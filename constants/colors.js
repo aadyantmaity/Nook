@@ -5,4 +5,8 @@ export const colors = {
   black: "#000000",
   gray: "#F0F0F0",
   darkGray: "#CCCCCC",
+  darkBackground: "#121212", // Dark mode background
+  darkCard: "#1E1E1E", // Dark mode card background
+  lightText: "#FFFFFF", // Light text for dark mode
+  subtleText: "#CCCCCC", // Subtle text for dark mode
 };

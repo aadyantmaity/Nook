@@ -1,9 +1,10 @@
+import { colors } from "./constants/colors"; // Import colors
+
 export const studySpots = [
   {
     id: "1",
-    name: "Central Library",
-    location: { lat: 37.7749, lng: -122.4194 },
-    tags: ["quiet", "wifi", "outlets"],
+    name: "Odegaard Library",
+    tags: ["wifi", "outlets", "group-friendly"],
     ratings: {
       wifi: 4.5,
       noise: 1.2,
@@ -15,21 +16,22 @@ export const studySpots = [
         user: "Alice",
         rating: 5,
         text: "Super quiet and fast WiFi.",
-        color: "#4B2E83",
+        color: colors.purple,
       },
       {
         user: "Bob",
         rating: 4,
         text: "Great for focus, but gets crowded.",
-        color: "#4B2E83",
+        color: colors.purple,
       },
     ],
+    image:
+      "https://th.bing.com/th/id/OIP.LMuN07EFFNbJnqgKJTTlUwHaFb?w=235&h=180&c=7&r=0&o=5&dpr=1.6&pid=1.7",
   },
   {
     id: "2",
-    name: "Cafe Mocha",
-    location: { lat: 37.775, lng: -122.418 },
-    tags: ["wifi", "group-friendly"],
+    name: "Suzallo Library",
+    tags: ["wifi", "quiet", "outlets"],
     ratings: {
       wifi: 4.2,
       noise: 3.5,
@@ -44,6 +46,8 @@ export const studySpots = [
         color: "#4B2E83",
       },
     ],
+    image:
+      "https://th.bing.com/th/id/OIP.bN8M6ZxWHS1yrgjebBwL_QHaE8?w=237&h=180&c=7&r=0&o=5&dpr=1.6&pid=1.7",
   },
   // ...more spots...
 ];

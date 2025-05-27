@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
+import { colors } from "../constants/colors"; // Import colors
 // Removed: import MapView, { Marker } from "react-native-maps";
 import { studySpots } from "../mockData";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -16,8 +17,8 @@ export default function MapScreen({ navigation }) {
   const [selectedSpot, setSelectedSpot] = useState(null);
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <View style={{ flex: 1, padding: 16 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.white }}>
+      <View style={{ flex: 1, padding: 16, backgroundColor: colors.white }}>
         <View
           style={{
             flexDirection: "row",
@@ -31,12 +32,11 @@ export default function MapScreen({ navigation }) {
               flexDirection: "row",
               alignItems: "center",
               padding: 10,
-              backgroundColor: "#eee",
+              backgroundColor: colors.gray, // Light button background
               borderRadius: 8,
             }}
           >
-            <ArrowLeft size={20} color="black" />
-            <Text style={{ marginLeft: 8 }}>Back to Home</Text>
+            <ArrowLeft size={20} color={colors.black} />
           </TouchableOpacity>
         </View>
         <ScrollView style={{ flex: 1, padding: 16 }}>
@@ -45,7 +45,7 @@ export default function MapScreen({ navigation }) {
               fontSize: 20,
               fontWeight: "bold",
               marginBottom: 12,
-              color: "#4B2E83",
+              color: colors.black, // Dark text
             }}
           >
             Study Spots
@@ -57,20 +57,24 @@ export default function MapScreen({ navigation }) {
               style={{
                 marginBottom: 12,
                 padding: 12,
-                backgroundColor: "#f0f0f0",
+                backgroundColor: colors.gray, // Light card background
                 borderRadius: 8,
               }}
             >
               <Text
-                style={{ fontSize: 16, fontWeight: "bold", color: "#4B2E83" }}
+                style={{
+                  fontSize: 16,
+                  fontWeight: "bold",
+                  color: colors.black,
+                }}
               >
                 {spot.name}
               </Text>
-              <Text style={{ color: "#4B2E83" }}>
+              <Text style={{ color: colors.subtleText }}>
                 {spot.location.address ||
                   `${spot.location.lat}, ${spot.location.lng}`}
               </Text>
-              <Text style={{ color: "#4B2E83" }}>
+              <Text style={{ color: colors.subtleText }}>
                 Tags: {spot.tags.join(", ")}
               </Text>
             </TouchableOpacity>
@@ -86,7 +90,7 @@ export default function MapScreen({ navigation }) {
           >
             <View
               style={{
-                backgroundColor: "#fff",
+                backgroundColor: colors.white,
                 margin: 32,
                 padding: 16,
                 borderRadius: 8,
