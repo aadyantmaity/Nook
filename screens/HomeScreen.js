@@ -1,16 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   FlatList,
   TouchableOpacity,
   Image,
+  ImageBackground,
   Platform,
 } from "react-native";
-import { studySpots } from "../mockData";
+import { collection, getDocs } from "firebase/firestore"; // Import Firestore functions
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Plus } from "phosphor-react-native"; // Import icons
+import { Plus, User } from "phosphor-react-native"; // Import icons
 import { colors } from "../constants/colors"; // Import colors
+import { auth, db } from "../firebaseConfig"; // Import Firebase
+import { doc, getDoc } from "firebase/firestore"; // Import Firestore functions
 
 function Filters({ filter, setFilter }) {
   return (
@@ -53,48 +56,46 @@ function Filters({ filter, setFilter }) {
           paddingHorizontal: 16,
         }}
       >
-        {["All", "Quiet", "WiFi", "Outlets", "Group-Friendly"].map(
-          (label, index) => (
-            <TouchableOpacity
-              key={index}
-              onPress={() =>
-                setFilter(
-                  label.toLowerCase() === "all" ? null : label.toLowerCase()
-                )
-              }
+        {["All", "Quiet", "Outlets", "Group-Friendly"].map((label, index) => (
+          <TouchableOpacity
+            key={index}
+            onPress={() =>
+              setFilter(
+                label.toLowerCase() === "all" ? null : label.toLowerCase()
+              )
+            }
+            style={{
+              paddingVertical: 10,
+              paddingHorizontal: 10,
+              backgroundColor:
+                filter ===
+                (label.toLowerCase() === "all" ? null : label.toLowerCase())
+                  ? colors.purple
+                  : "#F0F0F0",
+              borderRadius: 25,
+              margin: 6,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+              elevation: 2,
+            }}
+          >
+            <Text
               style={{
-                paddingVertical: 10,
-                paddingHorizontal: 10,
-                backgroundColor:
+                color:
                   filter ===
                   (label.toLowerCase() === "all" ? null : label.toLowerCase())
-                    ? colors.purple
-                    : "#F0F0F0",
-                borderRadius: 25,
-                margin: 6,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-                elevation: 2,
+                    ? "#FFFFFF"
+                    : colors.purple,
+                fontWeight: "bold",
+                fontSize: 13,
               }}
             >
-              <Text
-                style={{
-                  color:
-                    filter ===
-                    (label.toLowerCase() === "all" ? null : label.toLowerCase())
-                      ? "#FFFFFF"
-                      : colors.purple,
-                  fontWeight: "bold",
-                  fontSize: 13,
-                }}
-              >
-                {label}
-              </Text>
-            </TouchableOpacity>
-          )
-        )}
+              {label}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
     </View>
   );
@@ -103,22 +104,17 @@ function Filters({ filter, setFilter }) {
 function StudySpots({ filteredSpots, navigation }) {
   return (
     <FlatList
-      data={filteredSpots}
-      key={2}
+      data={filteredSpots} // Display the filtered study spots
       keyExtractor={(item) => item.id}
-      numColumns={2}
-      columnWrapperStyle={{
-        justifyContent: "space-between",
-        marginBottom: 16,
-      }}
       contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16 }}
       renderItem={({ item }) => (
-        <View
+        <TouchableOpacity
+          onPress={() => navigation.navigate("SpotDetail", { spotId: item.id })}
           style={{
-            width: "48%",
+            padding: 16,
+            marginBottom: 12,
             backgroundColor: "#FFFFFF",
-            borderRadius: 12,
-            overflow: "hidden",
+            borderRadius: 8,
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.1,
@@ -126,53 +122,88 @@ function StudySpots({ filteredSpots, navigation }) {
             elevation: 3,
           }}
         >
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate("SpotDetail", { spotId: item.id })
-            }
+          <Text
             style={{
-              aspectRatio: 1,
-              backgroundColor: "#F8F8F8",
+              fontSize: 18,
+              fontWeight: "bold",
+              color: colors.purple,
+              marginBottom: 8,
             }}
           >
-            <Image
-              source={{ uri: item.image }}
-              style={{ width: "100%", height: "100%" }}
-              resizeMode="cover"
-            />
-          </TouchableOpacity>
-          <View style={{ padding: 12 }}>
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "bold",
-                marginBottom: 4,
-                color: colors.purple,
-              }}
-            >
-              {item.name}
-            </Text>
-            <Text
-              style={{
-                color: "#666666",
-                fontSize: 12,
-                fontStyle: "italic",
-              }}
-            >
-              {item.tags.join(", ")}
-            </Text>
-          </View>
-        </View>
+            {item.name} {/* Display the building name */}
+          </Text>
+          <Text
+            style={{
+              fontSize: 14,
+              color: "#666666",
+              fontStyle: "italic",
+            }}
+          >
+            {item.tags.join(", ")} {/* Display the tags */}
+          </Text>
+        </TouchableOpacity>
       )}
     />
   );
 }
 
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen({ navigation, route }) {
   const [filter, setFilter] = useState(null);
+  const [studySpots, setStudySpots] = useState([]); // Fetch spots from Firestore
+  const [userName, setUserName] = useState(""); // Add state for user's name
+  const [isLoading, setIsLoading] = useState(true); // Add loading state
+
+  const fetchStudySpots = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, "studySpots"));
+      const spots = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setStudySpots(spots); // Store fetched spots in state
+    } catch (error) {
+      console.error("Error fetching study spots:", error);
+      alert("Unable to fetch study spots. Please check your permissions.");
+    } finally {
+      setIsLoading(false); // Set loading to false after fetching data
+    }
+  };
+
+  useEffect(() => {
+    const fetchUserName = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          setUserName(userDoc.data().name);
+        }
+      }
+    };
+
+    fetchUserName();
+  }, []);
+
+  useEffect(() => {
+    fetchStudySpots(); // Fetch spots on initial load
+  }, []);
+
+  useEffect(() => {
+    if (route.params?.refresh) {
+      fetchStudySpots(); // Refresh spots when navigating back with "refresh"
+    }
+  }, [route.params?.refresh]);
+
+  if (isLoading)
+    return (
+      <SafeAreaView
+        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+      >
+        <Text style={{ fontSize: 16, color: colors.darkGray }}>Loading...</Text>
+      </SafeAreaView>
+    );
 
   const filteredSpots = filter
-    ? studySpots.filter((spot) => spot.tags.includes(filter))
+    ? studySpots.filter((spot) => spot.tags.includes(filter)) // Apply filter
     : studySpots;
 
   return (
@@ -181,7 +212,14 @@ export default function HomeScreen({ navigation }) {
         <Filters filter={filter} setFilter={setFilter} />
         <StudySpots filteredSpots={filteredSpots} navigation={navigation} />
         <TouchableOpacity
-          onPress={() => navigation.navigate("AddSpot")}
+          onPress={() => {
+            try {
+              navigation.navigate("AddSpot");
+            } catch (error) {
+              console.error("Error adding spot:", error);
+              alert("Unable to add a new spot. Please check your permissions.");
+            }
+          }}
           style={{
             position: "absolute",
             bottom: 16,
@@ -208,8 +246,30 @@ export default function HomeScreen({ navigation }) {
               marginLeft: 8,
             }}
           >
-            Add Spot
+            Add a Nook
           </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("Profile")}
+          style={{
+            position: "absolute",
+            top: 16,
+            right: 16,
+            alignItems: "center",
+            justifyContent: "center",
+            width: 40, // Match the size of the container
+            height: 40, // Match the size of the container
+            backgroundColor: colors.purple,
+            borderRadius: 20, // Make it circular
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.2,
+            shadowRadius: 4,
+            elevation: 3,
+            zIndex: 5,
+          }}
+        >
+          <User size={24} color="white" weight="bold" />
         </TouchableOpacity>
       </View>
     </SafeAreaView>

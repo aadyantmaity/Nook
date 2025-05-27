@@ -9,4 +9,5 @@ export const colors = {
   darkCard: "#1E1E1E", // Dark mode card background
   lightText: "#FFFFFF", // Light text for dark mode
   subtleText: "#CCCCCC", // Subtle text for dark mode
+  red: "#CC0000", // Darker red for error or important actions
 };
