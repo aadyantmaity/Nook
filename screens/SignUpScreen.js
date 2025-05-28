@@ -49,6 +49,7 @@ export default function SignUpScreen({ navigation }) {
         email,
         major,
         gradYear,
+        profilePic: null,
       });
 
       // Navigate to Home on successful sign-up

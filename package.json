@@ -28,7 +28,9 @@
     "react-native-image-picker": "^8.2.1",
     "react-native-picker": "^4.3.7",
     "react-native-safe-area-context": "^5.4.1",
-    "react-native-svg": "^15.12.0"
+    "react-native-svg": "^15.12.0",
+    "expo-image-picker": "~16.1.4",
+    "expo-file-system": "~18.1.10"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

@@ -27,13 +27,13 @@ import { doc, getDoc } from "firebase/firestore"; // Import Firestore functions
 const TAGS = [
   "All",
   "Favorites",
-  "quiet",
-  "group-friendly",
-  "wifi",
-  "outlets",
-  "natural-light",
-  "food-nearby",
-  "open-space",
+  "Quiet",
+  "Group Friendly",
+  "WiFi",
+  "Outlets",
+  "Natural Light",
+  "Food Nearby",
+  "Open Space",
 ];
 
 function Filters({ filter, setFilter }) {
@@ -299,29 +299,58 @@ function StudySpots({
                 ? `${item.averageOverallRating.toFixed(1)} (${
                     item.overallRatingsCount
                   })`
-                : "No rating"}
+                : "No ratings"}
             </Text>
           </View>
-          <Text
+          {/* Tags as pills */}
+          <View
             style={{
-              fontSize: 13,
-              color: "#666666",
-              fontStyle: "italic",
+              flexDirection: "row",
+              flexWrap: "wrap",
               marginBottom: 8,
+              gap: 6, // If your React Native version supports gap, otherwise use marginRight/marginBottom below
             }}
           >
-            {item.tags.join(", ")} {/* Display the tags */}
-          </Text>
+            {item.tags && item.tags.length > 0 ? (
+              [...item.tags]
+                .sort((a, b) => String(a).localeCompare(String(b)))
+                .map((tag, idx) => (
+                  <View
+                    key={idx}
+                    style={{
+                      backgroundColor: colors.purple,
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 16,
+                      marginRight: 0,
+                      marginBottom: 3,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "#fff",
+                        fontSize: 12,
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {tag}
+                    </Text>
+                  </View>
+                ))
+            ) : (
+              <Text style={{ color: "#AAA", fontSize: 12 }}>No tags</Text>
+            )}
+          </View>
           <View
             style={{ flexDirection: "row", justifyContent: "space-between" }}
           >
             <View style={{ alignItems: "center" }}>
-              <Text style={{ fontSize: 12, color: colors.darkGray }}>
+              <Text style={{ fontSize: 14, color: colors.darkGray }}>
                 Noise Level
               </Text>
               <Text
                 style={{
-                  fontSize: 14,
+                  fontSize: 12,
                   fontWeight: "bold",
                   color: colors.purple,
                 }}
@@ -332,12 +361,12 @@ function StudySpots({
               </Text>
             </View>
             <View style={{ alignItems: "center" }}>
-              <Text style={{ fontSize: 12, color: colors.darkGray }}>
+              <Text style={{ fontSize: 14, color: colors.darkGray }}>
                 Crowd Level
               </Text>
               <Text
                 style={{
-                  fontSize: 14,
+                  fontSize: 12,
                   fontWeight: "bold",
                   color: colors.purple,
                 }}

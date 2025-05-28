@@ -29,12 +29,12 @@ import { db } from "../firebaseConfig";
 import {
   ArrowLeft,
   SpeakerHigh,
-  Check,
   X,
   UsersThree,
-  Clock,
   Star,
   Heart,
+  House,
+  Broadcast, // Add this import for the update/edit icon
 } from "phosphor-react-native";
 import { colors } from "../constants/colors";
 import { auth } from "../firebaseConfig"; // Import auth
@@ -409,7 +409,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                 shadowRadius: 4,
               }}
             >
-              <ArrowLeft size={20} color={colors.white} />
+              <House size={20} color={colors.white} />
             </TouchableOpacity>
             {/* Favorite Button */}
             <TouchableOpacity
@@ -561,7 +561,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                   pendingOverallRating !== 0 &&
                   pendingOverallRating !== userOverallRating
                     ? colors.purple
-                    : colors.gray,
+                    : colors.darkGray,
                 paddingVertical: 8,
                 paddingHorizontal: 24,
                 borderRadius: 8,
@@ -638,57 +638,59 @@ export default function SpotDetailScreen({ route, navigation }) {
           borderTopColor: colors.gray,
         }}
       >
-        <TouchableOpacity
-          onPress={() => setShowLiveUpdate(true)} // Open the modal without accessing undefined states
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            paddingVertical: 12,
-            paddingHorizontal: 16,
-            backgroundColor: colors.purple,
-            borderRadius: 8,
-            marginBottom: 16,
-            shadowColor: colors.black,
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.2,
-            shadowRadius: 4,
-            elevation: 3,
-          }}
+        <View
+          style={{ flexDirection: "row", width: "75%", alignSelf: "center" }}
         >
-          <SpeakerHigh size={20} color={colors.white} />
-          <Text
+          <TouchableOpacity
+            onPress={() => setShowLiveUpdate(true)}
             style={{
-              marginLeft: 8,
-              color: colors.white,
-              fontWeight: "bold",
-              fontSize: 16,
+              flex: 1,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              backgroundColor: colors.purple,
+              borderRadius: 8,
+              marginRight: 8,
+              shadowColor: colors.black,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.2,
+              shadowRadius: 4,
+              elevation: 3,
             }}
           >
-            Live Update
-          </Text>
-        </TouchableOpacity>
-        <LiveUpdateModal
-          visible={showLiveUpdate} // Pass the correct visibility state
-          onClose={() => setShowLiveUpdate(false)} // Ensure modal can be closed
-          spotId={spotId} // Pass the spotId to the modal
-          initialNoise={spot.ratings?.noise || 0} // Pass current noise rating
-          initialCrowd={spot.ratings?.crowd || 0} // Pass current crowd rating
-        />
-        {spot.addedBy === auth.currentUser?.uid && (
-          <View style={{ flexDirection: "row" }}>
+            <Broadcast size={20} color={colors.white} />
+            <Text
+              style={{
+                marginLeft: 8,
+                color: colors.white,
+                fontWeight: "bold",
+                fontSize: 16,
+              }}
+            >
+              Update
+            </Text>
+          </TouchableOpacity>
+          {spot.addedBy === auth.currentUser?.uid && (
             <TouchableOpacity
               onPress={handleDeleteSpot}
               style={{
                 flex: 1,
-                padding: 12,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                paddingVertical: 12,
+                paddingHorizontal: 16,
                 backgroundColor: colors.red,
                 borderRadius: 8,
-                alignItems: "center",
+                marginLeft: 8,
               }}
             >
+              <X size={20} color={colors.white} weight="bold" />
               <Text
                 style={{
+                  marginLeft: 8,
                   color: colors.white,
                   fontWeight: "bold",
                   fontSize: 16,
@@ -697,8 +699,15 @@ export default function SpotDetailScreen({ route, navigation }) {
                 Delete
               </Text>
             </TouchableOpacity>
-          </View>
-        )}
+          )}
+        </View>
+        <LiveUpdateModal
+          visible={showLiveUpdate}
+          onClose={() => setShowLiveUpdate(false)}
+          spotId={spotId}
+          initialNoise={spot.ratings?.noise || 0}
+          initialCrowd={spot.ratings?.crowd || 0}
+        />
       </View>
     </SafeAreaView>
   );

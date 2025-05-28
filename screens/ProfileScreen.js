@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Modal,
   TextInput,
+  Image,
 } from "react-native";
 import { signOut, updateProfile } from "firebase/auth";
 import { auth, db } from "../firebaseConfig"; // Ensure db is imported
@@ -22,6 +23,9 @@ import {
   Heart,
 } from "phosphor-react-native"; // Import icons
 import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore"; // Import Firestore functions
+import * as ImagePicker from "expo-image-picker"; // Add this import
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage"; // Add for storage
+import * as FileSystem from "expo-file-system"; // Add this import for Expo
 
 export default function ProfileScreen({ navigation }) {
   const [firstName, setFirstName] = useState("");
@@ -37,6 +41,8 @@ export default function ProfileScreen({ navigation }) {
   const [isLoading, setIsLoading] = useState(true); // Add loading state
   const [favorites, setFavorites] = useState([]);
   const [favoriteSpots, setFavoriteSpots] = useState([]);
+  const [profilePic, setProfilePic] = useState(null);
+  const [editedProfilePic, setEditedProfilePic] = useState(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -52,6 +58,7 @@ export default function ProfileScreen({ navigation }) {
             setUserMajor(data.major || "No Major");
             setUserGradYear(data.gradYear || "No Grad Year");
             setFavorites(data.favorites || []);
+            setProfilePic(data.profilePic); // <-- Add this line
           } else {
             console.error("User document does not exist");
           }
@@ -65,6 +72,13 @@ export default function ProfileScreen({ navigation }) {
 
     fetchUserData();
   }, []);
+
+  useEffect(() => {
+    // When modal opens, set editedProfilePic to current profilePic
+    if (isModalVisible) {
+      setEditedProfilePic(profilePic);
+    }
+  }, [isModalVisible, profilePic]);
 
   // Fetch favorite spots details
   useEffect(() => {
@@ -101,17 +115,17 @@ export default function ProfileScreen({ navigation }) {
     try {
       const user = auth.currentUser;
       if (user) {
-        await setDoc(
-          doc(db, "users", user.uid),
-          {
-            firstName: editedFirstName || firstName,
-            lastName: editedLastName || lastName,
-            major: editedMajor || userMajor,
-            gradYear: editedGradYear || userGradYear,
-            email: userEmail,
-          },
-          { merge: true }
-        );
+        const updateData = {
+          firstName: editedFirstName || firstName,
+          lastName: editedLastName || lastName,
+          major: editedMajor || userMajor,
+          gradYear: editedGradYear || userGradYear,
+          email: userEmail,
+        };
+        if (editedProfilePic && editedProfilePic !== profilePic) {
+          updateData.profilePic = editedProfilePic;
+        }
+        await setDoc(doc(db, "users", user.uid), updateData, { merge: true });
 
         // Update displayName in Firebase Authentication
         await updateProfile(user, {
@@ -124,10 +138,46 @@ export default function ProfileScreen({ navigation }) {
         setLastName(editedLastName || lastName);
         setUserMajor(editedMajor || userMajor);
         setUserGradYear(editedGradYear || userGradYear);
+        if (editedProfilePic && editedProfilePic !== profilePic) {
+          setProfilePic(editedProfilePic);
+        }
         setIsModalVisible(false);
       }
     } catch (error) {
       console.error("Error saving profile:", error);
+    }
+  };
+
+  // Add this function
+  const handlePickProfilePic = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+      base64: true, // Add base64 so we can store as string
+    });
+    if (!result.cancelled) {
+      try {
+        // Use base64 string as the profile picture
+        // For Expo SDK 48+, result.assets[0].base64; for older, result.base64
+        const base64 =
+          result.assets && result.assets[0] && result.assets[0].base64
+            ? result.assets[0].base64
+            : result.base64;
+        if (!base64) throw new Error("No image data found");
+        const dataUrl = `data:image/jpeg;base64,${base64}`;
+        setProfilePic(dataUrl);
+        const user = auth.currentUser;
+        if (!user) return;
+        await setDoc(
+          doc(db, "users", user.uid),
+          { profilePic: dataUrl },
+          { merge: true }
+        );
+      } catch (e) {
+        alert("Failed to save profile picture.");
+      }
     }
   };
 
@@ -153,7 +203,21 @@ export default function ProfileScreen({ navigation }) {
       </View>
       {/* Profile Picture */}
       <View style={styles.profilePictureContainer}>
-        <User size={80} color="white" weight="bold" />
+        <TouchableOpacity
+          onPress={handlePickProfilePic}
+          style={{ alignItems: "center" }}
+        >
+          {profilePic ? (
+            <Image
+              source={{ uri: profilePic }}
+              style={{ width: 100, height: 100, borderRadius: 50 }}
+            />
+          ) : (
+            <View>
+              <User size={80} color="white" weight="bold" />
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
 
       {/* Profile Details */}
@@ -179,7 +243,7 @@ export default function ProfileScreen({ navigation }) {
         <View
           style={{
             flexDirection: "row",
-            alignItems: "left",
+            alignItems: "center", // Fix alignment
             marginBottom: 8,
           }}
         >
@@ -193,22 +257,131 @@ export default function ProfileScreen({ navigation }) {
         {favoriteSpots.length === 0 ? (
           <Text style={styles.noFavoritesText}>No favorites yet.</Text>
         ) : (
-          favoriteSpots.map((spot) => (
-            <TouchableOpacity
-              key={spot.id}
-              style={styles.favoriteSpotContainer}
-              onPress={() =>
-                navigation.navigate("SpotDetail", { spotId: spot.id })
-              }
-            >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={styles.favoriteSpotName}>{spot.name}</Text>
-              </View>
-              <Text style={styles.favoriteSpotTags}>
-                {spot.tags && spot.tags.length > 0 ? spot.tags.join(", ") : ""}
-              </Text>
-            </TouchableOpacity>
-          ))
+          <View style={{ width: "100%" }}>
+            {favoriteSpots.map((spot) => (
+              <TouchableOpacity
+                key={spot.id}
+                style={{
+                  backgroundColor: "#f5f3fa",
+                  borderRadius: 12,
+                  padding: 14,
+                  marginBottom: 10,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.08,
+                  shadowRadius: 3,
+                  elevation: 2,
+                }}
+                onPress={() =>
+                  navigation.navigate("SpotDetail", { spotId: spot.id })
+                }
+                activeOpacity={0.85}
+              >
+                {/* Image preview */}
+                {spot.imageUrl ? (
+                  <View
+                    style={{
+                      width: 75,
+                      height: 75,
+                      borderRadius: 8,
+                      overflow: "hidden",
+                      marginRight: 14,
+                      backgroundColor: "#EEE",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Image
+                      source={{ uri: spot.imageUrl }}
+                      style={{ width: "100%", height: "100%" }}
+                      resizeMode="cover"
+                    />
+                  </View>
+                ) : (
+                  <View
+                    style={{
+                      backgroundColor: colors.purple,
+                      borderRadius: 8,
+                      width: 38,
+                      height: 38,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: 14,
+                    }}
+                  >
+                    <User size={22} color="#fff" weight="bold" />
+                  </View>
+                )}
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "bold",
+                      color: colors.purple,
+                      marginBottom: 2,
+                    }}
+                    numberOfLines={1}
+                  >
+                    {spot.name}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      color: colors.darkGray,
+                      marginBottom: 2,
+                    }}
+                    numberOfLines={1}
+                  >
+                    {spot.roomNumber ? `Room: ${spot.roomNumber}` : ""}
+                  </Text>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+                    {spot.tags && spot.tags.length > 0
+                      ? [...spot.tags]
+                          .sort((a, b) => String(a).localeCompare(String(b)))
+                          .slice(0, 3)
+                          .map((tag, idx) => (
+                            <View
+                              key={idx}
+                              style={{
+                                backgroundColor: colors.purple,
+                                borderRadius: 12,
+                                paddingHorizontal: 8,
+                                paddingVertical: 2,
+                                marginRight: 6,
+                                marginTop: 2,
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  color: "#fff",
+                                  fontSize: 11,
+                                  fontWeight: "bold",
+                                }}
+                              >
+                                {tag}
+                              </Text>
+                            </View>
+                          ))
+                      : null}
+                    {spot.tags && spot.tags.length > 3 && (
+                      <Text
+                        style={{
+                          color: colors.purple,
+                          fontSize: 11,
+                          fontWeight: "bold",
+                          marginTop: 2,
+                        }}
+                      >
+                        +{spot.tags.length - 3} more
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
         )}
         <View style={styles.divider} />
       </View>
@@ -248,6 +421,134 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Edit Profile</Text>
+            {/* Profile picture preview and picker */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 16,
+              }}
+            >
+              {/* Current profile picture */}
+              <View style={{ alignItems: "center", marginRight: 12 }}>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.darkGray,
+                    marginBottom: 4,
+                  }}
+                >
+                  Current
+                </Text>
+                {profilePic ? (
+                  <Image
+                    source={{ uri: profilePic }}
+                    style={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: 28,
+                      borderWidth: 1,
+                      borderColor: colors.gray,
+                    }}
+                  />
+                ) : (
+                  <View
+                    style={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: 28,
+                      backgroundColor: colors.gray,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderWidth: 1,
+                      borderColor: colors.gray,
+                    }}
+                  >
+                    <User size={32} color={colors.purple} weight="bold" />
+                  </View>
+                )}
+              </View>
+              {/* New profile picture */}
+              <View style={{ alignItems: "center", marginRight: 12 }}>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.darkGray,
+                    marginBottom: 4,
+                  }}
+                >
+                  New
+                </Text>
+                {editedProfilePic &&
+                editedProfilePic.startsWith("data:image") ? (
+                  <Image
+                    source={{ uri: editedProfilePic }}
+                    style={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: 28,
+                      borderWidth: 1,
+                      borderColor: colors.purple,
+                    }}
+                  />
+                ) : (
+                  <View
+                    style={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: 28,
+                      backgroundColor: "#f0eafd",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderWidth: 1,
+                      borderColor: colors.gray,
+                    }}
+                  >
+                    <User size={32} color={colors.purple} weight="bold" />
+                  </View>
+                )}
+              </View>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: colors.purple,
+                  borderRadius: 8,
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginTop: 18,
+                }}
+                onPress={async () => {
+                  let result = await ImagePicker.launchImageLibraryAsync({
+                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                    allowsEditing: true,
+                    aspect: [1, 1],
+                    quality: 0.5,
+                    base64: true,
+                  });
+                  if (!result.cancelled) {
+                    const base64 =
+                      result.assets &&
+                      result.assets[0] &&
+                      result.assets[0].base64
+                        ? result.assets[0].base64
+                        : result.base64;
+                    if (!base64) {
+                      alert("No image data found");
+                      return;
+                    }
+                    const dataUrl = `data:image/jpeg;base64,${base64}`;
+                    setEditedProfilePic(dataUrl);
+                  }
+                }}
+              >
+                <Text
+                  style={{ color: "#fff", fontWeight: "bold", fontSize: 13 }}
+                >
+                  Change Picture
+                </Text>
+              </TouchableOpacity>
+            </View>
             <TextInput
               style={styles.input}
               placeholder="First Name"
@@ -265,7 +566,12 @@ export default function ProfileScreen({ navigation }) {
             <TextInput
               style={styles.input}
               placeholder="Major"
-              value={editedMajor}
+              value={
+                typeof editedMajor === "string" &&
+                !editedMajor.startsWith("data:image")
+                  ? editedMajor
+                  : ""
+              }
               onChangeText={setEditedMajor}
               placeholderTextColor={colors.darkGray}
             />

@@ -22,15 +22,13 @@ import {
 import { db, auth } from "../firebaseConfig"; // Import Firestore instance
 
 const TAGS = [
-  "All",
-  "Favorites",
-  "quiet",
-  "group-friendly",
-  "wifi",
-  "outlets",
-  "natural-light",
-  "food-nearby",
-  "open-space",
+  "Quiet",
+  "Group Friendly",
+  "WiFi",
+  "Outlets",
+  "Natural Light",
+  "Food Nearby",
+  "Open Space",
 ];
 
 const BUILDINGS = [
@@ -78,6 +76,8 @@ export default function AddSpotScreen({ navigation }) {
   const [selectedTags, setSelectedTags] = useState([]);
   const [showAddedBy, setShowAddedBy] = useState(false); // New state for "Added By" option
   const [isLoading, setIsLoading] = useState(false); // Add loading state
+  const [isUWBuilding, setIsUWBuilding] = useState(true); // New state for UW building toggle
+  const [customBuilding, setCustomBuilding] = useState(""); // For custom building name
 
   const toggleTag = (tag) => {
     setSelectedTags((tags) =>
@@ -94,9 +94,14 @@ export default function AddSpotScreen({ navigation }) {
       const querySnapshot = await getDocs(collection(db, "studySpots"));
       const existingSpots = querySnapshot.docs.map((doc) => doc.data());
 
+      const buildingNameToCheck = isUWBuilding
+        ? selectedBuilding
+        : customBuilding;
+
       const isDuplicate = existingSpots.some(
         (spot) =>
-          spot.buildingName.toLowerCase() === selectedBuilding.toLowerCase() &&
+          spot.buildingName.toLowerCase() ===
+            buildingNameToCheck.toLowerCase() &&
           spot.roomNumber.toLowerCase() === roomNumber.toLowerCase()
       );
 
@@ -107,8 +112,8 @@ export default function AddSpotScreen({ navigation }) {
       }
 
       const spotDetails = {
-        name: selectedBuilding, // Use the selected building as the spot name
-        buildingName: selectedBuilding,
+        name: buildingNameToCheck, // Use the selected or custom building as the spot name
+        buildingName: buildingNameToCheck,
         roomNumber,
         huskyCardNeeded,
         department: huskyCardNeeded ? department : null,
@@ -174,39 +179,107 @@ export default function AddSpotScreen({ navigation }) {
             </TouchableOpacity>
           </View>
 
-          <Text style={{ fontSize: 19, marginBottom: 8, color: colors.purple }}>
-            Select Building:
-          </Text>
+          {/* UW Building Toggle */}
           <View
             style={{
-              borderWidth: 1,
-              borderColor: "#CCCCCC",
-              borderRadius: 8,
-              marginBottom: 16,
-              backgroundColor: "colors.white",
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 12,
             }}
           >
-            <Picker
-              selectedValue={selectedBuilding}
-              onValueChange={(itemValue) => setSelectedBuilding(itemValue)}
-              style={{ color: "#000000", fontSize: 18 }}
-              itemStyle={{ fontSize: 18 }}
+            <TouchableOpacity
+              onPress={() => setIsUWBuilding(true)}
+              style={{
+                flex: 1,
+                alignItems: "center",
+                padding: 12,
+                marginRight: 8,
+                backgroundColor: isUWBuilding ? colors.purple : "#F0F0F0",
+                borderRadius: 8,
+              }}
             >
-              <Picker.Item
-                label="Select a building"
-                value=""
-                style={{ fontSize: 18 }}
-              />
-              {BUILDINGS.map((building) => (
+              <Text
+                style={{
+                  color: isUWBuilding ? "white" : "#000000",
+                  fontWeight: "bold",
+                }}
+              >
+                UW Building
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setIsUWBuilding(false)}
+              style={{
+                flex: 1,
+                alignItems: "center",
+                padding: 12,
+                marginLeft: 8,
+                backgroundColor: !isUWBuilding ? colors.purple : "#F0F0F0",
+                borderRadius: 8,
+              }}
+            >
+              <Text
+                style={{
+                  color: !isUWBuilding ? "white" : "#000000",
+                  fontWeight: "bold",
+                }}
+              >
+                Custom Location
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={{ fontSize: 19, marginBottom: 8, color: colors.purple }}>
+            {isUWBuilding ? "Select Building:" : "Enter Location Name:"}
+          </Text>
+          {isUWBuilding ? (
+            <View
+              style={{
+                borderWidth: 1,
+                borderColor: "#CCCCCC",
+                borderRadius: 8,
+                marginBottom: 16,
+                backgroundColor: "colors.white",
+              }}
+            >
+              <Picker
+                selectedValue={selectedBuilding}
+                onValueChange={(itemValue) => setSelectedBuilding(itemValue)}
+                style={{ color: "#000000", fontSize: 18 }}
+                itemStyle={{ fontSize: 18 }}
+              >
                 <Picker.Item
-                  key={building}
-                  label={building}
-                  value={building}
+                  label="Select a building"
+                  value=""
                   style={{ fontSize: 18 }}
                 />
-              ))}
-            </Picker>
-          </View>
+                {BUILDINGS.map((building) => (
+                  <Picker.Item
+                    key={building}
+                    label={building}
+                    value={building}
+                    style={{ fontSize: 18 }}
+                  />
+                ))}
+              </Picker>
+            </View>
+          ) : (
+            <TextInput
+              placeholder="Enter location name"
+              placeholderTextColor="#666666"
+              value={customBuilding}
+              onChangeText={setCustomBuilding}
+              style={{
+                borderWidth: 1,
+                borderColor: "#CCCCCC",
+                borderRadius: 8,
+                padding: 12,
+                marginBottom: 16,
+                backgroundColor: "colors.white",
+                color: "#000000",
+              }}
+            />
+          )}
           <TextInput
             placeholder="Room Number (if applicable)"
             placeholderTextColor="#666666"
