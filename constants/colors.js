@@ -10,4 +10,5 @@ export const colors = {
   lightText: "#FFFFFF", // Light text for dark mode
   subtleText: "#CCCCCC", // Subtle text for dark mode
   red: "#CC0000", // Darker red for error or important actions
+  green: "#28A745", // Green for success messages
 };

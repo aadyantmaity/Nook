@@ -33,22 +33,7 @@ import {
 } from "phosphor-react-native";
 import { colors } from "../constants/colors";
 import { auth } from "../firebaseConfig"; // Import auth
-
-function renderStars(rating) {
-  return (
-    <View style={{ flexDirection: "row", marginTop: 8 }}>
-      {[1, 2, 3, 4, 5].map((star) => (
-        <Star
-          key={star}
-          size={20}
-          color={star <= rating ? colors.white : colors.gray}
-          weight={star <= rating ? "fill" : "regular"}
-          style={{ marginHorizontal: 2 }}
-        />
-      ))}
-    </View>
-  );
-}
+import Slider from "@react-native-community/slider"; // Add this import for Slider
 
 export default function SpotDetailScreen({ route, navigation }) {
   const { spotId } = route.params || {};
@@ -93,8 +78,11 @@ export default function SpotDetailScreen({ route, navigation }) {
           if (spotData.addedBy) {
             const userDoc = await getDoc(doc(db, "users", spotData.addedBy));
             if (userDoc.exists()) {
+              const revealIdentity = spotData.revealIdentity; // Check revealIdentity flag
               setAddedByName(
-                `${userDoc.data().firstName} ${userDoc.data().lastName}`
+                revealIdentity
+                  ? `${userDoc.data().firstName} ${userDoc.data().lastName}`
+                  : "Anonymous"
               );
             } else {
               setAddedByName("Anonymous"); // Fallback if userDoc doesn't exist
@@ -119,31 +107,32 @@ export default function SpotDetailScreen({ route, navigation }) {
     // Real-time updates for ratings
     const ratingsQuery = query(
       collection(db, "ratings"),
-      where("spotId", "==", spotId),
-      where(
-        "timestamp",
-        ">=",
-        Timestamp.fromDate(new Date(Date.now() - 30 * 60 * 1000)) // Last 30 minutes
-      )
+      where("spotId", "==", spotId) // Fetch all ratings for the spot
     );
 
     const unsubscribe = onSnapshot(ratingsQuery, (snapshot) => {
       let noiseSum = 0;
       let crowdSum = 0;
       let count = 0;
+      const thirtyMinutesAgo = Timestamp.now().toMillis() - 30 * 60 * 1000;
 
       snapshot.forEach((doc) => {
         const data = doc.data();
-        noiseSum += data.noise;
-        crowdSum += data.crowd;
-        count++;
+        if (data.timestamp.toMillis() >= thirtyMinutesAgo) {
+          noiseSum += data.noise;
+          crowdSum += data.crowd;
+          count++;
+        }
       });
+
+      const noiseRating = count > 0 ? noiseSum / count : "N/A";
+      const crowdRating = count > 0 ? crowdSum / count : "N/A";
 
       setSpot((prevSpot) => ({
         ...prevSpot,
         ratings: {
-          noise: count > 0 ? noiseSum / count : prevSpot?.ratings?.noise || 0,
-          crowd: count > 0 ? crowdSum / count : prevSpot?.ratings?.crowd || 0,
+          noise: noiseRating,
+          crowd: crowdRating,
         },
       }));
     });
@@ -165,9 +154,8 @@ export default function SpotDetailScreen({ route, navigation }) {
       alert("Unable to delete the spot. Please check your permissions.");
     }
   };
-
   const handleEditSpot = () => {
-    navigation.navigate("AddSpot", { spotId }); // Navigate to AddSpot for editing
+    navigation.navigate("Home");
   };
 
   if (isLoading)
@@ -180,7 +168,6 @@ export default function SpotDetailScreen({ route, navigation }) {
     );
 
   const tags = spot.tags || [];
-  const ratings = spot.ratings || { noise: 0, crowd: 0 };
   const addedBy = spot.addedBy || "Anonymous";
   const buildingName = spot.buildingName || "Not Available";
 
@@ -223,6 +210,7 @@ export default function SpotDetailScreen({ route, navigation }) {
           >
             {buildingName}
           </Text>
+          {/* Live Ratings */}
           <View
             style={{
               flexDirection: "row",
@@ -232,35 +220,46 @@ export default function SpotDetailScreen({ route, navigation }) {
           >
             <View
               style={{
-                flex: 1,
                 alignItems: "center",
                 padding: 16,
                 backgroundColor: colors.purple,
                 borderRadius: 8,
-                marginRight: 8,
+                flex: 1, // Adjust width to align with "Added By" box
+                marginRight: 8, // Add spacing between boxes
               }}
             >
-              <SpeakerHigh size={32} color={colors.white} />
-              <Text style={{ color: colors.white, fontSize: 14, marginTop: 8 }}>
-                Current Noise Level
+              <SpeakerHigh size={24} color={colors.white} />
+              <Text
+                style={{
+                  color: colors.white,
+                  fontSize: 16,
+                  fontWeight: "bold",
+                  marginTop: 8,
+                }}
+              >
+                Noise: {spot.ratings?.noise || "N/A"}
               </Text>
-              {renderStars(ratings.noise)}
             </View>
             <View
               style={{
-                flex: 1,
                 alignItems: "center",
                 padding: 16,
                 backgroundColor: colors.purple,
                 borderRadius: 8,
-                marginLeft: 8,
+                flex: 1, // Adjust width to align with "Added By" box
               }}
             >
-              <UsersThree size={32} color={colors.white} />
-              <Text style={{ color: colors.white, fontSize: 14, marginTop: 8 }}>
-                Current Crowd Level
+              <UsersThree size={24} color={colors.white} />
+              <Text
+                style={{
+                  color: colors.white,
+                  fontSize: 16,
+                  fontWeight: "bold",
+                  marginTop: 8,
+                }}
+              >
+                Crowd: {spot.ratings?.crowd || "N/A"}
               </Text>
-              {renderStars(ratings.crowd)}
             </View>
           </View>
           {/* Added By */}
@@ -353,7 +352,7 @@ export default function SpotDetailScreen({ route, navigation }) {
         }}
       >
         <TouchableOpacity
-          onPress={() => setShowLiveUpdate(true)}
+          onPress={() => setShowLiveUpdate(true)} // Open the modal without accessing undefined states
           style={{
             flexDirection: "row",
             alignItems: "center",
@@ -361,7 +360,7 @@ export default function SpotDetailScreen({ route, navigation }) {
             paddingVertical: 12,
             paddingHorizontal: 16,
             backgroundColor: colors.purple,
-            borderRadius: 25,
+            borderRadius: 8,
             marginBottom: 16,
             shadowColor: colors.black,
             shadowOffset: { width: 0, height: 2 },
@@ -382,23 +381,15 @@ export default function SpotDetailScreen({ route, navigation }) {
             Live Update
           </Text>
         </TouchableOpacity>
+        <LiveUpdateModal
+          visible={showLiveUpdate} // Pass the correct visibility state
+          onClose={() => setShowLiveUpdate(false)} // Ensure modal can be closed
+          spotId={spotId} // Pass the spotId to the modal
+          initialNoise={spot.ratings?.noise || 0} // Pass current noise rating
+          initialCrowd={spot.ratings?.crowd || 0} // Pass current crowd rating
+        />
         {spot.addedBy === auth.currentUser?.uid && (
           <View style={{ flexDirection: "row" }}>
-            <TouchableOpacity
-              onPress={handleEditSpot}
-              style={{
-                flex: 1,
-                padding: 12,
-                backgroundColor: colors.purple,
-                borderRadius: 8,
-                alignItems: "center",
-                marginRight: 8,
-              }}
-            >
-              <Text style={{ color: colors.white, fontWeight: "bold" }}>
-                Edit
-              </Text>
-            </TouchableOpacity>
             <TouchableOpacity
               onPress={handleDeleteSpot}
               style={{
@@ -420,9 +411,22 @@ export default function SpotDetailScreen({ route, navigation }) {
   );
 }
 
-function LiveUpdateModal({ visible, onClose, spotId }) {
-  const [noiseLevel, setNoiseLevel] = useState(3);
-  const [crowdLevel, setCrowdLevel] = useState(3);
+function LiveUpdateModal({
+  visible,
+  onClose,
+  spotId,
+  initialNoise,
+  initialCrowd,
+}) {
+  const [noiseLevel, setNoiseLevel] = useState(initialNoise); // Use initial noise rating
+  const [crowdLevel, setCrowdLevel] = useState(initialCrowd); // Use initial crowd rating
+
+  useEffect(() => {
+    if (visible) {
+      setNoiseLevel(initialNoise); // Reset noise level when modal opens
+      setCrowdLevel(initialCrowd); // Reset crowd level when modal opens
+    }
+  }, [visible, initialNoise, initialCrowd]);
 
   const handleSubmitUpdate = async () => {
     try {
@@ -433,6 +437,7 @@ function LiveUpdateModal({ visible, onClose, spotId }) {
         crowd: crowdLevel,
         timestamp: Timestamp.now(),
       });
+      console.log("Live update submitted successfully");
       onClose();
     } catch (error) {
       console.error("Error submitting live update:", error);
@@ -460,54 +465,38 @@ function LiveUpdateModal({ visible, onClose, spotId }) {
           <Text style={{ marginBottom: 8, fontSize: 16, fontWeight: "bold" }}>
             Noise Level (1 = Very Quiet, 5 = Noisy):
           </Text>
-          <View style={{ flexDirection: "row", marginBottom: 16 }}>
-            {[1, 2, 3, 4, 5].map((level) => (
-              <TouchableOpacity
-                key={level}
-                onPress={() => setNoiseLevel(level)}
-                style={{
-                  padding: 10,
-                  marginHorizontal: 4,
-                  backgroundColor:
-                    noiseLevel === level ? colors.purple : colors.gray,
-                  borderRadius: 8,
-                }}
-              >
-                <Text
-                  style={{
-                    color: noiseLevel === level ? colors.white : colors.black,
-                  }}
-                >
-                  {level}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          <View style={{ marginBottom: 16 }}>
+            <Text style={{ fontSize: 14, marginBottom: 4 }}>
+              Selected: {noiseLevel}
+            </Text>
+            <Slider
+              minimumValue={1}
+              maximumValue={5}
+              step={1}
+              value={noiseLevel}
+              onValueChange={(value) => setNoiseLevel(value)}
+              minimumTrackTintColor={colors.purple}
+              maximumTrackTintColor={colors.gray}
+              thumbTintColor={colors.purple}
+            />
           </View>
           <Text style={{ marginBottom: 8, fontSize: 16, fontWeight: "bold" }}>
             Crowd Level (1 = Sparse, 5 = Packed):
           </Text>
-          <View style={{ flexDirection: "row", marginBottom: 16 }}>
-            {[1, 2, 3, 4, 5].map((level) => (
-              <TouchableOpacity
-                key={level}
-                onPress={() => setCrowdLevel(level)}
-                style={{
-                  padding: 10,
-                  marginHorizontal: 4,
-                  backgroundColor:
-                    crowdLevel === level ? colors.purple : colors.gray,
-                  borderRadius: 8,
-                }}
-              >
-                <Text
-                  style={{
-                    color: crowdLevel === level ? colors.white : colors.black,
-                  }}
-                >
-                  {level}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          <View style={{ marginBottom: 16 }}>
+            <Text style={{ fontSize: 14, marginBottom: 4 }}>
+              Selected: {crowdLevel}
+            </Text>
+            <Slider
+              minimumValue={1}
+              maximumValue={5}
+              step={1}
+              value={crowdLevel}
+              onValueChange={(value) => setCrowdLevel(value)}
+              minimumTrackTintColor={colors.purple}
+              maximumTrackTintColor={colors.gray}
+              thumbTintColor={colors.purple}
+            />
           </View>
           <View
             style={{ flexDirection: "row", justifyContent: "space-between" }}

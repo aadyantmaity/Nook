@@ -9,10 +9,16 @@ import {
   SafeAreaView,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker"; // Import Picker for dropdown
-
 import { ArrowLeft, Check } from "phosphor-react-native"; // Import icons
 import { colors } from "../constants/colors"; // Correctly import colors
-import { collection, addDoc, getDoc, doc, getDocs } from "firebase/firestore"; // Import Firestore functions
+import {
+  collection,
+  addDoc,
+  getDoc,
+  doc,
+  getDocs,
+  Timestamp,
+} from "firebase/firestore"; // Ensure Timestamp is imported
 import { db, auth } from "../firebaseConfig"; // Import Firestore instance
 
 const TAGS = ["quiet", "wifi", "outlets", "group-friendly", "outdoors"];
@@ -69,8 +75,6 @@ export default function AddSpotScreen({ navigation }) {
   const [department, setDepartment] = useState("");
   const [selectedTags, setSelectedTags] = useState([]);
   const [showAddedBy, setShowAddedBy] = useState(false); // New state for "Added By" option
-  const [noiseRating, setNoiseRating] = useState(3); // State for noise rating
-  const [crowdRating, setCrowdRating] = useState(3); // State for crowd rating
   const [isLoading, setIsLoading] = useState(false); // Add loading state
 
   const toggleTag = (tag) => {
@@ -108,11 +112,8 @@ export default function AddSpotScreen({ navigation }) {
         department: huskyCardNeeded ? department : null,
         tags: selectedTags,
         createdAt: new Date().toISOString(),
-        addedBy: showAddedBy ? user.uid : null, // Store user ID instead of username
-        ratings: {
-          noise: noiseRating,
-          crowd: crowdRating,
-        }, // Include noise and crowd ratings
+        addedBy: user.uid, // Always store user ID
+        revealIdentity: showAddedBy, // Add a flag to control identity visibility
       };
 
       // Save to Firestore
@@ -169,18 +170,8 @@ export default function AddSpotScreen({ navigation }) {
               <ArrowLeft size={20} color="white" />
             </TouchableOpacity>
           </View>
-          <Text
-            style={{
-              fontSize: 40,
-              fontWeight: "bold",
-              marginBottom: 16,
-              color: colors.purple, // Dark text
-              alignSelf: "center", // Center the title
-            }}
-          >
-            Add a Nook
-          </Text>
-          <Text style={{ fontSize: 16, marginBottom: 8, color: colors.purple }}>
+
+          <Text style={{ fontSize: 19, marginBottom: 8, color: colors.purple }}>
             Select Building:
           </Text>
           <View
@@ -230,7 +221,7 @@ export default function AddSpotScreen({ navigation }) {
           />
           <View style={{ marginBottom: 16 }}>
             <Text
-              style={{ fontSize: 16, marginBottom: 8, color: colors.purple }}
+              style={{ fontSize: 19, marginBottom: 8, color: colors.purple }}
             >
               Husky Card Needed:
             </Text>
@@ -286,7 +277,7 @@ export default function AddSpotScreen({ navigation }) {
               }}
             />
           )}
-          <Text style={{ fontSize: 16, marginBottom: 8, color: colors.purple }}>
+          <Text style={{ fontSize: 19, marginBottom: 8, color: colors.purple }}>
             Tags:
           </Text>
           <View
@@ -330,7 +321,7 @@ export default function AddSpotScreen({ navigation }) {
           </View>
           <View style={{ marginBottom: 16 }}>
             <Text
-              style={{ fontSize: 16, marginBottom: 8, color: colors.purple }}
+              style={{ fontSize: 19, marginBottom: 8, color: colors.purple }}
             >
               Display "Added By" Information:
             </Text>
@@ -369,54 +360,7 @@ export default function AddSpotScreen({ navigation }) {
               </TouchableOpacity>
             </View>
           </View>
-          <Text style={{ fontSize: 16, marginBottom: 8, color: colors.purple }}>
-            Noise Rating (1 = Very Quiet, 5 = Noisy):
-          </Text>
-          <View style={{ flexDirection: "row", marginBottom: 16 }}>
-            {[1, 2, 3, 4, 5].map((level) => (
-              <TouchableOpacity
-                key={level}
-                onPress={() => setNoiseRating(level)}
-                style={{
-                  padding: 10,
-                  marginHorizontal: 4,
-                  backgroundColor:
-                    noiseRating === level ? colors.purple : "#F0F0F0",
-                  borderRadius: 8,
-                }}
-              >
-                <Text
-                  style={{ color: noiseRating === level ? "white" : "#000000" }}
-                >
-                  {level}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <Text style={{ fontSize: 16, marginBottom: 8, color: colors.purple }}>
-            Crowd Rating (1 = Sparse, 5 = Packed):
-          </Text>
-          <View style={{ flexDirection: "row", marginBottom: 16 }}>
-            {[1, 2, 3, 4, 5].map((level) => (
-              <TouchableOpacity
-                key={level}
-                onPress={() => setCrowdRating(level)}
-                style={{
-                  padding: 10,
-                  marginHorizontal: 4,
-                  backgroundColor:
-                    crowdRating === level ? colors.purple : "#F0F0F0",
-                  borderRadius: 8,
-                }}
-              >
-                <Text
-                  style={{ color: crowdRating === level ? "white" : "#000000" }}
-                >
-                  {level}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+
           <View style={{ marginTop: 24, alignItems: "center" }}>
             <TouchableOpacity
               onPress={handleSubmit} // Replace setShowReview with handleSubmit
@@ -426,7 +370,7 @@ export default function AddSpotScreen({ navigation }) {
                 justifyContent: "center", // Center content horizontally
                 paddingVertical: 12, // Increase vertical padding
                 paddingHorizontal: 16, // Increase horizontal padding
-                backgroundColor: "#4B2E83",
+                backgroundColor: colors.green,
                 borderRadius: 25, // Make the button more rounded
                 marginTop: 16,
                 shadowColor: "#000",
@@ -446,7 +390,7 @@ export default function AddSpotScreen({ navigation }) {
                   fontSize: 16, // Slightly increase font size
                 }}
               >
-                Add Spot
+                Add Nook
               </Text>
             </TouchableOpacity>
           </View>

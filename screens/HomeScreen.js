@@ -8,9 +8,15 @@ import {
   ImageBackground,
   Platform,
 } from "react-native";
-import { collection, getDocs } from "firebase/firestore"; // Import Firestore functions
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  Timestamp,
+} from "firebase/firestore"; // Ensure Timestamp is imported
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Plus, User } from "phosphor-react-native"; // Import icons
+import { Plus, User, ArrowClockwise } from "phosphor-react-native"; // Replace Refresh with ArrowClockwise
 import { colors } from "../constants/colors"; // Import colors
 import { auth, db } from "../firebaseConfig"; // Import Firebase
 import { doc, getDoc } from "firebase/firestore"; // Import Firestore functions
@@ -137,10 +143,43 @@ function StudySpots({ filteredSpots, navigation }) {
               fontSize: 14,
               color: "#666666",
               fontStyle: "italic",
+              marginBottom: 8,
             }}
           >
             {item.tags.join(", ")} {/* Display the tags */}
           </Text>
+          <View
+            style={{ flexDirection: "row", justifyContent: "space-between" }}
+          >
+            <View style={{ alignItems: "center" }}>
+              <Text style={{ fontSize: 12, color: colors.darkGray }}>
+                Noise Level
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "bold",
+                  color: colors.purple,
+                }}
+              >
+                {item.ratings?.noise}
+              </Text>
+            </View>
+            <View style={{ alignItems: "center" }}>
+              <Text style={{ fontSize: 12, color: colors.darkGray }}>
+                Crowd Level
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "bold",
+                  color: colors.purple,
+                }}
+              >
+                {item.ratings?.crowd}
+              </Text>
+            </View>
+          </View>
         </TouchableOpacity>
       )}
     />
@@ -156,11 +195,46 @@ export default function HomeScreen({ navigation, route }) {
   const fetchStudySpots = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, "studySpots"));
-      const spots = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setStudySpots(spots); // Store fetched spots in state
+      const spots = await Promise.all(
+        querySnapshot.docs.map(async (doc) => {
+          const spotData = doc.data();
+
+          // Fetch ratings for the spot
+          const ratingsQuery = query(
+            collection(db, "ratings"),
+            where("spotId", "==", doc.id)
+          );
+          const ratingsSnapshot = await getDocs(ratingsQuery);
+
+          let noiseSum = 0;
+          let crowdSum = 0;
+          let count = 0;
+          const thirtyMinutesAgo = Timestamp.now().toMillis() - 30 * 60 * 1000;
+
+          ratingsSnapshot.forEach((ratingDoc) => {
+            const ratingData = ratingDoc.data();
+            if (ratingData.timestamp.toMillis() >= thirtyMinutesAgo) {
+              noiseSum += ratingData.noise;
+              crowdSum += ratingData.crowd;
+              count++;
+            }
+          });
+
+          const averageNoise = count > 0 ? noiseSum / count : "No rating yet"; // Ensure default is 999
+          const averageCrowd = count > 0 ? crowdSum / count : "No rating yet"; // Ensure default is 999
+
+          return {
+            id: doc.id,
+            ...spotData,
+            ratings: {
+              noise: averageNoise,
+              crowd: averageCrowd,
+            },
+          };
+        })
+      );
+
+      setStudySpots(spots); // Store fetched spots with updated ratings in state
     } catch (error) {
       console.error("Error fetching study spots:", error);
       alert("Unable to fetch study spots. Please check your permissions.");
@@ -270,6 +344,31 @@ export default function HomeScreen({ navigation, route }) {
           }}
         >
           <User size={24} color="white" weight="bold" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => {
+            setIsLoading(true); // Show loading state
+            fetchStudySpots(); // Fetch updated study spots
+          }}
+          style={{
+            position: "absolute",
+            top: 16,
+            left: 16, // Position it on the top-left corner
+            alignItems: "center",
+            justifyContent: "center",
+            width: 40, // Match the size of the container
+            height: 40, // Match the size of the container
+            backgroundColor: colors.purple,
+            borderRadius: 20, // Make it circular
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.2,
+            shadowRadius: 4,
+            elevation: 3,
+            zIndex: 5,
+          }}
+        >
+          <ArrowClockwise size={24} color="white" weight="bold" />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
