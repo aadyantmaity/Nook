@@ -16,36 +16,39 @@ import {
   where,
   Timestamp,
   deleteDoc,
+  updateDoc,
 } from "firebase/firestore"; // Ensure Timestamp is imported
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Plus, User, ArrowClockwise, Star } from "phosphor-react-native"; // Replace Refresh with ArrowClockwise
+import { Plus, User, ArrowClockwise, Star, Heart } from "phosphor-react-native"; // Add Heart icon
 import { colors } from "../constants/colors"; // Import colors
 import { auth, db } from "../firebaseConfig"; // Import Firebase
 import { doc, getDoc } from "firebase/firestore"; // Import Firestore functions
 
 const TAGS = [
   "All",
+  "Favorites",
   "quiet",
   "group-friendly",
   "wifi",
   "outlets",
-  "cozy",
   "natural-light",
   "food-nearby",
   "open-space",
-  "AC/heated",
-  "bathrooms",
 ];
 
 function Filters({ filter, setFilter }) {
-  // Distribute tags into two rows with roughly equal total character length
+  // Distribute tags into two rows with roughly equal total character length,
+  // but always put "Favorites" in the first row if present
   function splitTagsEvenly(tags) {
     let row1 = [],
       row2 = [];
     let len1 = 0,
       len2 = 0;
     tags.forEach((tag) => {
-      if (len1 <= len2) {
+      if (tag === "Favorites") {
+        row1.push(tag);
+        len1 += tag.length;
+      } else if (len1 <= len2) {
         row1.push(tag);
         len1 += tag.length;
       } else {
@@ -108,17 +111,21 @@ function Filters({ filter, setFilter }) {
             {row.map((label, index) => (
               <TouchableOpacity
                 key={label}
-                onPress={() =>
-                  setFilter(
-                    label.toLowerCase() === "all" ? null : label.toLowerCase()
-                  )
-                }
+                onPress={() => {
+                  if (label === "All") setFilter(null);
+                  else if (label === "Favorites") setFilter("favorites");
+                  else setFilter(label.toLowerCase());
+                }}
                 style={{
                   paddingVertical: 10,
                   paddingHorizontal: 10,
                   backgroundColor:
                     filter ===
-                    (label.toLowerCase() === "all" ? null : label.toLowerCase())
+                    (label === "All"
+                      ? null
+                      : label === "Favorites"
+                      ? "favorites"
+                      : label.toLowerCase())
                       ? colors.purple
                       : "#F0F0F0",
                   borderRadius: 25,
@@ -135,8 +142,10 @@ function Filters({ filter, setFilter }) {
                   style={{
                     color:
                       filter ===
-                      (label.toLowerCase() === "all"
+                      (label === "All"
                         ? null
+                        : label === "Favorites"
+                        ? "favorites"
                         : label.toLowerCase())
                         ? "#FFFFFF"
                         : colors.purple,
@@ -155,7 +164,12 @@ function Filters({ filter, setFilter }) {
   );
 }
 
-function StudySpots({ filteredSpots, navigation }) {
+function StudySpots({
+  filteredSpots,
+  navigation,
+  favorites,
+  handleToggleFavorite,
+}) {
   return (
     <FlatList
       data={filteredSpots} // Display the filtered study spots
@@ -178,8 +192,57 @@ function StudySpots({ filteredSpots, navigation }) {
             shadowOpacity: 0.1,
             shadowRadius: 4,
             elevation: 3,
+            position: "relative",
           }}
         >
+          {/* Image placeholder or actual image */}
+          <View
+            style={{
+              width: "100%",
+              height: 120,
+              backgroundColor: "#EEE",
+              borderTopLeftRadius: 8,
+              borderTopRightRadius: 8,
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+              marginBottom: 12,
+            }}
+          >
+            {item.imageUrl ? (
+              <Image
+                source={{ uri: item.imageUrl }}
+                style={{ width: "100%", height: "100%" }}
+                resizeMode="cover"
+              />
+            ) : (
+              <Text style={{ color: "#AAA" }}>No Image</Text>
+            )}
+          </View>
+          {/* Heart icon for favorite */}
+          <TouchableOpacity
+            onPress={() => handleToggleFavorite(item.id)}
+            style={{
+              position: "absolute",
+              top: 12,
+              right: 12,
+              zIndex: 10,
+              backgroundColor: "#fff",
+              borderRadius: 20,
+              padding: 4,
+              borderWidth: 1,
+              borderColor: colors.purple,
+            }}
+            onPressOut={(e) => e.stopPropagation && e.stopPropagation()}
+          >
+            <Heart
+              size={22}
+              color={
+                favorites.includes(item.id) ? colors.purple : colors.darkGray
+              }
+              weight={favorites.includes(item.id) ? "fill" : "regular"}
+            />
+          </TouchableOpacity>
           <Text
             style={{
               fontSize: 18,
@@ -233,13 +296,15 @@ function StudySpots({ filteredSpots, navigation }) {
               }}
             >
               {item.overallRatingsCount > 0
-                ? item.averageOverallRating.toFixed(1)
+                ? `${item.averageOverallRating.toFixed(1)} (${
+                    item.overallRatingsCount
+                  })`
                 : "No rating"}
             </Text>
           </View>
           <Text
             style={{
-              fontSize: 14,
+              fontSize: 13,
               color: "#666666",
               fontStyle: "italic",
               marginBottom: 8,
@@ -294,6 +359,41 @@ export default function HomeScreen({ navigation, route }) {
   const [studySpots, setStudySpots] = useState([]); // Fetch spots from Firestore
   const [userName, setUserName] = useState(""); // Add state for user's name
   const [isLoading, setIsLoading] = useState(true); // Add loading state
+  const [favorites, setFavorites] = useState([]); // Track user's favorites
+
+  // Fetch user's favorites
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          setFavorites(userDoc.data().favorites || []);
+        }
+      }
+    };
+    fetchFavorites();
+  }, []);
+
+  // Toggle favorite for a spot
+  const handleToggleFavorite = async (spotId) => {
+    const user = auth.currentUser;
+    if (!user) return;
+    const userRef = doc(db, "users", user.uid);
+    try {
+      if (favorites.includes(spotId)) {
+        await updateDoc(userRef, {
+          favorites: favorites.filter((f) => f !== spotId),
+        });
+        setFavorites(favorites.filter((f) => f !== spotId));
+      } else {
+        await updateDoc(userRef, { favorites: [...favorites, spotId] });
+        setFavorites([...favorites, spotId]);
+      }
+    } catch (e) {
+      alert("Failed to update favorites.");
+    }
+  };
 
   const fetchStudySpots = async () => {
     try {
@@ -347,6 +447,7 @@ export default function HomeScreen({ navigation, route }) {
           return {
             id: docSnap.id,
             ...spotData,
+            photoUrl: spotData.photoUrl || "", // Add photoUrl field (empty if not present)
             ratings: {
               noise: averageNoise,
               crowd: averageCrowd,
@@ -399,15 +500,23 @@ export default function HomeScreen({ navigation, route }) {
       </SafeAreaView>
     );
 
-  const filteredSpots = filter
-    ? studySpots.filter((spot) => spot.tags.includes(filter)) // Apply filter
-    : studySpots;
+  const filteredSpots =
+    filter === "favorites"
+      ? studySpots.filter((spot) => favorites.includes(spot.id))
+      : filter
+      ? studySpots.filter((spot) => spot.tags.includes(filter))
+      : studySpots;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
       <View style={{ flex: 1 }}>
         <Filters filter={filter} setFilter={setFilter} />
-        <StudySpots filteredSpots={filteredSpots} navigation={navigation} />
+        <StudySpots
+          filteredSpots={filteredSpots}
+          navigation={navigation}
+          favorites={favorites}
+          handleToggleFavorite={handleToggleFavorite}
+        />
         <TouchableOpacity
           onPress={() => {
             try {

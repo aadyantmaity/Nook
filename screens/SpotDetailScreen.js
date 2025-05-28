@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
+  Image,
 } from "react-native";
 import {
   doc,
@@ -20,6 +21,9 @@ import {
   addDoc,
   onSnapshot,
   deleteDoc,
+  arrayUnion,
+  arrayRemove,
+  updateDoc,
 } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import {
@@ -30,6 +34,7 @@ import {
   UsersThree,
   Clock,
   Star,
+  Heart,
 } from "phosphor-react-native";
 import { colors } from "../constants/colors";
 import { auth } from "../firebaseConfig"; // Import auth
@@ -47,6 +52,7 @@ export default function SpotDetailScreen({ route, navigation }) {
   const [overallRatingsCount, setOverallRatingsCount] = useState(0);
   const [pendingOverallRating, setPendingOverallRating] = useState(0);
   const [isSubmittingOverall, setIsSubmittingOverall] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   // Move fetchSpotDetails to top-level scope so it can be called from anywhere
   const fetchSpotDetails = async () => {
@@ -297,6 +303,38 @@ export default function SpotDetailScreen({ route, navigation }) {
     setIsSubmittingOverall(false);
   };
 
+  // Check if spot is favorited by current user
+  useEffect(() => {
+    const checkFavorite = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const favs = userDoc.data().favorites || [];
+          setIsFavorite(favs.includes(spotId));
+        }
+      }
+    };
+    if (spotId && auth.currentUser) checkFavorite();
+  }, [spotId, auth.currentUser]);
+
+  const handleToggleFavorite = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+    const userRef = doc(db, "users", user.uid);
+    try {
+      if (isFavorite) {
+        await updateDoc(userRef, { favorites: arrayRemove(spotId) });
+        setIsFavorite(false);
+      } else {
+        await updateDoc(userRef, { favorites: arrayUnion(spotId) });
+        setIsFavorite(true);
+      }
+    } catch (e) {
+      alert("Failed to update favorites.");
+    }
+  };
+
   if (isLoading)
     return (
       <SafeAreaView
@@ -315,6 +353,41 @@ export default function SpotDetailScreen({ route, navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.white }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 16 }}>
         <View style={{ flex: 1, backgroundColor: colors.white }}>
+          {/* Spot Image */}
+          {spot.imageUrl ? (
+            <View
+              style={{
+                width: "100%",
+                height: 150,
+                backgroundColor: "#EEE",
+                borderRadius: 8,
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+                marginBottom: 16,
+              }}
+            >
+              <Image
+                source={{ uri: spot.imageUrl }}
+                style={{ width: "100%", height: "100%" }}
+                resizeMode="cover"
+              />
+            </View>
+          ) : (
+            <View
+              style={{
+                width: "100%",
+                aspectRatio: 1,
+                backgroundColor: "#EEE",
+                borderRadius: 8,
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 16,
+              }}
+            >
+              <Text style={{ color: "#AAA" }}>No Image</Text>
+            </View>
+          )}
           <View
             style={{
               flexDirection: "row",
@@ -337,6 +410,26 @@ export default function SpotDetailScreen({ route, navigation }) {
               }}
             >
               <ArrowLeft size={20} color={colors.white} />
+            </TouchableOpacity>
+            {/* Favorite Button */}
+            <TouchableOpacity
+              onPress={handleToggleFavorite}
+              style={{
+                marginLeft: 16,
+                padding: 8,
+                backgroundColor: colors.white,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: colors.purple,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Heart
+                size={24}
+                color={isFavorite ? colors.purple : colors.darkGray}
+                weight={isFavorite ? "fill" : "regular"}
+              />
             </TouchableOpacity>
           </View>
 
@@ -442,7 +535,9 @@ export default function SpotDetailScreen({ route, navigation }) {
                 }}
               >
                 {overallRatingsCount > 0
-                  ? averageOverallRating.toFixed(1)
+                  ? `${averageOverallRating.toFixed(
+                      1
+                    )} (${overallRatingsCount})`
                   : "No rating"}
               </Text>
             </View>
@@ -695,7 +790,7 @@ function LiveUpdateModal({
           }}
         >
           <Text style={{ marginBottom: 8, fontSize: 16, fontWeight: "bold" }}>
-            Noise (1 = Quiet, 5 = Noisy):
+            Noise (1 = Quiet, 5 = Noisy)
           </Text>
           <View style={{ marginBottom: 16 }}>
             <Slider
@@ -711,7 +806,7 @@ function LiveUpdateModal({
             {renderSliderLabels()}
           </View>
           <Text style={{ marginBottom: 8, fontSize: 16, fontWeight: "bold" }}>
-            Crowd (1 = Sparse, 5 = Packed):
+            Crowd (1 = Sparse, 5 = Packed)
           </Text>
           <View style={{ marginBottom: 16 }}>
             <Slider

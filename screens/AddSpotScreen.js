@@ -23,16 +23,14 @@ import { db, auth } from "../firebaseConfig"; // Import Firestore instance
 
 const TAGS = [
   "All",
+  "Favorites",
   "quiet",
   "group-friendly",
   "wifi",
   "outlets",
-  "cozy",
   "natural-light",
   "food-nearby",
   "open-space",
-  "AC/heated",
-  "bathrooms",
 ];
 
 const BUILDINGS = [
@@ -118,6 +116,7 @@ export default function AddSpotScreen({ navigation }) {
         createdAt: new Date().toISOString(),
         addedBy: user.uid, // Always store user ID
         revealIdentity: showAddedBy, // Add a flag to control identity visibility
+        photoUrl: "", // Placeholder for photo URL
       };
 
       // Save to Firestore

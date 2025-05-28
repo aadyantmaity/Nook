@@ -19,8 +19,9 @@ import {
   GraduationCap,
   Briefcase,
   User,
+  Heart,
 } from "phosphor-react-native"; // Import icons
-import { doc, getDoc, setDoc } from "firebase/firestore"; // Import Firestore functions
+import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore"; // Import Firestore functions
 
 export default function ProfileScreen({ navigation }) {
   const [firstName, setFirstName] = useState("");
@@ -34,6 +35,8 @@ export default function ProfileScreen({ navigation }) {
   const [editedMajor, setEditedMajor] = useState("");
   const [editedGradYear, setEditedGradYear] = useState("");
   const [isLoading, setIsLoading] = useState(true); // Add loading state
+  const [favorites, setFavorites] = useState([]);
+  const [favoriteSpots, setFavoriteSpots] = useState([]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -48,6 +51,7 @@ export default function ProfileScreen({ navigation }) {
             setUserEmail(data.email || "No Email");
             setUserMajor(data.major || "No Major");
             setUserGradYear(data.gradYear || "No Grad Year");
+            setFavorites(data.favorites || []);
           } else {
             console.error("User document does not exist");
           }
@@ -61,6 +65,26 @@ export default function ProfileScreen({ navigation }) {
 
     fetchUserData();
   }, []);
+
+  // Fetch favorite spots details
+  useEffect(() => {
+    const fetchFavoriteSpots = async () => {
+      if (!favorites.length) {
+        setFavoriteSpots([]);
+        return;
+      }
+      try {
+        const spotsSnapshot = await getDocs(collection(db, "studySpots"));
+        const favSpots = spotsSnapshot.docs
+          .filter((doc) => favorites.includes(doc.id))
+          .map((doc) => ({ id: doc.id, ...doc.data() }));
+        setFavoriteSpots(favSpots);
+      } catch (e) {
+        setFavoriteSpots([]);
+      }
+    };
+    fetchFavoriteSpots();
+  }, [favorites]);
 
   const handleLogout = () => {
     signOut(auth)
@@ -150,6 +174,42 @@ export default function ProfileScreen({ navigation }) {
           <GraduationCap size={20} color={colors.purple} />
           <Text style={styles.userGradYear}>{userGradYear}</Text>
         </View>
+        <View style={styles.divider} />
+        {/* Favorites Section */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "left",
+            marginBottom: 8,
+          }}
+        >
+          <Heart size={20} color={colors.purple} weight="fill" />
+          <Text
+            style={[styles.favoritesTitle, { marginLeft: 8, marginBottom: 0 }]}
+          >
+            Favorites
+          </Text>
+        </View>
+        {favoriteSpots.length === 0 ? (
+          <Text style={styles.noFavoritesText}>No favorites yet.</Text>
+        ) : (
+          favoriteSpots.map((spot) => (
+            <TouchableOpacity
+              key={spot.id}
+              style={styles.favoriteSpotContainer}
+              onPress={() =>
+                navigation.navigate("SpotDetail", { spotId: spot.id })
+              }
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text style={styles.favoriteSpotName}>{spot.name}</Text>
+              </View>
+              <Text style={styles.favoriteSpotTags}>
+                {spot.tags && spot.tags.length > 0 ? spot.tags.join(", ") : ""}
+              </Text>
+            </TouchableOpacity>
+          ))
+        )}
         <View style={styles.divider} />
       </View>
 
@@ -396,5 +456,35 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: colors.purple,
     fontWeight: "bold",
+  },
+  favoritesTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: colors.purple,
+    marginBottom: 8,
+    alignSelf: "flex-start",
+  },
+  noFavoritesText: {
+    fontSize: 15,
+    color: colors.darkGray,
+    marginBottom: 8,
+    alignSelf: "flex-start",
+  },
+  favoriteSpotContainer: {
+    backgroundColor: colors.gray,
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 8,
+    alignSelf: "stretch",
+  },
+  favoriteSpotName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: colors.purple,
+  },
+  favoriteSpotTags: {
+    fontSize: 13,
+    color: colors.darkGray,
+    marginTop: 2,
   },
 });
