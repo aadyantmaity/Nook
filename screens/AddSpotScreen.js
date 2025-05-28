@@ -21,14 +21,21 @@ import {
 } from "firebase/firestore"; // Ensure Timestamp is imported
 import { db, auth } from "../firebaseConfig"; // Import Firestore instance
 
-const TAGS = ["quiet", "wifi", "outlets", "group-friendly", "outdoors"];
+const TAGS = [
+  "All",
+  "quiet",
+  "group-friendly",
+  "wifi",
+  "outlets",
+  "cozy",
+  "natural-light",
+  "food-nearby",
+  "open-space",
+  "AC/heated",
+  "bathrooms",
+];
 
 const BUILDINGS = [
-  // Libraries
-  "Allen Library",
-  "Suzzallo Library",
-  "Odegaard Library",
-
   // Academic and Administrative Buildings
   "Mary Gates Hall",
   "Husky Union Building (HUB)",
@@ -37,7 +44,6 @@ const BUILDINGS = [
   "Paccar Hall",
   "Denny Hall",
   "Bagley Hall",
-  "Kane Hall",
   "Smith Hall",
   "Thomson Hall",
   "Physics-Astronomy Building",
@@ -61,11 +67,9 @@ const BUILDINGS = [
   "Parrington Hall",
   "Schmitz Hall",
   "South Campus Center",
-  "Social Work/Speech and Hearing Sciences Building",
 
   // Health and Research Facilities
   "Health Sciences Building",
-  "Population Health Building",
 ];
 
 export default function AddSpotScreen({ navigation }) {
@@ -140,11 +144,11 @@ export default function AddSpotScreen({ navigation }) {
     );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "colors.white" }}>
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, backgroundColor: "#FFFFFF" }}
+        contentContainerStyle={{ flexGrow: 1, backgroundColor: "colors.white" }}
       >
-        <View style={{ flex: 1, padding: 16, backgroundColor: "#FFFFFF" }}>
+        <View style={{ flex: 1, padding: 16, backgroundColor: "colors.white" }}>
           {/* Light background */}
           <View
             style={{
@@ -180,7 +184,7 @@ export default function AddSpotScreen({ navigation }) {
               borderColor: "#CCCCCC",
               borderRadius: 8,
               marginBottom: 16,
-              backgroundColor: "#FFFFFF",
+              backgroundColor: "colors.white",
             }}
           >
             <Picker
@@ -215,7 +219,7 @@ export default function AddSpotScreen({ navigation }) {
               borderRadius: 8,
               padding: 12,
               marginBottom: 16,
-              backgroundColor: "#FFFFFF",
+              backgroundColor: "colors.white",
               color: "#000000",
             }}
           />
@@ -272,7 +276,7 @@ export default function AddSpotScreen({ navigation }) {
                 borderRadius: 8,
                 padding: 12,
                 marginBottom: 16,
-                backgroundColor: "#FFFFFF",
+                backgroundColor: "colors.white",
                 color: "#000000",
               }}
             />
@@ -318,47 +322,6 @@ export default function AddSpotScreen({ navigation }) {
                 </Text>
               </TouchableOpacity>
             ))}
-          </View>
-          <View style={{ marginBottom: 16 }}>
-            <Text
-              style={{ fontSize: 19, marginBottom: 8, color: colors.purple }}
-            >
-              Display "Added By" Information:
-            </Text>
-            <View
-              style={{ flexDirection: "row", justifyContent: "space-between" }}
-            >
-              <TouchableOpacity
-                onPress={() => setShowAddedBy(false)}
-                style={{
-                  flex: 1,
-                  alignItems: "center",
-                  padding: 12,
-                  marginRight: 8,
-                  backgroundColor: !showAddedBy ? "#4B2E83" : "#F0F0F0",
-                  borderRadius: 8,
-                }}
-              >
-                <Text style={{ color: !showAddedBy ? "white" : "#000000" }}>
-                  No
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setShowAddedBy(true)}
-                style={{
-                  flex: 1,
-                  alignItems: "center",
-                  padding: 12,
-                  marginLeft: 8,
-                  backgroundColor: showAddedBy ? "#4B2E83" : "#F0F0F0",
-                  borderRadius: 8,
-                }}
-              >
-                <Text style={{ color: showAddedBy ? "white" : "#000000" }}>
-                  Yes
-                </Text>
-              </TouchableOpacity>
-            </View>
           </View>
 
           <View style={{ marginTop: 24, alignItems: "center" }}>

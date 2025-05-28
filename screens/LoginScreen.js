@@ -23,8 +23,7 @@ export default function LoginScreen({ navigation }) {
 
     signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
-        // Navigate to Home on successful login
-        navigation.navigate("Home"); // Ensure Home is registered in the navigator
+        // Navigation is handled by auth state in App.js, so no manual navigation here
       })
       .catch((error) => {
         console.error(error.message);

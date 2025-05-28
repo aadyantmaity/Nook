@@ -8,7 +8,7 @@ import {
   Modal,
   TextInput,
 } from "react-native";
-import { signOut } from "firebase/auth";
+import { signOut, updateProfile } from "firebase/auth";
 import { auth, db } from "../firebaseConfig"; // Ensure db is imported
 import { colors } from "../constants/colors";
 import {
@@ -65,7 +65,8 @@ export default function ProfileScreen({ navigation }) {
   const handleLogout = () => {
     signOut(auth)
       .then(() => {
-        navigation.replace("Login");
+        // navigation.replace("Login"); // REMOVE this line
+        // No manual navigation needed; auth state will trigger navigation
       })
       .catch((error) => {
         console.error("Error logging out:", error.message);
@@ -89,7 +90,7 @@ export default function ProfileScreen({ navigation }) {
         );
 
         // Update displayName in Firebase Authentication
-        await user.updateProfile({
+        await updateProfile(user, {
           displayName: `${editedFirstName || firstName} ${
             editedLastName || lastName
           }`,

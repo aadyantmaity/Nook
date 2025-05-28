@@ -52,7 +52,7 @@ export default function SignUpScreen({ navigation }) {
       });
 
       // Navigate to Home on successful sign-up
-      navigation.navigate("Home");
+      // navigation.navigate("Home"); // REMOVE this line
     } catch (error) {
       console.error(error.message);
     }

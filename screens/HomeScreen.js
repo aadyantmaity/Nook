@@ -7,6 +7,7 @@ import {
   Image,
   ImageBackground,
   Platform,
+  ScrollView,
 } from "react-native";
 import {
   collection,
@@ -14,14 +15,48 @@ import {
   query,
   where,
   Timestamp,
+  deleteDoc,
 } from "firebase/firestore"; // Ensure Timestamp is imported
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Plus, User, ArrowClockwise } from "phosphor-react-native"; // Replace Refresh with ArrowClockwise
+import { Plus, User, ArrowClockwise, Star } from "phosphor-react-native"; // Replace Refresh with ArrowClockwise
 import { colors } from "../constants/colors"; // Import colors
 import { auth, db } from "../firebaseConfig"; // Import Firebase
 import { doc, getDoc } from "firebase/firestore"; // Import Firestore functions
 
+const TAGS = [
+  "All",
+  "quiet",
+  "group-friendly",
+  "wifi",
+  "outlets",
+  "cozy",
+  "natural-light",
+  "food-nearby",
+  "open-space",
+  "AC/heated",
+  "bathrooms",
+];
+
 function Filters({ filter, setFilter }) {
+  // Distribute tags into two rows with roughly equal total character length
+  function splitTagsEvenly(tags) {
+    let row1 = [],
+      row2 = [];
+    let len1 = 0,
+      len2 = 0;
+    tags.forEach((tag) => {
+      if (len1 <= len2) {
+        row1.push(tag);
+        len1 += tag.length;
+      } else {
+        row2.push(tag);
+        len2 += tag.length;
+      }
+    });
+    return [row1, row2];
+  }
+  const [row1, row2] = splitTagsEvenly(TAGS);
+
   return (
     <View
       style={{
@@ -53,56 +88,69 @@ function Filters({ filter, setFilter }) {
           Nook
         </Text>
       </View>
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "center",
-          flexWrap: "wrap",
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
+          flexDirection: "column",
           paddingHorizontal: 16,
         }}
       >
-        {["All", "Quiet", "Outlets", "Group-Friendly"].map((label, index) => (
-          <TouchableOpacity
-            key={index}
-            onPress={() =>
-              setFilter(
-                label.toLowerCase() === "all" ? null : label.toLowerCase()
-              )
-            }
+        {[row1, row2].map((row, rowIdx) => (
+          <View
+            key={rowIdx}
             style={{
-              paddingVertical: 10,
-              paddingHorizontal: 10,
-              backgroundColor:
-                filter ===
-                (label.toLowerCase() === "all" ? null : label.toLowerCase())
-                  ? colors.purple
-                  : "#F0F0F0",
-              borderRadius: 25,
-              margin: 6,
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 4,
-              elevation: 2,
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: rowIdx === 0 ? 8 : 0,
             }}
           >
-            <Text
-              style={{
-                color:
-                  filter ===
-                  (label.toLowerCase() === "all" ? null : label.toLowerCase())
-                    ? "#FFFFFF"
-                    : colors.purple,
-                fontWeight: "bold",
-                fontSize: 13,
-              }}
-            >
-              {label}
-            </Text>
-          </TouchableOpacity>
+            {row.map((label, index) => (
+              <TouchableOpacity
+                key={label}
+                onPress={() =>
+                  setFilter(
+                    label.toLowerCase() === "all" ? null : label.toLowerCase()
+                  )
+                }
+                style={{
+                  paddingVertical: 10,
+                  paddingHorizontal: 10,
+                  backgroundColor:
+                    filter ===
+                    (label.toLowerCase() === "all" ? null : label.toLowerCase())
+                      ? colors.purple
+                      : "#F0F0F0",
+                  borderRadius: 25,
+                  marginRight: 8,
+                  marginBottom: 4,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 2,
+                }}
+              >
+                <Text
+                  style={{
+                    color:
+                      filter ===
+                      (label.toLowerCase() === "all"
+                        ? null
+                        : label.toLowerCase())
+                        ? "#FFFFFF"
+                        : colors.purple,
+                    fontWeight: "bold",
+                    fontSize: 11,
+                  }}
+                >
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         ))}
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -112,7 +160,11 @@ function StudySpots({ filteredSpots, navigation }) {
     <FlatList
       data={filteredSpots} // Display the filtered study spots
       keyExtractor={(item) => item.id}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16 }}
+      contentContainerStyle={{
+        paddingHorizontal: 16,
+        paddingTop: 16,
+        paddingBottom: 96, // Add extra bottom padding for floating button
+      }}
       renderItem={({ item }) => (
         <TouchableOpacity
           onPress={() => navigation.navigate("SpotDetail", { spotId: item.id })}
@@ -136,8 +188,55 @@ function StudySpots({ filteredSpots, navigation }) {
               marginBottom: 8,
             }}
           >
-            {item.name} {/* Display the building name */}
+            {item.name}
           </Text>
+          {/* Display room number if present */}
+          {item.roomNumber && (
+            <Text
+              style={{
+                fontSize: 14,
+                color: colors.darkGray,
+                marginBottom: 4,
+              }}
+            >
+              Room: {item.roomNumber}
+            </Text>
+          )}
+          {/* General Rating Stars */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 8,
+            }}
+          >
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star
+                key={star}
+                size={18}
+                color={
+                  star <= (item.averageOverallRating || 0)
+                    ? colors.purple
+                    : colors.darkGray
+                }
+                weight={
+                  star <= (item.averageOverallRating || 0) ? "fill" : "regular"
+                }
+                style={{ marginRight: 2 }}
+              />
+            ))}
+            <Text
+              style={{
+                marginLeft: 8,
+                color: colors.darkGray,
+                fontSize: 13,
+              }}
+            >
+              {item.overallRatingsCount > 0
+                ? item.averageOverallRating.toFixed(1)
+                : "No rating"}
+            </Text>
+          </View>
           <Text
             style={{
               fontSize: 14,
@@ -162,7 +261,9 @@ function StudySpots({ filteredSpots, navigation }) {
                   color: colors.purple,
                 }}
               >
-                {item.ratings?.noise}
+                {typeof item.ratings?.noise === "number"
+                  ? item.ratings.noise.toFixed(1)
+                  : item.ratings?.noise}
               </Text>
             </View>
             <View style={{ alignItems: "center" }}>
@@ -176,7 +277,9 @@ function StudySpots({ filteredSpots, navigation }) {
                   color: colors.purple,
                 }}
               >
-                {item.ratings?.crowd}
+                {typeof item.ratings?.crowd === "number"
+                  ? item.ratings.crowd.toFixed(1)
+                  : item.ratings?.crowd}
               </Text>
             </View>
           </View>
@@ -196,13 +299,13 @@ export default function HomeScreen({ navigation, route }) {
     try {
       const querySnapshot = await getDocs(collection(db, "studySpots"));
       const spots = await Promise.all(
-        querySnapshot.docs.map(async (doc) => {
-          const spotData = doc.data();
+        querySnapshot.docs.map(async (docSnap) => {
+          const spotData = docSnap.data();
 
           // Fetch ratings for the spot
           const ratingsQuery = query(
             collection(db, "ratings"),
-            where("spotId", "==", doc.id)
+            where("spotId", "==", docSnap.id)
           );
           const ratingsSnapshot = await getDocs(ratingsQuery);
 
@@ -211,25 +314,45 @@ export default function HomeScreen({ navigation, route }) {
           let count = 0;
           const thirtyMinutesAgo = Timestamp.now().toMillis() - 30 * 60 * 1000;
 
-          ratingsSnapshot.forEach((ratingDoc) => {
+          ratingsSnapshot.forEach(async (ratingDoc) => {
             const ratingData = ratingDoc.data();
             if (ratingData.timestamp.toMillis() >= thirtyMinutesAgo) {
               noiseSum += ratingData.noise;
               crowdSum += ratingData.crowd;
               count++;
+            } else {
+              // Delete ratings older than 30 minutes
+              await deleteDoc(doc(db, "ratings", ratingDoc.id));
             }
           });
 
-          const averageNoise = count > 0 ? noiseSum / count : "No rating yet"; // Ensure default is 999
-          const averageCrowd = count > 0 ? crowdSum / count : "No rating yet"; // Ensure default is 999
+          const averageNoise = count > 0 ? noiseSum / count : "No rating yet";
+          const averageCrowd = count > 0 ? crowdSum / count : "No rating yet";
+
+          // Fetch overall ratings for the spot
+          const overallRatingsQuery = query(
+            collection(db, "overallRatings"),
+            where("spotId", "==", docSnap.id)
+          );
+          const overallRatingsSnapshot = await getDocs(overallRatingsQuery);
+          let overallSum = 0;
+          let overallCount = 0;
+          overallRatingsSnapshot.forEach((r) => {
+            overallSum += r.data().rating || 0;
+            overallCount++;
+          });
+          const averageOverallRating =
+            overallCount > 0 ? overallSum / overallCount : 0;
 
           return {
-            id: doc.id,
+            id: docSnap.id,
             ...spotData,
             ratings: {
               noise: averageNoise,
               crowd: averageCrowd,
             },
+            averageOverallRating,
+            overallRatingsCount: overallCount,
           };
         })
       );
