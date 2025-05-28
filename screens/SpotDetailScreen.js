@@ -146,7 +146,79 @@ export default function SpotDetailScreen({ route, navigation }) {
       return;
     }
 
-    fetchSpotDetails();
+    let isMounted = true; // Prevent state update if unmounted
+
+    const fetchAndSetSpot = async () => {
+      setIsLoading(true);
+      try {
+        const docRef = doc(db, "studySpots", spotId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists() && isMounted) {
+          const spotData = docSnap.data();
+          setSpot(spotData);
+
+          // Fetch username using addedBy user ID
+          if (spotData.addedBy) {
+            const userDoc = await getDoc(doc(db, "users", spotData.addedBy));
+            if (userDoc.exists()) {
+              const revealIdentity = spotData.revealIdentity; // Check revealIdentity flag
+              setAddedByName(
+                revealIdentity
+                  ? `${userDoc.data().firstName} ${userDoc.data().lastName}`
+                  : "Anonymous"
+              );
+            } else {
+              setAddedByName("Anonymous"); // Fallback if userDoc doesn't exist
+            }
+          } else {
+            setAddedByName("Anonymous"); // Fallback if addedBy is null
+          }
+
+          // Fetch ratings for the spot
+          const ratingsQuery = query(
+            collection(db, "ratings"),
+            where("spotId", "==", spotId)
+          );
+          const ratingsSnapshot = await getDocs(ratingsQuery);
+
+          let noiseSum = 0;
+          let crowdSum = 0;
+          let count = 0;
+          const thirtyMinutesAgo = Timestamp.now().toMillis() - 30 * 60 * 1000;
+
+          ratingsSnapshot.forEach((ratingDoc) => {
+            const ratingData = ratingDoc.data();
+            if (ratingData.timestamp.toMillis() >= thirtyMinutesAgo) {
+              noiseSum += ratingData.noise || 0; // Ensure noise is a valid number
+              crowdSum += ratingData.crowd || 0; // Ensure crowd is a valid number
+              count++;
+            }
+          });
+
+          const noiseRating = count > 0 ? (noiseSum / count).toFixed(1) : "N/A";
+          const crowdRating = count > 0 ? (crowdSum / count).toFixed(1) : "N/A";
+
+          setSpot((prevSpot) => ({
+            ...spotData,
+            ratings: {
+              noise: noiseRating,
+              crowd: crowdRating,
+            },
+          }));
+        } else if (isMounted) {
+          console.error("Spot not found");
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error("Error fetching spot details:", error);
+          alert("Unable to fetch spot details. Please check your permissions.");
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    fetchAndSetSpot();
 
     // Real-time updates for ratings
     const ratingsQuery = query(
@@ -181,7 +253,10 @@ export default function SpotDetailScreen({ route, navigation }) {
       }));
     });
 
-    return () => unsubscribe(); // Cleanup listener on unmount
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, [spotId, navigation]);
 
   // Fetch overall ratings and user's rating
@@ -354,50 +429,49 @@ export default function SpotDetailScreen({ route, navigation }) {
       <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 16 }}>
         <View style={{ flex: 1, backgroundColor: colors.white }}>
           {/* Spot Image */}
-          {spot.imageUrl ? (
-            <View
-              style={{
-                width: "100%",
-                height: 150,
-                backgroundColor: "#EEE",
-                borderRadius: 8,
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                marginBottom: 16,
-              }}
-            >
-              <Image
-                source={{ uri: spot.imageUrl }}
-                style={{ width: "100%", height: "100%" }}
-                resizeMode="cover"
-              />
-            </View>
-          ) : (
-            <View
-              style={{
-                width: "100%",
-                aspectRatio: 1,
-                backgroundColor: "#EEE",
-                borderRadius: 8,
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 16,
-              }}
-            >
-              <Text style={{ color: "#AAA" }}>No Image</Text>
-            </View>
-          )}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 16,
-            }}
-          >
+          <View style={{ position: "relative", width: "100%" }}>
+            {spot.imageUrl ? (
+              <View
+                style={{
+                  width: "100%",
+                  height: 150,
+                  backgroundColor: "#EEE",
+                  borderRadius: 8,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                  marginBottom: 16,
+                }}
+              >
+                <Image
+                  source={{ uri: spot.imageUrl }}
+                  style={{ width: "100%", height: "100%" }}
+                  resizeMode="cover"
+                />
+              </View>
+            ) : (
+              <View
+                style={{
+                  width: "100%",
+                  height: 150,
+                  backgroundColor: "#EEE",
+                  borderRadius: 8,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 16,
+                }}
+              >
+                <Text style={{ color: "#AAA" }}>No Image</Text>
+              </View>
+            )}
+            {/* Home Button Overlay */}
             <TouchableOpacity
               onPress={() => navigation.navigate("Home")}
               style={{
+                position: "absolute",
+                top: 12,
+                left: 12,
+                zIndex: 10,
                 flexDirection: "row",
                 alignItems: "center",
                 padding: 10,
@@ -411,26 +485,6 @@ export default function SpotDetailScreen({ route, navigation }) {
             >
               <House size={20} color={colors.white} />
             </TouchableOpacity>
-            {/* Favorite Button */}
-            <TouchableOpacity
-              onPress={handleToggleFavorite}
-              style={{
-                marginLeft: 16,
-                padding: 8,
-                backgroundColor: colors.white,
-                borderRadius: 20,
-                borderWidth: 1,
-                borderColor: colors.purple,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Heart
-                size={24}
-                color={isFavorite ? colors.purple : colors.darkGray}
-                weight={isFavorite ? "fill" : "regular"}
-              />
-            </TouchableOpacity>
           </View>
 
           <Text
@@ -443,6 +497,24 @@ export default function SpotDetailScreen({ route, navigation }) {
           >
             {buildingName}
           </Text>
+          {/* Open/Quiet Hours */}
+          {spot.openHours ? (
+            <View style={{ alignItems: "center", marginBottom: 10 }}>
+              <Text
+                style={{
+                  fontSize: 15,
+                  color: colors.purple,
+                  fontWeight: "bold",
+                  marginBottom: 2,
+                }}
+              >
+                Open/Quiet Hours
+              </Text>
+              <Text style={{ color: colors.darkGray, fontSize: 15 }}>
+                {spot.openHours}
+              </Text>
+            </View>
+          ) : null}
           {/* Live Ratings */}
           <View
             style={{

@@ -8,6 +8,7 @@ import {
   ImageBackground,
   Platform,
   ScrollView,
+  TextInput, // <-- Add TextInput for search bar
 } from "react-native";
 import {
   collection,
@@ -258,11 +259,11 @@ function StudySpots({
             <Text
               style={{
                 fontSize: 14,
-                color: colors.darkGray,
+                color: colors.purple,
                 marginBottom: 4,
               }}
             >
-              Room: {item.roomNumber}
+              Floor: {item.roomNumber}
             </Text>
           )}
           {/* General Rating Stars */}
@@ -383,12 +384,25 @@ function StudySpots({
   );
 }
 
+// Simple fuzzy search function
+function fuzzyMatch(str, query) {
+  if (!str || !query) return false;
+  str = str.toLowerCase();
+  query = query.toLowerCase();
+  let qi = 0;
+  for (let si = 0; si < str.length && qi < query.length; si++) {
+    if (str[si] === query[qi]) qi++;
+  }
+  return qi === query.length;
+}
+
 export default function HomeScreen({ navigation, route }) {
   const [filter, setFilter] = useState(null);
-  const [studySpots, setStudySpots] = useState([]); // Fetch spots from Firestore
-  const [userName, setUserName] = useState(""); // Add state for user's name
-  const [isLoading, setIsLoading] = useState(true); // Add loading state
-  const [favorites, setFavorites] = useState([]); // Track user's favorites
+  const [studySpots, setStudySpots] = useState([]);
+  const [userName, setUserName] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [favorites, setFavorites] = useState([]);
+  const [search, setSearch] = useState(""); // <-- Add search state
 
   // Fetch user's favorites
   useEffect(() => {
@@ -529,17 +543,68 @@ export default function HomeScreen({ navigation, route }) {
       </SafeAreaView>
     );
 
+  // Fuzzy search filter
+  const searchFilter = (spot) => {
+    if (!search.trim()) return true;
+    const q = search.trim().toLowerCase();
+    // Search in name, buildingName, tags, features (if present)
+    const fields = [
+      spot.name,
+      spot.buildingName,
+      spot.roomNumber,
+      ...(spot.tags || []),
+      ...(spot.features || []),
+    ];
+    return fields.some((field) =>
+      typeof field === "string" ? fuzzyMatch(field, q) : false
+    );
+  };
+
   const filteredSpots =
     filter === "favorites"
-      ? studySpots.filter((spot) => favorites.includes(spot.id))
+      ? studySpots
+          .filter((spot) => favorites.includes(spot.id))
+          .filter(searchFilter)
       : filter
-      ? studySpots.filter((spot) => spot.tags.includes(filter))
-      : studySpots;
+      ? studySpots
+          .filter((spot) => spot.tags.includes(filter))
+          .filter(searchFilter)
+      : studySpots.filter(searchFilter);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
       <View style={{ flex: 1 }}>
         <Filters filter={filter} setFilter={setFilter} />
+        {/* Search Bar */}
+        <View
+          style={{
+            paddingHorizontal: 16,
+            paddingTop: 16,
+            backgroundColor: "#fff",
+          }}
+        >
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search by name, tag, or feature"
+            placeholderTextColor={colors.darkGray}
+            style={{
+              backgroundColor: "#F5F5F5",
+              borderRadius: 20,
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+              fontSize: 16,
+              color: colors.purple,
+              borderWidth: 1,
+              borderColor: "#E0E0E0",
+            }}
+            autoCorrect={false}
+            autoCapitalize="none"
+            clearButtonMode="while-editing"
+            accessibilityLabel="Search study spots"
+            accessible={true}
+          />
+        </View>
         <StudySpots
           filteredSpots={filteredSpots}
           navigation={navigation}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,9 +8,12 @@ import {
   Modal,
   TextInput,
   Image,
+  Pressable,
+  RefreshControl,
+  ScrollView,
 } from "react-native";
 import { signOut, updateProfile } from "firebase/auth";
-import { auth, db } from "../firebaseConfig"; // Ensure db is imported
+import { auth, db } from "../firebaseConfig";
 import { colors } from "../constants/colors";
 import {
   ArrowLeft,
@@ -21,11 +24,12 @@ import {
   Briefcase,
   User,
   Heart,
-} from "phosphor-react-native"; // Import icons
-import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore"; // Import Firestore functions
-import * as ImagePicker from "expo-image-picker"; // Add this import
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage"; // Add for storage
-import * as FileSystem from "expo-file-system"; // Add this import for Expo
+  X,
+} from "phosphor-react-native";
+import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore";
+import * as ImagePicker from "expo-image-picker";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import * as FileSystem from "expo-file-system";
 
 export default function ProfileScreen({ navigation }) {
   const [firstName, setFirstName] = useState("");
@@ -38,77 +42,89 @@ export default function ProfileScreen({ navigation }) {
   const [editedLastName, setEditedLastName] = useState("");
   const [editedMajor, setEditedMajor] = useState("");
   const [editedGradYear, setEditedGradYear] = useState("");
-  const [isLoading, setIsLoading] = useState(true); // Add loading state
+  const [isLoading, setIsLoading] = useState(true);
   const [favorites, setFavorites] = useState([]);
   const [favoriteSpots, setFavoriteSpots] = useState([]);
   const [profilePic, setProfilePic] = useState(null);
   const [editedProfilePic, setEditedProfilePic] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const user = auth.currentUser;
-      if (user) {
-        try {
-          const userDoc = await getDoc(doc(db, "users", user.uid));
-          if (userDoc.exists()) {
-            const data = userDoc.data();
-            setFirstName(data.firstName || "No First Name");
-            setLastName(data.lastName || "No Last Name");
-            setUserEmail(data.email || "No Email");
-            setUserMajor(data.major || "No Major");
-            setUserGradYear(data.gradYear || "No Grad Year");
-            setFavorites(data.favorites || []);
-            setProfilePic(data.profilePic); // <-- Add this line
-          } else {
-            console.error("User document does not exist");
-          }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-        } finally {
-          setIsLoading(false); // Set loading to false after fetching data
+  // Fetch user data
+  const fetchUserData = useCallback(async () => {
+    const user = auth.currentUser;
+    if (user) {
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setFirstName(data.firstName || "No First Name");
+          setLastName(data.lastName || "No Last Name");
+          setUserEmail(data.email || "No Email");
+          setUserMajor(data.major || "No Major");
+          setUserGradYear(data.gradYear || "No Grad Year");
+          setFavorites(data.favorites || []);
+          setProfilePic(data.profilePic);
+        } else {
+          console.error("User document does not exist");
         }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      } finally {
+        setIsLoading(false);
+        setRefreshing(false);
       }
-    };
-
-    fetchUserData();
+    }
   }, []);
 
   useEffect(() => {
-    // When modal opens, set editedProfilePic to current profilePic
+    fetchUserData();
+  }, [fetchUserData]);
+
+  useEffect(() => {
     if (isModalVisible) {
       setEditedProfilePic(profilePic);
     }
   }, [isModalVisible, profilePic]);
 
   // Fetch favorite spots details
-  useEffect(() => {
-    const fetchFavoriteSpots = async () => {
-      if (!favorites.length) {
-        setFavoriteSpots([]);
-        return;
-      }
-      try {
-        const spotsSnapshot = await getDocs(collection(db, "studySpots"));
-        const favSpots = spotsSnapshot.docs
-          .filter((doc) => favorites.includes(doc.id))
-          .map((doc) => ({ id: doc.id, ...doc.data() }));
-        setFavoriteSpots(favSpots);
-      } catch (e) {
-        setFavoriteSpots([]);
-      }
-    };
-    fetchFavoriteSpots();
+  const fetchFavoriteSpots = useCallback(async () => {
+    if (!favorites.length) {
+      setFavoriteSpots([]);
+      return;
+    }
+    try {
+      const spotsSnapshot = await getDocs(collection(db, "studySpots"));
+      const favSpots = spotsSnapshot.docs
+        .filter((doc) => favorites.includes(doc.id))
+        .map((doc) => ({ id: doc.id, ...doc.data() }));
+      setFavoriteSpots(favSpots);
+    } catch (e) {
+      setFavoriteSpots([]);
+    }
   }, [favorites]);
 
+  useEffect(() => {
+    fetchFavoriteSpots();
+  }, [favorites, fetchFavoriteSpots]);
+
+  // Pull-to-refresh handler
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchUserData();
+    await fetchFavoriteSpots();
+    setRefreshing(false);
+  }, [fetchUserData, fetchFavoriteSpots]);
+
   const handleLogout = () => {
-    signOut(auth)
-      .then(() => {
-        // navigation.replace("Login"); // REMOVE this line
-        // No manual navigation needed; auth state will trigger navigation
-      })
-      .catch((error) => {
-        console.error("Error logging out:", error.message);
-      });
+    setLogoutModalVisible(true);
+  };
+
+  const confirmLogout = () => {
+    setLogoutModalVisible(false);
+    signOut(auth).catch((error) => {
+      console.error("Error logging out:", error.message);
+    });
   };
 
   const handleSaveProfile = async () => {
@@ -127,7 +143,6 @@ export default function ProfileScreen({ navigation }) {
         }
         await setDoc(doc(db, "users", user.uid), updateData, { merge: true });
 
-        // Update displayName in Firebase Authentication
         await updateProfile(user, {
           displayName: `${editedFirstName || firstName} ${
             editedLastName || lastName
@@ -148,19 +163,16 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
-  // Add this function
   const handlePickProfilePic = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.5,
-      base64: true, // Add base64 so we can store as string
+      base64: true,
     });
     if (!result.cancelled) {
       try {
-        // Use base64 string as the profile picture
-        // For Expo SDK 48+, result.assets[0].base64; for older, result.base64
         const base64 =
           result.assets && result.assets[0] && result.assets[0].base64
             ? result.assets[0].base64
@@ -176,7 +188,7 @@ export default function ProfileScreen({ navigation }) {
           { merge: true }
         );
       } catch (e) {
-        alert("Failed to save profile picture.");
+        console.log("Failed to save profile picture.");
       }
     }
   };
@@ -192,224 +204,314 @@ export default function ProfileScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Back Button */}
-      <View style={{ flex: 0.2 }}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.navigate("Home")}
-        >
-          <ArrowLeft size={24} color={colors.white} />
-        </TouchableOpacity>
-      </View>
-      {/* Profile Picture */}
-      <View style={styles.profilePictureContainer}>
-        <TouchableOpacity
-          onPress={handlePickProfilePic}
-          style={{ alignItems: "center" }}
-        >
-          {profilePic ? (
-            <Image
-              source={{ uri: profilePic }}
-              style={{ width: 100, height: 100, borderRadius: 50 }}
-            />
-          ) : (
-            <View>
-              <User size={80} color="white" weight="bold" />
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* Profile Details */}
-      <View style={styles.profileContainer}>
-        <Text style={styles.userName}>
-          {firstName} {lastName}
-        </Text>
-        <View style={styles.detailRow}>
-          <Envelope size={20} color={colors.purple} />
-          <Text style={styles.userEmail}>{userEmail}</Text>
-        </View>
-
-        <View style={styles.detailRow}>
-          <Briefcase size={20} color={colors.purple} />
-          <Text style={styles.userMajor}>{userMajor}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <GraduationCap size={20} color={colors.purple} />
-          <Text style={styles.userGradYear}>{userGradYear}</Text>
-        </View>
-        <View style={styles.divider} />
-        {/* Favorites Section */}
-        <View
+      {/* Logout Confirmation Modal */}
+      <Modal
+        visible={logoutModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLogoutModalVisible(false)}
+      >
+        <Pressable
           style={{
-            flexDirection: "row",
-            alignItems: "center", // Fix alignment
-            marginBottom: 8,
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.3)",
+            justifyContent: "center",
+            alignItems: "center",
           }}
+          onPress={() => setLogoutModalVisible(false)}
         >
-          <Heart size={20} color={colors.purple} weight="fill" />
-          <Text
-            style={[styles.favoritesTitle, { marginLeft: 8, marginBottom: 0 }]}
-          >
-            Favorites
-          </Text>
-        </View>
-        {favoriteSpots.length === 0 ? (
-          <Text style={styles.noFavoritesText}>No favorites yet.</Text>
-        ) : (
-          <View style={{ width: "100%" }}>
-            {favoriteSpots.map((spot) => (
-              <TouchableOpacity
-                key={spot.id}
-                style={{
-                  backgroundColor: "#f5f3fa",
-                  borderRadius: 12,
-                  padding: 14,
-                  marginBottom: 10,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.08,
-                  shadowRadius: 3,
-                  elevation: 2,
-                }}
-                onPress={() =>
-                  navigation.navigate("SpotDetail", { spotId: spot.id })
-                }
-                activeOpacity={0.85}
-              >
-                {/* Image preview */}
-                {spot.imageUrl ? (
-                  <View
-                    style={{
-                      width: 75,
-                      height: 75,
-                      borderRadius: 8,
-                      overflow: "hidden",
-                      marginRight: 14,
-                      backgroundColor: "#EEE",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Image
-                      source={{ uri: spot.imageUrl }}
-                      style={{ width: "100%", height: "100%" }}
-                      resizeMode="cover"
-                    />
-                  </View>
-                ) : (
-                  <View
-                    style={{
-                      backgroundColor: colors.purple,
-                      borderRadius: 8,
-                      width: 38,
-                      height: 38,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginRight: 14,
-                    }}
-                  >
-                    <User size={22} color="#fff" weight="bold" />
-                  </View>
-                )}
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: "bold",
-                      color: colors.purple,
-                      marginBottom: 2,
-                    }}
-                    numberOfLines={1}
-                  >
-                    {spot.name}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      color: colors.darkGray,
-                      marginBottom: 2,
-                    }}
-                    numberOfLines={1}
-                  >
-                    {spot.roomNumber ? `Room: ${spot.roomNumber}` : ""}
-                  </Text>
-                  <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-                    {spot.tags && spot.tags.length > 0
-                      ? [...spot.tags]
-                          .sort((a, b) => String(a).localeCompare(String(b)))
-                          .slice(0, 3)
-                          .map((tag, idx) => (
-                            <View
-                              key={idx}
-                              style={{
-                                backgroundColor: colors.purple,
-                                borderRadius: 12,
-                                paddingHorizontal: 8,
-                                paddingVertical: 2,
-                                marginRight: 6,
-                                marginTop: 2,
-                              }}
-                            >
-                              <Text
-                                style={{
-                                  color: "#fff",
-                                  fontSize: 11,
-                                  fontWeight: "bold",
-                                }}
-                              >
-                                {tag}
-                              </Text>
-                            </View>
-                          ))
-                      : null}
-                    {spot.tags && spot.tags.length > 3 && (
-                      <Text
-                        style={{
-                          color: colors.purple,
-                          fontSize: 11,
-                          fontWeight: "bold",
-                          marginTop: 2,
-                        }}
-                      >
-                        +{spot.tags.length - 3} more
-                      </Text>
-                    )}
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-        <View style={styles.divider} />
-      </View>
-
-      {/* Buttons */}
-      <View style={styles.optionsContainer}>
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => {
-              setEditedFirstName(
-                firstName !== "No First Name" ? firstName : ""
-              );
-              setEditedLastName(lastName !== "No Last Name" ? lastName : "");
-              setEditedMajor(userMajor !== "No Major" ? userMajor : "");
-              setEditedGradYear(
-                userGradYear !== "No Grad Year" ? userGradYear : ""
-              );
-              setIsModalVisible(true);
+          <View
+            style={{
+              backgroundColor: "#fff",
+              borderRadius: 12,
+              padding: 24,
+              alignItems: "center",
+              minWidth: 240,
             }}
           >
-            <PencilSimple size={20} color={colors.white} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <SignOut size={20} color={colors.white} />
+            <Text
+              style={{ fontSize: 18, fontWeight: "bold", marginBottom: 12 }}
+            >
+              Confirm Logout
+            </Text>
+            <Text
+              style={{ fontSize: 15, color: colors.darkGray, marginBottom: 20 }}
+            >
+              Are you sure you want to log out?
+            </Text>
+            <View
+              style={{
+                flexDirection: "row",
+                width: "100%",
+                justifyContent: "space-between",
+              }}
+            >
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: colors.red,
+                  borderRadius: 8,
+                  padding: 12,
+                  alignItems: "center",
+                  marginRight: 8,
+                }}
+                onPress={confirmLogout}
+              >
+                <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                  Log Out
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: colors.lightPurple,
+                  borderRadius: 8,
+                  padding: 12,
+                  alignItems: "center",
+                }}
+                onPress={() => setLogoutModalVisible(false)}
+              >
+                <Text style={{ color: colors.purple, fontWeight: "bold" }}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
+
+      <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Back Button */}
+        <View style={{ flex: 0.2 }}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.navigate("Home")}
+          >
+            <ArrowLeft size={24} color={colors.white} />
           </TouchableOpacity>
         </View>
-      </View>
+        {/* Profile Picture */}
+        <View style={styles.profilePictureContainer}>
+          <TouchableOpacity
+            onPress={handlePickProfilePic}
+            style={{ alignItems: "center" }}
+          >
+            {profilePic ? (
+              <Image
+                source={{ uri: profilePic }}
+                style={{ width: 125, height: 125, borderRadius: 75 }}
+              />
+            ) : (
+              <View>
+                <User size={100} color="white" weight="bold" />
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* Profile Details */}
+        <View style={styles.profileContainer}>
+          <Text style={styles.userName}>
+            {firstName} {lastName}
+          </Text>
+          <View style={styles.detailRow}>
+            <Envelope size={20} color={colors.purple} />
+            <Text style={styles.userEmail}>{userEmail}</Text>
+          </View>
+
+          <View style={styles.detailRow}>
+            <Briefcase size={20} color={colors.purple} />
+            <Text style={styles.userMajor}>{userMajor}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <GraduationCap size={20} color={colors.purple} />
+            <Text style={styles.userGradYear}>{userGradYear}</Text>
+          </View>
+          <View style={styles.divider} />
+          {/* Favorites Section */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center", // Fix alignment
+              marginBottom: 8,
+            }}
+          >
+            <Heart size={20} color={colors.purple} weight="fill" />
+            <Text
+              style={[
+                styles.favoritesTitle,
+                { marginLeft: 8, marginBottom: 0 },
+              ]}
+            >
+              Favorites
+            </Text>
+          </View>
+          {favoriteSpots.length === 0 ? (
+            <Text style={styles.noFavoritesText}>No favorites yet.</Text>
+          ) : (
+            <View style={{ width: "100%" }}>
+              {favoriteSpots.map((spot) => (
+                <TouchableOpacity
+                  key={spot.id}
+                  style={{
+                    backgroundColor: "#f5f3fa",
+                    borderRadius: 12,
+                    padding: 14,
+                    marginBottom: 10,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 3,
+                    elevation: 2,
+                  }}
+                  onPress={() =>
+                    navigation.navigate("SpotDetail", { spotId: spot.id })
+                  }
+                  activeOpacity={0.85}
+                >
+                  {/* Image preview */}
+                  {spot.imageUrl ? (
+                    <View
+                      style={{
+                        width: 75,
+                        height: 75,
+                        borderRadius: 8,
+                        overflow: "hidden",
+                        marginRight: 14,
+                        backgroundColor: "#EEE",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Image
+                        source={{ uri: spot.imageUrl }}
+                        style={{ width: "100%", height: "100%" }}
+                        resizeMode="cover"
+                      />
+                    </View>
+                  ) : (
+                    <View
+                      style={{
+                        backgroundColor: colors.purple,
+                        borderRadius: 8,
+                        width: 38,
+                        height: 38,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginRight: 14,
+                      }}
+                    >
+                      <User size={22} color="#fff" weight="bold" />
+                    </View>
+                  )}
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "bold",
+                        color: colors.purple,
+                        marginBottom: 2,
+                      }}
+                      numberOfLines={1}
+                    >
+                      {spot.name}
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        color: colors.darkGray,
+                        marginBottom: 2,
+                      }}
+                      numberOfLines={1}
+                    >
+                      {spot.roomNumber ? `Room: ${spot.roomNumber}` : ""}
+                    </Text>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+                      {spot.tags && spot.tags.length > 0
+                        ? [...spot.tags]
+                            .sort((a, b) => String(a).localeCompare(String(b)))
+                            .slice(0, 3)
+                            .map((tag, idx) => (
+                              <View
+                                key={idx}
+                                style={{
+                                  backgroundColor: colors.purple,
+                                  borderRadius: 12,
+                                  paddingHorizontal: 8,
+                                  paddingVertical: 2,
+                                  marginRight: 6,
+                                  marginTop: 2,
+                                }}
+                              >
+                                <Text
+                                  style={{
+                                    color: "#fff",
+                                    fontSize: 11,
+                                    fontWeight: "bold",
+                                  }}
+                                >
+                                  {tag}
+                                </Text>
+                              </View>
+                            ))
+                        : null}
+                      {spot.tags && spot.tags.length > 3 && (
+                        <Text
+                          style={{
+                            color: colors.purple,
+                            fontSize: 11,
+                            fontWeight: "bold",
+                            marginTop: 2,
+                          }}
+                        >
+                          +{spot.tags.length - 3} more
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+          <View style={styles.divider} />
+        </View>
+
+        {/* Buttons */}
+        <View style={styles.optionsContainer}>
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => {
+                setEditedFirstName(
+                  firstName !== "No First Name" ? firstName : ""
+                );
+                setEditedLastName(lastName !== "No Last Name" ? lastName : "");
+                setEditedMajor(userMajor !== "No Major" ? userMajor : "");
+                setEditedGradYear(
+                  userGradYear !== "No Grad Year" ? userGradYear : ""
+                );
+                setIsModalVisible(true);
+              }}
+            >
+              <PencilSimple size={20} color={colors.white} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+            >
+              <SignOut size={20} color={colors.white} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
 
       {/* Modal for editing profile */}
       <Modal
@@ -418,8 +520,33 @@ export default function ProfileScreen({ navigation }) {
         transparent={true}
         onRequestClose={() => setIsModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
+        <Pressable
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.3)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          onPress={() => setIsModalVisible(false)}
+        >
+          <Pressable
+            style={[styles.modalContent, { width: "80%" }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            {/* Close (X) button */}
+            <TouchableOpacity
+              style={{
+                position: "absolute",
+                top: 10,
+                right: 10,
+                zIndex: 10,
+                padding: 6,
+              }}
+              onPress={() => setIsModalVisible(false)}
+              hitSlop={10}
+            >
+              <X size={22} color={colors.purple} weight="bold" />
+            </TouchableOpacity>
             <Text style={styles.modalTitle}>Edit Profile</Text>
             {/* Profile picture preview and picker */}
             <View
@@ -597,8 +724,8 @@ export default function ProfileScreen({ navigation }) {
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </SafeAreaView>
   );
@@ -624,10 +751,10 @@ const styles = StyleSheet.create({
   profilePictureContainer: {
     alignItems: "center",
     justifyContent: "center",
-    width: 100, // Adjust width for better appearance
-    height: 100, // Adjust height for better appearance
+    width: 125, // Adjust width for better appearance
+    height: 125, // Adjust height for better appearance
     backgroundColor: colors.purple,
-    borderRadius: 50, // Make it circular
+    borderRadius: 75, // Make it circular
     marginTop: 32, // Add spacing from the top
     alignSelf: "center", // Center horizontally within the screen
     shadowColor: "#000",

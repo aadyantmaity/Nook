@@ -7,9 +7,11 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  Alert,
+  Modal,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker"; // Import Picker for dropdown
-import { ArrowLeft, Check } from "phosphor-react-native"; // Import icons
+import { ArrowLeft, Check, Heart } from "phosphor-react-native"; // Add Heart icon
 import { colors } from "../constants/colors"; // Correctly import colors
 import {
   collection,
@@ -78,6 +80,9 @@ export default function AddSpotScreen({ navigation }) {
   const [isLoading, setIsLoading] = useState(false); // Add loading state
   const [isUWBuilding, setIsUWBuilding] = useState(true); // New state for UW building toggle
   const [customBuilding, setCustomBuilding] = useState(""); // For custom building name
+  const [isFavorite, setIsFavorite] = useState(false); // Favorite toggle
+  const [openHours, setOpenHours] = useState(""); // Open/quiet hours field
+  const [showPreview, setShowPreview] = useState(false); // Preview modal
 
   const toggleTag = (tag) => {
     setSelectedTags((tags) =>
@@ -85,9 +90,22 @@ export default function AddSpotScreen({ navigation }) {
     );
   };
 
+  const resetForm = () => {
+    setSelectedBuilding("");
+    setRoomNumber("");
+    setHuskyCardNeeded(false);
+    setDepartment("");
+    setSelectedTags([]);
+    setShowAddedBy(false);
+    setIsUWBuilding(true);
+    setCustomBuilding("");
+    setIsFavorite(false);
+    setOpenHours("");
+  };
+
   const handleSubmit = async () => {
     try {
-      setIsLoading(true); // Show loading screen
+      setIsLoading(true);
       const user = auth.currentUser;
 
       // Fetch existing spots to check for duplicates
@@ -107,34 +125,34 @@ export default function AddSpotScreen({ navigation }) {
 
       if (isDuplicate) {
         alert("This building and room combination already exists.");
-        setIsLoading(false); // Hide loading screen
+        setIsLoading(false);
         return;
       }
 
       const spotDetails = {
-        name: buildingNameToCheck, // Use the selected or custom building as the spot name
+        name: buildingNameToCheck,
         buildingName: buildingNameToCheck,
         roomNumber,
         huskyCardNeeded,
         department: huskyCardNeeded ? department : null,
         tags: selectedTags,
         createdAt: new Date().toISOString(),
-        addedBy: user.uid, // Always store user ID
-        revealIdentity: showAddedBy, // Add a flag to control identity visibility
-        photoUrl: "", // Placeholder for photo URL
+        addedBy: user.uid,
+        revealIdentity: showAddedBy,
+        photoUrl: "",
+        favorite: isFavorite, // Add favorite field
+        openHours, // Add open/quiet hours field
       };
 
-      // Save to Firestore
       await addDoc(collection(db, "studySpots"), spotDetails);
 
-      console.log("Spot added successfully:", spotDetails);
-
-      // Navigate back to Home and refresh
+      // Navigate to Home after successful add
       navigation.navigate("Home", { refresh: true });
+      resetForm();
     } catch (error) {
       console.error("Error adding spot:", error);
     } finally {
-      setIsLoading(false); // Hide loading screen
+      setIsLoading(false);
     }
   };
 
@@ -142,17 +160,96 @@ export default function AddSpotScreen({ navigation }) {
     return (
       <SafeAreaView
         style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        accessibilityLabel="Loading"
+        accessible={true}
       >
         <Text style={{ fontSize: 16, color: colors.darkGray }}>Loading...</Text>
       </SafeAreaView>
     );
 
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "colors.white" }}>
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1, backgroundColor: "colors.white" }}
+  // Spot preview modal
+  const renderPreview = () => (
+    <Modal visible={showPreview} transparent animationType="slide">
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "rgba(0,0,0,0.3)",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
       >
-        <View style={{ flex: 1, padding: 16, backgroundColor: "colors.white" }}>
+        <View
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: 16,
+            padding: 24,
+            width: "85%",
+            alignItems: "center",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "bold",
+              color: colors.purple,
+              marginBottom: 12,
+            }}
+          >
+            Spot Preview
+          </Text>
+          <Text style={{ fontWeight: "bold" }}>Name:</Text>
+          <Text>{isUWBuilding ? selectedBuilding : customBuilding}</Text>
+          <Text style={{ fontWeight: "bold", marginTop: 8 }}>
+            Floor Number:
+          </Text>
+          <Text>{roomNumber || "N/A"}</Text>
+          <Text style={{ fontWeight: "bold", marginTop: 8 }}>Favorite:</Text>
+          <Text>{isFavorite ? "Yes" : "No"}</Text>
+          <Text style={{ fontWeight: "bold", marginTop: 8 }}>
+            Open/Quiet Hours:
+          </Text>
+          <Text>{openHours || "N/A"}</Text>
+          <Text style={{ fontWeight: "bold", marginTop: 8 }}>Tags:</Text>
+          <Text>{selectedTags.length ? selectedTags.join(", ") : "None"}</Text>
+          <Text style={{ fontWeight: "bold", marginTop: 8 }}>
+            Husky Card Needed:
+          </Text>
+          <Text>{huskyCardNeeded ? "Yes" : "No"}</Text>
+          {huskyCardNeeded && (
+            <>
+              <Text style={{ fontWeight: "bold", marginTop: 8 }}>
+                Department:
+              </Text>
+              <Text>{department || "N/A"}</Text>
+            </>
+          )}
+          <TouchableOpacity
+            onPress={() => setShowPreview(false)}
+            style={{
+              marginTop: 18,
+              backgroundColor: colors.purple,
+              borderRadius: 8,
+              paddingVertical: 8,
+              paddingHorizontal: 18,
+              alignItems: "center",
+            }}
+            accessibilityLabel="Close Preview"
+            accessible={true}
+          >
+            <Text style={{ color: "#fff", fontWeight: "bold" }}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.white }}>
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.white }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={{ flex: 1, padding: 16, backgroundColor: colors.white }}>
           {/* Light background */}
           <View
             style={{
@@ -281,7 +378,7 @@ export default function AddSpotScreen({ navigation }) {
             />
           )}
           <TextInput
-            placeholder="Room Number (if applicable)"
+            placeholder="Floor Number (if applicable)"
             placeholderTextColor="#666666"
             value={roomNumber}
             onChangeText={setRoomNumber}
@@ -396,41 +493,169 @@ export default function AddSpotScreen({ navigation }) {
             ))}
           </View>
 
-          <View style={{ marginTop: 24, alignItems: "center" }}>
+          {/* Favorite toggle */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 16,
+              marginTop: 8,
+            }}
+          >
             <TouchableOpacity
-              onPress={handleSubmit} // Replace setShowReview with handleSubmit
+              onPress={() => setIsFavorite((f) => !f)}
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: colors.purple,
+                padding: 8,
+                marginRight: 12,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              accessibilityLabel="Toggle favorite"
+              accessible={true}
+            >
+              <Heart
+                size={22}
+                color={isFavorite ? colors.purple : colors.darkGray}
+                weight={isFavorite ? "fill" : "regular"}
+              />
+            </TouchableOpacity>
+            <Text style={{ color: colors.darkGray, fontSize: 13 }}>
+              Mark this spot as a favorite
+            </Text>
+          </View>
+          {/* Open/Quiet Hours */}
+          <TextInput
+            placeholder="Open/Quiet Hours (e.g. 8am-10pm, Quiet after 6pm)"
+            placeholderTextColor="#666666"
+            value={openHours}
+            onChangeText={setOpenHours}
+            style={{
+              borderWidth: 1,
+              borderColor: "#CCCCCC",
+              borderRadius: 8,
+              padding: 12,
+              marginBottom: 16,
+              backgroundColor: colors.white,
+              color: "#000000",
+            }}
+            accessibilityLabel="Open or Quiet Hours"
+            accessible={true}
+          />
+
+          <View
+            style={{
+              flexDirection: "row",
+              marginTop: 24,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => setShowPreview(true)}
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                justifyContent: "center", // Center content horizontally
-                paddingVertical: 12, // Increase vertical padding
-                paddingHorizontal: 16, // Increase horizontal padding
+                justifyContent: "center",
+                paddingVertical: 12,
+                paddingHorizontal: 16,
+                backgroundColor: colors.purple,
+                borderRadius: 25,
+                marginRight: 12,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 4,
+                elevation: 3,
+              }}
+              accessibilityLabel="Preview Spot"
+              accessible={true}
+            >
+              <Text
+                style={{
+                  color: "white",
+                  fontWeight: "bold",
+                  fontSize: 16,
+                  textAlign: "center",
+                }}
+              >
+                Summary
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={resetForm}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                paddingVertical: 12,
+                paddingHorizontal: 16,
+                backgroundColor: colors.red,
+                borderRadius: 25,
+                marginRight: 12,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 4,
+                elevation: 3,
+                minWidth: 90,
+              }}
+              accessibilityLabel="Reset Form"
+              accessible={true}
+            >
+              <Text
+                style={{
+                  color: "white",
+                  fontWeight: "bold",
+                  fontSize: 16,
+                  textAlign: "center",
+                  flex: 1,
+                }}
+              >
+                Reset
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleSubmit}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                paddingVertical: 12,
+                paddingHorizontal: 16,
                 backgroundColor: colors.green,
-                borderRadius: 25, // Make the button more rounded
-                marginTop: 16,
+                borderRadius: 25,
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.2,
                 shadowRadius: 4,
                 alignSelf: "center",
-                elevation: 3, // Add elevation for a subtle shadow
+                elevation: 3,
               }}
+              accessibilityLabel="Add Nook"
+              accessible={true}
             >
               <Check size={20} color="white" />
               <Text
                 style={{
                   marginLeft: 8,
                   color: "white",
-                  fontWeight: "bold", // Make the text bold
-                  fontSize: 16, // Slightly increase font size
+                  fontWeight: "bold",
+                  fontSize: 16,
                 }}
               >
                 Add Nook
               </Text>
             </TouchableOpacity>
           </View>
+          {renderPreview()}
         </View>
       </ScrollView>
+      {/* Ensure the preview modal is rendered outside the ScrollView for visibility */}
+      {showPreview && renderPreview()}
     </SafeAreaView>
   );
 }
