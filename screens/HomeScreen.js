@@ -290,7 +290,7 @@ function StudySpots({
               backgroundColor: themeColors.white, // changed
               borderRadius: 20,
               padding: 4,
-              borderWidth: 1,
+              borderWidth: 0.5,
               borderColor: themeColors.purple, // changed
             }}
             onPressOut={(e) => e.stopPropagation && e.stopPropagation()}
@@ -534,7 +534,7 @@ function RecentlyViewed({
                 backgroundColor: themeColors.white, // changed
                 borderRadius: 20,
                 padding: 4,
-                borderWidth: 1,
+                borderWidth: 0.5,
                 borderColor: themeColors.purple, // changed
               }}
               onPressOut={(e) => e.stopPropagation && e.stopPropagation()}

@@ -553,8 +553,8 @@ export default function AddSpotScreen({
                   shadowOpacity: 0.1,
                   shadowRadius: 4,
                   elevation: 2,
-                  borderWidth: isDarkMode ? 1 : 0,
-                  borderColor: isDarkMode ? themeColors.purple : "transparent",
+                  borderWidth: 1,
+                  borderColor: themeColors.purple,
                 }}
               >
                 <Text

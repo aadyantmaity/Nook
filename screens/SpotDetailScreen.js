@@ -952,9 +952,11 @@ function LiveUpdateModal({
               style={{
                 flex: 1,
                 padding: 12,
-                backgroundColor: themeColors.gray,
+                backgroundColor: themeColors.white,
                 borderRadius: 8,
                 alignItems: "center",
+                borderColor: themeColors.purple,
+                borderWidth: 0.5,
               }}
             >
               <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
