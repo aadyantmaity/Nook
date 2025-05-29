@@ -269,9 +269,9 @@ function StudySpots({
               marginBottom: 12,
             }}
           >
-            {item.imageUrl ? (
+            {item.photoUrl ? (
               <Image
-                source={{ uri: item.imageUrl }}
+                source={{ uri: item.photoUrl }}
                 style={{ width: "100%", height: "100%" }}
                 resizeMode="cover"
               />
@@ -514,9 +514,9 @@ function RecentlyViewed({
                 marginBottom: 8,
               }}
             >
-              {item.imageUrl ? (
+              {item.photoUrl ? (
                 <Image
-                  source={{ uri: item.imageUrl }}
+                  source={{ uri: item.photoUrl }}
                   style={{ width: "100%", height: "100%" }}
                   resizeMode="cover"
                 />
@@ -850,6 +850,7 @@ export default function HomeScreen({
     );
   };
 
+  // Filters for Home tab
   const filteredSpots =
     filter === "favorites"
       ? studySpots
@@ -857,9 +858,32 @@ export default function HomeScreen({
           .filter(searchFilter)
       : filter
       ? studySpots
-          .filter((spot) => spot.tags.includes(filter))
+          .filter((spot) =>
+            (spot.tags || []).map((t) => String(t).toLowerCase()).includes(filter)
+          )
           .filter(searchFilter)
       : studySpots.filter(searchFilter);
+
+  // Filters for Recently Viewed tab
+  const filteredRecentlyViewedSpots =
+    filter === "favorites"
+      ? recentlyViewed
+          .map((id) => studySpots.find((s) => s.id === id))
+          .filter(Boolean)
+          .filter((spot) => favorites.includes(spot.id))
+          .filter(searchFilter)
+      : filter
+      ? recentlyViewed
+          .map((id) => studySpots.find((s) => s.id === id))
+          .filter(Boolean)
+          .filter((spot) =>
+            (spot.tags || []).map((t) => String(t).toLowerCase()).includes(filter)
+          )
+          .filter(searchFilter)
+      : recentlyViewed
+          .map((id) => studySpots.find((s) => s.id === id))
+          .filter(Boolean)
+          .filter(searchFilter);
 
   // Get recently viewed spot objects
   const recentlyViewedSpots = recentlyViewed
@@ -900,7 +924,7 @@ export default function HomeScreen({
           />
         ) : (
           <StudySpots
-            filteredSpots={recentlyViewedSpots}
+            filteredSpots={filteredRecentlyViewedSpots}
             navigation={{
               ...navigation,
               navigate: (screen, params) => {

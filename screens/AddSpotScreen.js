@@ -36,6 +36,9 @@ const TAGS = [
 
 const BUILDINGS = [
   // Academic and Administrative Buildings
+  "Suzallo Library",
+  "Allen Library",
+  "Odegaard Undergraduate Library",
   "Mary Gates Hall",
   "Husky Union Building (HUB)",
   "Paul G. Allen Center (CSE)",
@@ -412,7 +415,7 @@ export default function AddSpotScreen({
           ) : (
             <TextInput
               placeholder="Enter location name"
-              placeholderTextColor={themeColors.darkGray}
+              placeholderTextColor={themeColors.purple}
               value={customBuilding}
               onChangeText={setCustomBuilding}
               style={{

@@ -426,7 +426,7 @@ export default function ProfileScreen({
                   activeOpacity={0.85}
                 >
                   {/* Image preview */}
-                  {spot.imageUrl ? (
+                  {spot.photoUrl ? (
                     <View
                       style={{
                         width: 75,
@@ -440,7 +440,7 @@ export default function ProfileScreen({
                       }}
                     >
                       <Image
-                        source={{ uri: spot.imageUrl }}
+                        source={{ uri: spot.photoUrl }}
                         style={{ width: "100%", height: "100%" }}
                         resizeMode="cover"
                       />
