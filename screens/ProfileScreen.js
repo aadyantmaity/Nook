@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useContext } from "react";
 import {
   View,
   Text,
@@ -30,8 +30,18 @@ import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import * as FileSystem from "expo-file-system";
+import { ThemeContext } from "../App";
 
-export default function ProfileScreen({ navigation }) {
+export default function ProfileScreen({
+  navigation,
+  // Remove isDarkMode: propDark,
+  // Remove themeColors: propColors,
+}) {
+  const themeCtx = useContext(ThemeContext);
+  const isDarkMode = themeCtx?.isDarkMode ?? false;
+  const themeColors = themeCtx?.themeColors ?? colors;
+  const setIsDarkMode = themeCtx?.setIsDarkMode;
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [userEmail, setUserEmail] = useState("");
@@ -198,14 +208,23 @@ export default function ProfileScreen({ navigation }) {
   if (isLoading)
     return (
       <SafeAreaView
-        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: themeColors.white,
+        }}
       >
-        <Text style={{ fontSize: 16, color: colors.darkGray }}>Loading...</Text>
+        <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
+          Loading...
+        </Text>
       </SafeAreaView>
     );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: themeColors.white }]}
+    >
       {/* Logout Confirmation Modal */}
       <Modal
         visible={logoutModalVisible}
@@ -224,7 +243,7 @@ export default function ProfileScreen({ navigation }) {
         >
           <View
             style={{
-              backgroundColor: "#fff",
+              backgroundColor: themeColors.white,
               borderRadius: 12,
               padding: 24,
               alignItems: "center",
@@ -232,12 +251,21 @@ export default function ProfileScreen({ navigation }) {
             }}
           >
             <Text
-              style={{ fontSize: 18, fontWeight: "bold", marginBottom: 12 }}
+              style={{
+                fontSize: 18,
+                fontWeight: "bold",
+                marginBottom: 12,
+                color: themeColors.black,
+              }}
             >
               Confirm Logout
             </Text>
             <Text
-              style={{ fontSize: 15, color: colors.darkGray, marginBottom: 20 }}
+              style={{
+                fontSize: 15,
+                color: themeColors.purple,
+                marginBottom: 20,
+              }}
             >
               Are you sure you want to log out?
             </Text>
@@ -251,7 +279,7 @@ export default function ProfileScreen({ navigation }) {
               <TouchableOpacity
                 style={{
                   flex: 1,
-                  backgroundColor: colors.red,
+                  backgroundColor: themeColors.red,
                   borderRadius: 8,
                   padding: 12,
                   alignItems: "center",
@@ -259,21 +287,22 @@ export default function ProfileScreen({ navigation }) {
                 }}
                 onPress={confirmLogout}
               >
-                <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
                   Log Out
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={{
                   flex: 1,
-                  backgroundColor: colors.lightPurple,
+                  backgroundColor:
+                    themeColors.lightPurple || themeColors.purple,
                   borderRadius: 8,
                   padding: 12,
                   alignItems: "center",
                 }}
                 onPress={() => setLogoutModalVisible(false)}
               >
-                <Text style={{ color: colors.purple, fontWeight: "bold" }}>
+                <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
                   Cancel
                 </Text>
               </TouchableOpacity>
@@ -292,14 +321,19 @@ export default function ProfileScreen({ navigation }) {
         {/* Back Button */}
         <View style={{ flex: 0.2 }}>
           <TouchableOpacity
-            style={styles.backButton}
+            style={[styles.backButton, { backgroundColor: themeColors.purple }]}
             onPress={() => navigation.navigate("Home")}
           >
-            <ArrowLeft size={24} color={colors.white} />
+            <ArrowLeft size={24} color={themeColors.white} />
           </TouchableOpacity>
         </View>
         {/* Profile Picture */}
-        <View style={styles.profilePictureContainer}>
+        <View
+          style={[
+            styles.profilePictureContainer,
+            { backgroundColor: themeColors.purple },
+          ]}
+        >
           <TouchableOpacity
             onPress={handlePickProfilePic}
             style={{ alignItems: "center" }}
@@ -319,21 +353,27 @@ export default function ProfileScreen({ navigation }) {
 
         {/* Profile Details */}
         <View style={styles.profileContainer}>
-          <Text style={styles.userName}>
+          <Text style={[styles.userName, { color: themeColors.purple }]}>
             {firstName} {lastName}
           </Text>
           <View style={styles.detailRow}>
-            <Envelope size={20} color={colors.purple} />
-            <Text style={styles.userEmail}>{userEmail}</Text>
+            <Envelope size={20} color={themeColors.purple} />
+            <Text style={[styles.userEmail, { color: themeColors.purple }]}>
+              {userEmail}
+            </Text>
           </View>
 
           <View style={styles.detailRow}>
-            <Briefcase size={20} color={colors.purple} />
-            <Text style={styles.userMajor}>{userMajor}</Text>
+            <Briefcase size={20} color={themeColors.purple} />
+            <Text style={[styles.userMajor, { color: themeColors.purple }]}>
+              {userMajor}
+            </Text>
           </View>
           <View style={styles.detailRow}>
-            <GraduationCap size={20} color={colors.purple} />
-            <Text style={styles.userGradYear}>{userGradYear}</Text>
+            <GraduationCap size={20} color={themeColors.purple} />
+            <Text style={[styles.userGradYear, { color: themeColors.purple }]}>
+              {userGradYear}
+            </Text>
           </View>
           <View style={styles.divider} />
           {/* Favorites Section */}
@@ -344,25 +384,29 @@ export default function ProfileScreen({ navigation }) {
               marginBottom: 8,
             }}
           >
-            <Heart size={20} color={colors.purple} weight="fill" />
+            <Heart size={20} color={themeColors.purple} weight="fill" />
             <Text
               style={[
                 styles.favoritesTitle,
-                { marginLeft: 8, marginBottom: 0 },
+                { marginLeft: 8, marginBottom: 0, color: themeColors.purple },
               ]}
             >
               Favorites
             </Text>
           </View>
           {favoriteSpots.length === 0 ? (
-            <Text style={styles.noFavoritesText}>No favorites yet.</Text>
+            <Text
+              style={[styles.noFavoritesText, { color: themeColors.purple }]}
+            >
+              No favorites yet.
+            </Text>
           ) : (
             <View style={{ width: "100%" }}>
               {favoriteSpots.map((spot) => (
                 <TouchableOpacity
                   key={spot.id}
                   style={{
-                    backgroundColor: "#f5f3fa",
+                    backgroundColor: themeColors.white,
                     borderRadius: 12,
                     padding: 14,
                     marginBottom: 10,
@@ -373,6 +417,8 @@ export default function ProfileScreen({ navigation }) {
                     shadowOpacity: 0.08,
                     shadowRadius: 3,
                     elevation: 2,
+                    borderColor: themeColors.purple,
+                    borderWidth: 1,
                   }}
                   onPress={() =>
                     navigation.navigate("SpotDetail", { spotId: spot.id })
@@ -402,7 +448,7 @@ export default function ProfileScreen({ navigation }) {
                   ) : (
                     <View
                       style={{
-                        backgroundColor: colors.purple,
+                        backgroundColor: themeColors.purple,
                         borderRadius: 8,
                         width: 38,
                         height: 38,
@@ -419,7 +465,7 @@ export default function ProfileScreen({ navigation }) {
                       style={{
                         fontSize: 16,
                         fontWeight: "bold",
-                        color: colors.purple,
+                        color: themeColors.purple,
                         marginBottom: 2,
                       }}
                       numberOfLines={1}
@@ -429,7 +475,7 @@ export default function ProfileScreen({ navigation }) {
                     <Text
                       style={{
                         fontSize: 13,
-                        color: colors.darkGray,
+                        color: themeColors.darkGray,
                         marginBottom: 2,
                       }}
                       numberOfLines={1}
@@ -445,7 +491,7 @@ export default function ProfileScreen({ navigation }) {
                               <View
                                 key={idx}
                                 style={{
-                                  backgroundColor: colors.purple,
+                                  backgroundColor: themeColors.purple,
                                   borderRadius: 12,
                                   paddingHorizontal: 8,
                                   paddingVertical: 2,
@@ -455,7 +501,7 @@ export default function ProfileScreen({ navigation }) {
                               >
                                 <Text
                                   style={{
-                                    color: "#fff",
+                                    color: themeColors.white,
                                     fontSize: 11,
                                     fontWeight: "bold",
                                   }}
@@ -468,7 +514,7 @@ export default function ProfileScreen({ navigation }) {
                       {spot.tags && spot.tags.length > 3 && (
                         <Text
                           style={{
-                            color: colors.purple,
+                            color: themeColors.purple,
                             fontSize: 11,
                             fontWeight: "bold",
                             marginTop: 2,
@@ -490,7 +536,10 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.optionsContainer}>
           <View style={styles.buttonRow}>
             <TouchableOpacity
-              style={styles.editButton}
+              style={[
+                styles.editButton,
+                { backgroundColor: themeColors.purple },
+              ]}
               onPress={() => {
                 setEditedFirstName(
                   firstName !== "No First Name" ? firstName : ""
@@ -504,13 +553,16 @@ export default function ProfileScreen({ navigation }) {
                 setTimeout(() => setEditedProfilePic(null), 0); // Ensure state updates after modal opens
               }}
             >
-              <PencilSimple size={20} color={colors.white} />
+              <PencilSimple size={20} color={themeColors.white} />
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.logoutButton}
+              style={[
+                styles.logoutButton,
+                { backgroundColor: themeColors.red },
+              ]}
               onPress={handleLogout}
             >
-              <SignOut size={20} color={colors.white} />
+              <SignOut size={20} color={themeColors.white} />
             </TouchableOpacity>
           </View>
         </View>
@@ -533,7 +585,10 @@ export default function ProfileScreen({ navigation }) {
           onPress={() => setIsModalVisible(false)}
         >
           <Pressable
-            style={[styles.modalContent, { width: "80%" }]}
+            style={[
+              styles.modalContent,
+              { width: "80%", backgroundColor: themeColors.white },
+            ]}
             onPress={(e) => e.stopPropagation()}
           >
             {/* Close (X) button */}
@@ -548,7 +603,7 @@ export default function ProfileScreen({ navigation }) {
               onPress={() => setIsModalVisible(false)}
               hitSlop={10}
             >
-              <X size={22} color={colors.purple} weight="bold" />
+              <X size={22} color={themeColors.purple} weight="bold" />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Edit Profile</Text>
             {/* Profile picture preview and picker */}
@@ -564,7 +619,7 @@ export default function ProfileScreen({ navigation }) {
                 <Text
                   style={{
                     fontSize: 12,
-                    color: colors.darkGray,
+                    color: themeColors.darkGray,
                     marginBottom: 4,
                   }}
                 >
@@ -578,7 +633,7 @@ export default function ProfileScreen({ navigation }) {
                       height: 56,
                       borderRadius: 28,
                       borderWidth: 1,
-                      borderColor: colors.gray,
+                      borderColor: themeColors.gray,
                     }}
                   />
                 ) : (
@@ -587,14 +642,14 @@ export default function ProfileScreen({ navigation }) {
                       width: 56,
                       height: 56,
                       borderRadius: 28,
-                      backgroundColor: colors.gray,
+                      backgroundColor: themeColors.gray,
                       alignItems: "center",
                       justifyContent: "center",
                       borderWidth: 1,
-                      borderColor: colors.gray,
+                      borderColor: themeColors.gray,
                     }}
                   >
-                    <User size={32} color={colors.purple} weight="bold" />
+                    <User size={32} color={themeColors.purple} weight="bold" />
                   </View>
                 )}
               </View>
@@ -603,7 +658,7 @@ export default function ProfileScreen({ navigation }) {
                 <Text
                   style={{
                     fontSize: 12,
-                    color: colors.darkGray,
+                    color: themeColors.darkGray,
                     marginBottom: 4,
                   }}
                 >
@@ -618,7 +673,7 @@ export default function ProfileScreen({ navigation }) {
                       height: 56,
                       borderRadius: 28,
                       borderWidth: 1,
-                      borderColor: colors.purple,
+                      borderColor: themeColors.purple,
                     }}
                   />
                 ) : (
@@ -631,16 +686,16 @@ export default function ProfileScreen({ navigation }) {
                       alignItems: "center",
                       justifyContent: "center",
                       borderWidth: 1,
-                      borderColor: colors.gray,
+                      borderColor: themeColors.gray,
                     }}
                   >
-                    <User size={32} color={colors.purple} weight="bold" />
+                    <User size={32} color={themeColors.purple} weight="bold" />
                   </View>
                 )}
               </View>
               <TouchableOpacity
                 style={{
-                  backgroundColor: colors.purple,
+                  backgroundColor: themeColors.purple,
                   borderRadius: 8,
                   paddingVertical: 8,
                   paddingHorizontal: 12,
@@ -684,14 +739,14 @@ export default function ProfileScreen({ navigation }) {
               placeholder="First Name"
               value={editedFirstName}
               onChangeText={setEditedFirstName}
-              placeholderTextColor={colors.darkGray}
+              placeholderTextColor={themeColors.darkGray}
             />
             <TextInput
               style={styles.input}
               placeholder="Last Name"
               value={editedLastName}
               onChangeText={setEditedLastName}
-              placeholderTextColor={colors.darkGray}
+              placeholderTextColor={themeColors.darkGray}
             />
             <TextInput
               style={styles.input}
@@ -703,7 +758,7 @@ export default function ProfileScreen({ navigation }) {
                   : ""
               }
               onChangeText={setEditedMajor}
-              placeholderTextColor={colors.darkGray}
+              placeholderTextColor={themeColors.darkGray}
             />
             <TextInput
               style={styles.input}
@@ -711,20 +766,33 @@ export default function ProfileScreen({ navigation }) {
               value={editedGradYear}
               onChangeText={setEditedGradYear}
               keyboardType="numeric"
-              placeholderTextColor={colors.darkGray}
+              placeholderTextColor={themeColors.darkGray}
             />
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={styles.saveButton}
+                style={[
+                  styles.saveButton,
+                  { backgroundColor: themeColors.purple },
+                ]}
                 onPress={handleSaveProfile}
               >
                 <Text style={styles.saveButtonText}>Save</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.cancelButton}
+                style={[
+                  styles.cancelButton,
+                  { backgroundColor: themeColors.lightPurple },
+                ]}
                 onPress={() => setIsModalVisible(false)}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text
+                  style={[
+                    styles.cancelButtonText,
+                    { color: themeColors.purple },
+                  ]}
+                >
+                  Cancel
+                </Text>
               </TouchableOpacity>
             </View>
           </Pressable>
@@ -737,7 +805,7 @@ export default function ProfileScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.white,
+    // backgroundColor: colors.white, // Remove, handled by themeColors
     padding: 16,
   },
   backButton: {
@@ -745,7 +813,7 @@ const styles = StyleSheet.create({
     top: 16,
     left: 16,
     padding: 8,
-    backgroundColor: colors.purple,
+    // backgroundColor: themeColors.purple, // Remove this line
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
@@ -754,12 +822,12 @@ const styles = StyleSheet.create({
   profilePictureContainer: {
     alignItems: "center",
     justifyContent: "center",
-    width: 125, // Adjust width for better appearance
-    height: 125, // Adjust height for better appearance
-    backgroundColor: colors.purple,
-    borderRadius: 75, // Make it circular
-    marginTop: 32, // Add spacing from the top
-    alignSelf: "center", // Center horizontally within the screen
+    width: 125,
+    height: 125,
+    // backgroundColor: colors.purple, // Remove, handled inline
+    borderRadius: 75,
+    marginTop: 32,
+    alignSelf: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
@@ -768,14 +836,14 @@ const styles = StyleSheet.create({
   },
   profileContainer: {
     alignItems: "center",
-    paddingHorizontal: 16, // Ensure proper spacing
+    paddingHorizontal: 16,
   },
   userName: {
     fontSize: 24,
     fontWeight: "bold",
-    color: colors.purple,
-    marginBottom: 8, // Adjust spacing
-    paddingTop: 16, // Add padding to the top for better spacing
+    // color: colors.purple, // Remove, handled inline
+    marginBottom: 8,
+    paddingTop: 16,
   },
   detailRow: {
     flexDirection: "row",
@@ -784,57 +852,57 @@ const styles = StyleSheet.create({
   },
   userEmail: {
     fontSize: 16,
-    color: colors.darkGray,
-    marginLeft: 8, // Add spacing between icon and text
+    // color: themeColors.darkGray, // Remove, handled inline
+    marginLeft: 8,
     textAlign: "center",
   },
   userMajor: {
     fontSize: 16,
-    color: colors.darkGray,
-    marginLeft: 8, // Add spacing between icon and text
+    // color: themeColors.darkGray, // Remove, handled inline
+    marginLeft: 8,
     textAlign: "center",
   },
   userGradYear: {
     fontSize: 16,
-    color: colors.darkGray,
-    marginLeft: 8, // Add spacing between icon and text
+    // color: themeColors.darkGray, // Remove, handled inline
+    marginLeft: 8,
     textAlign: "center",
   },
   divider: {
     height: 1,
-    backgroundColor: colors.gray,
+    // backgroundColor: themeColors.gray, // Remove, handled inline
     marginVertical: 16,
     width: "80%",
     alignSelf: "center",
   },
   optionsContainer: {
     flex: 0.1,
-    justifyContent: "center", // Center vertically
-    alignItems: "center", // Center horizontally
-    paddingTop: 16, // Add vertical padding for spacing
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 16,
   },
   buttonRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    width: "60%", // Adjust width for centering
+    width: "60%",
   },
   editButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     padding: 12,
-    backgroundColor: colors.purple,
+    // backgroundColor: colors.purple, // Remove, handled inline
     borderRadius: 8,
-    width: "48%", // Take up 48% of the row width
+    width: "48%",
   },
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     padding: 12,
-    backgroundColor: colors.red,
+    // backgroundColor: colors.red, // Remove, handled inline
     borderRadius: 8,
-    width: "48%", // Take up 48% of the row width
+    width: "48%",
   },
   modalContainer: {
     flex: 1,
@@ -844,7 +912,7 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: "80%",
-    backgroundColor: colors.white,
+    // backgroundColor: colors.white, // Remove, handled inline
     borderRadius: 8,
     padding: 16,
     alignItems: "center",
@@ -852,18 +920,18 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: colors.purple,
+    // color: colors.purple, // Remove, handled inline
     marginBottom: 16,
   },
   input: {
     width: "100%",
     borderWidth: 1,
-    borderColor: colors.darkGray,
+    // borderColor: themeColors.darkGray, // Remove, handled inline
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
-    backgroundColor: colors.white,
-    color: colors.black,
+    // backgroundColor: colors.white, // Remove, handled inline
+    // color: colors.black, // Remove, handled inline
   },
   modalButtons: {
     flexDirection: "row",
@@ -873,36 +941,36 @@ const styles = StyleSheet.create({
   saveButton: {
     flex: 1,
     padding: 12,
-    backgroundColor: colors.purple,
+    // backgroundColor: colors.purple, // Remove, handled inline
     borderRadius: 8,
     alignItems: "center",
     marginRight: 8,
   },
   saveButtonText: {
-    color: colors.white,
+    // color: colors.white, // Remove, handled inline
     fontWeight: "bold",
   },
   cancelButton: {
     flex: 1,
     padding: 12,
-    backgroundColor: colors.lightPurple,
+    // backgroundColor: colors.lightPurple, // Remove, handled inline
     borderRadius: 8,
     alignItems: "center",
   },
   cancelButtonText: {
-    color: colors.purple,
+    // color: colors.purple, // Remove, handled inline
     fontWeight: "bold",
   },
   favoritesTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: colors.purple,
+    // color: colors.purple, // Remove, handled inline
     marginBottom: 8,
     alignSelf: "flex-start",
   },
   noFavoritesText: {
     fontSize: 15,
-    color: colors.darkGray,
+    // color: colors.darkGray, // Remove, handled inline
     marginBottom: 8,
     alignSelf: "flex-start",
   },
@@ -916,11 +984,11 @@ const styles = StyleSheet.create({
   favoriteSpotName: {
     fontSize: 16,
     fontWeight: "bold",
-    color: colors.purple,
+    // color: colors.purple, // Remove, handled inline
   },
   favoriteSpotTags: {
     fontSize: 13,
-    color: colors.darkGray,
+    // color: colors.darkGray, // Remove, handled inline
     marginTop: 2,
   },
 });

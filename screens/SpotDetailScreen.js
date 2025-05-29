@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   View,
   Text,
@@ -39,8 +39,13 @@ import {
 import { colors } from "../constants/colors";
 import { auth } from "../firebaseConfig"; // Import auth
 import Slider from "@react-native-community/slider"; // Add this import for Slider
+import { ThemeContext } from "../App"; // Import ThemeContext
 
 export default function SpotDetailScreen({ route, navigation }) {
+  const themeCtx = useContext(ThemeContext);
+  const isDarkMode = themeCtx?.isDarkMode ?? false;
+  const themeColors = themeCtx?.themeColors ?? colors;
+
   const { spotId } = route.params || {};
   const [spot, setSpot] = useState(null);
   const [showLiveUpdate, setShowLiveUpdate] = useState(false);
@@ -413,9 +418,16 @@ export default function SpotDetailScreen({ route, navigation }) {
   if (isLoading)
     return (
       <SafeAreaView
-        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: themeColors.white,
+        }}
       >
-        <Text style={{ fontSize: 16, color: colors.darkGray }}>Loading...</Text>
+        <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
+          Loading...
+        </Text>
       </SafeAreaView>
     );
 
@@ -425,9 +437,9 @@ export default function SpotDetailScreen({ route, navigation }) {
   const generalRating = spot.generalRating || 0;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.white }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 16 }}>
-        <View style={{ flex: 1, backgroundColor: colors.white }}>
+        <View style={{ flex: 1, backgroundColor: themeColors.white }}>
           {/* Spot Image */}
           <View style={{ position: "relative", width: "100%" }}>
             {spot.imageUrl ? (
@@ -475,15 +487,15 @@ export default function SpotDetailScreen({ route, navigation }) {
                 flexDirection: "row",
                 alignItems: "center",
                 padding: 10,
-                backgroundColor: colors.purple,
+                backgroundColor: themeColors.purple,
                 borderRadius: 8,
-                shadowColor: colors.black,
+                shadowColor: themeColors.black,
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.2,
                 shadowRadius: 4,
               }}
             >
-              <House size={20} color={colors.white} />
+              <House size={20} color={themeColors.white} />
             </TouchableOpacity>
           </View>
 
@@ -492,7 +504,7 @@ export default function SpotDetailScreen({ route, navigation }) {
               fontSize: 24,
               fontWeight: "bold",
               marginBottom: 16,
-              color: colors.purple,
+              color: themeColors.purple,
             }}
           >
             {buildingName}
@@ -503,14 +515,14 @@ export default function SpotDetailScreen({ route, navigation }) {
               <Text
                 style={{
                   fontSize: 15,
-                  color: colors.purple,
+                  color: themeColors.purple,
                   fontWeight: "bold",
                   marginBottom: 2,
                 }}
               >
                 Open/Quiet Hours
               </Text>
-              <Text style={{ color: colors.darkGray, fontSize: 15 }}>
+              <Text style={{ color: themeColors.darkGray, fontSize: 15 }}>
                 {spot.openHours}
               </Text>
             </View>
@@ -527,16 +539,16 @@ export default function SpotDetailScreen({ route, navigation }) {
               style={{
                 alignItems: "center",
                 padding: 16,
-                backgroundColor: colors.purple,
+                backgroundColor: themeColors.purple,
                 borderRadius: 8,
                 flex: 1, // Adjust width to align with "Added By" box
                 marginRight: 8, // Add spacing between boxes
               }}
             >
-              <SpeakerHigh size={24} color={colors.white} />
+              <SpeakerHigh size={24} color={themeColors.white} />
               <Text
                 style={{
-                  color: colors.white,
+                  color: themeColors.white,
                   fontSize: 16,
                   fontWeight: "bold",
                   marginTop: 8,
@@ -549,15 +561,15 @@ export default function SpotDetailScreen({ route, navigation }) {
               style={{
                 alignItems: "center",
                 padding: 16,
-                backgroundColor: colors.purple,
+                backgroundColor: themeColors.purple,
                 borderRadius: 8,
                 flex: 1, // Adjust width to align with "Added By" box
               }}
             >
-              <UsersThree size={24} color={colors.white} />
+              <UsersThree size={24} color={themeColors.white} />
               <Text
                 style={{
-                  color: colors.white,
+                  color: themeColors.white,
                   fontSize: 16,
                   fontWeight: "bold",
                   marginTop: 8,
@@ -579,7 +591,7 @@ export default function SpotDetailScreen({ route, navigation }) {
             <Text
               style={{
                 fontSize: 24,
-                color: colors.purple,
+                color: themeColors.purple,
                 fontWeight: "bold",
                 marginBottom: 16, // Add spacing between "Tags" text and the list
               }}
@@ -598,7 +610,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                   <View
                     key={index}
                     style={{
-                      backgroundColor: colors.purple,
+                      backgroundColor: themeColors.purple,
                       paddingHorizontal: 16,
                       paddingVertical: 8,
                       borderRadius: 20,
@@ -606,13 +618,13 @@ export default function SpotDetailScreen({ route, navigation }) {
                       marginBottom: 8,
                     }}
                   >
-                    <Text style={{ color: colors.white, fontSize: 16 }}>
+                    <Text style={{ color: themeColors.white, fontSize: 16 }}>
                       {String(tag)}
                     </Text>
                   </View>
                 ))
               ) : (
-                <Text style={{ fontSize: 16, color: colors.darkGray }}>
+                <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
                   No tags available
                 </Text>
               )}
@@ -626,7 +638,7 @@ export default function SpotDetailScreen({ route, navigation }) {
         <Text
           style={{
             fontSize: 16,
-            color: colors.purple,
+            color: themeColors.purple,
             fontWeight: "bold",
             marginBottom: 4,
           }}
@@ -643,7 +655,9 @@ export default function SpotDetailScreen({ route, navigation }) {
               <Star
                 size={28}
                 color={
-                  star <= pendingOverallRating ? colors.purple : colors.darkGray
+                  star <= pendingOverallRating
+                    ? themeColors.purple
+                    : themeColors.darkGray
                 }
                 weight={star <= pendingOverallRating ? "fill" : "regular"}
                 style={{ marginRight: 2 }}
@@ -653,7 +667,7 @@ export default function SpotDetailScreen({ route, navigation }) {
           <Text
             style={{
               marginLeft: 8,
-              color: colors.darkGray,
+              color: themeColors.darkGray,
               fontSize: 15,
             }}
           >
@@ -662,7 +676,9 @@ export default function SpotDetailScreen({ route, navigation }) {
               : "No rating"}
           </Text>
         </View>
-        <Text style={{ fontSize: 12, color: colors.darkGray, marginTop: 2 }}>
+        <Text
+          style={{ fontSize: 12, color: themeColors.darkGray, marginTop: 2 }}
+        >
           {userOverallRating
             ? `Your rating: ${userOverallRating}`
             : "Tap a star to rate"}
@@ -679,8 +695,8 @@ export default function SpotDetailScreen({ route, navigation }) {
             backgroundColor:
               pendingOverallRating !== 0 &&
               pendingOverallRating !== userOverallRating
-                ? colors.purple
-                : colors.darkGray,
+                ? themeColors.purple
+                : themeColors.darkGray,
             paddingVertical: 8,
             paddingHorizontal: 24,
             borderRadius: 8,
@@ -692,7 +708,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                 : 0.6,
           }}
         >
-          <Text style={{ color: colors.white, fontWeight: "bold" }}>
+          <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
             {isSubmittingOverall ? "Submitting..." : "Submit"}
           </Text>
         </TouchableOpacity>
@@ -700,9 +716,9 @@ export default function SpotDetailScreen({ route, navigation }) {
       <View
         style={{
           padding: 16,
-          backgroundColor: colors.white,
+          backgroundColor: themeColors.white,
           borderTopWidth: 1,
-          borderTopColor: colors.gray,
+          borderTopColor: themeColors.gray,
         }}
       >
         <View
@@ -717,21 +733,21 @@ export default function SpotDetailScreen({ route, navigation }) {
               justifyContent: "center",
               paddingVertical: 12,
               paddingHorizontal: 16,
-              backgroundColor: colors.purple,
+              backgroundColor: themeColors.purple,
               borderRadius: 8,
               marginRight: 8,
-              shadowColor: colors.black,
+              shadowColor: themeColors.black,
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.2,
               shadowRadius: 4,
               elevation: 3,
             }}
           >
-            <Broadcast size={20} color={colors.white} />
+            <Broadcast size={20} color={themeColors.white} />
             <Text
               style={{
                 marginLeft: 8,
-                color: colors.white,
+                color: themeColors.white,
                 fontWeight: "bold",
                 fontSize: 16,
               }}
@@ -749,16 +765,16 @@ export default function SpotDetailScreen({ route, navigation }) {
                 justifyContent: "center",
                 paddingVertical: 12,
                 paddingHorizontal: 16,
-                backgroundColor: colors.red,
+                backgroundColor: themeColors.red,
                 borderRadius: 8,
                 marginLeft: 8,
               }}
             >
-              <X size={20} color={colors.white} weight="bold" />
+              <X size={20} color={themeColors.white} weight="bold" />
               <Text
                 style={{
                   marginLeft: 8,
-                  color: colors.white,
+                  color: themeColors.white,
                   fontWeight: "bold",
                   fontSize: 16,
                 }}
@@ -787,6 +803,8 @@ function LiveUpdateModal({
   initialNoise,
   initialCrowd,
 }) {
+  const themeCtx = useContext(ThemeContext);
+  const themeColors = themeCtx?.themeColors ?? colors;
   // Always use a number between 1 and 5 for slider values
   const safeNoise =
     Number(initialNoise) >= 1 && Number(initialNoise) <= 5
@@ -837,7 +855,7 @@ function LiveUpdateModal({
           key={value}
           style={{
             fontSize: 12,
-            color: colors.darkGray,
+            color: themeColors.darkGray,
             width: 20,
             textAlign: "center",
           }}
@@ -859,13 +877,20 @@ function LiveUpdateModal({
       >
         <View
           style={{
-            backgroundColor: colors.white,
+            backgroundColor: themeColors.white,
             margin: 32,
             padding: 16,
             borderRadius: 8,
           }}
         >
-          <Text style={{ marginBottom: 8, fontSize: 16, fontWeight: "bold" }}>
+          <Text
+            style={{
+              marginBottom: 8,
+              fontSize: 16,
+              fontWeight: "bold",
+              color: themeColors.purple,
+            }}
+          >
             Noise (1 = Quiet, 5 = Noisy)
           </Text>
           <View style={{ marginBottom: 16 }}>
@@ -875,13 +900,20 @@ function LiveUpdateModal({
               step={1}
               value={noiseLevel}
               onValueChange={setNoiseLevel}
-              minimumTrackTintColor={colors.purple}
-              maximumTrackTintColor={colors.gray}
-              thumbTintColor={colors.purple}
+              minimumTrackTintColor={themeColors.purple}
+              maximumTrackTintColor={themeColors.gray}
+              thumbTintColor={themeColors.purple}
             />
             {renderSliderLabels()}
           </View>
-          <Text style={{ marginBottom: 8, fontSize: 16, fontWeight: "bold" }}>
+          <Text
+            style={{
+              marginBottom: 8,
+              fontSize: 16,
+              fontWeight: "bold",
+              color: themeColors.purple,
+            }}
+          >
             Crowd (1 = Sparse, 5 = Packed)
           </Text>
           <View style={{ marginBottom: 16 }}>
@@ -891,9 +923,9 @@ function LiveUpdateModal({
               step={1}
               value={crowdLevel}
               onValueChange={setCrowdLevel}
-              minimumTrackTintColor={colors.purple}
-              maximumTrackTintColor={colors.gray}
-              thumbTintColor={colors.purple}
+              minimumTrackTintColor={themeColors.purple}
+              maximumTrackTintColor={themeColors.gray}
+              thumbTintColor={themeColors.purple}
             />
             {renderSliderLabels()}
           </View>
@@ -905,13 +937,13 @@ function LiveUpdateModal({
               style={{
                 flex: 1,
                 padding: 12,
-                backgroundColor: colors.purple,
+                backgroundColor: themeColors.purple,
                 borderRadius: 8,
                 alignItems: "center",
                 marginRight: 8,
               }}
             >
-              <Text style={{ color: colors.white, fontWeight: "bold" }}>
+              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
                 Submit
               </Text>
             </TouchableOpacity>
@@ -920,12 +952,12 @@ function LiveUpdateModal({
               style={{
                 flex: 1,
                 padding: 12,
-                backgroundColor: colors.gray,
+                backgroundColor: themeColors.gray,
                 borderRadius: 8,
                 alignItems: "center",
               }}
             >
-              <Text style={{ color: colors.black, fontWeight: "bold" }}>
+              <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
                 Cancel
               </Text>
             </TouchableOpacity>
