@@ -14,9 +14,7 @@ import { doc, setDoc } from "firebase/firestore"; // Import Firestore functions
 import { colors } from "../constants/colors";
 import { auth } from "../firebaseConfig"; // Import the initialized auth
 
-export default function SignUpScreen({
-  navigation,
-}) {
+export default function SignUpScreen({ navigation }) {
   const themeColors = colors;
 
   const [firstName, setFirstName] = useState(""); // Add state for first name
@@ -211,7 +209,7 @@ const styles = StyleSheet.create({
   },
   input: {
     width: "100%",
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
@@ -243,7 +241,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     alignSelf: "center",
     marginBottom: 16,
-    borderWidth: 2,
+    borderWidth: 0.5,
   },
   secondaryButton: {
     marginTop: 16,

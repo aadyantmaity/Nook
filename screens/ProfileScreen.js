@@ -418,7 +418,7 @@ export default function ProfileScreen({
                     shadowRadius: 3,
                     elevation: 2,
                     borderColor: themeColors.purple,
-                    borderWidth: 1,
+                    borderWidth: 0.5,
                   }}
                   onPress={() =>
                     navigation.navigate("SpotDetail", { spotId: spot.id })
@@ -605,7 +605,9 @@ export default function ProfileScreen({
             >
               <X size={22} color={themeColors.purple} weight="bold" />
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Edit Profile</Text>
+            <Text style={[styles.modalTitle, { color: themeColors.purple }]}>
+              Edit Profile
+            </Text>
             {/* Profile picture preview and picker */}
             <View
               style={{
@@ -632,8 +634,8 @@ export default function ProfileScreen({
                       width: 56,
                       height: 56,
                       borderRadius: 28,
-                      borderWidth: 1,
-                      borderColor: themeColors.gray,
+                      borderWidth: 0.5,
+                      borderColor: themeColors.purple,
                     }}
                   />
                 ) : (
@@ -642,10 +644,10 @@ export default function ProfileScreen({
                       width: 56,
                       height: 56,
                       borderRadius: 28,
-                      backgroundColor: themeColors.gray,
+                      backgroundColor: themeColors.purple,
                       alignItems: "center",
                       justifyContent: "center",
-                      borderWidth: 1,
+                      borderWidth: 0.5,
                       borderColor: themeColors.gray,
                     }}
                   >
@@ -672,7 +674,7 @@ export default function ProfileScreen({
                       width: 56,
                       height: 56,
                       borderRadius: 28,
-                      borderWidth: 1,
+                      borderWidth: 0.5,
                       borderColor: themeColors.purple,
                     }}
                   />
@@ -685,8 +687,8 @@ export default function ProfileScreen({
                       backgroundColor: "#f0eafd",
                       alignItems: "center",
                       justifyContent: "center",
-                      borderWidth: 1,
-                      borderColor: themeColors.gray,
+                      borderWidth: 0.5,
+                      borderColor: themeColors.purple,
                     }}
                   >
                     <User size={32} color={themeColors.purple} weight="bold" />
@@ -728,7 +730,11 @@ export default function ProfileScreen({
                 }}
               >
                 <Text
-                  style={{ color: "#fff", fontWeight: "bold", fontSize: 13 }}
+                  style={{
+                    color: themeColors.white,
+                    fontWeight: "bold",
+                    fontSize: 13,
+                  }}
                 >
                   Change Picture
                 </Text>
@@ -739,14 +745,20 @@ export default function ProfileScreen({
               placeholder="First Name"
               value={editedFirstName}
               onChangeText={setEditedFirstName}
-              placeholderTextColor={themeColors.darkGray}
+              placeholderTextColor={themeColors.purple}
+              color={themeColors.purple}
+              borderColor={themeColors.purple}
+              borderWidth={0.5}
             />
             <TextInput
               style={styles.input}
               placeholder="Last Name"
               value={editedLastName}
               onChangeText={setEditedLastName}
-              placeholderTextColor={themeColors.darkGray}
+              placeholderTextColor={themeColors.purple}
+              color={themeColors.purple}
+              borderColor={themeColors.purple}
+              borderWidth={0.5}
             />
             <TextInput
               style={styles.input}
@@ -758,7 +770,10 @@ export default function ProfileScreen({
                   : ""
               }
               onChangeText={setEditedMajor}
-              placeholderTextColor={themeColors.darkGray}
+              placeholderTextColor={themeColors.purple}
+              color={themeColors.purple}
+              borderColor={themeColors.purple}
+              borderWidth={0.5}
             />
             <TextInput
               style={styles.input}
@@ -766,7 +781,10 @@ export default function ProfileScreen({
               value={editedGradYear}
               onChangeText={setEditedGradYear}
               keyboardType="numeric"
-              placeholderTextColor={themeColors.darkGray}
+              placeholderTextColor={themeColors.purple}
+              color={themeColors.purple}
+              borderColor={themeColors.purple}
+              borderWidth={0.5}
             />
             <View style={styles.modalButtons}>
               <TouchableOpacity
@@ -776,19 +794,29 @@ export default function ProfileScreen({
                 ]}
                 onPress={handleSaveProfile}
               >
-                <Text style={styles.saveButtonText}>Save</Text>
+                <Text
+                  style={[styles.saveButtonText, { color: themeColors.white }]}
+                >
+                  Save
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
                   styles.cancelButton,
-                  { backgroundColor: themeColors.lightPurple },
+                  {
+                    backgroundColor: themeColors.white,
+                    borderColor: themeColors.purple,
+                    borderWidth: 0.5,
+                  },
                 ]}
                 onPress={() => setIsModalVisible(false)}
               >
                 <Text
                   style={[
                     styles.cancelButtonText,
-                    { color: themeColors.purple },
+                    {
+                      color: themeColors.purple,
+                    },
                   ]}
                 >
                   Cancel
@@ -925,7 +953,7 @@ const styles = StyleSheet.create({
   },
   input: {
     width: "100%",
-    borderWidth: 1,
+    borderWidth: 0.5,
     // borderColor: themeColors.darkGray, // Remove, handled inline
     borderRadius: 8,
     padding: 12,
