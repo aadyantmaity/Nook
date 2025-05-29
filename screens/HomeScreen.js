@@ -47,7 +47,7 @@ const TAGS = [
   "Open Space",
 ];
 
-function Filters({ filter, setFilter, themeColors }) {
+function Filters({ filters, setFilters, themeColors }) {
   // Distribute tags into two rows with roughly equal total character length,
   // but always put "Favorites" in the first row if present
   function splitTagsEvenly(tags) {
@@ -69,7 +69,31 @@ function Filters({ filter, setFilter, themeColors }) {
     });
     return [row1, row2];
   }
+
   const [row1, row2] = splitTagsEvenly(TAGS);
+
+  const handlePress = (label) => {
+    if (label === "All") {
+      setFilters([]);
+      return;
+    }
+
+    const normalized =
+      label === "Favorites" ? "favorites" : label.toLowerCase();
+
+    if (filters.includes(normalized)) {
+      setFilters(filters.filter((f) => f !== normalized));
+    } else {
+      setFilters([...filters, normalized]);
+    }
+  };
+
+  const isSelected = (label) => {
+    if (label === "All") return filters.length === 0;
+    const normalized =
+      label === "Favorites" ? "favorites" : label.toLowerCase();
+    return filters.includes(normalized);
+  };
 
   return (
     <View
@@ -119,71 +143,58 @@ function Filters({ filter, setFilter, themeColors }) {
               marginBottom: rowIdx === 0 ? 8 : 0,
             }}
           >
-            {row.map((label, index) => (
-              <TouchableOpacity
-                key={label}
-                onPress={() => {
-                  if (label === "All") setFilter(null);
-                  else if (label === "Favorites") setFilter("favorites");
-                  else setFilter(label.toLowerCase());
-                }}
-                style={{
-                  paddingVertical: 10,
-                  paddingHorizontal: 10,
-                  backgroundColor:
-                    filter ===
-                    (label === "All"
-                      ? null
-                      : label === "Favorites"
-                      ? "favorites"
-                      : label.toLowerCase())
+            {row.map((label) => {
+              const selected = isSelected(label);
+              return (
+                <TouchableOpacity
+                  key={label}
+                  onPress={() => handlePress(label)}
+                  style={{
+                    paddingVertical: 10,
+                    paddingHorizontal: 10,
+                    backgroundColor: selected
                       ? themeColors.purple
                       : themeColors.white,
-                  borderRadius: 25,
-                  marginRight: 8,
-                  marginBottom: 4,
-                  shadowColor: themeColors.purple,
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
-                  // Add purple outline in dark mode
-                  borderWidth:
-                    themeColors.white !== "#fff" &&
-                    themeColors.white !== "#ffffff"
-                      ? 1
-                      : 0,
-                  borderColor:
-                    themeColors.white !== "#fff" &&
-                    themeColors.white !== "#ffffff"
-                      ? themeColors.purple
-                      : "transparent",
-                }}
-              >
-                <Text
-                  style={{
-                    color:
-                      filter ===
-                      (label === "All"
-                        ? null
-                        : label === "Favorites"
-                        ? "favorites"
-                        : label.toLowerCase())
-                        ? themeColors.white
-                        : themeColors.purple,
-                    fontWeight: "bold",
-                    fontSize: 11,
+                    borderRadius: 25,
+                    marginRight: 8,
+                    marginBottom: 4,
+                    shadowColor: themeColors.purple,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                    borderWidth:
+                      themeColors.white !== "#fff" &&
+                      themeColors.white !== "#ffffff"
+                        ? 1
+                        : 0,
+                    borderColor:
+                      themeColors.white !== "#fff" &&
+                      themeColors.white !== "#ffffff"
+                        ? themeColors.purple
+                        : "transparent",
                   }}
                 >
-                  {label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={{
+                      color: selected
+                        ? themeColors.white
+                        : themeColors.purple,
+                      fontWeight: "bold",
+                      fontSize: 11,
+                    }}
+                  >
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         ))}
       </ScrollView>
     </View>
   );
 }
+
 
 function StudySpots({
   filteredSpots,
@@ -659,7 +670,7 @@ export default function HomeScreen({
   const themeColors = propColors ?? themeCtx?.themeColors ?? colors;
   const setIsDarkMode = themeCtx?.setIsDarkMode;
 
-  const [filter, setFilter] = useState(null);
+  const [filters, setFilters] = useState([]);
   const [studySpots, setStudySpots] = useState([]);
   const [userName, setUserName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -851,39 +862,25 @@ export default function HomeScreen({
   };
 
   // Filters for Home tab
-  const filteredSpots =
-    filter === "favorites"
-      ? studySpots
-          .filter((spot) => favorites.includes(spot.id))
-          .filter(searchFilter)
-      : filter
-      ? studySpots
-          .filter((spot) =>
-            (spot.tags || []).map((t) => String(t).toLowerCase()).includes(filter)
-          )
-          .filter(searchFilter)
-      : studySpots.filter(searchFilter);
-
-  // Filters for Recently Viewed tab
-  const filteredRecentlyViewedSpots =
-    filter === "favorites"
-      ? recentlyViewed
-          .map((id) => studySpots.find((s) => s.id === id))
-          .filter(Boolean)
-          .filter((spot) => favorites.includes(spot.id))
-          .filter(searchFilter)
-      : filter
-      ? recentlyViewed
-          .map((id) => studySpots.find((s) => s.id === id))
-          .filter(Boolean)
-          .filter((spot) =>
-            (spot.tags || []).map((t) => String(t).toLowerCase()).includes(filter)
-          )
-          .filter(searchFilter)
-      : recentlyViewed
-          .map((id) => studySpots.find((s) => s.id === id))
-          .filter(Boolean)
-          .filter(searchFilter);
+  const matchFilters = (spot) => {
+    if (!filters.length) return true;
+    return filters.every((f) => {
+      if (f === "favorites") return favorites.includes(spot.id);
+      return (spot.tags || [])
+        .map((t) => String(t).toLowerCase())
+        .includes(f);
+    });
+  };
+  
+  const filteredSpots = studySpots.filter(
+    (spot) => matchFilters(spot) && searchFilter(spot)
+  );
+  
+  const filteredRecentlyViewedSpots = recentlyViewed
+    .map((id) => studySpots.find((s) => s.id === id))
+    .filter(Boolean)
+    .filter((spot) => matchFilters(spot) && searchFilter(spot));
+  
 
   // Get recently viewed spot objects
   const recentlyViewedSpots = recentlyViewed
@@ -894,8 +891,8 @@ export default function HomeScreen({
     <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
       <View style={{ flex: 1 }}>
         <Filters
-          filter={filter}
-          setFilter={setFilter}
+          filters={filters}
+          setFilters={setFilters}
           themeColors={themeColors}
         />
         <TabBar
