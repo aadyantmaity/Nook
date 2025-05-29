@@ -21,6 +21,7 @@ import {
   doc,
   getDocs,
   Timestamp,
+  updateDoc, // <-- Add this import
 } from "firebase/firestore"; // Ensure Timestamp is imported
 import { db, auth } from "../firebaseConfig"; // Import Firestore instance
 
@@ -152,11 +153,27 @@ export default function AddSpotScreen({
         addedBy: user.uid,
         revealIdentity: showAddedBy,
         photoUrl: "",
-        favorite: isFavorite, // Add favorite field
         openHours, // Add open/quiet hours field
       };
 
-      await addDoc(collection(db, "studySpots"), spotDetails);
+      // Add the spot to Firestore
+      const docRef = await addDoc(collection(db, "studySpots"), spotDetails);
+
+      // If marked as favorite, update user's favorites array
+      if (isFavorite && user) {
+        const userRef = doc(db, "users", user.uid);
+        // Fetch current favorites to avoid duplicates
+        const userDoc = await getDoc(userRef);
+        let currentFavorites = [];
+        if (userDoc.exists()) {
+          currentFavorites = userDoc.data().favorites || [];
+        }
+        if (!currentFavorites.includes(docRef.id)) {
+          await updateDoc(userRef, {
+            favorites: [...currentFavorites, docRef.id],
+          });
+        }
+      }
 
       // Navigate to Home after successful add
       navigation.navigate("Home", { refresh: true });
@@ -414,8 +431,8 @@ export default function AddSpotScreen({
             </View>
           ) : (
             <TextInput
-              placeholder="Enter location name"
-              placeholderTextColor={themeColors.purple}
+              placeholder="Enter location name (e.g. Bookstore or Starbucks)"
+              placeholderTextColor={themeColors.darkGray}
               value={customBuilding}
               onChangeText={setCustomBuilding}
               style={{
@@ -431,11 +448,11 @@ export default function AddSpotScreen({
           )}
           <TextInput
             placeholder="Floor Number (if applicable)"
-            placeholderTextColor={themeColors.purple}
+            placeholderTextColor={themeColors.darkGray}
             value={roomNumber}
             onChangeText={setRoomNumber}
             style={{
-              borderWidth: 1,
+              borderWidth: 0.5,
               borderColor: themeColors.purple,
               borderRadius: 8,
               padding: 12,
@@ -512,7 +529,7 @@ export default function AddSpotScreen({
           {huskyCardNeeded && (
             <TextInput
               placeholder="Department (if applicable)"
-              placeholderTextColor={themeColors.purple}
+              placeholderTextColor={themeColors.darkGray}
               value={department}
               onChangeText={setDepartment}
               style={{
@@ -605,14 +622,14 @@ export default function AddSpotScreen({
                 weight={isFavorite ? "fill" : "regular"}
               />
             </TouchableOpacity>
-            <Text style={{ color: themeColors.purple, fontSize: 13 }}>
+            <Text style={{ color: themeColors.purple, fontSize: 14.5 }}>
               Mark this spot as a favorite
             </Text>
           </View>
           {/* Open/Quiet Hours */}
           <TextInput
-            placeholder="Open/Quiet Hours (e.g. 8am-10pm, Quiet after 6pm)"
-            placeholderTextColor={themeColors.purple}
+            placeholder="Open/Quiet Hours (e.g. 8am-10pm, Quiet at 6pm)"
+            placeholderTextColor={themeColors.darkGray}
             value={openHours}
             onChangeText={setOpenHours}
             style={{
@@ -631,45 +648,16 @@ export default function AddSpotScreen({
           <View
             style={{
               flexDirection: "row",
-              marginTop: 24,
+              marginTop: 16,
               alignItems: "center",
               justifyContent: "center",
             }}
           >
             <TouchableOpacity
-              onPress={() => setShowPreview(true)}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                backgroundColor: themeColors.purple,
-                borderRadius: 25,
-                marginRight: 12,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 4,
-                elevation: 3,
-              }}
-              accessibilityLabel="Preview Spot"
-              accessible={true}
-            >
-              <Text
-                style={{
-                  color: themeColors.white,
-                  fontWeight: "bold",
-                  fontSize: 16,
-                  textAlign: "center",
-                }}
-              >
-                Summary
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
               onPress={resetForm}
               style={{
+                flex: 1,
+                maxWidth: "35%",
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "center",
@@ -692,7 +680,7 @@ export default function AddSpotScreen({
                 style={{
                   color: "white",
                   fontWeight: "bold",
-                  fontSize: 16,
+                  fontSize: 13,
                   textAlign: "center",
                   flex: 1,
                 }}
@@ -703,6 +691,8 @@ export default function AddSpotScreen({
             <TouchableOpacity
               onPress={handleSubmit}
               style={{
+                flex: 1,
+                maxWidth: "35%",
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "center",
@@ -710,12 +700,14 @@ export default function AddSpotScreen({
                 paddingHorizontal: 16,
                 backgroundColor: colors.green,
                 borderRadius: 25,
+                marginLeft: 12, // Add marginLeft to separate from Reset button
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.2,
                 shadowRadius: 4,
                 alignSelf: "center",
                 elevation: 3,
+                minWidth: 90, // Add minWidth for consistency
               }}
               accessibilityLabel="Add Nook"
               accessible={true}
@@ -726,7 +718,9 @@ export default function AddSpotScreen({
                   marginLeft: 8,
                   color: "white",
                   fontWeight: "bold",
-                  fontSize: 16,
+                  fontSize: 13,
+                  textAlign: "center",
+                  flex: 1,
                 }}
               >
                 Add Nook

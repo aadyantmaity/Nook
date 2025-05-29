@@ -745,7 +745,7 @@ export default function ProfileScreen({
               placeholder="First Name"
               value={editedFirstName}
               onChangeText={setEditedFirstName}
-              placeholderTextColor={themeColors.purple}
+              placeholderTextColor={themeColors.darkGray}
               color={themeColors.purple}
               borderColor={themeColors.purple}
               borderWidth={0.5}
@@ -755,7 +755,7 @@ export default function ProfileScreen({
               placeholder="Last Name"
               value={editedLastName}
               onChangeText={setEditedLastName}
-              placeholderTextColor={themeColors.purple}
+              placeholderTextColor={themeColors.darkGray}
               color={themeColors.purple}
               borderColor={themeColors.purple}
               borderWidth={0.5}
@@ -770,7 +770,7 @@ export default function ProfileScreen({
                   : ""
               }
               onChangeText={setEditedMajor}
-              placeholderTextColor={themeColors.purple}
+              placeholderTextColor={themeColors.darkGray}
               color={themeColors.purple}
               borderColor={themeColors.purple}
               borderWidth={0.5}
@@ -781,7 +781,7 @@ export default function ProfileScreen({
               value={editedGradYear}
               onChangeText={setEditedGradYear}
               keyboardType="numeric"
-              placeholderTextColor={themeColors.purple}
+              placeholderTextColor={themeColors.darkGray}
               color={themeColors.purple}
               borderColor={themeColors.purple}
               borderWidth={0.5}
