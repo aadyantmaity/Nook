@@ -12,6 +12,8 @@ import { colors } from "../constants/colors";
 import { auth } from "../firebaseConfig"; // Import the initialized auth
 
 export default function LoginScreen({ navigation }) {
+  const themeColors = colors;
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -36,29 +38,54 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Login</Text>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: themeColors.white }]}
+    >
+      <Text style={[styles.title, { color: themeColors.purple }]}>Login</Text>
       <View style={styles.formContainer}>
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              borderColor: themeColors.gray,
+              backgroundColor: themeColors.white,
+              color: themeColors.black,
+            },
+          ]}
           placeholder="Email"
-          placeholderTextColor={colors.darkGray}
+          placeholderTextColor={themeColors.darkGray}
           value={email}
           onChangeText={setEmail}
         />
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              borderColor: themeColors.gray,
+              backgroundColor: themeColors.white,
+              color: themeColors.black,
+            },
+          ]}
           placeholder="Password"
-          placeholderTextColor={colors.darkGray}
+          placeholderTextColor={themeColors.darkGray}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
         />
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Login</Text>
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: themeColors.purple }]}
+          onPress={handleLogin}
+        >
+          <Text style={[styles.buttonText, { color: themeColors.white }]}>
+            Login
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.secondaryButton} onPress={handleSignUp}>
-          <Text style={styles.secondaryButtonText}>Sign Up</Text>
+          <Text
+            style={[styles.secondaryButtonText, { color: themeColors.purple }]}
+          >
+            Sign Up
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -70,12 +97,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: colors.white,
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    color: colors.purple,
     marginBottom: 32,
   },
   formContainer: {
@@ -85,23 +110,18 @@ const styles = StyleSheet.create({
   input: {
     width: "100%",
     borderWidth: 1,
-    borderColor: colors.gray,
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
-    backgroundColor: colors.white,
-    color: colors.black,
   },
   button: {
     width: "100%",
     padding: 16,
-    backgroundColor: colors.purple,
     borderRadius: 8,
     alignItems: "center",
     marginVertical: 8,
   },
   buttonText: {
-    color: colors.white,
     fontWeight: "bold",
     fontSize: 16,
   },
@@ -110,7 +130,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   secondaryButtonText: {
-    color: colors.purple,
     fontWeight: "bold",
     fontSize: 16,
   },

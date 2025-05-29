@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Picker } from "@react-native-picker/picker"; // Import Picker for dropdown
 import { ArrowLeft, Check, Heart } from "phosphor-react-native"; // Add Heart icon
+import { ThemeContext } from "../App";
 import { colors } from "../constants/colors"; // Correctly import colors
 import {
   collection,
@@ -70,7 +71,15 @@ const BUILDINGS = [
   "Health Sciences Building",
 ];
 
-export default function AddSpotScreen({ navigation }) {
+export default function AddSpotScreen({
+  navigation,
+  // Remove isDarkMode: propDark,
+  // Remove themeColors: propColors,
+}) {
+  const themeCtx = useContext(ThemeContext);
+  const isDarkMode = themeCtx?.isDarkMode ?? false;
+  const themeColors = themeCtx?.themeColors ?? colors;
+
   const [selectedBuilding, setSelectedBuilding] = useState(""); // State for selected building
   const [roomNumber, setRoomNumber] = useState("");
   const [huskyCardNeeded, setHuskyCardNeeded] = useState(false);
@@ -159,11 +168,18 @@ export default function AddSpotScreen({ navigation }) {
   if (isLoading)
     return (
       <SafeAreaView
-        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: themeColors.white,
+        }}
         accessibilityLabel="Loading"
         accessible={true}
       >
-        <Text style={{ fontSize: 16, color: colors.darkGray }}>Loading...</Text>
+        <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
+          Loading...
+        </Text>
       </SafeAreaView>
     );
 
@@ -180,7 +196,7 @@ export default function AddSpotScreen({ navigation }) {
       >
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: themeColors.white,
             borderRadius: 16,
             padding: 24,
             width: "85%",
@@ -191,7 +207,7 @@ export default function AddSpotScreen({ navigation }) {
             style={{
               fontSize: 20,
               fontWeight: "bold",
-              color: colors.purple,
+              color: themeColors.purple,
               marginBottom: 12,
             }}
           >
@@ -227,7 +243,7 @@ export default function AddSpotScreen({ navigation }) {
             onPress={() => setShowPreview(false)}
             style={{
               marginTop: 18,
-              backgroundColor: colors.purple,
+              backgroundColor: themeColors.purple,
               borderRadius: 8,
               paddingVertical: 8,
               paddingHorizontal: 18,
@@ -236,7 +252,9 @@ export default function AddSpotScreen({ navigation }) {
             accessibilityLabel="Close Preview"
             accessible={true}
           >
-            <Text style={{ color: "#fff", fontWeight: "bold" }}>Close</Text>
+            <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+              Close
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -244,12 +262,17 @@ export default function AddSpotScreen({ navigation }) {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.white }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.white }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          backgroundColor: themeColors.white,
+        }}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={{ flex: 1, padding: 16, backgroundColor: colors.white }}>
+        <View
+          style={{ flex: 1, padding: 16, backgroundColor: themeColors.white }}
+        >
           {/* Light background */}
           <View
             style={{
@@ -264,7 +287,7 @@ export default function AddSpotScreen({ navigation }) {
                 flexDirection: "row",
                 alignItems: "center",
                 padding: 10,
-                backgroundColor: colors.purple, // Light button background
+                backgroundColor: themeColors.purple,
                 borderRadius: 8,
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
@@ -272,7 +295,7 @@ export default function AddSpotScreen({ navigation }) {
                 shadowRadius: 4,
               }}
             >
-              <ArrowLeft size={20} color="white" />
+              <ArrowLeft size={20} color={themeColors.white} />
             </TouchableOpacity>
           </View>
 
@@ -291,13 +314,17 @@ export default function AddSpotScreen({ navigation }) {
                 alignItems: "center",
                 padding: 12,
                 marginRight: 8,
-                backgroundColor: isUWBuilding ? colors.purple : "#F0F0F0",
+                backgroundColor: isUWBuilding
+                  ? themeColors.purple
+                  : themeColors.white,
                 borderRadius: 8,
+                borderColor: themeColors.purple,
+                borderWidth: 0.5,
               }}
             >
               <Text
                 style={{
-                  color: isUWBuilding ? "white" : "#000000",
+                  color: isUWBuilding ? themeColors.white : themeColors.purple,
                   fontWeight: "bold",
                 }}
               >
@@ -311,13 +338,17 @@ export default function AddSpotScreen({ navigation }) {
                 alignItems: "center",
                 padding: 12,
                 marginLeft: 8,
-                backgroundColor: !isUWBuilding ? colors.purple : "#F0F0F0",
+                backgroundColor: !isUWBuilding
+                  ? themeColors.purple
+                  : themeColors.white,
                 borderRadius: 8,
+                borderColor: themeColors.purple,
+                borderWidth: 0.5,
               }}
             >
               <Text
                 style={{
-                  color: !isUWBuilding ? "white" : "#000000",
+                  color: !isUWBuilding ? themeColors.white : themeColors.purple,
                   fontWeight: "bold",
                 }}
               >
@@ -326,36 +357,54 @@ export default function AddSpotScreen({ navigation }) {
             </TouchableOpacity>
           </View>
 
-          <Text style={{ fontSize: 19, marginBottom: 8, color: colors.purple }}>
+          <Text
+            style={{ fontSize: 19, marginBottom: 8, color: themeColors.purple }}
+          >
             {isUWBuilding ? "Select Building:" : "Enter Location Name:"}
           </Text>
           {isUWBuilding ? (
             <View
               style={{
                 borderWidth: 1,
-                borderColor: "#CCCCCC",
+                borderColor: themeColors.gray,
                 borderRadius: 8,
                 marginBottom: 16,
-                backgroundColor: "colors.white",
+                backgroundColor: themeColors.white,
               }}
             >
               <Picker
                 selectedValue={selectedBuilding}
                 onValueChange={(itemValue) => setSelectedBuilding(itemValue)}
-                style={{ color: "#000000", fontSize: 18 }}
-                itemStyle={{ fontSize: 18 }}
+                style={{
+                  color: themeColors.purple,
+                  fontSize: 18,
+                  backgroundColor: themeColors.white,
+                  borderColor: themeColors.purple,
+                  borderWidth: 0.5,
+                  borderRadius: 8,
+                }}
+                itemStyle={{
+                  fontSize: 18,
+                  color: themeColors.purple,
+                }}
               >
                 <Picker.Item
                   label="Select a building"
                   value=""
-                  style={{ fontSize: 18 }}
+                  style={{
+                    fontSize: 18,
+                    color: themeColors.purple,
+                  }}
                 />
                 {BUILDINGS.map((building) => (
                   <Picker.Item
                     key={building}
                     label={building}
                     value={building}
-                    style={{ fontSize: 18 }}
+                    style={{
+                      fontSize: 18,
+                      color: themeColors.purple,
+                    }}
                   />
                 ))}
               </Picker>
@@ -363,38 +412,42 @@ export default function AddSpotScreen({ navigation }) {
           ) : (
             <TextInput
               placeholder="Enter location name"
-              placeholderTextColor="#666666"
+              placeholderTextColor={themeColors.darkGray}
               value={customBuilding}
               onChangeText={setCustomBuilding}
               style={{
-                borderWidth: 1,
-                borderColor: "#CCCCCC",
+                borderWidth: 0.5,
+                borderColor: themeColors.purple,
                 borderRadius: 8,
                 padding: 12,
                 marginBottom: 16,
-                backgroundColor: "colors.white",
-                color: "#000000",
+                backgroundColor: themeColors.white,
+                color: themeColors.purple,
               }}
             />
           )}
           <TextInput
             placeholder="Floor Number (if applicable)"
-            placeholderTextColor="#666666"
+            placeholderTextColor={themeColors.purple}
             value={roomNumber}
             onChangeText={setRoomNumber}
             style={{
               borderWidth: 1,
-              borderColor: "#CCCCCC",
+              borderColor: themeColors.purple,
               borderRadius: 8,
               padding: 12,
               marginBottom: 16,
-              backgroundColor: "colors.white",
-              color: "#000000",
+              backgroundColor: themeColors.white,
+              color: themeColors.purple,
             }}
           />
           <View style={{ marginBottom: 16 }}>
             <Text
-              style={{ fontSize: 19, marginBottom: 8, color: colors.purple }}
+              style={{
+                fontSize: 19,
+                marginBottom: 8,
+                color: themeColors.purple,
+              }}
             >
               Husky Card Needed:
             </Text>
@@ -409,12 +462,20 @@ export default function AddSpotScreen({ navigation }) {
                   padding: 12,
                   marginRight: 8,
                   backgroundColor: !huskyCardNeeded
-                    ? colors.purple
-                    : colors.gray,
+                    ? themeColors.purple
+                    : themeColors.white,
                   borderRadius: 8,
+                  borderColor: themeColors.purple,
+                  borderWidth: 0.5,
                 }}
               >
-                <Text style={{ color: !huskyCardNeeded ? "white" : "#000000" }}>
+                <Text
+                  style={{
+                    color: !huskyCardNeeded
+                      ? themeColors.white
+                      : themeColors.purple,
+                  }}
+                >
                   No
                 </Text>
               </TouchableOpacity>
@@ -426,12 +487,20 @@ export default function AddSpotScreen({ navigation }) {
                   padding: 12,
                   marginLeft: 8,
                   backgroundColor: huskyCardNeeded
-                    ? colors.purple
-                    : colors.gray,
+                    ? themeColors.purple
+                    : themeColors.white,
                   borderRadius: 8,
+                  borderColor: themeColors.purple,
+                  borderWidth: 0.5,
                 }}
               >
-                <Text style={{ color: huskyCardNeeded ? "white" : "#000000" }}>
+                <Text
+                  style={{
+                    color: huskyCardNeeded
+                      ? themeColors.white
+                      : themeColors.purple,
+                  }}
+                >
                   Yes
                 </Text>
               </TouchableOpacity>
@@ -440,28 +509,30 @@ export default function AddSpotScreen({ navigation }) {
           {huskyCardNeeded && (
             <TextInput
               placeholder="Department (if applicable)"
-              placeholderTextColor="#666666"
+              placeholderTextColor={themeColors.purple}
               value={department}
               onChangeText={setDepartment}
               style={{
-                borderWidth: 1,
-                borderColor: "#CCCCCC",
+                borderWidth: 0.5,
+                borderColor: themeColors.purple,
                 borderRadius: 8,
                 padding: 12,
                 marginBottom: 16,
-                backgroundColor: "colors.white",
-                color: "#000000",
+                backgroundColor: themeColors.white,
+                color: themeColors.purple,
               }}
             />
           )}
-          <Text style={{ fontSize: 19, marginBottom: 8, color: colors.purple }}>
+          <Text
+            style={{ fontSize: 19, marginBottom: 8, color: themeColors.purple }}
+          >
             Tags:
           </Text>
           <View
             style={{
               flexDirection: "row",
               flexWrap: "wrap",
-              justifyContent: "center", // Center align the tags
+              justifyContent: "center",
               marginBottom: 16,
             }}
           >
@@ -470,25 +541,29 @@ export default function AddSpotScreen({ navigation }) {
                 key={tag}
                 onPress={() => toggleTag(tag)}
                 style={{
-                  margin: 6, // Add more spacing between tags
-                  paddingHorizontal: 16, // Increase horizontal padding
-                  paddingVertical: 10, // Increase vertical padding
+                  margin: 6,
+                  paddingHorizontal: 16,
+                  paddingVertical: 10,
                   backgroundColor: selectedTags.includes(tag)
-                    ? colors.purple
-                    : "#F0F0F0", // Light unselected background
-                  borderRadius: 25, // Make the tags more rounded
+                    ? themeColors.purple
+                    : themeColors.white,
+                  borderRadius: 25,
                   shadowColor: "#000",
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: 0.1,
                   shadowRadius: 4,
-                  elevation: 2, // Add subtle shadow for depth
+                  elevation: 2,
+                  borderWidth: isDarkMode ? 1 : 0,
+                  borderColor: isDarkMode ? themeColors.purple : "transparent",
                 }}
               >
                 <Text
                   style={{
-                    color: selectedTags.includes(tag) ? "white" : "#000000",
-                    fontSize: 14, // Slightly increase font size
-                    fontWeight: "bold", // Make the text bold
+                    color: selectedTags.includes(tag)
+                      ? themeColors.white
+                      : themeColors.purple,
+                    fontSize: 14,
+                    fontWeight: "bold",
                   }}
                 >
                   {tag}
@@ -509,10 +584,10 @@ export default function AddSpotScreen({ navigation }) {
             <TouchableOpacity
               onPress={() => setIsFavorite((f) => !f)}
               style={{
-                backgroundColor: "#fff",
+                backgroundColor: themeColors.white,
                 borderRadius: 20,
                 borderWidth: 1,
-                borderColor: colors.purple,
+                borderColor: themeColors.purple,
                 padding: 8,
                 marginRight: 12,
                 alignItems: "center",
@@ -523,28 +598,28 @@ export default function AddSpotScreen({ navigation }) {
             >
               <Heart
                 size={22}
-                color={isFavorite ? colors.purple : colors.darkGray}
+                color={themeColors.purple}
                 weight={isFavorite ? "fill" : "regular"}
               />
             </TouchableOpacity>
-            <Text style={{ color: colors.darkGray, fontSize: 13 }}>
+            <Text style={{ color: themeColors.purple, fontSize: 13 }}>
               Mark this spot as a favorite
             </Text>
           </View>
           {/* Open/Quiet Hours */}
           <TextInput
             placeholder="Open/Quiet Hours (e.g. 8am-10pm, Quiet after 6pm)"
-            placeholderTextColor="#666666"
+            placeholderTextColor={themeColors.purple}
             value={openHours}
             onChangeText={setOpenHours}
             style={{
-              borderWidth: 1,
-              borderColor: "#CCCCCC",
+              borderWidth: 0.5,
+              borderColor: themeColors.purple,
               borderRadius: 8,
               padding: 12,
               marginBottom: 16,
-              backgroundColor: colors.white,
-              color: "#000000",
+              backgroundColor: themeColors.white,
+              color: themeColors.purple,
             }}
             accessibilityLabel="Open or Quiet Hours"
             accessible={true}
@@ -566,7 +641,7 @@ export default function AddSpotScreen({ navigation }) {
                 justifyContent: "center",
                 paddingVertical: 12,
                 paddingHorizontal: 16,
-                backgroundColor: colors.purple,
+                backgroundColor: themeColors.purple,
                 borderRadius: 25,
                 marginRight: 12,
                 shadowColor: "#000",
@@ -580,7 +655,7 @@ export default function AddSpotScreen({ navigation }) {
             >
               <Text
                 style={{
-                  color: "white",
+                  color: themeColors.white,
                   fontWeight: "bold",
                   fontSize: 16,
                   textAlign: "center",
