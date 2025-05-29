@@ -28,6 +28,7 @@ import {
   Heart,
   Moon,
   Sun,
+  MagnifyingGlass, // <-- Add this import
 } from "phosphor-react-native"; // Add Heart icon
 import { colors } from "../constants/colors"; // Import colors
 import { auth, db } from "../firebaseConfig"; // Import Firebase
@@ -176,9 +177,7 @@ function Filters({ filters, setFilters, themeColors }) {
                 >
                   <Text
                     style={{
-                      color: selected
-                        ? themeColors.white
-                        : themeColors.purple,
+                      color: selected ? themeColors.white : themeColors.purple,
                       fontWeight: "bold",
                       fontSize: 11,
                     }}
@@ -195,7 +194,6 @@ function Filters({ filters, setFilters, themeColors }) {
   );
 }
 
-
 function StudySpots({
   filteredSpots,
   navigation,
@@ -211,42 +209,62 @@ function StudySpots({
       ListHeaderComponent={
         <View
           style={{
-            paddingHorizontal: 16,
+            paddingHorizontal: 0, // Remove horizontal padding here
             paddingTop: 16,
             paddingBottom: 16,
             backgroundColor: themeColors.white,
+            alignItems: "center", // Center the search bar container
           }}
         >
-          <TextInput
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search by name, tag, or feature"
-            placeholderTextColor={themeColors.purple}
+          <View
             style={{
+              flexDirection: "row",
+              alignItems: "center",
               backgroundColor: themeColors.white,
               borderRadius: 20,
-              paddingHorizontal: 16,
-              paddingVertical: 10,
-              fontSize: 16,
-              color: themeColors.purple,
-              borderColor: themeColors.purple, // outline color
-              borderWidth: 0.5, // outline thickness
+              borderColor: themeColors.purple,
+              borderWidth: 0.5,
+              paddingHorizontal: 12,
+              paddingVertical: 2,
+              width: "100%", // Match card width (cards have 16px horizontal padding, so 100%-16*2)
+              maxWidth: 600, // Optional: limit max width for large screens
             }}
-            autoCorrect={false}
-            autoCapitalize="none"
-            clearButtonMode="while-editing"
-            accessibilityLabel="Search study spots"
-            accessible={true}
-          />
+          >
+            <MagnifyingGlass
+              size={20}
+              color={themeColors.purple}
+              style={{ marginRight: 8 }}
+            />
+            <TextInput
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Search by name, tag, or feature"
+              placeholderTextColor={themeColors.darkGray}
+              style={{
+                flex: 1,
+                backgroundColor: themeColors.white,
+                borderRadius: 20,
+                paddingHorizontal: 4,
+                paddingVertical: 10,
+                fontSize: 16,
+                color: themeColors.purple,
+              }}
+              autoCorrect={false}
+              autoCapitalize="none"
+              clearButtonMode="while-editing"
+              accessibilityLabel="Search study spots"
+              accessible={true}
+            />
+          </View>
         </View>
       }
-      data={filteredSpots}
-      keyExtractor={(item) => item.id}
       contentContainerStyle={{
         paddingHorizontal: 16,
-        paddingTop: 0, // Remove extra top padding since search bar is now header
+        paddingTop: 0,
         paddingBottom: 96,
       }}
+      data={filteredSpots}
+      keyExtractor={(item) => item.id}
       renderItem={({ item }) => (
         <TouchableOpacity
           onPress={() => navigation.navigate("SpotDetail", { spotId: item.id })}
@@ -290,6 +308,7 @@ function StudySpots({
               <Text style={{ color: "#AAA" }}>No Image</Text>
             )}
           </View>
+
           {/* Heart icon for favorite */}
           <TouchableOpacity
             onPress={() => handleToggleFavorite(item.id)}
@@ -307,7 +326,7 @@ function StudySpots({
             onPressOut={(e) => e.stopPropagation && e.stopPropagation()}
           >
             <Heart
-              size={22}
+              size={28}
               color={themeColors.purple}
               weight={favorites.includes(item.id) ? "fill" : "regular"}
             />
@@ -316,21 +335,53 @@ function StudySpots({
             style={{
               fontSize: 18,
               fontWeight: "bold",
-              color: themeColors.purple, // changed
-              marginBottom: 8,
+              color: themeColors.purple,
+              marginBottom: 6,
             }}
           >
             {item.name}
+            {item.roomNumber && (
+              <Text
+                style={{
+                  fontSize: 18,
+                  color: themeColors.purple,
+                  fontWeight: "bold",
+                }}
+              >
+                {" - Floor "}
+                {item.roomNumber}
+              </Text>
+            )}
           </Text>
-          {item.roomNumber && (
+          {/* Husky Card/Department info below */}
+          {(item.huskyCardNeeded || item.department) && (
             <Text
               style={{
-                fontSize: 14,
-                color: themeColors.purple, // changed
-                marginBottom: 4,
+                fontSize: 13,
+                color: item.huskyCardNeeded
+                  ? themeColors.red
+                  : themeColors.darkGray,
+                marginBottom: 8,
+                marginTop: 2,
+                fontWeight: item.huskyCardNeeded ? "bold" : "normal",
               }}
             >
-              Floor: {item.roomNumber}
+              {item.huskyCardNeeded && "Husky Card Required"}
+              {item.huskyCardNeeded && item.department && (
+                <Text
+                  style={{ color: themeColors.darkGray, fontWeight: "normal" }}
+                >
+                  {" "}
+                  •{" "}
+                </Text>
+              )}
+              {item.department && (
+                <Text
+                  style={{ color: themeColors.darkGray, fontWeight: "normal" }}
+                >
+                  Department: {item.department}
+                </Text>
+              )}
             </Text>
           )}
           <View
@@ -416,12 +467,12 @@ function StudySpots({
             style={{ flexDirection: "row", justifyContent: "space-between" }}
           >
             <View style={{ alignItems: "center" }}>
-              <Text style={{ fontSize: 14, color: themeColors.darkGray }}>
+              <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
                 Noise Level
               </Text>
               <Text
                 style={{
-                  fontSize: 12,
+                  fontSize: 14,
                   fontWeight: "bold",
                   color: themeColors.purple, // changed
                 }}
@@ -432,12 +483,12 @@ function StudySpots({
               </Text>
             </View>
             <View style={{ alignItems: "center" }}>
-              <Text style={{ fontSize: 14, color: themeColors.darkGray }}>
+              <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
                 Crowd Level
               </Text>
               <Text
                 style={{
-                  fontSize: 12,
+                  fontSize: 14,
                   fontWeight: "bold",
                   color: themeColors.purple, // changed
                 }}
@@ -866,21 +917,18 @@ export default function HomeScreen({
     if (!filters.length) return true;
     return filters.every((f) => {
       if (f === "favorites") return favorites.includes(spot.id);
-      return (spot.tags || [])
-        .map((t) => String(t).toLowerCase())
-        .includes(f);
+      return (spot.tags || []).map((t) => String(t).toLowerCase()).includes(f);
     });
   };
-  
+
   const filteredSpots = studySpots.filter(
     (spot) => matchFilters(spot) && searchFilter(spot)
   );
-  
+
   const filteredRecentlyViewedSpots = recentlyViewed
     .map((id) => studySpots.find((s) => s.id === id))
     .filter(Boolean)
     .filter((spot) => matchFilters(spot) && searchFilter(spot));
-  
 
   // Get recently viewed spot objects
   const recentlyViewedSpots = recentlyViewed
@@ -981,12 +1029,12 @@ export default function HomeScreen({
           onPress={() => navigation.navigate("Profile")}
           style={{
             position: "absolute",
-            top: 16,
+            top: 24,
             right: 16,
             alignItems: "center",
             justifyContent: "center",
-            width: 40,
-            height: 40,
+            width: 30,
+            height: 30,
             backgroundColor: themeColors.purple, // changed
             borderRadius: 20,
             shadowColor: "#000",
@@ -997,7 +1045,7 @@ export default function HomeScreen({
             zIndex: 5,
           }}
         >
-          <User size={24} color={themeColors.white} weight="bold" />
+          <User size={20} color={themeColors.white} weight="bold" />
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => {
@@ -1006,12 +1054,12 @@ export default function HomeScreen({
           }}
           style={{
             position: "absolute",
-            top: 16,
+            top: 24,
             left: 16,
             alignItems: "center",
             justifyContent: "center",
-            width: 40,
-            height: 40,
+            width: 30,
+            height: 30,
             backgroundColor: themeColors.purple, // changed
             borderRadius: 20,
             shadowColor: "#000",
@@ -1022,19 +1070,19 @@ export default function HomeScreen({
             zIndex: 5,
           }}
         >
-          <ArrowClockwise size={24} color={themeColors.white} weight="bold" />
+          <ArrowClockwise size={22} color={themeColors.white} weight="bold" />
         </TouchableOpacity>
         {/* Add dark mode toggle button */}
         <TouchableOpacity
           onPress={() => setIsDarkMode && setIsDarkMode(!isDarkMode)}
           style={{
             position: "absolute",
-            top: 16,
+            top: 24,
             left: 64,
             alignItems: "center",
             justifyContent: "center",
-            width: 40,
-            height: 40,
+            width: 30,
+            height: 30,
             backgroundColor: themeColors.purple, // changed
             borderRadius: 20,
             shadowColor: "#000",
@@ -1046,9 +1094,9 @@ export default function HomeScreen({
           }}
         >
           {isDarkMode ? (
-            <Sun size={24} color={themeColors.white} weight="bold" />
+            <Sun size={22} color={themeColors.white} weight="bold" />
           ) : (
-            <Moon size={24} color={themeColors.white} weight="bold" />
+            <Moon size={22} color={themeColors.white} weight="bold" />
           )}
         </TouchableOpacity>
       </View>

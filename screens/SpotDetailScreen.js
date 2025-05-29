@@ -117,7 +117,6 @@ export default function SpotDetailScreen({ route, navigation }) {
           },
         }));
       } else {
-        console.error("Spot not found");
         alert("The requested spot could not be found. Please try again.");
       }
     } catch (error) {
@@ -211,7 +210,6 @@ export default function SpotDetailScreen({ route, navigation }) {
             },
           }));
         } else if (isMounted) {
-          console.error("Spot not found");
         }
       } catch (error) {
         if (isMounted) {
@@ -440,6 +438,27 @@ export default function SpotDetailScreen({ route, navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 16 }}>
         <View style={{ flex: 1, backgroundColor: themeColors.white }}>
+          {/* Home Button Above Image */}
+          <View style={{ width: "100%", marginBottom: 8 }}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Home")}
+              style={{
+                alignSelf: "flex-start",
+                flexDirection: "row",
+                alignItems: "center",
+                padding: 10,
+                backgroundColor: themeColors.purple,
+                borderRadius: 8,
+                shadowColor: themeColors.black,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 4,
+                marginBottom: 8,
+              }}
+            >
+              <House size={20} color={themeColors.white} />
+            </TouchableOpacity>
+          </View>
           {/* Spot Image */}
           <View style={{ position: "relative", width: "100%" }}>
             {spot.photoUrl ? (
@@ -476,27 +495,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                 <Text style={{ color: "#AAA" }}>No Image</Text>
               </View>
             )}
-            {/* Home Button Overlay */}
-            <TouchableOpacity
-              onPress={() => navigation.navigate("Home")}
-              style={{
-                position: "absolute",
-                top: 12,
-                left: 12,
-                zIndex: 10,
-                flexDirection: "row",
-                alignItems: "center",
-                padding: 10,
-                backgroundColor: themeColors.purple,
-                borderRadius: 8,
-                shadowColor: themeColors.black,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 4,
-              }}
-            >
-              <House size={20} color={themeColors.white} />
-            </TouchableOpacity>
           </View>
 
           <Text
@@ -509,100 +507,19 @@ export default function SpotDetailScreen({ route, navigation }) {
           >
             {buildingName}
           </Text>
-          {/* Open/Quiet Hours */}
-          {spot.openHours ? (
-            <View style={{ alignItems: "center", marginBottom: 10 }}>
-              <Text
-                style={{
-                  fontSize: 15,
-                  color: themeColors.purple,
-                  fontWeight: "bold",
-                  marginBottom: 2,
-                }}
-              >
-                Open/Quiet Hours
-              </Text>
-              <Text style={{ color: themeColors.darkGray, fontSize: 15 }}>
-                {spot.openHours}
-              </Text>
-            </View>
-          ) : null}
-          {/* Live Ratings */}
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              marginBottom: 16,
-            }}
-          >
-            <View
-              style={{
-                alignItems: "center",
-                padding: 16,
-                backgroundColor: themeColors.purple,
-                borderRadius: 8,
-                flex: 1, // Adjust width to align with "Added By" box
-                marginRight: 8, // Add spacing between boxes
-              }}
-            >
-              <SpeakerHigh size={24} color={themeColors.white} />
-              <Text
-                style={{
-                  color: themeColors.white,
-                  fontSize: 16,
-                  fontWeight: "bold",
-                  marginTop: 8,
-                }}
-              >
-                Noise: {spot.ratings?.noise || "N/A"}
-              </Text>
-            </View>
-            <View
-              style={{
-                alignItems: "center",
-                padding: 16,
-                backgroundColor: themeColors.purple,
-                borderRadius: 8,
-                flex: 1, // Adjust width to align with "Added By" box
-              }}
-            >
-              <UsersThree size={24} color={themeColors.white} />
-              <Text
-                style={{
-                  color: themeColors.white,
-                  fontSize: 16,
-                  fontWeight: "bold",
-                  marginTop: 8,
-                }}
-              >
-                Crowd: {spot.ratings?.crowd || "N/A"}
-              </Text>
-            </View>
-          </View>
 
+          {/* --- TAGS FIRST --- */}
           <View
             style={{
-              marginTop: 16,
-              alignItems: "center", // Center the "Tags" text horizontally
-              marginBottom: 5, // Reduce or remove marginBottom here
-              flex: 1,
+              marginTop: 0,
+              marginBottom: 16, // Add this if not already
+              alignItems: "left",
             }}
           >
-            <Text
-              style={{
-                fontSize: 24,
-                color: themeColors.purple,
-                fontWeight: "bold",
-                marginBottom: 16, // Add spacing between "Tags" text and the list
-              }}
-            >
-              Tags
-            </Text>
             <View
               style={{
                 flexDirection: "row",
                 flexWrap: "wrap",
-                justifyContent: "center", // Center align the tags horizontally
               }}
             >
               {tags.length > 0 ? (
@@ -630,89 +547,172 @@ export default function SpotDetailScreen({ route, navigation }) {
               )}
             </View>
           </View>
-        </View>
-      </ScrollView>
 
-      {/* General Rating */}
-      <View style={{ alignItems: "center", marginBottom: 16 }}>
-        <Text
-          style={{
-            fontSize: 16,
-            color: themeColors.purple,
-            fontWeight: "bold",
-            marginBottom: 4,
-          }}
-        >
-          Overall Rating
-        </Text>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          {[1, 2, 3, 4, 5].map((star) => (
-            <TouchableOpacity
-              key={star}
-              onPress={() => handleStarTap(star)}
-              activeOpacity={0.7}
-            >
-              <Star
-                size={28}
-                color={
-                  star <= pendingOverallRating
-                    ? themeColors.purple
-                    : themeColors.darkGray
-                }
-                weight={star <= pendingOverallRating ? "fill" : "regular"}
-                style={{ marginRight: 2 }}
-              />
-            </TouchableOpacity>
-          ))}
-          <Text
+          {/* --- NOISE & CROWD LEVELS LAST --- */}
+          <View
             style={{
-              marginLeft: 8,
-              color: themeColors.darkGray,
-              fontSize: 15,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              marginBottom: 50,
+              marginTop: 4, // Keep only one value
             }}
           >
-            {overallRatingsCount > 0
-              ? `${averageOverallRating.toFixed(1)} (${overallRatingsCount})`
-              : "No rating"}
-          </Text>
+            <View
+              style={{
+                alignItems: "center",
+                padding: 16,
+                backgroundColor: themeColors.white,
+                borderRadius: 8,
+                flex: 1,
+                marginRight: 8,
+                borderColor: themeColors.purple,
+                borderWidth: 0.5,
+              }}
+            >
+              <SpeakerHigh size={24} color={themeColors.purple} />
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontSize: 16,
+                  fontWeight: "bold",
+                  marginTop: 8,
+                }}
+              >
+                Noise: {spot.ratings?.noise || "N/A"}
+              </Text>
+            </View>
+            <View
+              style={{
+                alignItems: "center",
+                padding: 16,
+                backgroundColor: themeColors.white,
+                borderRadius: 8,
+                flex: 1,
+                borderColor: themeColors.purple,
+                borderWidth: 0.5,
+              }}
+            >
+              <UsersThree size={24} color={themeColors.purple} />
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontSize: 16,
+                  fontWeight: "bold",
+                  marginTop: 8,
+                }}
+              >
+                Crowd: {spot.ratings?.crowd || "N/A"}
+              </Text>
+            </View>
+          </View>
+
+          {/* --- OVERALL RATING NEXT --- */}
+          <View style={{ alignItems: "center", marginBottom: 16 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                color: themeColors.purple,
+                fontWeight: "bold",
+                marginBottom: 4,
+              }}
+            >
+              Overall Rating
+            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <TouchableOpacity
+                  key={star}
+                  onPress={() => handleStarTap(star)}
+                  activeOpacity={0.7}
+                >
+                  <Star
+                    size={28}
+                    color={
+                      star <= pendingOverallRating
+                        ? themeColors.purple
+                        : themeColors.darkGray
+                    }
+                    weight={star <= pendingOverallRating ? "fill" : "regular"}
+                    style={{ marginRight: 2 }}
+                  />
+                </TouchableOpacity>
+              ))}
+              <Text
+                style={{
+                  marginLeft: 8,
+                  color: themeColors.darkGray,
+                  fontSize: 15,
+                }}
+              >
+                {overallRatingsCount > 0
+                  ? `${averageOverallRating.toFixed(
+                      1
+                    )} (${overallRatingsCount})`
+                  : "No rating"}
+              </Text>
+            </View>
+            <Text
+              style={{
+                fontSize: 12,
+                color: themeColors.darkGray,
+                marginTop: 2,
+              }}
+            >
+              {userOverallRating
+                ? `Your rating: ${userOverallRating}`
+                : "Tap a star to rate"}
+            </Text>
+            <TouchableOpacity
+              onPress={handleSubmitOverallRating}
+              disabled={
+                isSubmittingOverall ||
+                pendingOverallRating === 0 ||
+                pendingOverallRating === userOverallRating
+              }
+              style={{
+                marginTop: 8,
+                backgroundColor:
+                  pendingOverallRating !== 0 &&
+                  pendingOverallRating !== userOverallRating
+                    ? themeColors.purple
+                    : themeColors.darkGray,
+                paddingVertical: 8,
+                paddingHorizontal: 24,
+                borderRadius: 8,
+                alignItems: "center",
+                opacity:
+                  pendingOverallRating !== 0 &&
+                  pendingOverallRating !== userOverallRating
+                    ? 1
+                    : 0.6,
+              }}
+            >
+              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+                {isSubmittingOverall ? "Submitting..." : "Submit"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* --- OPEN/QUIET HOURS --- */}
+          {spot.openHours ? (
+            <View style={{ alignItems: "center", marginBottom: 10 }}>
+              <Text
+                style={{
+                  fontSize: 15,
+                  color: themeColors.purple,
+                  fontWeight: "bold",
+                  marginBottom: 2,
+                }}
+              >
+                Open/Quiet Hours
+              </Text>
+              <Text style={{ color: themeColors.darkGray, fontSize: 15 }}>
+                {spot.openHours}
+              </Text>
+            </View>
+          ) : null}
         </View>
-        <Text
-          style={{ fontSize: 12, color: themeColors.darkGray, marginTop: 2 }}
-        >
-          {userOverallRating
-            ? `Your rating: ${userOverallRating}`
-            : "Tap a star to rate"}
-        </Text>
-        <TouchableOpacity
-          onPress={handleSubmitOverallRating}
-          disabled={
-            isSubmittingOverall ||
-            pendingOverallRating === 0 ||
-            pendingOverallRating === userOverallRating
-          }
-          style={{
-            marginTop: 8,
-            backgroundColor:
-              pendingOverallRating !== 0 &&
-              pendingOverallRating !== userOverallRating
-                ? themeColors.purple
-                : themeColors.darkGray,
-            paddingVertical: 8,
-            paddingHorizontal: 24,
-            borderRadius: 8,
-            alignItems: "center",
-            opacity:
-              pendingOverallRating !== 0 &&
-              pendingOverallRating !== userOverallRating
-                ? 1
-                : 0.6,
-          }}
-        >
-          <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
-            {isSubmittingOverall ? "Submitting..." : "Submit"}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      </ScrollView>
       <View
         style={{
           padding: 16,
