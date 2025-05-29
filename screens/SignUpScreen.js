@@ -14,7 +14,11 @@ import { doc, setDoc } from "firebase/firestore"; // Import Firestore functions
 import { colors } from "../constants/colors";
 import { auth } from "../firebaseConfig"; // Import the initialized auth
 
-export default function SignUpScreen({ navigation }) {
+export default function SignUpScreen({
+  navigation,
+}) {
+  const themeColors = colors;
+
   const [firstName, setFirstName] = useState(""); // Add state for first name
   const [lastName, setLastName] = useState(""); // Add state for last name
   const [email, setEmail] = useState("");
@@ -60,69 +64,130 @@ export default function SignUpScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Sign Up</Text>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: themeColors.white }]}
+    >
+      {/* Remove dark mode toggle button */}
+      <Text style={[styles.title, { color: themeColors.purple }]}>Sign Up</Text>
       <View style={styles.formContainer}>
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              borderColor: themeColors.darkGray,
+              backgroundColor: themeColors.white,
+              color: themeColors.black,
+            },
+          ]}
           placeholder="First Name"
-          placeholderTextColor={colors.darkGray}
+          placeholderTextColor={themeColors.darkGray}
           value={firstName}
           onChangeText={setFirstName}
         />
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              borderColor: themeColors.darkGray,
+              backgroundColor: themeColors.white,
+              color: themeColors.black,
+            },
+          ]}
           placeholder="Last Name"
-          placeholderTextColor={colors.darkGray}
+          placeholderTextColor={themeColors.darkGray}
           value={lastName}
           onChangeText={setLastName}
         />
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              borderColor: themeColors.darkGray,
+              backgroundColor: themeColors.white,
+              color: themeColors.black,
+            },
+          ]}
           placeholder="Email"
-          placeholderTextColor={colors.darkGray}
+          placeholderTextColor={themeColors.darkGray}
           value={email}
           onChangeText={setEmail}
         />
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              borderColor: themeColors.darkGray,
+              backgroundColor: themeColors.white,
+              color: themeColors.black,
+            },
+          ]}
           placeholder="Major"
-          placeholderTextColor={colors.darkGray}
+          placeholderTextColor={themeColors.darkGray}
           value={major}
           onChangeText={setMajor}
         />
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              borderColor: themeColors.darkGray,
+              backgroundColor: themeColors.white,
+              color: themeColors.black,
+            },
+          ]}
           placeholder="Graduation Year"
-          placeholderTextColor={colors.darkGray}
+          placeholderTextColor={themeColors.darkGray}
           value={gradYear}
           onChangeText={setGradYear}
           keyboardType="numeric" // Ensure numeric input
         />
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              borderColor: themeColors.darkGray,
+              backgroundColor: themeColors.white,
+              color: themeColors.black,
+            },
+          ]}
           placeholder="Password"
-          placeholderTextColor={colors.darkGray}
+          placeholderTextColor={themeColors.darkGray}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
         />
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              borderColor: themeColors.darkGray,
+              backgroundColor: themeColors.white,
+              color: themeColors.black,
+            },
+          ]}
           placeholder="Confirm Password"
-          placeholderTextColor={colors.darkGray}
+          placeholderTextColor={themeColors.darkGray}
           secureTextEntry
           value={confirmPassword}
           onChangeText={setConfirmPassword}
         />
-        <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-          <Text style={styles.buttonText}>Sign Up</Text>
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: themeColors.purple }]}
+          onPress={handleSignUp}
+        >
+          <Text style={[styles.buttonText, { color: themeColors.white }]}>
+            Sign Up
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.secondaryButton}
           onPress={() => navigation.navigate("Login")}
         >
-          <Text style={styles.secondaryButtonText}>Back to Login</Text>
+          <Text
+            style={[styles.secondaryButtonText, { color: themeColors.purple }]}
+          >
+            Back to Login
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -134,12 +199,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: colors.white,
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    color: colors.purple,
     marginBottom: 32,
   },
   formContainer: {
@@ -149,35 +212,28 @@ const styles = StyleSheet.create({
   input: {
     width: "100%",
     borderWidth: 1,
-    borderColor: colors.darkGray,
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
-    backgroundColor: colors.white,
-    color: colors.black,
   },
   button: {
     width: "100%",
     padding: 16,
-    backgroundColor: colors.purple,
     borderRadius: 8,
     alignItems: "center",
     marginVertical: 8,
   },
   buttonText: {
-    color: colors.white,
     fontWeight: "bold",
     fontSize: 16,
   },
   profilePictureButton: {
     padding: 12,
-    backgroundColor: colors.purple,
     borderRadius: 8,
     alignItems: "center",
     marginBottom: 16,
   },
   profilePictureButtonText: {
-    color: colors.white,
     fontWeight: "bold",
     fontSize: 16,
   },
@@ -188,14 +244,12 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginBottom: 16,
     borderWidth: 2,
-    borderColor: colors.purple,
   },
   secondaryButton: {
     marginTop: 16,
     alignItems: "center",
   },
   secondaryButtonText: {
-    color: colors.purple,
     fontWeight: "bold",
     fontSize: 16,
   },

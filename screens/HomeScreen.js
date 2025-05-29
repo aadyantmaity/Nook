@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   View,
   Text,
@@ -20,11 +20,20 @@ import {
   updateDoc,
 } from "firebase/firestore"; // Ensure Timestamp is imported
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Plus, User, ArrowClockwise, Star, Heart } from "phosphor-react-native"; // Add Heart icon
+import {
+  Plus,
+  User,
+  ArrowClockwise,
+  Star,
+  Heart,
+  Moon,
+  Sun,
+} from "phosphor-react-native"; // Add Heart icon
 import { colors } from "../constants/colors"; // Import colors
 import { auth, db } from "../firebaseConfig"; // Import Firebase
 import { doc, getDoc } from "firebase/firestore"; // Import Firestore functions
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ThemeContext } from "../App"; // Import ThemeContext
 
 const TAGS = [
   "All",
@@ -38,7 +47,7 @@ const TAGS = [
   "Open Space",
 ];
 
-function Filters({ filter, setFilter }) {
+function Filters({ filter, setFilter, themeColors }) {
   // Distribute tags into two rows with roughly equal total character length,
   // but always put "Favorites" in the first row if present
   function splitTagsEvenly(tags) {
@@ -67,7 +76,7 @@ function Filters({ filter, setFilter }) {
       style={{
         position: "relative",
         zIndex: 1,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: themeColors.white,
         paddingBottom: 16,
         borderBottomWidth: 1,
         borderBottomColor: "#E0E0E0",
@@ -85,7 +94,7 @@ function Filters({ filter, setFilter }) {
             fontSize: 40,
             fontWeight: "bold",
             textAlign: "center",
-            color: colors.purple,
+            color: themeColors.purple,
             fontFamily: Platform.OS === "ios" ? "Helvetica" : "sans-serif",
             marginTop: 16,
           }}
@@ -128,16 +137,26 @@ function Filters({ filter, setFilter }) {
                       : label === "Favorites"
                       ? "favorites"
                       : label.toLowerCase())
-                      ? colors.purple
-                      : "#F0F0F0",
+                      ? themeColors.purple
+                      : themeColors.white,
                   borderRadius: 25,
                   marginRight: 8,
                   marginBottom: 4,
-                  shadowColor: "#000",
+                  shadowColor: themeColors.purple,
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: 0.1,
                   shadowRadius: 4,
-                  elevation: 2,
+                  // Add purple outline in dark mode
+                  borderWidth:
+                    themeColors.white !== "#fff" &&
+                    themeColors.white !== "#ffffff"
+                      ? 1
+                      : 0,
+                  borderColor:
+                    themeColors.white !== "#fff" &&
+                    themeColors.white !== "#ffffff"
+                      ? themeColors.purple
+                      : "transparent",
                 }}
               >
                 <Text
@@ -149,8 +168,8 @@ function Filters({ filter, setFilter }) {
                         : label === "Favorites"
                         ? "favorites"
                         : label.toLowerCase())
-                        ? "#FFFFFF"
-                        : colors.purple,
+                        ? themeColors.white
+                        : themeColors.purple,
                     fontWeight: "bold",
                     fontSize: 11,
                   }}
@@ -173,6 +192,8 @@ function StudySpots({
   handleToggleFavorite,
   search,
   setSearch,
+  isDarkMode,
+  themeColors,
 }) {
   return (
     <FlatList
@@ -182,23 +203,23 @@ function StudySpots({
             paddingHorizontal: 16,
             paddingTop: 16,
             paddingBottom: 16,
-            backgroundColor: "#fff",
+            backgroundColor: themeColors.white,
           }}
         >
           <TextInput
             value={search}
             onChangeText={setSearch}
             placeholder="Search by name, tag, or feature"
-            placeholderTextColor={colors.darkGray}
+            placeholderTextColor={themeColors.purple}
             style={{
-              backgroundColor: "#F5F5F5",
+              backgroundColor: themeColors.white,
               borderRadius: 20,
               paddingHorizontal: 16,
               paddingVertical: 10,
               fontSize: 16,
-              color: colors.purple,
-              borderWidth: 1,
-              borderColor: "#E0E0E0",
+              color: themeColors.purple,
+              borderColor: themeColors.purple, // outline color
+              borderWidth: 0.5, // outline thickness
             }}
             autoCorrect={false}
             autoCapitalize="none"
@@ -221,7 +242,7 @@ function StudySpots({
           style={{
             padding: 16,
             marginBottom: 12,
-            backgroundColor: "#FFFFFF",
+            backgroundColor: themeColors.white, // changed
             borderRadius: 8,
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
@@ -229,6 +250,9 @@ function StudySpots({
             shadowRadius: 4,
             elevation: 3,
             position: "relative",
+
+            borderColor: themeColors.purple,
+            borderWidth: 0.5,
           }}
         >
           {/* Image placeholder or actual image */}
@@ -236,7 +260,7 @@ function StudySpots({
             style={{
               width: "100%",
               height: 120,
-              backgroundColor: "#EEE",
+              backgroundColor: themeColors.lightGray || "#EEE", // changed
               borderTopLeftRadius: 8,
               borderTopRightRadius: 8,
               alignItems: "center",
@@ -263,19 +287,17 @@ function StudySpots({
               top: 12,
               right: 12,
               zIndex: 10,
-              backgroundColor: "#fff",
+              backgroundColor: themeColors.white, // changed
               borderRadius: 20,
               padding: 4,
               borderWidth: 1,
-              borderColor: colors.purple,
+              borderColor: themeColors.purple, // changed
             }}
             onPressOut={(e) => e.stopPropagation && e.stopPropagation()}
           >
             <Heart
               size={22}
-              color={
-                favorites.includes(item.id) ? colors.purple : colors.darkGray
-              }
+              color={themeColors.purple}
               weight={favorites.includes(item.id) ? "fill" : "regular"}
             />
           </TouchableOpacity>
@@ -283,25 +305,23 @@ function StudySpots({
             style={{
               fontSize: 18,
               fontWeight: "bold",
-              color: colors.purple,
+              color: themeColors.purple, // changed
               marginBottom: 8,
             }}
           >
             {item.name}
           </Text>
-          {/* Display room number if present */}
           {item.roomNumber && (
             <Text
               style={{
                 fontSize: 14,
-                color: colors.purple,
+                color: themeColors.purple, // changed
                 marginBottom: 4,
               }}
             >
               Floor: {item.roomNumber}
             </Text>
           )}
-          {/* General Rating Stars */}
           <View
             style={{
               flexDirection: "row",
@@ -315,8 +335,8 @@ function StudySpots({
                 size={18}
                 color={
                   star <= (item.averageOverallRating || 0)
-                    ? colors.purple
-                    : colors.darkGray
+                    ? themeColors.purple
+                    : themeColors.darkGray
                 }
                 weight={
                   star <= (item.averageOverallRating || 0) ? "fill" : "regular"
@@ -327,7 +347,7 @@ function StudySpots({
             <Text
               style={{
                 marginLeft: 8,
-                color: colors.darkGray,
+                color: themeColors.darkGray, // changed
                 fontSize: 13,
               }}
             >
@@ -344,7 +364,7 @@ function StudySpots({
               flexDirection: "row",
               flexWrap: "wrap",
               marginBottom: 8,
-              gap: 6, // If your React Native version supports gap, otherwise use marginRight/marginBottom below
+              gap: 6,
             }}
           >
             {item.tags && item.tags.length > 0 ? (
@@ -354,7 +374,7 @@ function StudySpots({
                   <View
                     key={idx}
                     style={{
-                      backgroundColor: colors.purple,
+                      backgroundColor: themeColors.purple, // changed
                       paddingHorizontal: 12,
                       paddingVertical: 6,
                       borderRadius: 16,
@@ -364,7 +384,7 @@ function StudySpots({
                   >
                     <Text
                       style={{
-                        color: "#fff",
+                        color: themeColors.white || "#fff", // changed
                         fontSize: 12,
                         fontWeight: "bold",
                       }}
@@ -374,21 +394,25 @@ function StudySpots({
                   </View>
                 ))
             ) : (
-              <Text style={{ color: "#AAA", fontSize: 12 }}>No tags</Text>
+              <Text
+                style={{ color: themeColors.darkGray || "#AAA", fontSize: 12 }}
+              >
+                No tags
+              </Text>
             )}
           </View>
           <View
             style={{ flexDirection: "row", justifyContent: "space-between" }}
           >
             <View style={{ alignItems: "center" }}>
-              <Text style={{ fontSize: 14, color: colors.darkGray }}>
+              <Text style={{ fontSize: 14, color: themeColors.darkGray }}>
                 Noise Level
               </Text>
               <Text
                 style={{
                   fontSize: 12,
                   fontWeight: "bold",
-                  color: colors.purple,
+                  color: themeColors.purple, // changed
                 }}
               >
                 {typeof item.ratings?.noise === "number"
@@ -397,14 +421,14 @@ function StudySpots({
               </Text>
             </View>
             <View style={{ alignItems: "center" }}>
-              <Text style={{ fontSize: 14, color: colors.darkGray }}>
+              <Text style={{ fontSize: 14, color: themeColors.darkGray }}>
                 Crowd Level
               </Text>
               <Text
                 style={{
                   fontSize: 12,
                   fontWeight: "bold",
-                  color: colors.purple,
+                  color: themeColors.purple, // changed
                 }}
               >
                 {typeof item.ratings?.crowd === "number"
@@ -431,7 +455,13 @@ function fuzzyMatch(str, query) {
   return qi === query.length;
 }
 
-function RecentlyViewed({ spots, navigation, favorites, handleToggleFavorite }) {
+function RecentlyViewed({
+  spots,
+  navigation,
+  favorites,
+  handleToggleFavorite,
+  themeColors, // <-- add themeColors prop
+}) {
   if (!spots.length) return null;
   return (
     <View style={{ marginBottom: 16 }}>
@@ -439,7 +469,7 @@ function RecentlyViewed({ spots, navigation, favorites, handleToggleFavorite }) 
         style={{
           fontSize: 18,
           fontWeight: "bold",
-          color: colors.purple,
+          color: themeColors.purple, // changed
           marginLeft: 16,
           marginBottom: 8,
         }}
@@ -454,11 +484,13 @@ function RecentlyViewed({ spots, navigation, favorites, handleToggleFavorite }) 
         {spots.map((item) => (
           <TouchableOpacity
             key={item.id}
-            onPress={() => navigation.navigate("SpotDetail", { spotId: item.id })}
+            onPress={() =>
+              navigation.navigate("SpotDetail", { spotId: item.id })
+            }
             style={{
               width: 180,
               marginRight: 12,
-              backgroundColor: "#fff",
+              backgroundColor: themeColors.white, // changed
               borderRadius: 8,
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 2 },
@@ -473,7 +505,7 @@ function RecentlyViewed({ spots, navigation, favorites, handleToggleFavorite }) 
               style={{
                 width: "100%",
                 height: 80,
-                backgroundColor: "#EEE",
+                backgroundColor: themeColors.lightGray || "#EEE", // changed
                 borderTopLeftRadius: 8,
                 borderTopRightRadius: 8,
                 alignItems: "center",
@@ -499,18 +531,20 @@ function RecentlyViewed({ spots, navigation, favorites, handleToggleFavorite }) 
                 top: 8,
                 right: 8,
                 zIndex: 10,
-                backgroundColor: "#fff",
+                backgroundColor: themeColors.white, // changed
                 borderRadius: 20,
                 padding: 4,
                 borderWidth: 1,
-                borderColor: colors.purple,
+                borderColor: themeColors.purple, // changed
               }}
               onPressOut={(e) => e.stopPropagation && e.stopPropagation()}
             >
               <Heart
                 size={18}
                 color={
-                  favorites.includes(item.id) ? colors.purple : colors.darkGray
+                  favorites.includes(item.id)
+                    ? themeColors.purple
+                    : themeColors.darkGray
                 }
                 weight={favorites.includes(item.id) ? "fill" : "regular"}
               />
@@ -519,7 +553,7 @@ function RecentlyViewed({ spots, navigation, favorites, handleToggleFavorite }) 
               style={{
                 fontSize: 15,
                 fontWeight: "bold",
-                color: colors.purple,
+                color: themeColors.purple, // changed
                 marginBottom: 2,
                 marginLeft: 8,
               }}
@@ -530,7 +564,7 @@ function RecentlyViewed({ spots, navigation, favorites, handleToggleFavorite }) 
             <Text
               style={{
                 fontSize: 12,
-                color: colors.darkGray,
+                color: themeColors.darkGray, // changed
                 marginLeft: 8,
                 marginBottom: 2,
               }}
@@ -538,18 +572,26 @@ function RecentlyViewed({ spots, navigation, favorites, handleToggleFavorite }) 
             >
               {item.roomNumber || ""}
             </Text>
-            <View style={{ flexDirection: "row", alignItems: "center", marginLeft: 8 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginLeft: 8,
+              }}
+            >
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
                   key={star}
                   size={12}
                   color={
                     star <= (item.averageOverallRating || 0)
-                      ? colors.purple
-                      : colors.darkGray
+                      ? themeColors.purple // changed
+                      : themeColors.darkGray // changed
                   }
                   weight={
-                    star <= (item.averageOverallRating || 0) ? "fill" : "regular"
+                    star <= (item.averageOverallRating || 0)
+                      ? "fill"
+                      : "regular"
                   }
                   style={{ marginRight: 1 }}
                 />
@@ -562,16 +604,17 @@ function RecentlyViewed({ spots, navigation, favorites, handleToggleFavorite }) 
   );
 }
 
-function TabBar({ activeTab, setActiveTab }) {
+function TabBar({ activeTab, setActiveTab, themeColors }) {
+  // <-- add themeColors prop
   return (
     <View
       style={{
         flexDirection: "row",
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "#fff",
+        backgroundColor: themeColors.white, // changed
         borderBottomWidth: 1,
-        borderBottomColor: "#E0E0E0",
+        borderBottomColor: themeColors.lightGrayBorder || "#E0E0E0", // changed
         marginBottom: 0,
       }}
     >
@@ -581,15 +624,17 @@ function TabBar({ activeTab, setActiveTab }) {
           onPress={() => setActiveTab(tab)}
           style={{
             flex: 1,
-            paddingVertical: 14,
+            paddingVertical: 10,
             borderBottomWidth: 3,
-            borderBottomColor: activeTab === tab ? colors.purple : "transparent",
+            borderBottomColor:
+              activeTab === tab ? themeColors.purple : "transparent", // changed
             alignItems: "center",
           }}
         >
           <Text
             style={{
-              color: activeTab === tab ? colors.purple : colors.darkGray,
+              color:
+                activeTab === tab ? themeColors.purple : themeColors.darkGray, // changed
               fontWeight: activeTab === tab ? "bold" : "normal",
               fontSize: 16,
               letterSpacing: 0.5,
@@ -603,7 +648,17 @@ function TabBar({ activeTab, setActiveTab }) {
   );
 }
 
-export default function HomeScreen({ navigation, route }) {
+export default function HomeScreen({
+  navigation,
+  route,
+  isDarkMode: propDark,
+  themeColors: propColors,
+}) {
+  const themeCtx = useContext(ThemeContext);
+  const isDarkMode = propDark ?? themeCtx?.isDarkMode ?? false;
+  const themeColors = propColors ?? themeCtx?.themeColors ?? colors;
+  const setIsDarkMode = themeCtx?.setIsDarkMode;
+
   const [filter, setFilter] = useState(null);
   const [studySpots, setStudySpots] = useState([]);
   const [userName, setUserName] = useState("");
@@ -736,7 +791,10 @@ export default function HomeScreen({ navigation, route }) {
     if (updated.length > 8) updated = updated.slice(0, 8);
     setRecentlyViewed(updated);
     try {
-      await AsyncStorage.setItem("recentlyViewedSpots", JSON.stringify(updated));
+      await AsyncStorage.setItem(
+        "recentlyViewedSpots",
+        JSON.stringify(updated)
+      );
     } catch {}
   };
 
@@ -769,7 +827,9 @@ export default function HomeScreen({ navigation, route }) {
       <SafeAreaView
         style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
       >
-        <Text style={{ fontSize: 16, color: colors.darkGray }}>Loading...</Text>
+        <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
+          Loading...
+        </Text>
       </SafeAreaView>
     );
 
@@ -807,10 +867,18 @@ export default function HomeScreen({ navigation, route }) {
     .filter(Boolean);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
       <View style={{ flex: 1 }}>
-        <Filters filter={filter} setFilter={setFilter} />
-        <TabBar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <Filters
+          filter={filter}
+          setFilter={setFilter}
+          themeColors={themeColors}
+        />
+        <TabBar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          themeColors={themeColors}
+        />
         {activeTab === "Home" ? (
           <StudySpots
             filteredSpots={filteredSpots}
@@ -827,6 +895,8 @@ export default function HomeScreen({ navigation, route }) {
             handleToggleFavorite={handleToggleFavorite}
             search={search}
             setSearch={setSearch}
+            isDarkMode={isDarkMode}
+            themeColors={themeColors}
           />
         ) : (
           <StudySpots
@@ -844,6 +914,8 @@ export default function HomeScreen({ navigation, route }) {
             handleToggleFavorite={handleToggleFavorite}
             search={search}
             setSearch={setSearch}
+            isDarkMode={isDarkMode}
+            themeColors={themeColors}
           />
         )}
         <TouchableOpacity
@@ -863,7 +935,7 @@ export default function HomeScreen({ navigation, route }) {
             alignItems: "center",
             paddingVertical: 12,
             paddingHorizontal: 16,
-            backgroundColor: colors.purple,
+            backgroundColor: themeColors.purple, // changed
             borderRadius: 50,
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
@@ -872,10 +944,10 @@ export default function HomeScreen({ navigation, route }) {
             elevation: 3,
           }}
         >
-          <Plus size={24} color="white" />
+          <Plus size={24} color={themeColors.white} />
           <Text
             style={{
-              color: "white",
+              color: themeColors.white, // changed
               fontWeight: "bold",
               fontSize: 14,
               marginLeft: 8,
@@ -892,10 +964,10 @@ export default function HomeScreen({ navigation, route }) {
             right: 16,
             alignItems: "center",
             justifyContent: "center",
-            width: 40, // Match the size of the container
-            height: 40, // Match the size of the container
-            backgroundColor: colors.purple,
-            borderRadius: 20, // Make it circular
+            width: 40,
+            height: 40,
+            backgroundColor: themeColors.purple, // changed
+            borderRadius: 20,
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.2,
@@ -904,7 +976,7 @@ export default function HomeScreen({ navigation, route }) {
             zIndex: 5,
           }}
         >
-          <User size={24} color="white" weight="bold" />
+          <User size={24} color={themeColors.white} weight="bold" />
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => {
@@ -914,13 +986,13 @@ export default function HomeScreen({ navigation, route }) {
           style={{
             position: "absolute",
             top: 16,
-            left: 16, // Position it on the top-left corner
+            left: 16,
             alignItems: "center",
             justifyContent: "center",
-            width: 40, // Match the size of the container
-            height: 40, // Match the size of the container
-            backgroundColor: colors.purple,
-            borderRadius: 20, // Make it circular
+            width: 40,
+            height: 40,
+            backgroundColor: themeColors.purple, // changed
+            borderRadius: 20,
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.2,
@@ -929,7 +1001,34 @@ export default function HomeScreen({ navigation, route }) {
             zIndex: 5,
           }}
         >
-          <ArrowClockwise size={24} color="white" weight="bold" />
+          <ArrowClockwise size={24} color={themeColors.white} weight="bold" />
+        </TouchableOpacity>
+        {/* Add dark mode toggle button */}
+        <TouchableOpacity
+          onPress={() => setIsDarkMode && setIsDarkMode(!isDarkMode)}
+          style={{
+            position: "absolute",
+            top: 16,
+            left: 64,
+            alignItems: "center",
+            justifyContent: "center",
+            width: 40,
+            height: 40,
+            backgroundColor: themeColors.purple, // changed
+            borderRadius: 20,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.2,
+            shadowRadius: 4,
+            elevation: 3,
+            zIndex: 5,
+          }}
+        >
+          {isDarkMode ? (
+            <Sun size={24} color={themeColors.white} weight="bold" />
+          ) : (
+            <Moon size={24} color={themeColors.white} weight="bold" />
+          )}
         </TouchableOpacity>
       </View>
     </SafeAreaView>
