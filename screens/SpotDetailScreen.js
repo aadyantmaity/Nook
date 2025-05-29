@@ -568,102 +568,20 @@ export default function SpotDetailScreen({ route, navigation }) {
             </View>
           </View>
 
-          {/* General Rating */}
-          <View style={{ alignItems: "center", marginBottom: 16 }}>
-            <Text
-              style={{
-                fontSize: 16,
-                color: colors.purple,
-                fontWeight: "bold",
-                marginBottom: 4,
-              }}
-            >
-              Overall Rating
-            </Text>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <TouchableOpacity
-                  key={star}
-                  onPress={() => handleStarTap(star)}
-                  activeOpacity={0.7}
-                >
-                  <Star
-                    size={28}
-                    color={
-                      star <= pendingOverallRating
-                        ? colors.purple
-                        : colors.darkGray
-                    }
-                    weight={star <= pendingOverallRating ? "fill" : "regular"}
-                    style={{ marginRight: 2 }}
-                  />
-                </TouchableOpacity>
-              ))}
-              <Text
-                style={{
-                  marginLeft: 8,
-                  color: colors.darkGray,
-                  fontSize: 15,
-                }}
-              >
-                {overallRatingsCount > 0
-                  ? `${averageOverallRating.toFixed(
-                      1
-                    )} (${overallRatingsCount})`
-                  : "No rating"}
-              </Text>
-            </View>
-            <Text
-              style={{ fontSize: 12, color: colors.darkGray, marginTop: 2 }}
-            >
-              {userOverallRating
-                ? `Your rating: ${userOverallRating}`
-                : "Tap a star to rate"}
-            </Text>
-            <TouchableOpacity
-              onPress={handleSubmitOverallRating}
-              disabled={
-                isSubmittingOverall ||
-                pendingOverallRating === 0 ||
-                pendingOverallRating === userOverallRating
-              }
-              style={{
-                marginTop: 8,
-                backgroundColor:
-                  pendingOverallRating !== 0 &&
-                  pendingOverallRating !== userOverallRating
-                    ? colors.purple
-                    : colors.darkGray,
-                paddingVertical: 8,
-                paddingHorizontal: 24,
-                borderRadius: 8,
-                alignItems: "center",
-                opacity:
-                  pendingOverallRating !== 0 &&
-                  pendingOverallRating !== userOverallRating
-                    ? 1
-                    : 0.6,
-              }}
-            >
-              <Text style={{ color: colors.white, fontWeight: "bold" }}>
-                {isSubmittingOverall ? "Submitting..." : "Submit"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
           <View
             style={{
-              marginBottom: 16,
-              marginTop: 8,
+              marginTop: 16,
               alignItems: "center", // Center the "Tags" text horizontally
+              marginBottom: 5, // Reduce or remove marginBottom here
+              flex: 1,
             }}
           >
             <Text
               style={{
-                fontSize: 16,
+                fontSize: 24,
                 color: colors.purple,
                 fontWeight: "bold",
-                marginBottom: 8, // Add spacing between "Tags" text and the list
+                marginBottom: 16, // Add spacing between "Tags" text and the list
               }}
             >
               Tags
@@ -702,6 +620,83 @@ export default function SpotDetailScreen({ route, navigation }) {
           </View>
         </View>
       </ScrollView>
+
+      {/* General Rating */}
+      <View style={{ alignItems: "center", marginBottom: 16 }}>
+        <Text
+          style={{
+            fontSize: 16,
+            color: colors.purple,
+            fontWeight: "bold",
+            marginBottom: 4,
+          }}
+        >
+          Overall Rating
+        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {[1, 2, 3, 4, 5].map((star) => (
+            <TouchableOpacity
+              key={star}
+              onPress={() => handleStarTap(star)}
+              activeOpacity={0.7}
+            >
+              <Star
+                size={28}
+                color={
+                  star <= pendingOverallRating ? colors.purple : colors.darkGray
+                }
+                weight={star <= pendingOverallRating ? "fill" : "regular"}
+                style={{ marginRight: 2 }}
+              />
+            </TouchableOpacity>
+          ))}
+          <Text
+            style={{
+              marginLeft: 8,
+              color: colors.darkGray,
+              fontSize: 15,
+            }}
+          >
+            {overallRatingsCount > 0
+              ? `${averageOverallRating.toFixed(1)} (${overallRatingsCount})`
+              : "No rating"}
+          </Text>
+        </View>
+        <Text style={{ fontSize: 12, color: colors.darkGray, marginTop: 2 }}>
+          {userOverallRating
+            ? `Your rating: ${userOverallRating}`
+            : "Tap a star to rate"}
+        </Text>
+        <TouchableOpacity
+          onPress={handleSubmitOverallRating}
+          disabled={
+            isSubmittingOverall ||
+            pendingOverallRating === 0 ||
+            pendingOverallRating === userOverallRating
+          }
+          style={{
+            marginTop: 8,
+            backgroundColor:
+              pendingOverallRating !== 0 &&
+              pendingOverallRating !== userOverallRating
+                ? colors.purple
+                : colors.darkGray,
+            paddingVertical: 8,
+            paddingHorizontal: 24,
+            borderRadius: 8,
+            alignItems: "center",
+            opacity:
+              pendingOverallRating !== 0 &&
+              pendingOverallRating !== userOverallRating
+                ? 1
+                : 0.6,
+          }}
+        >
+          <Text style={{ color: colors.white, fontWeight: "bold" }}>
+            {isSubmittingOverall ? "Submitting..." : "Submit"}
+          </Text>
+        </TouchableOpacity>
+      </View>
       <View
         style={{
           padding: 16,

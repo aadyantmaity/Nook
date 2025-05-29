@@ -170,15 +170,48 @@ function StudySpots({
   navigation,
   favorites,
   handleToggleFavorite,
+  search,
+  setSearch,
 }) {
   return (
     <FlatList
-      data={filteredSpots} // Display the filtered study spots
+      ListHeaderComponent={
+        <View
+          style={{
+            paddingHorizontal: 16,
+            paddingTop: 16,
+            backgroundColor: "#fff",
+          }}
+        >
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search by name, tag, or feature"
+            placeholderTextColor={colors.darkGray}
+            style={{
+              backgroundColor: "#F5F5F5",
+              borderRadius: 20,
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+              fontSize: 16,
+              color: colors.purple,
+              borderWidth: 1,
+              borderColor: "#E0E0E0",
+            }}
+            autoCorrect={false}
+            autoCapitalize="none"
+            clearButtonMode="while-editing"
+            accessibilityLabel="Search study spots"
+            accessible={true}
+          />
+        </View>
+      }
+      data={filteredSpots}
       keyExtractor={(item) => item.id}
       contentContainerStyle={{
         paddingHorizontal: 16,
-        paddingTop: 16,
-        paddingBottom: 96, // Add extra bottom padding for floating button
+        paddingTop: 0, // Remove extra top padding since search bar is now header
+        paddingBottom: 96,
       }}
       renderItem={({ item }) => (
         <TouchableOpacity
@@ -575,41 +608,13 @@ export default function HomeScreen({ navigation, route }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
       <View style={{ flex: 1 }}>
         <Filters filter={filter} setFilter={setFilter} />
-        {/* Search Bar */}
-        <View
-          style={{
-            paddingHorizontal: 16,
-            paddingTop: 16,
-            backgroundColor: "#fff",
-          }}
-        >
-          <TextInput
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search by name, tag, or feature"
-            placeholderTextColor={colors.darkGray}
-            style={{
-              backgroundColor: "#F5F5F5",
-              borderRadius: 20,
-              paddingHorizontal: 16,
-              paddingVertical: 10,
-              fontSize: 16,
-              color: colors.purple,
-              borderWidth: 1,
-              borderColor: "#E0E0E0",
-            }}
-            autoCorrect={false}
-            autoCapitalize="none"
-            clearButtonMode="while-editing"
-            accessibilityLabel="Search study spots"
-            accessible={true}
-          />
-        </View>
         <StudySpots
           filteredSpots={filteredSpots}
           navigation={navigation}
           favorites={favorites}
           handleToggleFavorite={handleToggleFavorite}
+          search={search}
+          setSearch={setSearch}
         />
         <TouchableOpacity
           onPress={() => {

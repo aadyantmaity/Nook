@@ -84,6 +84,8 @@ export default function ProfileScreen({ navigation }) {
   useEffect(() => {
     if (isModalVisible) {
       setEditedProfilePic(profilePic);
+    } else {
+      setEditedProfilePic(null); // Reset preview to icon when modal closes
     }
   }, [isModalVisible, profilePic]);
 
@@ -499,6 +501,7 @@ export default function ProfileScreen({ navigation }) {
                   userGradYear !== "No Grad Year" ? userGradYear : ""
                 );
                 setIsModalVisible(true);
+                setTimeout(() => setEditedProfilePic(null), 0); // Ensure state updates after modal opens
               }}
             >
               <PencilSimple size={20} color={colors.white} />

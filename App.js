@@ -9,6 +9,7 @@ import SignUpScreen from "./screens/SignUpScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import { auth } from "./firebaseConfig"; // Import Firebase auth
 import { Text, View, ActivityIndicator } from "react-native";
+import { colors } from "./constants/colors"; // <-- Change this to a named import
 
 const Stack = createStackNavigator();
 
@@ -46,7 +47,7 @@ export default function App() {
                   alignItems: "center",
                 }}
               >
-                <ActivityIndicator size="large" color="#4B2E83" />
+                <ActivityIndicator size="large" color={colors.purple} />
                 <Text>Loading...</Text>
               </View>
             )}
@@ -133,7 +134,7 @@ export default function App() {
             backgroundColor: "rgba(0,0,0,0.3)",
           }}
         >
-          <ActivityIndicator size="large" color="#4B2E83" />
+          <ActivityIndicator size="large" color={colors.purple} />
         </View>
       )}
     </NavigationContainer>

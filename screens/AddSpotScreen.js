@@ -264,7 +264,7 @@ export default function AddSpotScreen({ navigation }) {
                 flexDirection: "row",
                 alignItems: "center",
                 padding: 10,
-                backgroundColor: "#4B2E83", // Light button background
+                backgroundColor: colors.purple, // Light button background
                 borderRadius: 8,
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
@@ -408,7 +408,9 @@ export default function AddSpotScreen({ navigation }) {
                   alignItems: "center",
                   padding: 12,
                   marginRight: 8,
-                  backgroundColor: !huskyCardNeeded ? "#4B2E83" : "#F0F0F0",
+                  backgroundColor: !huskyCardNeeded
+                    ? colors.purple
+                    : colors.gray,
                   borderRadius: 8,
                 }}
               >
@@ -423,7 +425,9 @@ export default function AddSpotScreen({ navigation }) {
                   alignItems: "center",
                   padding: 12,
                   marginLeft: 8,
-                  backgroundColor: huskyCardNeeded ? "#4B2E83" : "#F0F0F0",
+                  backgroundColor: huskyCardNeeded
+                    ? colors.purple
+                    : colors.gray,
                   borderRadius: 8,
                 }}
               >
