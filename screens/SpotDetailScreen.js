@@ -442,7 +442,7 @@ export default function SpotDetailScreen({ route, navigation }) {
         <View style={{ flex: 1, backgroundColor: themeColors.white }}>
           {/* Spot Image */}
           <View style={{ position: "relative", width: "100%" }}>
-            {spot.imageUrl ? (
+            {spot.photoUrl ? (
               <View
                 style={{
                   width: "100%",
@@ -456,7 +456,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                 }}
               >
                 <Image
-                  source={{ uri: spot.imageUrl }}
+                  source={{ uri: spot.photoUrl }}
                   style={{ width: "100%", height: "100%" }}
                   resizeMode="cover"
                 />
