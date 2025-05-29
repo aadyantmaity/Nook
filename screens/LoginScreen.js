@@ -41,7 +41,7 @@ export default function LoginScreen({ navigation }) {
     <SafeAreaView
       style={[styles.container, { backgroundColor: themeColors.white }]}
     >
-      <Text style={[styles.title, { color: themeColors.purple }]}>Login</Text>
+      <Text style={[styles.title, { color: themeColors.black }]}>Login</Text>
       <View style={styles.formContainer}>
         <TextInput
           style={[
@@ -76,7 +76,8 @@ export default function LoginScreen({ navigation }) {
           style={[styles.button, { backgroundColor: themeColors.purple }]}
           onPress={handleLogin}
         >
-          <Text style={[styles.buttonText, { color: themeColors.white }]}>
+          <Text style={[styles.buttonText, { color: themeColors.black }]}>
+            {/* Use black for button text */}
             Login
           </Text>
         </TouchableOpacity>

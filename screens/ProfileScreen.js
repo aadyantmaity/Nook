@@ -23,6 +23,7 @@ import {
   GraduationCap,
   Briefcase,
   User,
+  MapPin,
   Heart,
   X,
 } from "phosphor-react-native";
@@ -250,7 +251,7 @@ export default function ProfileScreen({
                 fontSize: 18,
                 fontWeight: "bold",
                 marginBottom: 12,
-                color: themeColors.black,
+                color: themeColors.black, // keep as black for contrast
               }}
             >
               Confirm Logout
@@ -340,7 +341,7 @@ export default function ProfileScreen({
               />
             ) : (
               <View>
-                <User size={100} color="white" weight="bold" />
+                <User size={100} color={themeColors.white} weight="bold" />
               </View>
             )}
           </TouchableOpacity>
@@ -348,28 +349,33 @@ export default function ProfileScreen({
 
         {/* Profile Details */}
         <View style={styles.profileContainer}>
-          <Text style={[styles.userName, { color: themeColors.purple }]}>
+          <Text style={[styles.userName, { color: themeColors.black }]}>
+            {/* Use black for name */}
             {firstName} {lastName}
           </Text>
           <View style={styles.detailRow}>
             <Envelope size={20} color={themeColors.purple} />
-            <Text style={[styles.userEmail, { color: themeColors.purple }]}>
+            <Text style={[styles.userEmail, { color: themeColors.black }]}>
+              {/* Use black for email */}
               {userEmail}
             </Text>
           </View>
 
           <View style={styles.detailRow}>
             <GraduationCap size={20} color={themeColors.purple} />
-            <Text style={[styles.userGradYear, { color: themeColors.purple }]}>
+            <Text style={[styles.userGradYear, { color: themeColors.black }]}>
+              {/* Use black for grad year */}
               {userGradYear}
             </Text>
           </View>
-          <View style={styles.divider} />
+          <View
+            style={[styles.divider, { backgroundColor: themeColors.gray }]}
+          />
           {/* Favorites Section */}
           <View
             style={{
               flexDirection: "row",
-              alignItems: "center", // Fix alignment
+              alignItems: "center",
               marginBottom: 8,
             }}
           >
@@ -377,15 +383,16 @@ export default function ProfileScreen({
             <Text
               style={[
                 styles.favoritesTitle,
-                { marginLeft: 8, marginBottom: 0, color: themeColors.purple },
+                { marginLeft: 8, marginBottom: 0, color: themeColors.black },
               ]}
             >
+              {/* Use black for section title */}
               Favorites
             </Text>
           </View>
           {favoriteSpots.length === 0 ? (
             <Text
-              style={[styles.noFavoritesText, { color: themeColors.purple }]}
+              style={[styles.noFavoritesText, { color: themeColors.darkGray }]}
             >
               No favorites yet.
             </Text>
@@ -439,37 +446,42 @@ export default function ProfileScreen({
                       style={{
                         backgroundColor: themeColors.purple,
                         borderRadius: 8,
-                        width: 38,
-                        height: 38,
+                        width: 75,
+                        height: 75,
                         alignItems: "center",
                         justifyContent: "center",
                         marginRight: 14,
                       }}
                     >
-                      <User size={22} color="#fff" weight="bold" />
+                      <MapPin
+                        size={45}
+                        color={themeColors.white}
+                        weight="bold"
+                      />
                     </View>
                   )}
                   <View style={{ flex: 1 }}>
                     <Text
                       style={{
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: "bold",
-                        color: themeColors.purple,
-                        marginBottom: 2,
+                        color: themeColors.black, // Use black for spot name
+                        marginBottom: 6,
                       }}
-                      numberOfLines={1}
                     >
-                      {spot.name}
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        color: themeColors.darkGray,
-                        marginBottom: 2,
-                      }}
-                      numberOfLines={1}
-                    >
-                      {spot.roomNumber ? `Room: ${spot.roomNumber}` : ""}
+                      {spot.buildingName}
+                      {spot.roomNumber && (
+                        <Text
+                          style={{
+                            fontSize: 18,
+                            color: themeColors.black,
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {" - Floor "}
+                          {spot.roomNumber}
+                        </Text>
+                      )}
                     </Text>
                     <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
                       {spot.tags && spot.tags.length > 0
@@ -518,7 +530,9 @@ export default function ProfileScreen({
               ))}
             </View>
           )}
-          <View style={styles.divider} />
+          <View
+            style={[styles.divider, { backgroundColor: themeColors.gray }]}
+          />
         </View>
 
         {/* Buttons */}
@@ -593,7 +607,8 @@ export default function ProfileScreen({
             >
               <X size={22} color={themeColors.purple} weight="bold" />
             </TouchableOpacity>
-            <Text style={[styles.modalTitle, { color: themeColors.purple }]}>
+            <Text style={[styles.modalTitle, { color: themeColors.black }]}>
+              {/* Use black for modal title */}
               Edit Profile
             </Text>
             {/* Profile picture preview and picker */}
@@ -639,7 +654,7 @@ export default function ProfileScreen({
                       borderColor: themeColors.gray,
                     }}
                   >
-                    <User size={32} color={themeColors.purple} weight="bold" />
+                    <User size={32} color={themeColors.white} weight="bold" />
                   </View>
                 )}
               </View>
@@ -734,7 +749,7 @@ export default function ProfileScreen({
               value={editedFirstName}
               onChangeText={setEditedFirstName}
               placeholderTextColor={themeColors.darkGray}
-              color={themeColors.purple}
+              color={themeColors.black}
               borderColor={themeColors.purple}
               borderWidth={0.5}
             />
@@ -744,7 +759,7 @@ export default function ProfileScreen({
               value={editedLastName}
               onChangeText={setEditedLastName}
               placeholderTextColor={themeColors.darkGray}
-              color={themeColors.purple}
+              color={themeColors.black}
               borderColor={themeColors.purple}
               borderWidth={0.5}
             />
@@ -755,7 +770,7 @@ export default function ProfileScreen({
               onChangeText={setEditedGradYear}
               keyboardType="numeric"
               placeholderTextColor={themeColors.darkGray}
-              color={themeColors.purple}
+              color={themeColors.black}
               borderColor={themeColors.purple}
               borderWidth={0.5}
             />

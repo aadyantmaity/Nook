@@ -423,7 +423,7 @@ export default function SpotDetailScreen({ route, navigation }) {
           backgroundColor: themeColors.white,
         }}
       >
-        <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
+        <Text style={{ fontSize: 16, color: themeColors.black }}>
           Loading...
         </Text>
       </SafeAreaView>
@@ -499,13 +499,25 @@ export default function SpotDetailScreen({ route, navigation }) {
 
           <Text
             style={{
-              fontSize: 24,
+              fontSize: 18,
               fontWeight: "bold",
-              marginBottom: 16,
-              color: themeColors.purple,
+              color: themeColors.black, // Use black for spot name
+              marginBottom: 6,
             }}
           >
-            {buildingName}
+            {spot.buildingName}
+            {spot.roomNumber && (
+              <Text
+                style={{
+                  fontSize: 18,
+                  color: themeColors.black,
+                  fontWeight: "bold",
+                }}
+              >
+                {" - Floor "}
+                {spot.roomNumber}
+              </Text>
+            )}
           </Text>
 
           {/* --- TAGS FIRST --- */}
@@ -541,7 +553,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                   </View>
                 ))
               ) : (
-                <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
+                <Text style={{ fontSize: 16, color: themeColors.black }}>
                   No tags available
                 </Text>
               )}
@@ -611,7 +623,7 @@ export default function SpotDetailScreen({ route, navigation }) {
             <Text
               style={{
                 fontSize: 16,
-                color: themeColors.purple,
+                color: themeColors.black,
                 fontWeight: "bold",
                 marginBottom: 4,
               }}
@@ -640,7 +652,7 @@ export default function SpotDetailScreen({ route, navigation }) {
               <Text
                 style={{
                   marginLeft: 8,
-                  color: themeColors.darkGray,
+                  color: themeColors.black,
                   fontSize: 15,
                 }}
               >
@@ -699,7 +711,7 @@ export default function SpotDetailScreen({ route, navigation }) {
               <Text
                 style={{
                   fontSize: 15,
-                  color: themeColors.purple,
+                  color: themeColors.black,
                   fontWeight: "bold",
                   marginBottom: 2,
                 }}
@@ -855,7 +867,7 @@ function LiveUpdateModal({
           key={value}
           style={{
             fontSize: 12,
-            color: themeColors.darkGray,
+            color: themeColors.black,
             width: 20,
             textAlign: "center",
           }}
@@ -888,7 +900,7 @@ function LiveUpdateModal({
               marginBottom: 8,
               fontSize: 16,
               fontWeight: "bold",
-              color: themeColors.purple,
+              color: themeColors.black,
             }}
           >
             Noise (1 = Quiet, 5 = Noisy)
@@ -911,7 +923,7 @@ function LiveUpdateModal({
               marginBottom: 8,
               fontSize: 16,
               fontWeight: "bold",
-              color: themeColors.purple,
+              color: themeColors.black,
             }}
           >
             Crowd (1 = Sparse, 5 = Packed)
