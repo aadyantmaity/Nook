@@ -46,6 +46,7 @@ const TAGS = [
   "Natural Light",
   "Food Nearby",
   "Open Space",
+  "No Husky Card", // Add this tag for filtering spots where Husky Card is NOT required
 ];
 
 function Filters({ filters, setFilters, themeColors }) {
@@ -80,7 +81,11 @@ function Filters({ filters, setFilters, themeColors }) {
     }
 
     const normalized =
-      label === "Favorites" ? "favorites" : label.toLowerCase();
+      label === "Favorites"
+        ? "favorites"
+        : label === "No Husky Card"
+        ? "no-husky-card"
+        : label.toLowerCase();
 
     if (filters.includes(normalized)) {
       setFilters(filters.filter((f) => f !== normalized));
@@ -92,7 +97,11 @@ function Filters({ filters, setFilters, themeColors }) {
   const isSelected = (label) => {
     if (label === "All") return filters.length === 0;
     const normalized =
-      label === "Favorites" ? "favorites" : label.toLowerCase();
+      label === "Favorites"
+        ? "favorites"
+        : label === "No Husky Card"
+        ? "no-husky-card"
+        : label.toLowerCase();
     return filters.includes(normalized);
   };
 
@@ -917,6 +926,7 @@ export default function HomeScreen({
     if (!filters.length) return true;
     return filters.every((f) => {
       if (f === "favorites") return favorites.includes(spot.id);
+      if (f === "no-husky-card") return !spot.huskyCardNeeded;
       return (spot.tags || []).map((t) => String(t).toLowerCase()).includes(f);
     });
   };
