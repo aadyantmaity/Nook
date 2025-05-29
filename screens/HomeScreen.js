@@ -24,6 +24,7 @@ import { Plus, User, ArrowClockwise, Star, Heart } from "phosphor-react-native";
 import { colors } from "../constants/colors"; // Import colors
 import { auth, db } from "../firebaseConfig"; // Import Firebase
 import { doc, getDoc } from "firebase/firestore"; // Import Firestore functions
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const TAGS = [
   "All",
@@ -180,6 +181,7 @@ function StudySpots({
           style={{
             paddingHorizontal: 16,
             paddingTop: 16,
+            paddingBottom: 16,
             backgroundColor: "#fff",
           }}
         >
@@ -429,6 +431,178 @@ function fuzzyMatch(str, query) {
   return qi === query.length;
 }
 
+function RecentlyViewed({ spots, navigation, favorites, handleToggleFavorite }) {
+  if (!spots.length) return null;
+  return (
+    <View style={{ marginBottom: 16 }}>
+      <Text
+        style={{
+          fontSize: 18,
+          fontWeight: "bold",
+          color: colors.purple,
+          marginLeft: 16,
+          marginBottom: 8,
+        }}
+      >
+        Recently Viewed
+      </Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingLeft: 16 }}
+      >
+        {spots.map((item) => (
+          <TouchableOpacity
+            key={item.id}
+            onPress={() => navigation.navigate("SpotDetail", { spotId: item.id })}
+            style={{
+              width: 180,
+              marginRight: 12,
+              backgroundColor: "#fff",
+              borderRadius: 8,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+              elevation: 2,
+              position: "relative",
+              paddingBottom: 8,
+            }}
+          >
+            <View
+              style={{
+                width: "100%",
+                height: 80,
+                backgroundColor: "#EEE",
+                borderTopLeftRadius: 8,
+                borderTopRightRadius: 8,
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+                marginBottom: 8,
+              }}
+            >
+              {item.imageUrl ? (
+                <Image
+                  source={{ uri: item.imageUrl }}
+                  style={{ width: "100%", height: "100%" }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Text style={{ color: "#AAA" }}>No Image</Text>
+              )}
+            </View>
+            <TouchableOpacity
+              onPress={() => handleToggleFavorite(item.id)}
+              style={{
+                position: "absolute",
+                top: 8,
+                right: 8,
+                zIndex: 10,
+                backgroundColor: "#fff",
+                borderRadius: 20,
+                padding: 4,
+                borderWidth: 1,
+                borderColor: colors.purple,
+              }}
+              onPressOut={(e) => e.stopPropagation && e.stopPropagation()}
+            >
+              <Heart
+                size={18}
+                color={
+                  favorites.includes(item.id) ? colors.purple : colors.darkGray
+                }
+                weight={favorites.includes(item.id) ? "fill" : "regular"}
+              />
+            </TouchableOpacity>
+            <Text
+              style={{
+                fontSize: 15,
+                fontWeight: "bold",
+                color: colors.purple,
+                marginBottom: 2,
+                marginLeft: 8,
+              }}
+              numberOfLines={1}
+            >
+              {item.name}
+            </Text>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.darkGray,
+                marginLeft: 8,
+                marginBottom: 2,
+              }}
+              numberOfLines={1}
+            >
+              {item.roomNumber || ""}
+            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", marginLeft: 8 }}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  size={12}
+                  color={
+                    star <= (item.averageOverallRating || 0)
+                      ? colors.purple
+                      : colors.darkGray
+                  }
+                  weight={
+                    star <= (item.averageOverallRating || 0) ? "fill" : "regular"
+                  }
+                  style={{ marginRight: 1 }}
+                />
+              ))}
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+function TabBar({ activeTab, setActiveTab }) {
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#fff",
+        borderBottomWidth: 1,
+        borderBottomColor: "#E0E0E0",
+        marginBottom: 0,
+      }}
+    >
+      {["Home", "Recently Viewed"].map((tab, idx) => (
+        <TouchableOpacity
+          key={tab}
+          onPress={() => setActiveTab(tab)}
+          style={{
+            flex: 1,
+            paddingVertical: 14,
+            borderBottomWidth: 3,
+            borderBottomColor: activeTab === tab ? colors.purple : "transparent",
+            alignItems: "center",
+          }}
+        >
+          <Text
+            style={{
+              color: activeTab === tab ? colors.purple : colors.darkGray,
+              fontWeight: activeTab === tab ? "bold" : "normal",
+              fontSize: 16,
+              letterSpacing: 0.5,
+            }}
+          >
+            {tab}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+}
+
 export default function HomeScreen({ navigation, route }) {
   const [filter, setFilter] = useState(null);
   const [studySpots, setStudySpots] = useState([]);
@@ -436,6 +610,8 @@ export default function HomeScreen({ navigation, route }) {
   const [isLoading, setIsLoading] = useState(true);
   const [favorites, setFavorites] = useState([]);
   const [search, setSearch] = useState(""); // <-- Add search state
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
+  const [activeTab, setActiveTab] = useState("Home");
 
   // Fetch user's favorites
   useEffect(() => {
@@ -543,6 +719,27 @@ export default function HomeScreen({ navigation, route }) {
     }
   };
 
+  // Load recently viewed from AsyncStorage
+  useEffect(() => {
+    const loadRecentlyViewed = async () => {
+      try {
+        const stored = await AsyncStorage.getItem("recentlyViewedSpots");
+        if (stored) setRecentlyViewed(JSON.parse(stored));
+      } catch {}
+    };
+    loadRecentlyViewed();
+  }, []);
+
+  // Helper to update recently viewed
+  const addRecentlyViewed = async (spotId) => {
+    let updated = [spotId, ...recentlyViewed.filter((id) => id !== spotId)];
+    if (updated.length > 8) updated = updated.slice(0, 8);
+    setRecentlyViewed(updated);
+    try {
+      await AsyncStorage.setItem("recentlyViewedSpots", JSON.stringify(updated));
+    } catch {}
+  };
+
   useEffect(() => {
     const fetchUserName = async () => {
       const user = auth.currentUser;
@@ -604,18 +801,51 @@ export default function HomeScreen({ navigation, route }) {
           .filter(searchFilter)
       : studySpots.filter(searchFilter);
 
+  // Get recently viewed spot objects
+  const recentlyViewedSpots = recentlyViewed
+    .map((id) => studySpots.find((s) => s.id === id))
+    .filter(Boolean);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
       <View style={{ flex: 1 }}>
         <Filters filter={filter} setFilter={setFilter} />
-        <StudySpots
-          filteredSpots={filteredSpots}
-          navigation={navigation}
-          favorites={favorites}
-          handleToggleFavorite={handleToggleFavorite}
-          search={search}
-          setSearch={setSearch}
-        />
+        <TabBar activeTab={activeTab} setActiveTab={setActiveTab} />
+        {activeTab === "Home" ? (
+          <StudySpots
+            filteredSpots={filteredSpots}
+            navigation={{
+              ...navigation,
+              navigate: (screen, params) => {
+                if (screen === "SpotDetail" && params?.spotId) {
+                  addRecentlyViewed(params.spotId);
+                }
+                navigation.navigate(screen, params);
+              },
+            }}
+            favorites={favorites}
+            handleToggleFavorite={handleToggleFavorite}
+            search={search}
+            setSearch={setSearch}
+          />
+        ) : (
+          <StudySpots
+            filteredSpots={recentlyViewedSpots}
+            navigation={{
+              ...navigation,
+              navigate: (screen, params) => {
+                if (screen === "SpotDetail" && params?.spotId) {
+                  addRecentlyViewed(params.spotId);
+                }
+                navigation.navigate(screen, params);
+              },
+            }}
+            favorites={favorites}
+            handleToggleFavorite={handleToggleFavorite}
+            search={search}
+            setSearch={setSearch}
+          />
+        )}
         <TouchableOpacity
           onPress={() => {
             try {
