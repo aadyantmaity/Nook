@@ -128,7 +128,7 @@ function Filters({ filters, setFilters, themeColors }) {
             fontSize: 40,
             fontWeight: "bold",
             textAlign: "center",
-            color: themeColors.purple,
+            color: themeColors.purple, // Use black for main title
             fontFamily: Platform.OS === "ios" ? "Helvetica" : "sans-serif",
             marginTop: 16,
           }}
@@ -256,7 +256,7 @@ function StudySpots({
                 paddingHorizontal: 4,
                 paddingVertical: 10,
                 fontSize: 16,
-                color: themeColors.purple,
+                color: themeColors.black, // Use black for search input
               }}
               autoCorrect={false}
               autoCapitalize="none"
@@ -344,7 +344,7 @@ function StudySpots({
             style={{
               fontSize: 18,
               fontWeight: "bold",
-              color: themeColors.purple,
+              color: themeColors.black, // Use black for spot name
               marginBottom: 6,
             }}
           >
@@ -353,7 +353,7 @@ function StudySpots({
               <Text
                 style={{
                   fontSize: 18,
-                  color: themeColors.purple,
+                  color: themeColors.black,
                   fontWeight: "bold",
                 }}
               >
@@ -540,7 +540,7 @@ function RecentlyViewed({
         style={{
           fontSize: 18,
           fontWeight: "bold",
-          color: themeColors.purple, // changed
+          color: themeColors.black, // Use black for recently viewed title
           marginLeft: 16,
           marginBottom: 8,
         }}
@@ -624,7 +624,7 @@ function RecentlyViewed({
               style={{
                 fontSize: 15,
                 fontWeight: "bold",
-                color: themeColors.purple, // changed
+                color: themeColors.black, // Use black for spot name
                 marginBottom: 2,
                 marginLeft: 8,
               }}
@@ -705,7 +705,7 @@ function TabBar({ activeTab, setActiveTab, themeColors }) {
           <Text
             style={{
               color:
-                activeTab === tab ? themeColors.purple : themeColors.darkGray, // changed
+                activeTab === tab ? themeColors.black : themeColors.darkGray, // Use black for active tab
               fontWeight: activeTab === tab ? "bold" : "normal",
               fontSize: 16,
               letterSpacing: 0.5,
@@ -898,7 +898,7 @@ export default function HomeScreen({
       <SafeAreaView
         style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
       >
-        <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
+        <Text style={{ fontSize: 16, color: themeColors.black }}>
           Loading...
         </Text>
       </SafeAreaView>

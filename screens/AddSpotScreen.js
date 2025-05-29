@@ -278,36 +278,90 @@ export default function AddSpotScreen({
             style={{
               fontSize: 20,
               fontWeight: "bold",
-              color: themeColors.purple,
+              color: themeColors.black, // Use black for preview title
               marginBottom: 12,
             }}
           >
             Spot Preview
           </Text>
-          <Text style={{ fontWeight: "bold" }}>Name:</Text>
-          <Text>{isUWBuilding ? selectedBuilding : customBuilding}</Text>
-          <Text style={{ fontWeight: "bold", marginTop: 8 }}>
+          <Text style={{ fontWeight: "bold", color: themeColors.black }}>
+            Name:
+          </Text>
+          <Text style={{ color: themeColors.black }}>
+            {isUWBuilding ? selectedBuilding : customBuilding}
+          </Text>
+          <Text
+            style={{
+              fontWeight: "bold",
+              marginTop: 8,
+              color: themeColors.black,
+            }}
+          >
             Floor Number:
           </Text>
-          <Text>{roomNumber || "N/A"}</Text>
-          <Text style={{ fontWeight: "bold", marginTop: 8 }}>Favorite:</Text>
-          <Text>{isFavorite ? "Yes" : "No"}</Text>
-          <Text style={{ fontWeight: "bold", marginTop: 8 }}>
+          <Text style={{ color: themeColors.black }}>
+            {roomNumber || "N/A"}
+          </Text>
+          <Text
+            style={{
+              fontWeight: "bold",
+              marginTop: 8,
+              color: themeColors.black,
+            }}
+          >
+            Favorite:
+          </Text>
+          <Text style={{ color: themeColors.black }}>
+            {isFavorite ? "Yes" : "No"}
+          </Text>
+          <Text
+            style={{
+              fontWeight: "bold",
+              marginTop: 8,
+              color: themeColors.black,
+            }}
+          >
             Open/Quiet Hours:
           </Text>
-          <Text>{openHours || "N/A"}</Text>
-          <Text style={{ fontWeight: "bold", marginTop: 8 }}>Tags:</Text>
-          <Text>{selectedTags.length ? selectedTags.join(", ") : "None"}</Text>
-          <Text style={{ fontWeight: "bold", marginTop: 8 }}>
+          <Text style={{ color: themeColors.black }}>{openHours || "N/A"}</Text>
+          <Text
+            style={{
+              fontWeight: "bold",
+              marginTop: 8,
+              color: themeColors.black,
+            }}
+          >
+            Tags:
+          </Text>
+          <Text style={{ color: themeColors.black }}>
+            {selectedTags.length ? selectedTags.join(", ") : "None"}
+          </Text>
+          <Text
+            style={{
+              fontWeight: "bold",
+              marginTop: 8,
+              color: themeColors.black,
+            }}
+          >
             Husky Card Needed:
           </Text>
-          <Text>{huskyCardNeeded ? "Yes" : "No"}</Text>
+          <Text style={{ color: themeColors.black }}>
+            {huskyCardNeeded ? "Yes" : "No"}
+          </Text>
           {huskyCardNeeded && (
             <>
-              <Text style={{ fontWeight: "bold", marginTop: 8 }}>
+              <Text
+                style={{
+                  fontWeight: "bold",
+                  marginTop: 8,
+                  color: themeColors.black,
+                }}
+              >
                 Department:
               </Text>
-              <Text>{department || "N/A"}</Text>
+              <Text style={{ color: themeColors.black }}>
+                {department || "N/A"}
+              </Text>
             </>
           )}
           <TouchableOpacity
@@ -429,7 +483,11 @@ export default function AddSpotScreen({
           </View>
 
           <Text
-            style={{ fontSize: 19, marginBottom: 8, color: themeColors.purple }}
+            style={{
+              fontSize: 20,
+              marginBottom: 8,
+              color: themeColors.black,
+            }}
           >
             {isUWBuilding ? "Select Building:" : "Enter Location Name:"}
           </Text>
@@ -561,7 +619,7 @@ export default function AddSpotScreen({
               style={{
                 fontSize: 19,
                 marginBottom: 8,
-                color: themeColors.purple,
+                color: themeColors.black,
               }}
             >
               Husky Card Needed:
@@ -639,7 +697,7 @@ export default function AddSpotScreen({
             />
           )}
           <Text
-            style={{ fontSize: 19, marginBottom: 8, color: themeColors.purple }}
+            style={{ fontSize: 19, marginBottom: 8, color: themeColors.black }}
           >
             Tags:
           </Text>
@@ -717,7 +775,7 @@ export default function AddSpotScreen({
                 weight={isFavorite ? "fill" : "regular"}
               />
             </TouchableOpacity>
-            <Text style={{ color: themeColors.purple, fontSize: 14.5 }}>
+            <Text style={{ color: themeColors.black, fontSize: 14.5 }}>
               Mark this spot as a favorite
             </Text>
           </View>
