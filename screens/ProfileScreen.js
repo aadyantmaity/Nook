@@ -45,12 +45,10 @@ export default function ProfileScreen({
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [userEmail, setUserEmail] = useState("");
-  const [userMajor, setUserMajor] = useState("");
   const [userGradYear, setUserGradYear] = useState("");
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editedFirstName, setEditedFirstName] = useState("");
   const [editedLastName, setEditedLastName] = useState("");
-  const [editedMajor, setEditedMajor] = useState("");
   const [editedGradYear, setEditedGradYear] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [favorites, setFavorites] = useState([]);
@@ -71,7 +69,6 @@ export default function ProfileScreen({
           setFirstName(data.firstName || "No First Name");
           setLastName(data.lastName || "No Last Name");
           setUserEmail(data.email || "No Email");
-          setUserMajor(data.major || "No Major");
           setUserGradYear(data.gradYear || "No Grad Year");
           setFavorites(data.favorites || []);
           setProfilePic(data.profilePic);
@@ -146,7 +143,6 @@ export default function ProfileScreen({
         const updateData = {
           firstName: editedFirstName || firstName,
           lastName: editedLastName || lastName,
-          major: editedMajor || userMajor,
           gradYear: editedGradYear || userGradYear,
           email: userEmail,
         };
@@ -163,7 +159,6 @@ export default function ProfileScreen({
 
         setFirstName(editedFirstName || firstName);
         setLastName(editedLastName || lastName);
-        setUserMajor(editedMajor || userMajor);
         setUserGradYear(editedGradYear || userGradYear);
         if (editedProfilePic && editedProfilePic !== profilePic) {
           setProfilePic(editedProfilePic);
@@ -364,12 +359,6 @@ export default function ProfileScreen({
           </View>
 
           <View style={styles.detailRow}>
-            <Briefcase size={20} color={themeColors.purple} />
-            <Text style={[styles.userMajor, { color: themeColors.purple }]}>
-              {userMajor}
-            </Text>
-          </View>
-          <View style={styles.detailRow}>
             <GraduationCap size={20} color={themeColors.purple} />
             <Text style={[styles.userGradYear, { color: themeColors.purple }]}>
               {userGradYear}
@@ -545,7 +534,6 @@ export default function ProfileScreen({
                   firstName !== "No First Name" ? firstName : ""
                 );
                 setEditedLastName(lastName !== "No Last Name" ? lastName : "");
-                setEditedMajor(userMajor !== "No Major" ? userMajor : "");
                 setEditedGradYear(
                   userGradYear !== "No Grad Year" ? userGradYear : ""
                 );
@@ -762,21 +750,6 @@ export default function ProfileScreen({
             />
             <TextInput
               style={styles.input}
-              placeholder="Major"
-              value={
-                typeof editedMajor === "string" &&
-                !editedMajor.startsWith("data:image")
-                  ? editedMajor
-                  : ""
-              }
-              onChangeText={setEditedMajor}
-              placeholderTextColor={themeColors.darkGray}
-              color={themeColors.purple}
-              borderColor={themeColors.purple}
-              borderWidth={0.5}
-            />
-            <TextInput
-              style={styles.input}
               placeholder="Graduation Year"
               value={editedGradYear}
               onChangeText={setEditedGradYear}
@@ -879,12 +852,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   userEmail: {
-    fontSize: 16,
-    // color: themeColors.darkGray, // Remove, handled inline
-    marginLeft: 8,
-    textAlign: "center",
-  },
-  userMajor: {
     fontSize: 16,
     // color: themeColors.darkGray, // Remove, handled inline
     marginLeft: 8,

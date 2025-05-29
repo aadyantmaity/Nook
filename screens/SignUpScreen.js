@@ -22,7 +22,6 @@ export default function SignUpScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [major, setMajor] = useState("");
   const [gradYear, setGradYear] = useState("");
 
   const handleSignUp = async () => {
@@ -49,7 +48,6 @@ export default function SignUpScreen({ navigation }) {
         firstName,
         lastName,
         email,
-        major,
         gradYear,
         profilePic: null,
       });
@@ -109,20 +107,6 @@ export default function SignUpScreen({ navigation }) {
           placeholderTextColor={themeColors.darkGray}
           value={email}
           onChangeText={setEmail}
-        />
-        <TextInput
-          style={[
-            styles.input,
-            {
-              borderColor: themeColors.darkGray,
-              backgroundColor: themeColors.white,
-              color: themeColors.black,
-            },
-          ]}
-          placeholder="Major"
-          placeholderTextColor={themeColors.darkGray}
-          value={major}
-          onChangeText={setMajor}
         />
         <TextInput
           style={[

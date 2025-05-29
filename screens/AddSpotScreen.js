@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   Alert,
   Modal,
+  Image,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker"; // Import Picker for dropdown
 import { ArrowLeft, Check, Heart } from "phosphor-react-native"; // Add Heart icon
@@ -24,6 +25,7 @@ import {
   updateDoc, // <-- Add this import
 } from "firebase/firestore"; // Ensure Timestamp is imported
 import { db, auth } from "../firebaseConfig"; // Import Firestore instance
+import * as ImagePicker from "expo-image-picker"; // Add this import
 
 const TAGS = [
   "Quiet",
@@ -96,6 +98,7 @@ export default function AddSpotScreen({
   const [isFavorite, setIsFavorite] = useState(false); // Favorite toggle
   const [openHours, setOpenHours] = useState(""); // Open/quiet hours field
   const [showPreview, setShowPreview] = useState(false); // Preview modal
+  const [customImage, setCustomImage] = useState(null); // Add state for custom image
 
   const toggleTag = (tag) => {
     setSelectedTags((tags) =>
@@ -114,6 +117,40 @@ export default function AddSpotScreen({
     setCustomBuilding("");
     setIsFavorite(false);
     setOpenHours("");
+    setCustomImage(null); // Reset image
+  };
+
+  // Image picker handler
+  const MAX_IMAGE_SIZE_BYTES = 700 * 1024; // 700KB for safety
+
+  const handlePickCustomImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [3, 2],
+      quality: 0.4, // Lower quality for smaller size
+      base64: true,
+    });
+    if (!result.cancelled) {
+      const base64 =
+        result.assets && result.assets[0] && result.assets[0].base64
+          ? result.assets[0].base64
+          : result.base64;
+      if (!base64) {
+        alert("No image data found");
+        return;
+      }
+      // Calculate base64 size
+      const base64Length = base64.length * 0.75; // 1 char = 6 bits
+      if (base64Length > MAX_IMAGE_SIZE_BYTES) {
+        alert(
+          "Image is too large to upload. Please choose a smaller image or crop it."
+        );
+        return;
+      }
+      const dataUrl = `data:image/jpeg;base64,${base64}`;
+      setCustomImage(dataUrl);
+    }
   };
 
   const handleSubmit = async () => {
@@ -142,6 +179,20 @@ export default function AddSpotScreen({
         return;
       }
 
+      // Check image size before submitting
+      if (!isUWBuilding && customImage) {
+        // Only check if customImage is set
+        const base64Data = customImage.split(",")[1] || "";
+        const base64Length = base64Data.length * 0.75;
+        if (base64Length > MAX_IMAGE_SIZE_BYTES) {
+          alert(
+            "Image is too large to upload. Please choose a smaller image or crop it."
+          );
+          setIsLoading(false);
+          return;
+        }
+      }
+
       const spotDetails = {
         name: buildingNameToCheck,
         buildingName: buildingNameToCheck,
@@ -152,7 +203,7 @@ export default function AddSpotScreen({
         createdAt: new Date().toISOString(),
         addedBy: user.uid,
         revealIdentity: showAddedBy,
-        photoUrl: "",
+        photoUrl: !isUWBuilding && customImage ? customImage : "", // Save image for custom location
         openHours, // Add open/quiet hours field
       };
 
@@ -430,37 +481,81 @@ export default function AddSpotScreen({
               </Picker>
             </View>
           ) : (
-            <TextInput
-              placeholder="Enter location name (e.g. Bookstore or Starbucks)"
-              placeholderTextColor={themeColors.darkGray}
-              value={customBuilding}
-              onChangeText={setCustomBuilding}
-              style={{
-                borderWidth: 0.5,
-                borderColor: themeColors.purple,
-                borderRadius: 8,
-                padding: 12,
-                marginBottom: 16,
-                backgroundColor: themeColors.white,
-                color: themeColors.purple,
-              }}
-            />
+            <>
+              <TextInput
+                placeholder="Enter location name (e.g. Bookstore or Starbucks)"
+                placeholderTextColor={themeColors.darkGray}
+                value={customBuilding}
+                onChangeText={setCustomBuilding}
+                style={{
+                  borderWidth: 0.5,
+                  borderColor: themeColors.purple,
+                  borderRadius: 8,
+                  padding: 12,
+                  marginBottom: 16,
+                  backgroundColor: themeColors.white,
+                  color: themeColors.purple,
+                }}
+              />
+
+              <TextInput
+                placeholder="Floor Number (if applicable)"
+                placeholderTextColor={themeColors.darkGray}
+                value={roomNumber}
+                onChangeText={setRoomNumber}
+                style={{
+                  borderWidth: 0.5,
+                  borderColor: themeColors.purple,
+                  borderRadius: 8,
+                  padding: 12,
+                  marginBottom: 16,
+                  backgroundColor: themeColors.white,
+                  color: themeColors.purple,
+                }}
+              />
+              {/* Image picker for custom location */}
+              <View style={{ marginBottom: 16, alignItems: "center" }}>
+                <TouchableOpacity
+                  onPress={handlePickCustomImage}
+                  style={{
+                    backgroundColor: themeColors.purple,
+                    borderRadius: 8,
+                    paddingVertical: 10,
+                    paddingHorizontal: 18,
+                    alignItems: "center",
+                    marginBottom: 8,
+                  }}
+                  accessibilityLabel="Pick an image for this location"
+                  accessible={true}
+                >
+                  <Text
+                    style={{ color: themeColors.white, fontWeight: "bold" }}
+                  >
+                    {customImage ? "Change Image" : "Upload Image"}
+                  </Text>
+                </TouchableOpacity>
+                {customImage && (
+                  <View
+                    style={{
+                      width: 180,
+                      height: 120,
+                      borderRadius: 8,
+                      overflow: "hidden",
+                      borderWidth: 0.5,
+                      borderColor: themeColors.purple,
+                      marginTop: 4,
+                    }}
+                  >
+                    <Image
+                      source={{ uri: customImage }}
+                      style={{ width: "100%", height: "100%" }}
+                      resizeMode="cover"
+                    />
+                  </View>
+                )}
+              </View>
+            </>
           )}
-          <TextInput
-            placeholder="Floor Number (if applicable)"
-            placeholderTextColor={themeColors.darkGray}
-            value={roomNumber}
-            onChangeText={setRoomNumber}
-            style={{
-              borderWidth: 0.5,
-              borderColor: themeColors.purple,
-              borderRadius: 8,
-              padding: 12,
-              marginBottom: 16,
-              backgroundColor: themeColors.white,
-              color: themeColors.purple,
-            }}
-          />
           <View style={{ marginBottom: 16 }}>
             <Text
               style={{
