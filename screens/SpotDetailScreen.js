@@ -923,7 +923,7 @@ function LiveUpdateModal({
               step={1}
               value={crowdLevel}
               onValueChange={setCrowdLevel}
-              minimumTrackTintColor={themeColors.purple}
+              minimumTrackTintColor={themeColors.white}
               maximumTrackTintColor={themeColors.gray}
               thumbTintColor={themeColors.purple}
             />
