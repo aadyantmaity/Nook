@@ -9,6 +9,8 @@ import {
   Platform,
   ScrollView,
   TextInput, // <-- Add TextInput for search bar
+  Alert,
+  Modal,
 } from "react-native";
 import {
   collection,
@@ -18,6 +20,7 @@ import {
   Timestamp,
   deleteDoc,
   updateDoc,
+  addDoc,
 } from "firebase/firestore"; // Ensure Timestamp is imported
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -29,6 +32,8 @@ import {
   Moon,
   Sun,
   MagnifyingGlass, // <-- Add this import
+  ExclamationMark, // <-- Add this import for the report button
+  List, // <-- Add hamburger menu icon
 } from "phosphor-react-native"; // Add Heart icon
 import { colors } from "../constants/colors"; // Import colors
 import { auth, db } from "../firebaseConfig"; // Import Firebase
@@ -116,26 +121,6 @@ function Filters({ filters, setFilters, themeColors }) {
         borderBottomColor: "#E0E0E0",
       }}
     >
-      <View
-        style={{
-          justifyContent: "center",
-          alignItems: "center",
-          marginBottom: 16,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 40,
-            fontWeight: "bold",
-            textAlign: "center",
-            color: themeColors.purple, // Use black for main title
-            fontFamily: Platform.OS === "ios" ? "Helvetica" : "sans-serif",
-            marginTop: 16,
-          }}
-        >
-          Nook
-        </Text>
-      </View>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -731,6 +716,129 @@ function TabBar({ activeTab, setActiveTab, themeColors }) {
   );
 }
 
+function GeneralReportModal({ visible, onClose }) {
+  const [reportText, setReportText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const themeCtx = useContext(ThemeContext);
+  const themeColors = themeCtx?.themeColors ?? colors;
+
+  const handleSubmit = async () => {
+    if (!reportText.trim()) {
+      Alert.alert("Please enter your suggestion or issue.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      // Add report to Firestore 'reports' collection
+      await addDoc(collection(db, "reports"), {
+        spotId: null,
+        spotName: null,
+        report: reportText,
+        user: auth.currentUser?.uid || "Anonymous",
+        createdAt: Timestamp.now(),
+      });
+      Alert.alert("Thank you!", "Your feedback has been submitted.");
+      setReportText("");
+      onClose();
+    } catch (e) {
+      Alert.alert("Error", "Failed to submit feedback.");
+    }
+    setSubmitting(false);
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="slide">
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "rgba(0,0,0,0.3)",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <View
+          style={{
+            backgroundColor: themeColors.white,
+            margin: 32,
+            padding: 16,
+            borderRadius: 8,
+            width: "90%",
+            maxWidth: 400,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: "bold",
+              color: themeColors.black,
+              marginBottom: 8,
+            }}
+          >
+            Suggestion / Report an Issue
+          </Text>
+          <TextInput
+            style={{
+              borderWidth: 0.5,
+              borderColor: themeColors.purple,
+              borderRadius: 8,
+              padding: 12,
+              minHeight: 80,
+              color: themeColors.black,
+              backgroundColor: themeColors.white,
+              marginBottom: 12,
+              textAlignVertical: "top",
+            }}
+            placeholder="Describe your suggestion or issue..."
+            placeholderTextColor={themeColors.darkGray}
+            multiline
+            value={reportText}
+            onChangeText={setReportText}
+            editable={!submitting}
+          />
+          <View
+            style={{ flexDirection: "row", justifyContent: "space-between" }}
+          >
+            <TouchableOpacity
+              onPress={handleSubmit}
+              disabled={submitting}
+              style={{
+                flex: 1,
+                padding: 12,
+                backgroundColor: themeColors.purple,
+                borderRadius: 8,
+                alignItems: "center",
+                marginRight: 8,
+                opacity: submitting ? 0.7 : 1,
+              }}
+            >
+              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+                {submitting ? "Submitting..." : "Submit"}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={onClose}
+              disabled={submitting}
+              style={{
+                flex: 1,
+                padding: 12,
+                backgroundColor: themeColors.white,
+                borderRadius: 8,
+                alignItems: "center",
+                borderColor: themeColors.black,
+                borderWidth: 0.5,
+              }}
+            >
+              <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 export default function HomeScreen({
   navigation,
   route,
@@ -750,6 +858,8 @@ export default function HomeScreen({
   const [search, setSearch] = useState(""); // <-- Add search state
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [activeTab, setActiveTab] = useState("Home");
+  const [showGeneralReport, setShowGeneralReport] = useState(false); // Add state for modal
+  const [menuOpen, setMenuOpen] = useState(false); // <-- Hamburger menu state
 
   // Fetch user's favorites
   useEffect(() => {
@@ -1033,14 +1143,236 @@ export default function HomeScreen({
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
       <View style={{ flex: 1 }}>
+        {/* --- TOP BAR: Title and Hamburger --- */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingHorizontal: 16,
+            paddingTop: 16,
+            marginBottom: 8,
+            zIndex: 10,
+          }}
+        >
+          {/* Left: Title */}
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Text
+              style={{
+                fontSize: 40,
+                fontWeight: "bold",
+                color: themeColors.purple,
+                fontFamily: Platform.OS === "ios" ? "Helvetica" : "sans-serif",
+                marginRight: 12,
+              }}
+            >
+              Nook
+            </Text>
+          </View>
+          {/* Hamburger menu button */}
+          <TouchableOpacity
+            onPress={() => setMenuOpen(true)}
+            style={{
+              alignItems: "center",
+              justifyContent: "center",
+              width: 36,
+              height: 36,
+              backgroundColor: themeColors.purple,
+              borderRadius: 18,
+              marginLeft: 8,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.2,
+              shadowRadius: 4,
+              elevation: 5,
+              zIndex: 100,
+            }}
+          >
+            <List size={26} color={themeColors.white} weight="bold" />
+          </TouchableOpacity>
+        </View>
+        {/* --- END TOP BAR --- */}
+
+        {/* Hamburger Menu Modal */}
+        {menuOpen && (
+          <Modal
+            visible={menuOpen}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setMenuOpen(false)}
+          >
+            <TouchableOpacity
+              style={{
+                flex: 1,
+                backgroundColor: "rgba(0,0,0,0.35)",
+                zIndex: 999,
+              }}
+              activeOpacity={1}
+              onPressOut={() => setMenuOpen(false)}
+            >
+              <View
+                style={{
+                  position: "absolute",
+                  top: 60,
+                  right: 16,
+                  backgroundColor: themeColors.white,
+                  borderRadius: 12,
+                  paddingVertical: 8,
+                  paddingHorizontal: 0,
+                  minWidth: 180,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  elevation: 20,
+                  zIndex: 1000,
+                }}
+              >
+                {/* Restart */}
+                <TouchableOpacity
+                  onPress={() => {
+                    setMenuOpen(false);
+                    setIsLoading(true);
+                    fetchStudySpots();
+                  }}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 12,
+                    paddingHorizontal: 20,
+                  }}
+                >
+                  <ArrowClockwise
+                    size={22}
+                    color={themeColors.purple}
+                    weight="bold"
+                  />
+                  <Text
+                    style={{
+                      marginLeft: 12,
+                      color: themeColors.purple,
+                      fontWeight: "bold",
+                      fontSize: 16,
+                    }}
+                  >
+                    Refresh
+                  </Text>
+                </TouchableOpacity>
+                {/* Divider */}
+                <View
+                  style={{
+                    height: 1,
+                    backgroundColor: themeColors.lightGrayBorder || "#eee",
+                    marginHorizontal: 10,
+                  }}
+                />
+                {/* Report */}
+                <TouchableOpacity
+                  onPress={() => {
+                    setMenuOpen(false);
+                    setShowGeneralReport(true);
+                  }}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 12,
+                    paddingHorizontal: 20,
+                  }}
+                >
+                  <ExclamationMark
+                    size={22}
+                    color={themeColors.purple}
+                    weight="bold"
+                  />
+                  <Text
+                    style={{
+                      marginLeft: 12,
+                      color: themeColors.purple,
+                      fontWeight: "bold",
+                      fontSize: 16,
+                    }}
+                  >
+                    Suggestion / Report
+                  </Text>
+                </TouchableOpacity>
+                {/* Divider */}
+                <View
+                  style={{
+                    height: 1,
+                    backgroundColor: themeColors.lightGrayBorder || "#eee",
+                    marginHorizontal: 10,
+                  }}
+                />
+                {/* Dark Mode */}
+                <TouchableOpacity
+                  onPress={() => {
+                    setMenuOpen(false);
+                    setIsDarkMode && setIsDarkMode(!isDarkMode);
+                  }}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 12,
+                    paddingHorizontal: 20,
+                  }}
+                >
+                  {isDarkMode ? (
+                    <Sun size={22} color={themeColors.purple} weight="bold" />
+                  ) : (
+                    <Moon size={22} color={themeColors.purple} weight="bold" />
+                  )}
+                  <Text
+                    style={{
+                      marginLeft: 12,
+                      color: themeColors.purple,
+                      fontWeight: "bold",
+                      fontSize: 16,
+                    }}
+                  >
+                    {isDarkMode ? "Light Mode" : "Dark Mode"}
+                  </Text>
+                </TouchableOpacity>
+                {/* Divider */}
+                <View
+                  style={{
+                    height: 1,
+                    backgroundColor: themeColors.lightGrayBorder || "#eee",
+                    marginHorizontal: 10,
+                  }}
+                />
+                {/* Profile */}
+                <TouchableOpacity
+                  onPress={() => {
+                    setMenuOpen(false);
+                    navigation.navigate("Profile");
+                  }}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 12,
+                    paddingHorizontal: 20,
+                  }}
+                >
+                  <User size={20} color={themeColors.purple} weight="bold" />
+                  <Text
+                    style={{
+                      marginLeft: 12,
+                      color: themeColors.purple,
+                      fontWeight: "bold",
+                      fontSize: 16,
+                    }}
+                  >
+                    Profile
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          </Modal>
+        )}
+
         <Filters
           filters={filters}
           setFilters={setFilters}
-          themeColors={themeColors}
-        />
-        <TabBar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
           themeColors={themeColors}
         />
         {activeTab === "Home" ? (
@@ -1120,81 +1452,10 @@ export default function HomeScreen({
             Add a Nook
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => navigation.navigate("Profile")}
-          style={{
-            position: "absolute",
-            top: 24,
-            right: 16,
-            alignItems: "center",
-            justifyContent: "center",
-            width: 30,
-            height: 30,
-            backgroundColor: themeColors.purple, // changed
-            borderRadius: 20,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.2,
-            shadowRadius: 4,
-            elevation: 3,
-            zIndex: 5,
-          }}
-        >
-          <User size={20} color={themeColors.white} weight="bold" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => {
-            setIsLoading(true); // Show loading state
-            fetchStudySpots(); // Fetch updated study spots
-          }}
-          style={{
-            position: "absolute",
-            top: 24,
-            left: 16,
-            alignItems: "center",
-            justifyContent: "center",
-            width: 30,
-            height: 30,
-            backgroundColor: themeColors.purple, // changed
-            borderRadius: 20,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.2,
-            shadowRadius: 4,
-            elevation: 3,
-            zIndex: 5,
-          }}
-        >
-          <ArrowClockwise size={22} color={themeColors.white} weight="bold" />
-        </TouchableOpacity>
-        {/* Add dark mode toggle button */}
-        <TouchableOpacity
-          onPress={() => setIsDarkMode && setIsDarkMode(!isDarkMode)}
-          activeOpacity={1}
-          style={{
-            position: "absolute",
-            top: 24,
-            left: 64,
-            alignItems: "center",
-            justifyContent: "center",
-            width: 30,
-            height: 30,
-            backgroundColor: themeColors.purple, // changed
-            borderRadius: 20,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.2,
-            shadowRadius: 4,
-            elevation: 3,
-            zIndex: 5,
-          }}
-        >
-          {isDarkMode ? (
-            <Sun size={22} color={themeColors.white} weight="bold" />
-          ) : (
-            <Moon size={22} color={themeColors.white} weight="bold" />
-          )}
-        </TouchableOpacity>
+        <GeneralReportModal
+          visible={showGeneralReport}
+          onClose={() => setShowGeneralReport(false)}
+        />
       </View>
     </SafeAreaView>
   );
