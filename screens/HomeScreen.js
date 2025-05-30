@@ -231,7 +231,7 @@ function StudySpots({
               alignItems: "center",
               backgroundColor: themeColors.white,
               borderRadius: 20,
-              borderColor: themeColors.purple,
+              borderColor: themeColors.black,
               borderWidth: 0.5,
               paddingHorizontal: 12,
               paddingVertical: 2,
@@ -289,7 +289,7 @@ function StudySpots({
             elevation: 3,
             position: "relative",
 
-            borderColor: themeColors.purple,
+            borderColor: themeColors.black,
             borderWidth: 0.5,
           }}
         >
@@ -330,7 +330,7 @@ function StudySpots({
               borderRadius: 20,
               padding: 4,
               borderWidth: 0.5,
-              borderColor: themeColors.purple, // changed
+              borderColor: themeColors.black, // changed
             }}
             onPressOut={(e) => e.stopPropagation && e.stopPropagation()}
           >
@@ -618,7 +618,7 @@ function RecentlyViewed({
                 borderRadius: 20,
                 padding: 4,
                 borderWidth: 0.5,
-                borderColor: themeColors.purple, // changed
+                borderColor: themeColors.black, // changed
               }}
               onPressOut={(e) => e.stopPropagation && e.stopPropagation()}
             >

@@ -114,7 +114,9 @@ export default function ProfileScreen({
 
   // Helper to compute noise/crowd averages and recency for a spot
   async function computeSpotRatings(spotId) {
-    const { Timestamp, collection, query, where, getDocs } = await import("firebase/firestore");
+    const { Timestamp, collection, query, where, getDocs } = await import(
+      "firebase/firestore"
+    );
     const ratingsQuery = query(
       collection(db, "ratings"),
       where("spotId", "==", spotId)
@@ -164,7 +166,9 @@ export default function ProfileScreen({
       });
       noiseRating = (noiseSumDay / todayRatings.length).toFixed(1);
       crowdRating = (crowdSumDay / todayRatings.length).toFixed(1);
-      lastUpdated = Math.max(...todayRatings.map((r) => r.timestamp.toMillis()));
+      lastUpdated = Math.max(
+        ...todayRatings.map((r) => r.timestamp.toMillis())
+      );
       lastUpdatedType = "today";
     } else {
       noiseRating = "N/A";
@@ -239,7 +243,10 @@ export default function ProfileScreen({
     // Convert base64 to Blob using fetch and a data URL
     const response = await fetch(`data:image/jpeg;base64,${base64}`);
     const blob = await response.blob();
-    const storageRef = ref(storage, `profile_pictures/${userId}_${Date.now()}.jpg`);
+    const storageRef = ref(
+      storage,
+      `profile_pictures/${userId}_${Date.now()}.jpg`
+    );
     await uploadBytes(storageRef, blob, { contentType: "image/jpeg" });
     return await getDownloadURL(storageRef);
   };
@@ -256,7 +263,10 @@ export default function ProfileScreen({
         };
         // If a new profile picture is selected, upload and save URL
         if (editedProfilePic && editedProfilePic !== profilePic) {
-          const downloadUrl = await uploadProfilePicToStorage(editedProfilePic, user.uid);
+          const downloadUrl = await uploadProfilePicToStorage(
+            editedProfilePic,
+            user.uid
+          );
           if (downloadUrl) {
             updateData.profilePic = downloadUrl;
             setProfilePic(downloadUrl);
@@ -292,7 +302,10 @@ export default function ProfileScreen({
         const asset = result.assets ? result.assets[0] : result;
         const user = auth.currentUser;
         if (!user) return;
-        const downloadUrl = await uploadProfilePicToStorage(asset.uri, user.uid);
+        const downloadUrl = await uploadProfilePicToStorage(
+          asset.uri,
+          user.uid
+        );
         if (downloadUrl) {
           setProfilePic(downloadUrl);
           await setDoc(
@@ -519,7 +532,7 @@ export default function ProfileScreen({
                     shadowOpacity: 0.08,
                     shadowRadius: 3,
                     elevation: 2,
-                    borderColor: themeColors.purple,
+                    borderColor: themeColors.black,
                     borderWidth: 0.5,
                   }}
                   onPress={() =>
@@ -783,7 +796,7 @@ export default function ProfileScreen({
                       height: 56,
                       borderRadius: 28,
                       borderWidth: 0.5,
-                      borderColor: themeColors.purple,
+                      borderColor: themeColors.black,
                     }}
                   />
                 ) : (
@@ -822,7 +835,7 @@ export default function ProfileScreen({
                       height: 56,
                       borderRadius: 28,
                       borderWidth: 0.5,
-                      borderColor: themeColors.purple,
+                      borderColor: themeColors.black,
                     }}
                   />
                 ) : (
@@ -835,7 +848,7 @@ export default function ProfileScreen({
                       alignItems: "center",
                       justifyContent: "center",
                       borderWidth: 0.5,
-                      borderColor: themeColors.purple,
+                      borderColor: themeColors.black,
                     }}
                   >
                     <User size={32} color={themeColors.purple} weight="bold" />
@@ -926,7 +939,7 @@ export default function ProfileScreen({
                   styles.cancelButton,
                   {
                     backgroundColor: themeColors.white,
-                    borderColor: themeColors.purple,
+                    borderColor: themeColors.black,
                     borderWidth: 0.5,
                   },
                 ]}
