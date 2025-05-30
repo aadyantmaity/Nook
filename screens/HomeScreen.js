@@ -1203,6 +1203,20 @@ export default function HomeScreen({
 // Helper for "last updated" display
 function getLastUpdatedLabel(ratings) {
   if (!ratings || !ratings.lastUpdated) return "";
+  const now = Date.now();
+  const last =
+    typeof ratings.lastUpdated === "number"
+      ? ratings.lastUpdated
+      : ratings.lastUpdated?.toMillis?.() ?? null;
+  if (!last) return "";
+
+  const diffMs = now - last;
+  const diffMin = Math.floor(diffMs / 60000);
+
+  if (diffMin < 30 && diffMin >= 0) {
+    if (diffMin === 0) return "Last updated: just now";
+    return `Last updated: ${diffMin} minute${diffMin === 1 ? "" : "s"} ago`;
+  }
   if (ratings.lastUpdatedType === "window" && ratings.lastWindowHours) {
     if (ratings.lastWindowHours === 1) {
       return "Last updated: 1 hour ago (1 hour avg)";

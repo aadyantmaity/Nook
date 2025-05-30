@@ -100,11 +100,25 @@ export default function ProfileScreen({
   // Helper for "last updated" display
   function getLastUpdatedLabel(ratings) {
     if (!ratings || !ratings.lastUpdated) return "";
+    const now = Date.now();
+    const last =
+      typeof ratings.lastUpdated === "number"
+        ? ratings.lastUpdated
+        : ratings.lastUpdated?.toMillis?.() ?? null;
+    if (!last) return "";
+
+    const diffMs = now - last;
+    const diffMin = Math.floor(diffMs / 60000);
+
+    if (diffMin < 30 && diffMin >= 0) {
+      if (diffMin === 0) return "Last updated: just now";
+      return `Last updated: ${diffMin} minute${diffMin === 1 ? "" : "s"} ago`;
+    }
     if (ratings.lastUpdatedType === "window" && ratings.lastWindowHours) {
       if (ratings.lastWindowHours === 1) {
-        return "Last updated: within 1 hour";
+        return "Last updated: 1 hour ago";
       }
-      return `Last updated: within ${ratings.lastWindowHours} hours`;
+      return `Last updated: ${ratings.lastWindowHours} hours ago`;
     }
     if (ratings.lastUpdatedType === "today") {
       return "Last updated: Today (daily avg)";
