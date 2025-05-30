@@ -76,7 +76,7 @@ export default function LoginScreen({ navigation }) {
           style={[styles.button, { backgroundColor: themeColors.purple }]}
           onPress={handleLogin}
         >
-          <Text style={[styles.buttonText, { color: themeColors.black }]}>
+          <Text style={[styles.buttonText, { color: themeColors.white }]}>
             {/* Use black for button text */}
             Login
           </Text>

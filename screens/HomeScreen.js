@@ -298,7 +298,7 @@ function StudySpots({
             style={{
               width: "100%",
               height: 120,
-              backgroundColor: themeColors.lightGray || "#EEE", // changed
+              backgroundColor: themeColors.darkGray || "#EEE", // changed
               borderTopLeftRadius: 8,
               borderTopRightRadius: 8,
               alignItems: "center",
@@ -314,7 +314,7 @@ function StudySpots({
                 resizeMode="cover"
               />
             ) : (
-              <Text style={{ color: "#AAA" }}>No Image</Text>
+              <Text style={{ color: themeColors.black }}>No Image</Text>
             )}
           </View>
 
@@ -604,7 +604,7 @@ function RecentlyViewed({
                   resizeMode="cover"
                 />
               ) : (
-                <Text style={{ color: "#AAA" }}>No Image</Text>
+                <Text style={{ color: themeColors.black }}>No Image</Text>
               )}
             </View>
             <TouchableOpacity

@@ -578,14 +578,14 @@ export default function SpotDetailScreen({ route, navigation }) {
                 style={{
                   width: "100%",
                   height: 150,
-                  backgroundColor: "#EEE",
+                  backgroundColor: themeColors.darkGray,
                   borderRadius: 8,
                   alignItems: "center",
                   justifyContent: "center",
                   marginBottom: 16,
                 }}
               >
-                <Text style={{ color: "#AAA" }}>No Image</Text>
+                <Text style={{ color: themeColors.black }}>No Image</Text>
               </View>
             )}
           </View>
