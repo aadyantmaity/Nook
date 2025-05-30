@@ -7,6 +7,7 @@ import AddSpotScreen from "./screens/AddSpotScreen";
 import LoginScreen from "./screens/LoginScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import ProfileScreen from "./screens/ProfileScreen";
+import FocusTimerScreen from "./screens/FocusTimerScreen"; // <-- Add this import
 import { auth } from "./firebaseConfig"; // Import Firebase auth
 import { Text, View, ActivityIndicator, Appearance } from "react-native"; // For system color scheme
 import { colors, getThemeColors } from "./constants/colors"; // <-- Import getThemeColors
@@ -133,6 +134,16 @@ export default function App() {
           <Stack.Screen name="Profile">
             {(props) => (
               <ProfileScreen
+                {...props}
+                onNavigate={(callback) => handleScreenTransition(callback)}
+                isDarkMode={isDarkMode}
+                themeColors={themeColors}
+              />
+            )}
+          </Stack.Screen>
+          <Stack.Screen name="FocusTimer">
+            {(props) => (
+              <FocusTimerScreen
                 {...props}
                 onNavigate={(callback) => handleScreenTransition(callback)}
                 isDarkMode={isDarkMode}
