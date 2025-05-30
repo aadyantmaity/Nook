@@ -80,7 +80,7 @@ export default function SpotDetailScreen({ route, navigation }) {
     if (ratings.lastUpdatedType === "window" && ratings.lastWindowHours) {
       if (diffMin < 60) {
         if (diffMin === 0) return "Last updated: just now";
-        return `Last updated: ${diffMin} min ago (${ratings.lastWindowHours}h avg)`;
+        return `Last updated: ${diffMin} min ago`;
       }
       if (ratings.lastWindowHours === 1) {
         return "Last updated: 1 hour ago (1h avg)";
@@ -588,313 +588,311 @@ export default function SpotDetailScreen({ route, navigation }) {
   const generalRating = spot.generalRating || 0;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 16 }}>
-        <View style={{ flex: 1, backgroundColor: themeColors.white }}>
-          {/* Home Button Above Image */}
-          <View style={{ width: "100%", marginBottom: 8 }}>
-            <TouchableOpacity
-              onPress={() => navigation.navigate("Home")}
-              style={{
-                alignSelf: "flex-start",
-                flexDirection: "row",
-                alignItems: "center",
-                padding: 10,
-                backgroundColor: themeColors.purple,
-                borderRadius: 8,
-                shadowColor: themeColors.black,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 4,
-                marginBottom: 8,
-              }}
-            >
-              <House size={20} color={themeColors.white} />
-            </TouchableOpacity>
-          </View>
-          {/* Spot Image */}
-          <View style={{ position: "relative", width: "100%" }}>
-            {spot.photoUrl ? (
-              <View
-                style={{
-                  width: "100%",
-                  height: 150,
-                  backgroundColor: "#EEE",
-                  borderRadius: 8,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  overflow: "hidden",
-                  marginBottom: 16,
-                }}
-              >
-                <Image
-                  source={{
-                    uri:
-                      cachedPhotoUri && cachedPhotoUri.length > 0
-                        ? cachedPhotoUri
-                        : spot.photoUrl,
-                  }}
-                  style={{ width: "100%", height: "100%" }}
-                  resizeMode="cover"
-                />
-              </View>
-            ) : (
-              <View
-                style={{
-                  width: "100%",
-                  height: 150,
-                  backgroundColor: themeColors.darkGray,
-                  borderRadius: 8,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 16,
-                }}
-              >
-                <Text style={{ color: themeColors.black }}>No Image</Text>
-              </View>
-            )}
-          </View>
-
-          <Text
+    <SafeAreaView style={{ flexGrow: 1, backgroundColor: themeColors.white }}>
+      <View
+        style={{ flex: 1, backgroundColor: themeColors.white, padding: 16 }}
+      >
+        {/* Home Button Above Image */}
+        <View style={{ width: "100%", marginBottom: 8 }}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Home")}
             style={{
-              fontSize: 18,
-              fontWeight: "bold",
-              color: themeColors.black, // Use black for spot name
-              marginBottom: 6,
+              alignSelf: "flex-start",
+              flexDirection: "row",
+              alignItems: "center",
+              padding: 10,
+              backgroundColor: themeColors.purple,
+              borderRadius: 8,
+              shadowColor: themeColors.black,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.2,
+              shadowRadius: 4,
+              marginBottom: 8,
             }}
           >
-            {spot.buildingName}
-            {spot.roomNumber && (
-              <Text
-                style={{
-                  fontSize: 18,
-                  color: themeColors.black,
-                  fontWeight: "bold",
-                }}
-              >
-                {" - Floor "}
-                {spot.roomNumber}
-              </Text>
-            )}
-          </Text>
-
-          {/* --- TAGS FIRST --- */}
-          <View
-            style={{
-              marginTop: 0,
-              marginBottom: 16, // Add this if not already
-              alignItems: "left",
-            }}
-          >
+            <House size={20} color={themeColors.white} />
+          </TouchableOpacity>
+        </View>
+        {/* Spot Image */}
+        <View style={{ position: "relative", width: "100%" }}>
+          {spot.photoUrl ? (
             <View
               style={{
-                flexDirection: "row",
-                flexWrap: "wrap",
+                width: "100%",
+                height: 150,
+                backgroundColor: "#EEE",
+                borderRadius: 8,
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+                marginBottom: 16,
               }}
             >
-              {tags.length > 0 ? (
-                tags.map((tag, index) => (
-                  <View
-                    key={index}
-                    style={{
-                      backgroundColor: themeColors.purple,
-                      paddingHorizontal: 16,
-                      paddingVertical: 8,
-                      borderRadius: 20,
-                      marginRight: 8,
-                      marginBottom: 8,
-                    }}
-                  >
-                    <Text style={{ color: themeColors.white, fontSize: 16 }}>
-                      {String(tag)}
-                    </Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={{ fontSize: 16, color: themeColors.black }}>
-                  No tags available
-                </Text>
-              )}
+              <Image
+                source={{
+                  uri:
+                    cachedPhotoUri && cachedPhotoUri.length > 0
+                      ? cachedPhotoUri
+                      : spot.photoUrl,
+                }}
+                style={{ width: "100%", height: "100%" }}
+                resizeMode="cover"
+              />
             </View>
-          </View>
+          ) : (
+            <View
+              style={{
+                width: "100%",
+                height: 150,
+                backgroundColor: themeColors.darkGray,
+                borderRadius: 8,
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 16,
+              }}
+            >
+              <Text style={{ color: themeColors.black }}>No Image</Text>
+            </View>
+          )}
+        </View>
 
-          {/* --- NOISE & CROWD LEVELS LAST --- */}
+        <Text
+          style={{
+            fontSize: 24,
+            fontWeight: "bold",
+            color: themeColors.black, // Use black for spot name
+            marginBottom: 6,
+          }}
+        >
+          {spot.buildingName}
+          {spot.roomNumber && (
+            <Text
+              style={{
+                fontSize: 24,
+                color: themeColors.black,
+                fontWeight: "bold",
+              }}
+            >
+              {" - Floor "}
+              {spot.roomNumber}
+            </Text>
+          )}
+        </Text>
+
+        {/* --- TAGS FIRST --- */}
+        <View
+          style={{
+            marginTop: 0,
+            marginBottom: 16, // Add this if not already
+            alignItems: "left",
+          }}
+        >
           <View
             style={{
               flexDirection: "row",
-              justifyContent: "space-between",
-              marginBottom: 16,
-              marginTop: 4, // Keep only one value
+              flexWrap: "wrap",
             }}
           >
-            <View
-              style={{
-                alignItems: "center",
-                padding: 16,
-                backgroundColor: themeColors.white,
-                borderRadius: 8,
-                flex: 1,
-                marginRight: 8,
-                borderColor: themeColors.black,
-                borderWidth: 0.5,
-              }}
-            >
-              <SpeakerHigh size={24} color={themeColors.purple} />
-              <Text
-                style={{
-                  color: themeColors.purple,
-                  fontSize: 16,
-                  fontWeight: "bold",
-                  marginTop: 8,
-                }}
-              >
-                Noise: {spot.ratings?.noise || "N/A"}
+            {tags.length > 0 ? (
+              tags.map((tag, index) => (
+                <View
+                  key={index}
+                  style={{
+                    backgroundColor: themeColors.purple,
+                    paddingHorizontal: 16,
+                    paddingVertical: 8,
+                    borderRadius: 20,
+                    marginRight: 8,
+                    marginBottom: 8,
+                  }}
+                >
+                  <Text style={{ color: themeColors.white, fontSize: 14 }}>
+                    {String(tag)}
+                  </Text>
+                </View>
+              ))
+            ) : (
+              <Text style={{ fontSize: 16, color: themeColors.black }}>
+                No tags available
               </Text>
-            </View>
-            <View
-              style={{
-                alignItems: "center",
-                padding: 16,
-                backgroundColor: themeColors.white,
-                borderRadius: 8,
-                flex: 1,
-                borderColor: themeColors.black,
-                borderWidth: 0.5,
-              }}
-            >
-              <UsersThree size={24} color={themeColors.purple} />
-              <Text
-                style={{
-                  color: themeColors.purple,
-                  fontSize: 16,
-                  fontWeight: "bold",
-                  marginTop: 8,
-                }}
-              >
-                Crowd: {spot.ratings?.crowd || "N/A"}
-              </Text>
-            </View>
+            )}
           </View>
+        </View>
 
-          {/* --- LAST UPDATED LABEL --- */}
-          <Text
+        {/* --- NOISE & CROWD LEVELS LAST --- */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            marginBottom: 16,
+            marginTop: 4, // Keep only one value
+          }}
+        >
+          <View
             style={{
-              fontSize: 12,
-              color: themeColors.darkGray,
-              marginBottom: 34,
-              textAlign: "right",
+              alignItems: "center",
+              padding: 16,
+              backgroundColor: themeColors.white,
+              borderRadius: 8,
+              flex: 1,
+              marginRight: 8,
+              borderColor: themeColors.black,
+              borderWidth: 0.5,
             }}
           >
-            {getLastUpdatedLabel(spot.ratings)}
-          </Text>
-
-          {/* --- OVERALL RATING NEXT --- */}
-          <View style={{ alignItems: "center", marginBottom: 16 }}>
+            <SpeakerHigh size={24} color={themeColors.purple} />
             <Text
               style={{
+                color: themeColors.purple,
                 fontSize: 16,
+                fontWeight: "bold",
+                marginTop: 8,
+              }}
+            >
+              Noise: {spot.ratings?.noise || "N/A"}
+            </Text>
+          </View>
+          <View
+            style={{
+              alignItems: "center",
+              padding: 16,
+              backgroundColor: themeColors.white,
+              borderRadius: 8,
+              flex: 1,
+              borderColor: themeColors.black,
+              borderWidth: 0.5,
+            }}
+          >
+            <UsersThree size={24} color={themeColors.purple} />
+            <Text
+              style={{
+                color: themeColors.purple,
+                fontSize: 16,
+                fontWeight: "bold",
+                marginTop: 8,
+              }}
+            >
+              Crowd: {spot.ratings?.crowd || "N/A"}
+            </Text>
+          </View>
+        </View>
+
+        {/* --- LAST UPDATED LABEL --- */}
+        <Text
+          style={{
+            fontSize: 12,
+            color: themeColors.darkGray,
+            marginBottom: 24,
+            textAlign: "right",
+          }}
+        >
+          {getLastUpdatedLabel(spot.ratings)}
+        </Text>
+
+        {/* --- OPEN/QUIET HOURS --- */}
+        {spot.openHours ? (
+          <View style={{ alignItems: "center", marginBottom: 10 }}>
+            <Text
+              style={{
+                fontSize: 15,
                 color: themeColors.black,
                 fontWeight: "bold",
-                marginBottom: 4,
+                marginBottom: 2,
               }}
             >
-              Overall Rating
+              Open/Quiet Hours
             </Text>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <TouchableOpacity
-                  key={star}
-                  onPress={() => handleStarTap(star)}
-                  activeOpacity={0.7}
-                >
-                  <Star
-                    size={28}
-                    color={
-                      star <= pendingOverallRating
-                        ? themeColors.purple
-                        : themeColors.darkGray
-                    }
-                    weight={star <= pendingOverallRating ? "fill" : "regular"}
-                    style={{ marginRight: 2 }}
-                  />
-                </TouchableOpacity>
-              ))}
-              <Text
-                style={{
-                  marginLeft: 8,
-                  color: themeColors.black,
-                  fontSize: 15,
-                }}
-              >
-                {overallRatingsCount > 0
-                  ? `${averageOverallRating.toFixed(
-                      1
-                    )} (${overallRatingsCount})`
-                  : "No rating"}
-              </Text>
-            </View>
-            <Text
-              style={{
-                fontSize: 12,
-                color: themeColors.darkGray,
-                marginTop: 2,
-              }}
-            >
-              {userOverallRating
-                ? `Your rating: ${userOverallRating}`
-                : "Tap a star to rate"}
+            <Text style={{ color: themeColors.darkGray, fontSize: 15 }}>
+              {spot.openHours}
             </Text>
-            <TouchableOpacity
-              onPress={handleSubmitOverallRating}
-              disabled={
-                isSubmittingOverall ||
-                pendingOverallRating === 0 ||
-                pendingOverallRating === userOverallRating
-              }
-              style={{
-                marginTop: 8,
-                backgroundColor:
-                  pendingOverallRating !== 0 &&
-                  pendingOverallRating !== userOverallRating
-                    ? themeColors.purple
-                    : themeColors.darkGray,
-                paddingVertical: 8,
-                paddingHorizontal: 24,
-                borderRadius: 8,
-                alignItems: "center",
-                opacity:
-                  pendingOverallRating !== 0 &&
-                  pendingOverallRating !== userOverallRating
-                    ? 1
-                    : 0.6,
-              }}
-            >
-              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
-                {isSubmittingOverall ? "Submitting..." : "Submit"}
-              </Text>
-            </TouchableOpacity>
           </View>
+        ) : null}
+      </View>
 
-          {/* --- OPEN/QUIET HOURS --- */}
-          {spot.openHours ? (
-            <View style={{ alignItems: "center", marginBottom: 10 }}>
-              <Text
-                style={{
-                  fontSize: 15,
-                  color: themeColors.black,
-                  fontWeight: "bold",
-                  marginBottom: 2,
-                }}
-              >
-                Open/Quiet Hours
-              </Text>
-              <Text style={{ color: themeColors.darkGray, fontSize: 15 }}>
-                {spot.openHours}
-              </Text>
-            </View>
-          ) : null}
+      {/* --- OVERALL RATING NEXT --- */}
+      <View style={{ alignItems: "center", marginBottom: 16 }}>
+        <Text
+          style={{
+            fontSize: 16,
+            color: themeColors.black,
+            fontWeight: "bold",
+            marginBottom: 4,
+          }}
+        >
+          Overall Rating
+        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {[1, 2, 3, 4, 5].map((star) => (
+            <TouchableOpacity
+              key={star}
+              onPress={() => handleStarTap(star)}
+              activeOpacity={0.7}
+            >
+              <Star
+                size={28}
+                color={
+                  star <= pendingOverallRating
+                    ? themeColors.purple
+                    : themeColors.darkGray
+                }
+                weight={star <= pendingOverallRating ? "fill" : "regular"}
+                style={{ marginRight: 2 }}
+              />
+            </TouchableOpacity>
+          ))}
+          <Text
+            style={{
+              marginLeft: 8,
+              color: themeColors.black,
+              fontSize: 15,
+            }}
+          >
+            {overallRatingsCount > 0
+              ? `${averageOverallRating.toFixed(1)} (${overallRatingsCount})`
+              : "No rating"}
+          </Text>
         </View>
-      </ScrollView>
+        <Text
+          style={{
+            fontSize: 12,
+            color: themeColors.darkGray,
+            marginTop: 2,
+          }}
+        >
+          {userOverallRating
+            ? `Your rating: ${userOverallRating}`
+            : "Tap a star to rate"}
+        </Text>
+        <TouchableOpacity
+          onPress={handleSubmitOverallRating}
+          disabled={
+            isSubmittingOverall ||
+            pendingOverallRating === 0 ||
+            pendingOverallRating === userOverallRating
+          }
+          style={{
+            marginTop: 8,
+            backgroundColor:
+              pendingOverallRating !== 0 &&
+              pendingOverallRating !== userOverallRating
+                ? themeColors.purple
+                : themeColors.darkGray,
+            paddingVertical: 8,
+            paddingHorizontal: 24,
+            borderRadius: 8,
+            alignItems: "center",
+            opacity:
+              pendingOverallRating !== 0 &&
+              pendingOverallRating !== userOverallRating
+                ? 1
+                : 0.6,
+          }}
+        >
+          <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+            {isSubmittingOverall ? "Submitting..." : "Submit"}
+          </Text>
+        </TouchableOpacity>
+      </View>
       <View
         style={{
           padding: 16,
@@ -972,6 +970,7 @@ export default function SpotDetailScreen({ route, navigation }) {
           style={{
             marginTop: 12,
             alignSelf: "center",
+            width: "75%", // Match width of the button row above
             backgroundColor: themeColors.white,
             borderColor: themeColors.purple,
             borderWidth: 1,
@@ -980,8 +979,14 @@ export default function SpotDetailScreen({ route, navigation }) {
             paddingHorizontal: 24,
           }}
         >
-          <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
-            Report Incorrect Info / Suggestion
+          <Text
+            style={{
+              color: themeColors.purple,
+              fontWeight: "bold",
+              textAlign: "center",
+            }}
+          >
+            Report Incorrect Information
           </Text>
         </TouchableOpacity>
         <LiveUpdateModal
@@ -1027,8 +1032,8 @@ function LiveUpdateModal({
 
   useEffect(() => {
     if (visible) {
-      setNoiseLevel(safeNoise);
-      setCrowdLevel(safeCrowd);
+      setNoiseLevel(3);
+      setCrowdLevel(3);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, initialNoise, initialCrowd]);

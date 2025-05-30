@@ -55,11 +55,13 @@ export default function ProfileScreen({
   const [isLoading, setIsLoading] = useState(true);
   const [favorites, setFavorites] = useState([]);
   const [favoriteSpots, setFavoriteSpots] = useState([]);
+  const [favoriteSpotsLoading, setFavoriteSpotsLoading] = useState(true); // <-- Add loading state for favorites
   const [profilePic, setProfilePic] = useState(null);
   const [editedProfilePic, setEditedProfilePic] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [cachedProfilePicUri, setCachedProfilePicUri] = useState(null);
+  const [cachedFavoriteSpotImages, setCachedFavoriteSpotImages] = useState({}); // spotId -> uri
 
   // Helper to cache profile picture locally
   const cacheProfilePic = async (url) => {
@@ -89,6 +91,27 @@ export default function ProfileScreen({
     } catch (e) {
       setCachedProfilePicUri(null);
     }
+  };
+
+  // Helper to cache favorite spot images locally
+  const cacheFavoriteSpotImage = async (spotId, photoUrl) => {
+    if (!photoUrl) return null;
+    try {
+      const cacheKey = `favSpotImageUri_${spotId}`;
+      const cachedUri = await AsyncStorage.getItem(cacheKey);
+      const cachedUrl = await AsyncStorage.getItem(`${cacheKey}_url`);
+      if (cachedUri && cachedUrl === photoUrl) {
+        return cachedUri;
+      }
+      const fileUri = FileSystem.cacheDirectory + `fav_spot_${spotId}.jpg`;
+      const downloadRes = await FileSystem.downloadAsync(photoUrl, fileUri);
+      if (downloadRes.status === 200) {
+        await AsyncStorage.setItem(cacheKey, downloadRes.uri);
+        await AsyncStorage.setItem(`${cacheKey}_url`, photoUrl);
+        return downloadRes.uri;
+      }
+    } catch (e) {}
+    return null;
   };
 
   // Fetch user data and cache profile picture
@@ -146,6 +169,29 @@ export default function ProfileScreen({
     }
   }, [profilePic]);
 
+  // Cache all favorite spot images after fetching favoriteSpots
+  useEffect(() => {
+    let isMounted = true;
+    const cacheAllImages = async () => {
+      const cacheMap = {};
+      await Promise.all(
+        favoriteSpots.map(async (spot) => {
+          if (spot.photoUrl) {
+            const uri = await cacheFavoriteSpotImage(spot.id, spot.photoUrl);
+            if (uri && isMounted) cacheMap[spot.id] = uri;
+          }
+        })
+      );
+      if (isMounted) setCachedFavoriteSpotImages(cacheMap);
+    };
+    if (favoriteSpots.length > 0) {
+      cacheAllImages();
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [favoriteSpots]);
+
   // Helper for "last updated" display
   function getLastUpdatedLabel(ratings) {
     if (!ratings || !ratings.lastUpdated) return "";
@@ -159,18 +205,22 @@ export default function ProfileScreen({
     const diffMs = now - last;
     const diffMin = Math.floor(diffMs / 60000);
 
-    if (diffMin < 30 && diffMin >= 0) {
-      if (diffMin === 0) return "Last updated: just now";
-      return `Last updated: ${diffMin} minute${diffMin === 1 ? "" : "s"} ago`;
-    }
     if (ratings.lastUpdatedType === "window" && ratings.lastWindowHours) {
-      if (ratings.lastWindowHours === 1) {
-        return "Last updated: 1 hour ago";
+      if (diffMin < 60) {
+        if (diffMin === 0) return "Last updated: just now";
+        return `Last updated: ${diffMin} min ago`;
       }
-      return `Last updated: ${ratings.lastWindowHours} hours ago`;
+      if (ratings.lastWindowHours === 1) {
+        return "Last updated: 1 hour ago (1h avg)";
+      }
+      return `Last updated: ${ratings.lastWindowHours} hours ago (${ratings.lastWindowHours}h avg)`;
     }
     if (ratings.lastUpdatedType === "today") {
       return "Last updated: Today (daily avg)";
+    }
+    if (diffMin < 30 && diffMin >= 0) {
+      if (diffMin === 0) return "Last updated: just now";
+      return `Last updated: ${diffMin} min ago`;
     }
     return "";
   }
@@ -279,8 +329,10 @@ export default function ProfileScreen({
 
   // Fetch favorite spots details
   const fetchFavoriteSpots = useCallback(async () => {
+    setFavoriteSpotsLoading(true); // <-- Start loading before fetch
     if (!favorites.length) {
       setFavoriteSpots([]);
+      setFavoriteSpotsLoading(false); // <-- Done loading
       return;
     }
     try {
@@ -299,6 +351,7 @@ export default function ProfileScreen({
     } catch (e) {
       setFavoriteSpots([]);
     }
+    setFavoriteSpotsLoading(false); // <-- Done loading
   }, [favorites]);
 
   useEffect(() => {
@@ -429,6 +482,7 @@ export default function ProfileScreen({
       </SafeAreaView>
     );
 
+  // Only render the main profile UI after loading is complete
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: themeColors.white }]}
@@ -603,11 +657,66 @@ export default function ProfileScreen({
                 { marginLeft: 8, color: themeColors.black },
               ]}
             >
-              {/* Use black for section title */}
               Favorites
             </Text>
           </View>
-          {favoriteSpots.length === 0 ? (
+          {/* Show skeleton loader or spinner while loading favorites */}
+          {favoriteSpotsLoading ? (
+            <View style={{ width: "100%", marginBottom: 12 }}>
+              {[1, 2, 3].map((i) => (
+                <View
+                  key={i}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    backgroundColor: themeColors.gray,
+                    borderRadius: 12,
+                    padding: 14,
+                    marginBottom: 10,
+                    opacity: 0.5,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 75,
+                      height: 75,
+                      borderRadius: 8,
+                      backgroundColor: themeColors.lightGray || "#EEE",
+                      marginRight: 14,
+                    }}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <View
+                      style={{
+                        height: 18,
+                        backgroundColor: themeColors.lightGray || "#EEE",
+                        borderRadius: 4,
+                        marginBottom: 8,
+                        width: "60%",
+                      }}
+                    />
+                    <View
+                      style={{
+                        height: 12,
+                        backgroundColor: themeColors.lightGray || "#EEE",
+                        borderRadius: 4,
+                        marginBottom: 6,
+                        width: "40%",
+                      }}
+                    />
+                    <View
+                      style={{
+                        height: 12,
+                        backgroundColor: themeColors.lightGray || "#EEE",
+                        borderRadius: 4,
+                        width: "30%",
+                      }}
+                    />
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : favoriteSpots.length === 0 ? (
             <Text
               style={[styles.noFavoritesText, { color: themeColors.darkGray }]}
             >
@@ -653,7 +762,10 @@ export default function ProfileScreen({
                       }}
                     >
                       <Image
-                        source={{ uri: spot.photoUrl }}
+                        source={{
+                          uri:
+                            cachedFavoriteSpotImages[spot.id] || spot.photoUrl,
+                        }}
                         style={{ width: "100%", height: "100%" }}
                         resizeMode="cover"
                       />
@@ -792,38 +904,42 @@ export default function ProfileScreen({
         </View>
 
         {/* Buttons */}
-        <View style={styles.optionsContainer}>
-          <View style={styles.buttonRow}>
-            <TouchableOpacity
-              style={[
-                styles.editButton,
-                { backgroundColor: themeColors.purple },
-              ]}
-              onPress={() => {
-                setEditedFirstName(
-                  firstName !== "No First Name" ? firstName : ""
-                );
-                setEditedLastName(lastName !== "No Last Name" ? lastName : "");
-                setEditedGradYear(
-                  userGradYear !== "No Grad Year" ? userGradYear : ""
-                );
-                setIsModalVisible(true);
-                setTimeout(() => setEditedProfilePic(null), 0); // Ensure state updates after modal opens
-              }}
-            >
-              <PencilSimple size={20} color={themeColors.white} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.logoutButton,
-                { backgroundColor: themeColors.red },
-              ]}
-              onPress={handleLogout}
-            >
-              <SignOut size={20} color={themeColors.white} />
-            </TouchableOpacity>
+        {!isLoading && (
+          <View style={styles.optionsContainer}>
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={[
+                  styles.editButton,
+                  { backgroundColor: themeColors.purple },
+                ]}
+                onPress={() => {
+                  setEditedFirstName(
+                    firstName !== "No First Name" ? firstName : ""
+                  );
+                  setEditedLastName(
+                    lastName !== "No Last Name" ? lastName : ""
+                  );
+                  setEditedGradYear(
+                    userGradYear !== "No Grad Year" ? userGradYear : ""
+                  );
+                  setIsModalVisible(true);
+                  setTimeout(() => setEditedProfilePic(null), 0); // Ensure state updates after modal opens
+                }}
+              >
+                <PencilSimple size={20} color={themeColors.white} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.logoutButton,
+                  { backgroundColor: themeColors.red },
+                ]}
+                onPress={handleLogout}
+              >
+                <SignOut size={20} color={themeColors.white} />
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        )}
       </ScrollView>
 
       {/* Modal for editing profile */}
