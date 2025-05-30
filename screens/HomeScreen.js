@@ -41,6 +41,7 @@ import { doc, getDoc } from "firebase/firestore"; // Import Firestore functions
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system"; // <-- Add this import
 import { ThemeContext } from "../App"; // Import ThemeContext
+let imageCache = {};
 
 const TAGS = [
   "All",
@@ -1341,7 +1342,8 @@ export default function HomeScreen({
                 <TouchableOpacity
                   onPress={() => {
                     setMenuOpen(false);
-                    setShowGeneralReport(true);
+                    // Delay showing the modal until after the menu closes to avoid flicker
+                    setTimeout(() => setShowGeneralReport(true), 250);
                   }}
                   style={{
                     flexDirection: "row",
@@ -1414,8 +1416,12 @@ export default function HomeScreen({
                 {/* Profile */}
                 <TouchableOpacity
                   onPress={() => {
+                    // Always close the report modal before navigating to Profile
+                    setShowGeneralReport(false);
                     setMenuOpen(false);
-                    navigation.navigate("Profile");
+                    setTimeout(() => {
+                      navigation.navigate("Profile");
+                    }, 250);
                   }}
                   style={{
                     flexDirection: "row",
@@ -1548,7 +1554,7 @@ function getLastUpdatedLabel(ratings) {
   if (ratings.lastUpdatedType === "window" && ratings.lastWindowHours) {
     if (diffMin < 60) {
       if (diffMin === 0) return "Last updated: just now";
-      return `Last updated: ${diffMin} min ago (${ratings.lastWindowHours}h avg)`;
+      return `Last updated: ${diffMin} min ago`;
     }
     if (ratings.lastWindowHours === 1) {
       return "Last updated: 1 hour ago (1h avg)";
