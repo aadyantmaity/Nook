@@ -805,6 +805,7 @@ export default function AddSpotScreen({
               justifyContent: "center",
             }}
           >
+            {/* Reset (negative) on left, Add Nook (positive) on right */}
             <TouchableOpacity
               onPress={resetForm}
               style={{

@@ -909,6 +909,15 @@ export default function ProfileScreen({
             <View style={styles.buttonRow}>
               <TouchableOpacity
                 style={[
+                  styles.logoutButton,
+                  { backgroundColor: themeColors.red },
+                ]}
+                onPress={handleLogout}
+              >
+                <SignOut size={20} color={themeColors.white} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
                   styles.editButton,
                   { backgroundColor: themeColors.purple },
                 ]}
@@ -927,15 +936,6 @@ export default function ProfileScreen({
                 }}
               >
                 <PencilSimple size={20} color={themeColors.white} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.logoutButton,
-                  { backgroundColor: themeColors.red },
-                ]}
-                onPress={handleLogout}
-              >
-                <SignOut size={20} color={themeColors.white} />
               </TouchableOpacity>
             </View>
           </View>
@@ -1135,19 +1135,7 @@ export default function ProfileScreen({
               borderWidth={0.5}
             />
             <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[
-                  styles.saveButton,
-                  { backgroundColor: themeColors.purple },
-                ]}
-                onPress={handleSaveProfile}
-              >
-                <Text
-                  style={[styles.saveButtonText, { color: themeColors.white }]}
-                >
-                  Save
-                </Text>
-              </TouchableOpacity>
+              {/* Cancel (negative) on left, Save (positive) on right */}
               <TouchableOpacity
                 style={[
                   styles.cancelButton,
@@ -1155,6 +1143,7 @@ export default function ProfileScreen({
                     backgroundColor: themeColors.white,
                     borderColor: themeColors.black,
                     borderWidth: 0.5,
+                    marginRight: 8,
                   },
                 ]}
                 onPress={() => setIsModalVisible(false)}
@@ -1168,6 +1157,19 @@ export default function ProfileScreen({
                   ]}
                 >
                   Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.saveButton,
+                  { backgroundColor: themeColors.purple },
+                ]}
+                onPress={handleSaveProfile}
+              >
+                <Text
+                  style={[styles.saveButtonText, { color: themeColors.white }]}
+                >
+                  Save
                 </Text>
               </TouchableOpacity>
             </View>
