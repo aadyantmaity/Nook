@@ -64,7 +64,7 @@ export default function SignUpScreen({ navigation }) {
       style={[styles.container, { backgroundColor: themeColors.white }]}
     >
       {/* Remove dark mode toggle button */}
-      <Text style={[styles.title, { color: themeColors.purple }]}>Sign Up</Text>
+      <Text style={[styles.title, { color: themeColors.black }]}>Sign Up</Text>
       <View style={styles.formContainer}>
         <TextInput
           style={[
