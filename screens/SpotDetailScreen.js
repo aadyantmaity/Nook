@@ -1129,6 +1129,34 @@ export default function SpotDetailScreen({ route, navigation }) {
         <View
           style={{ flexDirection: "row", width: "75%", alignSelf: "center" }}
         >
+          {spot.addedBy === auth.currentUser?.uid && (
+            <TouchableOpacity
+              onPress={handleDeleteSpot}
+              style={{
+                flex: 1,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                paddingVertical: 12,
+                paddingHorizontal: 16,
+                backgroundColor: themeColors.red,
+                borderRadius: 8,
+                marginRight: 8,
+              }}
+            >
+              <X size={20} color={themeColors.white} weight="bold" />
+              <Text
+                style={{
+                  marginLeft: 8,
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontSize: 16,
+                }}
+              >
+                Delete
+              </Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             onPress={() => setShowLiveUpdate(true)}
             style={{
@@ -1140,7 +1168,7 @@ export default function SpotDetailScreen({ route, navigation }) {
               paddingHorizontal: 16,
               backgroundColor: themeColors.purple,
               borderRadius: 8,
-              marginRight: 8,
+              marginLeft: 8,
               shadowColor: themeColors.black,
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.2,
@@ -1160,34 +1188,6 @@ export default function SpotDetailScreen({ route, navigation }) {
               Update
             </Text>
           </TouchableOpacity>
-          {spot.addedBy === auth.currentUser?.uid && (
-            <TouchableOpacity
-              onPress={handleDeleteSpot}
-              style={{
-                flex: 1,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                backgroundColor: themeColors.red,
-                borderRadius: 8,
-                marginLeft: 8,
-              }}
-            >
-              <X size={20} color={themeColors.white} weight="bold" />
-              <Text
-                style={{
-                  marginLeft: 8,
-                  color: themeColors.white,
-                  fontWeight: "bold",
-                  fontSize: 16,
-                }}
-              >
-                Delete
-              </Text>
-            </TouchableOpacity>
-          )}
         </View>
         {/* Add Report Button */}
         <TouchableOpacity
