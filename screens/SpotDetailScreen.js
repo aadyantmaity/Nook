@@ -51,7 +51,7 @@ export default function SpotDetailScreen({ route, navigation }) {
   const [showLiveUpdate, setShowLiveUpdate] = useState(false);
   const [currentUserName, setCurrentUserName] = useState(""); // State for current user's name
   const [addedByName, setAddedByName] = useState(null); // Set initial state to null
-  const [isLoading, setIsLoading] = useState(true); // Add loading state
+  const [isLoading, setIsLoading] = useState(true); // Add loading stat
   const [userOverallRating, setUserOverallRating] = useState(0);
   const [averageOverallRating, setAverageOverallRating] = useState(0);
   const [overallRatingsCount, setOverallRatingsCount] = useState(0);
