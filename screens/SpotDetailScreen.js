@@ -64,7 +64,7 @@ export default function SpotDetailScreen({ route, navigation }) {
   const [showReportModal, setShowReportModal] = useState(false); // Add state for report modal
   const [cachedPhotoUri, setCachedPhotoUri] = useState(null);
 
-  // Helper for "last updated" display
+  // Helper for "last updated" display (copied from HomeScreen)
   function getLastUpdatedLabel(ratings) {
     if (!ratings || !ratings.lastUpdated) return "";
     const now = Date.now();
@@ -128,71 +128,135 @@ export default function SpotDetailScreen({ route, navigation }) {
           collection(db, "ratings"),
           where("spotId", "==", spotId)
         );
-        const ratingsSnapshot = await getDocs(ratingsQuery);
 
-        let noiseSum = 0,
-          crowdSum = 0,
-          count = 0;
-        let lastRecentTimestamp = null;
-        let recentRatings = [];
-        let todayRatings = [];
-        const now = Timestamp.now().toMillis();
-        const thirtyMinutesAgo = now - 30 * 60 * 1000;
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-        const todayStartMillis = todayStart.getTime();
+        const unsubscribe = onSnapshot(ratingsQuery, (snapshot) => {
+          const now = Timestamp.now().toMillis();
+          const thirtyMinutesAgo = now - 30 * 60 * 1000;
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+          const todayStartMillis = todayStart.getTime();
 
-        ratingsSnapshot.forEach((ratingDoc) => {
-          const ratingData = ratingDoc.data();
-          const ts = ratingData.timestamp.toMillis();
-          if (ts >= thirtyMinutesAgo) {
-            noiseSum += ratingData.noise || 0; // Ensure noise is a valid number
-            crowdSum += ratingData.crowd || 0; // Ensure crowd is a valid number
-            count++;
-            recentRatings.push(ratingData);
-            if (!lastRecentTimestamp || ts > lastRecentTimestamp)
-              lastRecentTimestamp = ts;
-          }
-          if (ts >= todayStartMillis) {
-            todayRatings.push(ratingData);
-          }
-        });
-
-        let noiseRating, crowdRating, lastUpdated, lastUpdatedType;
-        if (count > 0) {
-          noiseRating = (noiseSum / count).toFixed(1);
-          crowdRating = (crowdSum / count).toFixed(1);
-          lastUpdated = lastRecentTimestamp;
-          lastUpdatedType = "recent";
-        } else if (todayRatings.length > 0) {
-          let noiseSumDay = 0,
-            crowdSumDay = 0;
-          todayRatings.forEach((r) => {
-            noiseSumDay += r.noise || 0;
-            crowdSumDay += r.crowd || 0;
+          // --- NEW LOGIC: Check for recent (last 30 min) ratings first ---
+          let recentRatings = [];
+          let recentLastTimestamp = null;
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            const ts = data.timestamp.toMillis();
+            if (ts >= thirtyMinutesAgo) {
+              recentRatings.push(data);
+              if (!recentLastTimestamp || ts > recentLastTimestamp)
+                recentLastTimestamp = ts;
+            }
           });
-          noiseRating = (noiseSumDay / todayRatings.length).toFixed(1);
-          crowdRating = (crowdSumDay / todayRatings.length).toFixed(1);
-          lastUpdated = Math.max(
-            ...todayRatings.map((r) => r.timestamp.toMillis())
-          );
-          lastUpdatedType = "today";
-        } else {
-          noiseRating = "N/A";
-          crowdRating = "N/A";
-          lastUpdated = null;
-          lastUpdatedType = null;
-        }
 
-        setSpot((prevSpot) => ({
-          ...spotData,
-          ratings: {
-            noise: noiseRating,
-            crowd: crowdRating,
+          let noiseRating,
+            crowdRating,
             lastUpdated,
             lastUpdatedType,
-          },
-        }));
+            lastWindowHours;
+
+          if (recentRatings.length > 0) {
+            // Use only recent ratings (last 30 min)
+            let noiseSum = 0,
+              crowdSum = 0;
+            recentRatings.forEach((r) => {
+              noiseSum += r.noise;
+              crowdSum += r.crowd;
+            });
+            noiseRating = (noiseSum / recentRatings.length).toFixed(1);
+            crowdRating = (crowdSum / recentRatings.length).toFixed(1);
+            lastUpdated = recentLastTimestamp;
+            lastUpdatedType = "recent";
+            lastWindowHours = null;
+          } else {
+            // --- Otherwise, use 1-6 hour window as before ---
+            let bestWindow = null;
+            let bestWindowRatings = [];
+            let bestWindowStart = null;
+            let bestWindowEnd = null;
+            let lastRecentTimestamp = null;
+            let found = false;
+            for (let hours = 1; hours <= 6; hours++) {
+              const windowStart = now - hours * 60 * 60 * 1000;
+              let windowRatings = [];
+              let windowLastTimestamp = null;
+              snapshot.forEach((doc) => {
+                const data = doc.data();
+                const ts = data.timestamp.toMillis();
+                if (ts >= windowStart) {
+                  windowRatings.push(data);
+                  if (!windowLastTimestamp || ts > windowLastTimestamp)
+                    windowLastTimestamp = ts;
+                }
+              });
+              if (windowRatings.length > 0) {
+                bestWindow = hours;
+                bestWindowRatings = windowRatings;
+                bestWindowStart = windowStart;
+                bestWindowEnd = now;
+                lastRecentTimestamp = windowLastTimestamp;
+                found = true;
+                break;
+              }
+            }
+            // If no ratings in last 6 hours, fallback to today's ratings
+            let todayRatings = [];
+            if (!found) {
+              snapshot.forEach((doc) => {
+                const data = doc.data();
+                const ts = data.timestamp.toMillis();
+                if (ts >= todayStartMillis) {
+                  todayRatings.push(data);
+                }
+              });
+            }
+
+            if (found && bestWindowRatings.length > 0) {
+              let noiseSum = 0,
+                crowdSum = 0;
+              bestWindowRatings.forEach((r) => {
+                noiseSum += r.noise;
+                crowdSum += r.crowd;
+              });
+              noiseRating = (noiseSum / bestWindowRatings.length).toFixed(1);
+              crowdRating = (crowdSum / bestWindowRatings.length).toFixed(1);
+              lastUpdated = lastRecentTimestamp;
+              lastUpdatedType = "window";
+              lastWindowHours = bestWindow;
+            } else if (todayRatings.length > 0) {
+              let noiseSumDay = 0,
+                crowdSumDay = 0;
+              todayRatings.forEach((r) => {
+                noiseSumDay += r.noise;
+                crowdSumDay += r.crowd;
+              });
+              noiseRating = (noiseSumDay / todayRatings.length).toFixed(1);
+              crowdRating = (crowdSumDay / todayRatings.length).toFixed(1);
+              lastUpdated = Math.max(
+                ...todayRatings.map((r) => r.timestamp.toMillis())
+              );
+              lastUpdatedType = "today";
+              lastWindowHours = null;
+            } else {
+              noiseRating = "N/A";
+              crowdRating = "N/A";
+              lastUpdated = null;
+              lastUpdatedType = null;
+              lastWindowHours = null;
+            }
+          }
+
+          setSpot((prev) => ({
+            ...prev,
+            ratings: {
+              noise: noiseRating,
+              crowd: crowdRating,
+              lastUpdated,
+              lastUpdatedType,
+              lastWindowHours,
+            },
+          }));
+        });
       } else {
         alert("The requested spot could not be found. Please try again.");
       }
@@ -299,58 +363,120 @@ export default function SpotDetailScreen({ route, navigation }) {
           );
           const ratingsSnapshot = await getDocs(ratingsQuery);
 
-          let noiseSum = 0,
-            crowdSum = 0,
-            count = 0;
-          let lastRecentTimestamp = null;
-          let recentRatings = [];
-          let todayRatings = [];
           const now = Timestamp.now().toMillis();
           const thirtyMinutesAgo = now - 30 * 60 * 1000;
           const todayStart = new Date();
           todayStart.setHours(0, 0, 0, 0);
           const todayStartMillis = todayStart.getTime();
 
+          // --- NEW LOGIC: Check for recent (last 30 min) ratings first ---
+          let recentRatings = [];
+          let recentLastTimestamp = null;
           ratingsSnapshot.forEach((ratingDoc) => {
             const ratingData = ratingDoc.data();
             const ts = ratingData.timestamp.toMillis();
             if (ts >= thirtyMinutesAgo) {
-              noiseSum += ratingData.noise || 0; // Ensure noise is a valid number
-              crowdSum += ratingData.crowd || 0; // Ensure crowd is a valid number
-              count++;
               recentRatings.push(ratingData);
-              if (!lastRecentTimestamp || ts > lastRecentTimestamp)
-                lastRecentTimestamp = ts;
-            }
-            if (ts >= todayStartMillis) {
-              todayRatings.push(ratingData);
+              if (!recentLastTimestamp || ts > recentLastTimestamp)
+                recentLastTimestamp = ts;
             }
           });
 
-          let noiseRating, crowdRating, lastUpdated, lastUpdatedType;
-          if (count > 0) {
-            noiseRating = (noiseSum / count).toFixed(1);
-            crowdRating = (crowdSum / count).toFixed(1);
-            lastUpdated = lastRecentTimestamp;
-            lastUpdatedType = "recent";
-          } else if (todayRatings.length > 0) {
-            let noiseSumDay = 0,
-              crowdSumDay = 0;
-            todayRatings.forEach((r) => {
-              noiseSumDay += r.noise || 0;
-              crowdSumDay += r.crowd || 0;
+          let noiseRating,
+            crowdRating,
+            lastUpdated,
+            lastUpdatedType,
+            lastWindowHours;
+
+          if (recentRatings.length > 0) {
+            // Use only recent ratings (last 30 min)
+            let noiseSum = 0,
+              crowdSum = 0;
+            recentRatings.forEach((r) => {
+              noiseSum += r.noise;
+              crowdSum += r.crowd;
             });
-            noiseRating = (noiseSumDay / todayRatings.length).toFixed(1);
-            crowdRating = (crowdSumDay / todayRatings.length).toFixed(1);
-            lastUpdated = Math.max(
-              ...todayRatings.map((r) => r.timestamp.toMillis())
-            );
-            lastUpdatedType = "today";
+            noiseRating = (noiseSum / recentRatings.length).toFixed(1);
+            crowdRating = (crowdSum / recentRatings.length).toFixed(1);
+            lastUpdated = recentLastTimestamp;
+            lastUpdatedType = "recent";
+            lastWindowHours = null;
           } else {
-            noiseRating = "N/A";
-            crowdRating = "N/A";
-            lastUpdated = null;
-            lastUpdatedType = null;
+            // --- Otherwise, use 1-6 hour window as before ---
+            let bestWindow = null;
+            let bestWindowRatings = [];
+            let bestWindowStart = null;
+            let bestWindowEnd = null;
+            let lastRecentTimestamp = null;
+            let found = false;
+            for (let hours = 1; hours <= 6; hours++) {
+              const windowStart = now - hours * 60 * 60 * 1000;
+              let windowRatings = [];
+              let windowLastTimestamp = null;
+              ratingsSnapshot.forEach((ratingDoc) => {
+                const ratingData = ratingDoc.data();
+                const ts = ratingData.timestamp.toMillis();
+                if (ts >= windowStart) {
+                  windowRatings.push(ratingData);
+                  if (!windowLastTimestamp || ts > windowLastTimestamp)
+                    windowLastTimestamp = ts;
+                }
+              });
+              if (windowRatings.length > 0) {
+                bestWindow = hours;
+                bestWindowRatings = windowRatings;
+                bestWindowStart = windowStart;
+                bestWindowEnd = now;
+                lastRecentTimestamp = windowLastTimestamp;
+                found = true;
+                break;
+              }
+            }
+            // If no ratings in last 6 hours, fallback to today's ratings
+            let todayRatings = [];
+            if (!found) {
+              ratingsSnapshot.forEach((ratingDoc) => {
+                const ratingData = ratingDoc.data();
+                const ts = ratingData.timestamp.toMillis();
+                if (ts >= todayStartMillis) {
+                  todayRatings.push(ratingData);
+                }
+              });
+            }
+
+            if (found && bestWindowRatings.length > 0) {
+              let noiseSum = 0,
+                crowdSum = 0;
+              bestWindowRatings.forEach((r) => {
+                noiseSum += r.noise;
+                crowdSum += r.crowd;
+              });
+              noiseRating = (noiseSum / bestWindowRatings.length).toFixed(1);
+              crowdRating = (crowdSum / bestWindowRatings.length).toFixed(1);
+              lastUpdated = lastRecentTimestamp;
+              lastUpdatedType = "window";
+              lastWindowHours = bestWindow;
+            } else if (todayRatings.length > 0) {
+              let noiseSumDay = 0,
+                crowdSumDay = 0;
+              todayRatings.forEach((r) => {
+                noiseSumDay += r.noise;
+                crowdSumDay += r.crowd;
+              });
+              noiseRating = (noiseSumDay / todayRatings.length).toFixed(1);
+              crowdRating = (crowdSumDay / todayRatings.length).toFixed(1);
+              lastUpdated = Math.max(
+                ...todayRatings.map((r) => r.timestamp.toMillis())
+              );
+              lastUpdatedType = "today";
+              lastWindowHours = null;
+            } else {
+              noiseRating = "N/A";
+              crowdRating = "N/A";
+              lastUpdated = null;
+              lastUpdatedType = null;
+              lastWindowHours = null;
+            }
           }
 
           setSpot((prevSpot) => ({
@@ -360,6 +486,7 @@ export default function SpotDetailScreen({ route, navigation }) {
               crowd: crowdRating,
               lastUpdated,
               lastUpdatedType,
+              lastWindowHours,
             },
           }));
         } else if (isMounted) {
@@ -379,32 +506,130 @@ export default function SpotDetailScreen({ route, navigation }) {
     // Real-time updates for ratings
     const ratingsQuery = query(
       collection(db, "ratings"),
-      where("spotId", "==", spotId) // Fetch all ratings for the spot
+      where("spotId", "==", spotId)
     );
 
     const unsubscribe = onSnapshot(ratingsQuery, (snapshot) => {
-      let noiseSum = 0;
-      let crowdSum = 0;
-      let count = 0;
-      const thirtyMinutesAgo = Timestamp.now().toMillis() - 30 * 60 * 1000;
+      const now = Timestamp.now().toMillis();
+      const thirtyMinutesAgo = now - 30 * 60 * 1000;
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const todayStartMillis = todayStart.getTime();
 
+      let recentRatings = [];
+      let recentLastTimestamp = null;
       snapshot.forEach((doc) => {
         const data = doc.data();
-        if (data.timestamp.toMillis() >= thirtyMinutesAgo) {
-          noiseSum += data.noise || 0; // Ensure noise is a valid number
-          crowdSum += data.crowd || 0; // Ensure crowd is a valid number
-          count++;
+        const ts = data.timestamp.toMillis();
+        if (ts >= thirtyMinutesAgo) {
+          recentRatings.push(data);
+          if (!recentLastTimestamp || ts > recentLastTimestamp)
+            recentLastTimestamp = ts;
         }
       });
 
-      const noiseRating = count > 0 ? (noiseSum / count).toFixed(1) : "N/A";
-      const crowdRating = count > 0 ? (crowdSum / count).toFixed(1) : "N/A";
+      let noiseRating,
+        crowdRating,
+        lastUpdated,
+        lastUpdatedType,
+        lastWindowHours;
+
+      if (recentRatings.length > 0) {
+        let noiseSum = 0,
+          crowdSum = 0;
+        recentRatings.forEach((r) => {
+          noiseSum += r.noise;
+          crowdSum += r.crowd;
+        });
+        noiseRating = (noiseSum / recentRatings.length).toFixed(1);
+        crowdRating = (crowdSum / recentRatings.length).toFixed(1);
+        lastUpdated = recentLastTimestamp;
+        lastUpdatedType = "recent";
+        lastWindowHours = null;
+      } else {
+        let bestWindow = null;
+        let bestWindowRatings = [];
+        let bestWindowStart = null;
+        let bestWindowEnd = null;
+        let lastRecentTimestamp = null;
+        let found = false;
+        for (let hours = 1; hours <= 6; hours++) {
+          const windowStart = now - hours * 60 * 60 * 1000;
+          let windowRatings = [];
+          let windowLastTimestamp = null;
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            const ts = data.timestamp.toMillis();
+            if (ts >= windowStart) {
+              windowRatings.push(data);
+              if (!windowLastTimestamp || ts > windowLastTimestamp)
+                windowLastTimestamp = ts;
+            }
+          });
+          if (windowRatings.length > 0) {
+            bestWindow = hours;
+            bestWindowRatings = windowRatings;
+            bestWindowStart = windowStart;
+            bestWindowEnd = now;
+            lastRecentTimestamp = windowLastTimestamp;
+            found = true;
+            break;
+          }
+        }
+        let todayRatings = [];
+        if (!found) {
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            const ts = data.timestamp.toMillis();
+            if (ts >= todayStartMillis) {
+              todayRatings.push(data);
+            }
+          });
+        }
+
+        if (found && bestWindowRatings.length > 0) {
+          let noiseSum = 0,
+            crowdSum = 0;
+          bestWindowRatings.forEach((r) => {
+            noiseSum += r.noise;
+            crowdSum += r.crowd;
+          });
+          noiseRating = (noiseSum / bestWindowRatings.length).toFixed(1);
+          crowdRating = (crowdSum / bestWindowRatings.length).toFixed(1);
+          lastUpdated = lastRecentTimestamp;
+          lastUpdatedType = "window";
+          lastWindowHours = bestWindow;
+        } else if (todayRatings.length > 0) {
+          let noiseSumDay = 0,
+            crowdSumDay = 0;
+          todayRatings.forEach((r) => {
+            noiseSumDay += r.noise;
+            crowdSumDay += r.crowd;
+          });
+          noiseRating = (noiseSumDay / todayRatings.length).toFixed(1);
+          crowdRating = (crowdSumDay / todayRatings.length).toFixed(1);
+          lastUpdated = Math.max(
+            ...todayRatings.map((r) => r.timestamp.toMillis())
+          );
+          lastUpdatedType = "today";
+          lastWindowHours = null;
+        } else {
+          noiseRating = "N/A";
+          crowdRating = "N/A";
+          lastUpdated = null;
+          lastUpdatedType = null;
+          lastWindowHours = null;
+        }
+      }
 
       setSpot((prevSpot) => ({
         ...prevSpot,
         ratings: {
           noise: noiseRating,
           crowd: crowdRating,
+          lastUpdated,
+          lastUpdatedType,
+          lastWindowHours,
         },
       }));
     });
