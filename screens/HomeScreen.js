@@ -508,6 +508,18 @@ function StudySpots({
               </Text>
             </View>
           </View>
+          {/* Add last updated label */}
+          <Text
+            style={{
+              fontSize: 12,
+              color: themeColors.darkGray,
+              marginTop: 4,
+              textAlign: "right",
+            }}
+          >
+            {getLastUpdatedLabel(item.ratings)}
+          </Text>
+          {/* ...existing code... */}
         </TouchableOpacity>
       )}
     />
@@ -787,25 +799,62 @@ export default function HomeScreen({
           );
           const ratingsSnapshot = await getDocs(ratingsQuery);
 
-          let noiseSum = 0;
-          let crowdSum = 0;
-          let count = 0;
-          const thirtyMinutesAgo = Timestamp.now().toMillis() - 30 * 60 * 1000;
+          let noiseSum = 0,
+            crowdSum = 0,
+            count = 0;
+          let lastRecentTimestamp = null;
+          let recentRatings = [];
+          let todayRatings = [];
+          const now = Timestamp.now().toMillis();
+          const thirtyMinutesAgo = now - 30 * 60 * 1000;
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+          const todayStartMillis = todayStart.getTime();
 
-          ratingsSnapshot.forEach(async (ratingDoc) => {
+          ratingsSnapshot.forEach((ratingDoc) => {
             const ratingData = ratingDoc.data();
-            if (ratingData.timestamp.toMillis() >= thirtyMinutesAgo) {
+            const ts = ratingData.timestamp.toMillis();
+            if (ts >= thirtyMinutesAgo) {
               noiseSum += ratingData.noise;
               crowdSum += ratingData.crowd;
               count++;
-            } else {
-              // Delete ratings older than 30 minutes
-              await deleteDoc(doc(db, "ratings", ratingDoc.id));
+              recentRatings.push(ratingData);
+              if (!lastRecentTimestamp || ts > lastRecentTimestamp)
+                lastRecentTimestamp = ts;
+            }
+            // Collect all ratings from today for fallback
+            if (ts >= todayStartMillis) {
+              todayRatings.push(ratingData);
             }
           });
 
-          const averageNoise = count > 0 ? noiseSum / count : "No rating yet";
-          const averageCrowd = count > 0 ? crowdSum / count : "No rating yet";
+          let averageNoise, averageCrowd, lastUpdated, lastUpdatedType;
+          if (count > 0) {
+            averageNoise = noiseSum / count;
+            averageCrowd = crowdSum / count;
+            lastUpdated = lastRecentTimestamp;
+            lastUpdatedType = "recent";
+          } else if (todayRatings.length > 0) {
+            // Fallback to today's ratings
+            let noiseSumDay = 0,
+              crowdSumDay = 0;
+            todayRatings.forEach((r) => {
+              noiseSumDay += r.noise;
+              crowdSumDay += r.crowd;
+            });
+            averageNoise = noiseSumDay / todayRatings.length;
+            averageCrowd = crowdSumDay / todayRatings.length;
+            // Use the latest timestamp from today
+            lastUpdated = Math.max(
+              ...todayRatings.map((r) => r.timestamp.toMillis())
+            );
+            lastUpdatedType = "today";
+          } else {
+            averageNoise = "No rating yet";
+            averageCrowd = "No rating yet";
+            lastUpdated = null;
+            lastUpdatedType = null;
+          }
 
           // Fetch overall ratings for the spot
           const overallRatingsQuery = query(
@@ -825,10 +874,12 @@ export default function HomeScreen({
           return {
             id: docSnap.id,
             ...spotData,
-            photoUrl: spotData.photoUrl || "", // Add photoUrl field (empty if not present)
+            photoUrl: spotData.photoUrl || "",
             ratings: {
               noise: averageNoise,
               crowd: averageCrowd,
+              lastUpdated,
+              lastUpdatedType,
             },
             averageOverallRating,
             overallRatingsCount: overallCount,
@@ -1112,4 +1163,19 @@ export default function HomeScreen({
       </View>
     </SafeAreaView>
   );
+}
+
+// Helper for "last updated" display
+function getLastUpdatedLabel(ratings) {
+  if (!ratings || !ratings.lastUpdated) return "";
+  if (ratings.lastUpdatedType === "recent") {
+    const mins = Math.round((Date.now() - ratings.lastUpdated) / 60000);
+    return mins <= 1
+      ? "Last updated: just now"
+      : `Last updated: ${mins} min ago`;
+  }
+  if (ratings.lastUpdatedType === "today") {
+    return "Last updated: Today (daily avg)";
+  }
+  return "";
 }

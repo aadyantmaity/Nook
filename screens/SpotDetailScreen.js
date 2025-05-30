@@ -59,6 +59,21 @@ export default function SpotDetailScreen({ route, navigation }) {
   const [isSubmittingOverall, setIsSubmittingOverall] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
 
+  // Helper for "last updated" display
+  function getLastUpdatedLabel(ratings) {
+    if (!ratings || !ratings.lastUpdated) return "";
+    if (ratings.lastUpdatedType === "recent") {
+      const mins = Math.round((Date.now() - ratings.lastUpdated) / 60000);
+      return mins <= 1
+        ? "Last updated: just now"
+        : `Last updated: ${mins} min ago`;
+    }
+    if (ratings.lastUpdatedType === "today") {
+      return "Last updated: Today (today's avg)";
+    }
+    return "";
+  }
+
   // Move fetchSpotDetails to top-level scope so it can be called from anywhere
   const fetchSpotDetails = async () => {
     try {
@@ -92,28 +107,67 @@ export default function SpotDetailScreen({ route, navigation }) {
         );
         const ratingsSnapshot = await getDocs(ratingsQuery);
 
-        let noiseSum = 0;
-        let crowdSum = 0;
-        let count = 0;
-        const thirtyMinutesAgo = Timestamp.now().toMillis() - 30 * 60 * 1000;
+        let noiseSum = 0,
+          crowdSum = 0,
+          count = 0;
+        let lastRecentTimestamp = null;
+        let recentRatings = [];
+        let todayRatings = [];
+        const now = Timestamp.now().toMillis();
+        const thirtyMinutesAgo = now - 30 * 60 * 1000;
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayStartMillis = todayStart.getTime();
 
         ratingsSnapshot.forEach((ratingDoc) => {
           const ratingData = ratingDoc.data();
-          if (ratingData.timestamp.toMillis() >= thirtyMinutesAgo) {
+          const ts = ratingData.timestamp.toMillis();
+          if (ts >= thirtyMinutesAgo) {
             noiseSum += ratingData.noise || 0; // Ensure noise is a valid number
             crowdSum += ratingData.crowd || 0; // Ensure crowd is a valid number
             count++;
+            recentRatings.push(ratingData);
+            if (!lastRecentTimestamp || ts > lastRecentTimestamp)
+              lastRecentTimestamp = ts;
+          }
+          if (ts >= todayStartMillis) {
+            todayRatings.push(ratingData);
           }
         });
 
-        const noiseRating = count > 0 ? (noiseSum / count).toFixed(1) : "N/A";
-        const crowdRating = count > 0 ? (crowdSum / count).toFixed(1) : "N/A";
+        let noiseRating, crowdRating, lastUpdated, lastUpdatedType;
+        if (count > 0) {
+          noiseRating = (noiseSum / count).toFixed(1);
+          crowdRating = (crowdSum / count).toFixed(1);
+          lastUpdated = lastRecentTimestamp;
+          lastUpdatedType = "recent";
+        } else if (todayRatings.length > 0) {
+          let noiseSumDay = 0,
+            crowdSumDay = 0;
+          todayRatings.forEach((r) => {
+            noiseSumDay += r.noise || 0;
+            crowdSumDay += r.crowd || 0;
+          });
+          noiseRating = (noiseSumDay / todayRatings.length).toFixed(1);
+          crowdRating = (crowdSumDay / todayRatings.length).toFixed(1);
+          lastUpdated = Math.max(
+            ...todayRatings.map((r) => r.timestamp.toMillis())
+          );
+          lastUpdatedType = "today";
+        } else {
+          noiseRating = "N/A";
+          crowdRating = "N/A";
+          lastUpdated = null;
+          lastUpdatedType = null;
+        }
 
         setSpot((prevSpot) => ({
           ...spotData,
           ratings: {
             noise: noiseRating,
             crowd: crowdRating,
+            lastUpdated,
+            lastUpdatedType,
           },
         }));
       } else {
@@ -185,28 +239,67 @@ export default function SpotDetailScreen({ route, navigation }) {
           );
           const ratingsSnapshot = await getDocs(ratingsQuery);
 
-          let noiseSum = 0;
-          let crowdSum = 0;
-          let count = 0;
-          const thirtyMinutesAgo = Timestamp.now().toMillis() - 30 * 60 * 1000;
+          let noiseSum = 0,
+            crowdSum = 0,
+            count = 0;
+          let lastRecentTimestamp = null;
+          let recentRatings = [];
+          let todayRatings = [];
+          const now = Timestamp.now().toMillis();
+          const thirtyMinutesAgo = now - 30 * 60 * 1000;
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+          const todayStartMillis = todayStart.getTime();
 
           ratingsSnapshot.forEach((ratingDoc) => {
             const ratingData = ratingDoc.data();
-            if (ratingData.timestamp.toMillis() >= thirtyMinutesAgo) {
+            const ts = ratingData.timestamp.toMillis();
+            if (ts >= thirtyMinutesAgo) {
               noiseSum += ratingData.noise || 0; // Ensure noise is a valid number
               crowdSum += ratingData.crowd || 0; // Ensure crowd is a valid number
               count++;
+              recentRatings.push(ratingData);
+              if (!lastRecentTimestamp || ts > lastRecentTimestamp)
+                lastRecentTimestamp = ts;
+            }
+            if (ts >= todayStartMillis) {
+              todayRatings.push(ratingData);
             }
           });
 
-          const noiseRating = count > 0 ? (noiseSum / count).toFixed(1) : "N/A";
-          const crowdRating = count > 0 ? (crowdSum / count).toFixed(1) : "N/A";
+          let noiseRating, crowdRating, lastUpdated, lastUpdatedType;
+          if (count > 0) {
+            noiseRating = (noiseSum / count).toFixed(1);
+            crowdRating = (crowdSum / count).toFixed(1);
+            lastUpdated = lastRecentTimestamp;
+            lastUpdatedType = "recent";
+          } else if (todayRatings.length > 0) {
+            let noiseSumDay = 0,
+              crowdSumDay = 0;
+            todayRatings.forEach((r) => {
+              noiseSumDay += r.noise || 0;
+              crowdSumDay += r.crowd || 0;
+            });
+            noiseRating = (noiseSumDay / todayRatings.length).toFixed(1);
+            crowdRating = (crowdSumDay / todayRatings.length).toFixed(1);
+            lastUpdated = Math.max(
+              ...todayRatings.map((r) => r.timestamp.toMillis())
+            );
+            lastUpdatedType = "today";
+          } else {
+            noiseRating = "N/A";
+            crowdRating = "N/A";
+            lastUpdated = null;
+            lastUpdatedType = null;
+          }
 
           setSpot((prevSpot) => ({
             ...spotData,
             ratings: {
               noise: noiseRating,
               crowd: crowdRating,
+              lastUpdated,
+              lastUpdatedType,
             },
           }));
         } else if (isMounted) {
@@ -565,7 +658,7 @@ export default function SpotDetailScreen({ route, navigation }) {
             style={{
               flexDirection: "row",
               justifyContent: "space-between",
-              marginBottom: 50,
+              marginBottom: 16,
               marginTop: 4, // Keep only one value
             }}
           >
@@ -617,6 +710,18 @@ export default function SpotDetailScreen({ route, navigation }) {
               </Text>
             </View>
           </View>
+
+          {/* --- LAST UPDATED LABEL --- */}
+          <Text
+            style={{
+              fontSize: 12,
+              color: themeColors.darkGray,
+              marginBottom: 34,
+              textAlign: "right",
+            }}
+          >
+            {getLastUpdatedLabel(spot.ratings)}
+          </Text>
 
           {/* --- OVERALL RATING NEXT --- */}
           <View style={{ alignItems: "center", marginBottom: 16 }}>

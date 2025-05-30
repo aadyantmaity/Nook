@@ -97,6 +97,90 @@ export default function ProfileScreen({
     }
   }, [isModalVisible, profilePic]);
 
+  // Helper for "last updated" display
+  function getLastUpdatedLabel(ratings) {
+    if (!ratings || !ratings.lastUpdated) return "";
+    if (ratings.lastUpdatedType === "recent") {
+      const mins = Math.round((Date.now() - ratings.lastUpdated) / 60000);
+      return mins <= 1
+        ? "Last updated: just now"
+        : `Last updated: ${mins} min ago`;
+    }
+    if (ratings.lastUpdatedType === "today") {
+      return "Last updated: Today (today's avg)";
+    }
+    return "";
+  }
+
+  // Helper to compute noise/crowd averages and recency for a spot
+  async function computeSpotRatings(spotId) {
+    const { Timestamp, collection, query, where, getDocs } = await import("firebase/firestore");
+    const ratingsQuery = query(
+      collection(db, "ratings"),
+      where("spotId", "==", spotId)
+    );
+    const ratingsSnapshot = await getDocs(ratingsQuery);
+
+    let noiseSum = 0,
+      crowdSum = 0,
+      count = 0;
+    let lastRecentTimestamp = null;
+    let recentRatings = [];
+    let todayRatings = [];
+    const now = Date.now();
+    const thirtyMinutesAgo = now - 30 * 60 * 1000;
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayStartMillis = todayStart.getTime();
+
+    ratingsSnapshot.forEach((ratingDoc) => {
+      const ratingData = ratingDoc.data();
+      const ts = ratingData.timestamp.toMillis();
+      if (ts >= thirtyMinutesAgo) {
+        noiseSum += ratingData.noise || 0;
+        crowdSum += ratingData.crowd || 0;
+        count++;
+        recentRatings.push(ratingData);
+        if (!lastRecentTimestamp || ts > lastRecentTimestamp)
+          lastRecentTimestamp = ts;
+      }
+      if (ts >= todayStartMillis) {
+        todayRatings.push(ratingData);
+      }
+    });
+
+    let noiseRating, crowdRating, lastUpdated, lastUpdatedType;
+    if (count > 0) {
+      noiseRating = (noiseSum / count).toFixed(1);
+      crowdRating = (crowdSum / count).toFixed(1);
+      lastUpdated = lastRecentTimestamp;
+      lastUpdatedType = "recent";
+    } else if (todayRatings.length > 0) {
+      let noiseSumDay = 0,
+        crowdSumDay = 0;
+      todayRatings.forEach((r) => {
+        noiseSumDay += r.noise || 0;
+        crowdSumDay += r.crowd || 0;
+      });
+      noiseRating = (noiseSumDay / todayRatings.length).toFixed(1);
+      crowdRating = (crowdSumDay / todayRatings.length).toFixed(1);
+      lastUpdated = Math.max(...todayRatings.map((r) => r.timestamp.toMillis()));
+      lastUpdatedType = "today";
+    } else {
+      noiseRating = "N/A";
+      crowdRating = "N/A";
+      lastUpdated = null;
+      lastUpdatedType = null;
+    }
+
+    return {
+      noise: noiseRating,
+      crowd: crowdRating,
+      lastUpdated,
+      lastUpdatedType,
+    };
+  }
+
   // Fetch favorite spots details
   const fetchFavoriteSpots = useCallback(async () => {
     if (!favorites.length) {
@@ -105,9 +189,16 @@ export default function ProfileScreen({
     }
     try {
       const spotsSnapshot = await getDocs(collection(db, "studySpots"));
-      const favSpots = spotsSnapshot.docs
-        .filter((doc) => favorites.includes(doc.id))
-        .map((doc) => ({ id: doc.id, ...doc.data() }));
+      const favSpots = await Promise.all(
+        spotsSnapshot.docs
+          .filter((doc) => favorites.includes(doc.id))
+          .map(async (doc) => {
+            const spotData = doc.data();
+            // Compute ratings for this spot
+            const ratings = await computeSpotRatings(doc.id);
+            return { id: doc.id, ...spotData, ratings };
+          })
+      );
       setFavoriteSpots(favSpots);
     } catch (e) {
       setFavoriteSpots([]);
@@ -137,6 +228,22 @@ export default function ProfileScreen({
     });
   };
 
+  // Helper to upload image to Firebase Storage and get download URL
+  const uploadProfilePicToStorage = async (imageUri, userId) => {
+    if (!imageUri || !userId) return null;
+    const storage = getStorage();
+    // Read the file as base64
+    const base64 = await FileSystem.readAsStringAsync(imageUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    // Convert base64 to Blob using fetch and a data URL
+    const response = await fetch(`data:image/jpeg;base64,${base64}`);
+    const blob = await response.blob();
+    const storageRef = ref(storage, `profile_pictures/${userId}_${Date.now()}.jpg`);
+    await uploadBytes(storageRef, blob, { contentType: "image/jpeg" });
+    return await getDownloadURL(storageRef);
+  };
+
   const handleSaveProfile = async () => {
     try {
       const user = auth.currentUser;
@@ -147,8 +254,13 @@ export default function ProfileScreen({
           gradYear: editedGradYear || userGradYear,
           email: userEmail,
         };
+        // If a new profile picture is selected, upload and save URL
         if (editedProfilePic && editedProfilePic !== profilePic) {
-          updateData.profilePic = editedProfilePic;
+          const downloadUrl = await uploadProfilePicToStorage(editedProfilePic, user.uid);
+          if (downloadUrl) {
+            updateData.profilePic = downloadUrl;
+            setProfilePic(downloadUrl);
+          }
         }
         await setDoc(doc(db, "users", user.uid), updateData, { merge: true });
 
@@ -161,9 +273,6 @@ export default function ProfileScreen({
         setFirstName(editedFirstName || firstName);
         setLastName(editedLastName || lastName);
         setUserGradYear(editedGradYear || userGradYear);
-        if (editedProfilePic && editedProfilePic !== profilePic) {
-          setProfilePic(editedProfilePic);
-        }
         setIsModalVisible(false);
       }
     } catch (error) {
@@ -177,24 +286,21 @@ export default function ProfileScreen({
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.5,
-      base64: true,
     });
     if (!result.cancelled) {
       try {
-        const base64 =
-          result.assets && result.assets[0] && result.assets[0].base64
-            ? result.assets[0].base64
-            : result.base64;
-        if (!base64) throw new Error("No image data found");
-        const dataUrl = `data:image/jpeg;base64,${base64}`;
-        setProfilePic(dataUrl);
+        const asset = result.assets ? result.assets[0] : result;
         const user = auth.currentUser;
         if (!user) return;
-        await setDoc(
-          doc(db, "users", user.uid),
-          { profilePic: dataUrl },
-          { merge: true }
-        );
+        const downloadUrl = await uploadProfilePicToStorage(asset.uri, user.uid);
+        if (downloadUrl) {
+          setProfilePic(downloadUrl);
+          await setDoc(
+            doc(db, "users", user.uid),
+            { profilePic: downloadUrl },
+            { merge: true }
+          );
+        }
       } catch (e) {
         console.log("Failed to save profile picture.");
       }
@@ -376,14 +482,14 @@ export default function ProfileScreen({
             style={{
               flexDirection: "row",
               alignItems: "center",
-              marginBottom: 8,
+              marginBottom: 16,
             }}
           >
             <Heart size={20} color={themeColors.purple} weight="fill" />
             <Text
               style={[
                 styles.favoritesTitle,
-                { marginLeft: 8, marginBottom: 0, color: themeColors.black },
+                { marginLeft: 8, color: themeColors.black },
               ]}
             >
               {/* Use black for section title */}
@@ -525,6 +631,45 @@ export default function ProfileScreen({
                         </Text>
                       )}
                     </View>
+                    {/* Noise and Crowd Level Row */}
+                    <View style={{ flexDirection: "row", marginTop: 6 }}>
+                      <Text
+                        style={{
+                          color: themeColors.purple,
+                          fontSize: 13,
+                          fontWeight: "bold",
+                          marginRight: 12,
+                        }}
+                      >
+                        Noise:{" "}
+                        {typeof spot.ratings?.noise === "number"
+                          ? spot.ratings.noise.toFixed(1)
+                          : spot.ratings?.noise || "N/A"}
+                      </Text>
+                      <Text
+                        style={{
+                          color: themeColors.purple,
+                          fontSize: 13,
+                          fontWeight: "bold",
+                        }}
+                      >
+                        Crowd:{" "}
+                        {typeof spot.ratings?.crowd === "number"
+                          ? spot.ratings.crowd.toFixed(1)
+                          : spot.ratings?.crowd || "N/A"}
+                      </Text>
+                    </View>
+                    {/* Add last updated label */}
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        color: themeColors.darkGray,
+                        marginTop: 2,
+                        textAlign: "right",
+                      }}
+                    >
+                      {getLastUpdatedLabel(spot.ratings)}
+                    </Text>
                   </View>
                 </TouchableOpacity>
               ))}
@@ -669,8 +814,7 @@ export default function ProfileScreen({
                 >
                   New
                 </Text>
-                {editedProfilePic &&
-                editedProfilePic.startsWith("data:image") ? (
+                {editedProfilePic ? (
                   <Image
                     source={{ uri: editedProfilePic }}
                     style={{
@@ -714,21 +858,10 @@ export default function ProfileScreen({
                     allowsEditing: true,
                     aspect: [1, 1],
                     quality: 0.5,
-                    base64: true,
                   });
                   if (!result.cancelled) {
-                    const base64 =
-                      result.assets &&
-                      result.assets[0] &&
-                      result.assets[0].base64
-                        ? result.assets[0].base64
-                        : result.base64;
-                    if (!base64) {
-                      alert("No image data found");
-                      return;
-                    }
-                    const dataUrl = `data:image/jpeg;base64,${base64}`;
-                    setEditedProfilePic(dataUrl);
+                    const asset = result.assets ? result.assets[0] : result;
+                    setEditedProfilePic(asset.uri);
                   }
                 }}
               >
@@ -975,7 +1108,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     // color: colors.purple, // Remove, handled inline
-    marginBottom: 8,
     alignSelf: "flex-start",
   },
   noFavoritesText: {
