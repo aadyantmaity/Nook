@@ -26,6 +26,8 @@ import {
 } from "firebase/firestore"; // Ensure Timestamp is imported
 import { db, auth } from "../firebaseConfig"; // Import Firestore instance
 import * as ImagePicker from "expo-image-picker"; // Add this import
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage"; // <-- Add this import
+import * as FileSystem from "expo-file-system"; // <-- Add this import
 
 const TAGS = [
   "Quiet",
@@ -98,7 +100,7 @@ export default function AddSpotScreen({
   const [isFavorite, setIsFavorite] = useState(false); // Favorite toggle
   const [openHours, setOpenHours] = useState(""); // Open/quiet hours field
   const [showPreview, setShowPreview] = useState(false); // Preview modal
-  const [customImage, setCustomImage] = useState(null); // Add state for custom image
+  const [customImage, setCustomImage] = useState(null); // { uri, name }
 
   const toggleTag = (tag) => {
     setSelectedTags((tags) =>
@@ -127,30 +129,35 @@ export default function AddSpotScreen({
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [3, 2],
-      quality: 0.4, // Lower quality for smaller size
-      base64: true,
+      aspect: [4, 3],
     });
     if (!result.cancelled) {
-      const base64 =
-        result.assets && result.assets[0] && result.assets[0].base64
-          ? result.assets[0].base64
-          : result.base64;
-      if (!base64) {
-        alert("No image data found");
-        return;
-      }
-      // Calculate base64 size
-      const base64Length = base64.length * 0.75; // 1 char = 6 bits
-      if (base64Length > MAX_IMAGE_SIZE_BYTES) {
-        alert(
-          "Image is too large to upload. Please choose a smaller image or crop it."
-        );
-        return;
-      }
-      const dataUrl = `data:image/jpeg;base64,${base64}`;
-      setCustomImage(dataUrl);
+      // Use the file URI and filename
+      const asset = result.assets ? result.assets[0] : result;
+      setCustomImage({
+        uri: asset.uri,
+        name: asset.fileName || `custom_${Date.now()}.jpg`,
+      });
     }
+  };
+
+  // Helper to upload image to Firebase Storage and get download URL
+  const uploadImageToStorage = async (imageObj, spotId) => {
+    if (!imageObj?.uri) return "";
+    const storage = getStorage();
+    // Read the file as base64
+    const base64 = await FileSystem.readAsStringAsync(imageObj.uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    // Convert base64 to Blob using fetch and a data URL
+    const response = await fetch(`data:image/jpeg;base64,${base64}`);
+    const blob = await response.blob();
+    const storageRef = ref(
+      storage,
+      `custom_spot_images/${spotId || Date.now()}_${imageObj.name}`
+    );
+    await uploadBytes(storageRef, blob, { contentType: "image/jpeg" });
+    return await getDownloadURL(storageRef);
   };
 
   const handleSubmit = async () => {
@@ -179,20 +186,8 @@ export default function AddSpotScreen({
         return;
       }
 
-      // Check image size before submitting
-      if (!isUWBuilding && customImage) {
-        // Only check if customImage is set
-        const base64Data = customImage.split(",")[1] || "";
-        const base64Length = base64Data.length * 0.75;
-        if (base64Length > MAX_IMAGE_SIZE_BYTES) {
-          alert(
-            "Image is too large to upload. Please choose a smaller image or crop it."
-          );
-          setIsLoading(false);
-          return;
-        }
-      }
-
+      let photoUrl = "";
+      // Add the spot to Firestore first to get the spotId
       const spotDetails = {
         name: buildingNameToCheck,
         buildingName: buildingNameToCheck,
@@ -203,12 +198,16 @@ export default function AddSpotScreen({
         createdAt: new Date().toISOString(),
         addedBy: user.uid,
         revealIdentity: showAddedBy,
-        photoUrl: !isUWBuilding && customImage ? customImage : "", // Save image for custom location
-        openHours, // Add open/quiet hours field
+        photoUrl: "", // Placeholder, will update after upload
+        openHours,
       };
-
-      // Add the spot to Firestore
       const docRef = await addDoc(collection(db, "studySpots"), spotDetails);
+
+      // If custom image, upload to storage and update Firestore with download URL
+      if (!isUWBuilding && customImage) {
+        photoUrl = await uploadImageToStorage(customImage, docRef.id);
+        await updateDoc(docRef, { photoUrl });
+      }
 
       // If marked as favorite, update user's favorites array
       if (isFavorite && user) {
@@ -605,7 +604,7 @@ export default function AddSpotScreen({
                     }}
                   >
                     <Image
-                      source={{ uri: customImage }}
+                      source={{ uri: customImage.uri }}
                       style={{ width: "100%", height: "100%" }}
                       resizeMode="cover"
                     />
