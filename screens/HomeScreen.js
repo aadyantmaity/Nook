@@ -39,6 +39,7 @@ import { colors } from "../constants/colors"; // Import colors
 import { auth, db } from "../firebaseConfig"; // Import Firebase
 import { doc, getDoc } from "firebase/firestore"; // Import Firestore functions
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as FileSystem from "expo-file-system"; // <-- Add this import
 import { ThemeContext } from "../App"; // Import ThemeContext
 
 const TAGS = [
@@ -294,7 +295,12 @@ function StudySpots({
           >
             {item.photoUrl ? (
               <Image
-                source={{ uri: item.photoUrl }}
+                source={{
+                  uri:
+                    imageCache[item.id] && imageCache[item.id].length > 0
+                      ? imageCache[item.id]
+                      : item.photoUrl,
+                }}
                 style={{ width: "100%", height: "100%" }}
                 resizeMode="cover"
               />
@@ -584,7 +590,12 @@ function RecentlyViewed({
             >
               {item.photoUrl ? (
                 <Image
-                  source={{ uri: item.photoUrl }}
+                  source={{
+                    uri:
+                      imageCache[item.id] && imageCache[item.id].length > 0
+                        ? imageCache[item.id]
+                        : item.photoUrl,
+                  }}
                   style={{ width: "100%", height: "100%" }}
                   resizeMode="cover"
                 />
@@ -860,6 +871,7 @@ export default function HomeScreen({
   const [activeTab, setActiveTab] = useState("Home");
   const [showGeneralReport, setShowGeneralReport] = useState(false); // Add state for modal
   const [menuOpen, setMenuOpen] = useState(false); // <-- Hamburger menu state
+  const [imageCache, setImageCache] = useState({}); // spotId -> local file URI
 
   // Fetch user's favorites
   useEffect(() => {
@@ -895,6 +907,28 @@ export default function HomeScreen({
     }
   };
 
+  // Helper to cache spot images
+  const cacheSpotImage = async (spotId, photoUrl) => {
+    if (!photoUrl) return null;
+    try {
+      const cacheKey = `spotImageUri_${spotId}`;
+      const cachedUri = await AsyncStorage.getItem(cacheKey);
+      const cachedUrl = await AsyncStorage.getItem(`${cacheKey}_url`);
+      if (cachedUri && cachedUrl === photoUrl) {
+        return cachedUri;
+      }
+      const fileUri = FileSystem.cacheDirectory + `spot_${spotId}.jpg`;
+      const downloadRes = await FileSystem.downloadAsync(photoUrl, fileUri);
+      if (downloadRes.status === 200) {
+        await AsyncStorage.setItem(cacheKey, downloadRes.uri);
+        await AsyncStorage.setItem(`${cacheKey}_url`, photoUrl);
+        return downloadRes.uri;
+      }
+    } catch (e) {}
+    return null;
+  };
+
+  // Fetch study spots and cache images
   const fetchStudySpots = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, "studySpots"));
@@ -1014,10 +1048,16 @@ export default function HomeScreen({
           const averageOverallRating =
             overallCount > 0 ? overallSum / overallCount : 0;
 
+          // Cache image if photoUrl exists
+          let cachedUri = "";
+          if (spotData.photoUrl) {
+            cachedUri = await cacheSpotImage(docSnap.id, spotData.photoUrl);
+          }
           return {
             id: docSnap.id,
             ...spotData,
             photoUrl: spotData.photoUrl || "",
+            cachedPhotoUri: cachedUri || "", // Add cached URI
             ratings: {
               noise: averageNoise,
               crowd: averageCrowd,
@@ -1030,8 +1070,13 @@ export default function HomeScreen({
           };
         })
       );
-
-      setStudySpots(spots); // Store fetched spots with updated ratings in state
+      // Build imageCache map
+      const cacheMap = {};
+      spots.forEach((spot) => {
+        if (spot.cachedPhotoUri) cacheMap[spot.id] = spot.cachedPhotoUri;
+      });
+      setImageCache(cacheMap);
+      setStudySpots(spots);
     } catch (error) {
       console.error("Error fetching study spots:", error);
       alert("Unable to fetch study spots. Please check your permissions.");
