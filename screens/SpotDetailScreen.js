@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  Alert,
 } from "react-native";
 import {
   doc,
@@ -58,6 +59,7 @@ export default function SpotDetailScreen({ route, navigation }) {
   const [pendingOverallRating, setPendingOverallRating] = useState(0);
   const [isSubmittingOverall, setIsSubmittingOverall] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false); // Add state for report modal
 
   // Helper for "last updated" display
   function getLastUpdatedLabel(ratings) {
@@ -901,12 +903,37 @@ export default function SpotDetailScreen({ route, navigation }) {
             </TouchableOpacity>
           )}
         </View>
+        {/* Add Report Button */}
+        <TouchableOpacity
+          onPress={() => setShowReportModal(true)}
+          style={{
+            marginTop: 12,
+            alignSelf: "center",
+            backgroundColor: themeColors.white,
+            borderColor: themeColors.purple,
+            borderWidth: 1,
+            borderRadius: 8,
+            paddingVertical: 10,
+            paddingHorizontal: 24,
+          }}
+        >
+          <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
+            Report Incorrect Info / Suggestion
+          </Text>
+        </TouchableOpacity>
         <LiveUpdateModal
           visible={showLiveUpdate}
           onClose={() => setShowLiveUpdate(false)}
           spotId={spotId}
           initialNoise={spot.ratings?.noise || 0}
           initialCrowd={spot.ratings?.crowd || 0}
+        />
+        {/* Report Modal */}
+        <ReportModal
+          visible={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          spotId={spotId}
+          spotName={spot?.buildingName || ""}
         />
       </View>
     </SafeAreaView>
@@ -1066,6 +1093,129 @@ function LiveUpdateModal({
             </TouchableOpacity>
             <TouchableOpacity
               onPress={onClose}
+              style={{
+                flex: 1,
+                padding: 12,
+                backgroundColor: themeColors.white,
+                borderRadius: 8,
+                alignItems: "center",
+                borderColor: themeColors.black,
+                borderWidth: 0.5,
+              }}
+            >
+              <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function ReportModal({ visible, onClose, spotId, spotName }) {
+  const [reportText, setReportText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const themeCtx = useContext(ThemeContext);
+  const themeColors = themeCtx?.themeColors ?? colors;
+
+  const handleSubmit = async () => {
+    if (!reportText.trim()) {
+      Alert.alert("Please enter your report or suggestion.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      // Add report to Firestore 'reports' collection
+      await addDoc(collection(db, "reports"), {
+        spotId: spotId || null,
+        spotName: spotName || null,
+        report: reportText,
+        user: auth.currentUser?.uid || "Anonymous",
+        createdAt: Timestamp.now(),
+      });
+      Alert.alert("Thank you!", "Your report has been submitted.");
+      setReportText("");
+      onClose();
+    } catch (e) {
+      Alert.alert("Error", "Failed to submit report.");
+    }
+    setSubmitting(false);
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="slide">
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "rgba(0,0,0,0.3)",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <View
+          style={{
+            backgroundColor: themeColors.white,
+            margin: 32,
+            padding: 16,
+            borderRadius: 8,
+            width: "90%",
+            maxWidth: 400,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: "bold",
+              color: themeColors.black,
+              marginBottom: 8,
+            }}
+          >
+            Report Incorrect Info / Suggestion
+          </Text>
+          <TextInput
+            style={{
+              borderWidth: 0.5,
+              borderColor: themeColors.purple,
+              borderRadius: 8,
+              padding: 12,
+              minHeight: 80,
+              color: themeColors.black,
+              backgroundColor: themeColors.white,
+              marginBottom: 12,
+              textAlignVertical: "top",
+            }}
+            placeholder="Describe the issue or suggestion..."
+            placeholderTextColor={themeColors.darkGray}
+            multiline
+            value={reportText}
+            onChangeText={setReportText}
+            editable={!submitting}
+          />
+          <View
+            style={{ flexDirection: "row", justifyContent: "space-between" }}
+          >
+            <TouchableOpacity
+              onPress={handleSubmit}
+              disabled={submitting}
+              style={{
+                flex: 1,
+                padding: 12,
+                backgroundColor: themeColors.purple,
+                borderRadius: 8,
+                alignItems: "center",
+                marginRight: 8,
+                opacity: submitting ? 0.7 : 1,
+              }}
+            >
+              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+                {submitting ? "Submitting..." : "Submit"}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={onClose}
+              disabled={submitting}
               style={{
                 flex: 1,
                 padding: 12,
