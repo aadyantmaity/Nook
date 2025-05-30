@@ -31,6 +31,7 @@ import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import * as FileSystem from "expo-file-system";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemeContext } from "../App";
 
 export default function ProfileScreen({
@@ -58,8 +59,39 @@ export default function ProfileScreen({
   const [editedProfilePic, setEditedProfilePic] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [cachedProfilePicUri, setCachedProfilePicUri] = useState(null);
 
-  // Fetch user data
+  // Helper to cache profile picture locally
+  const cacheProfilePic = async (url) => {
+    if (!url) {
+      setCachedProfilePicUri(null);
+      await AsyncStorage.removeItem("profilePicUri");
+      await AsyncStorage.removeItem("profilePicUrl");
+      return;
+    }
+    try {
+      const cachedUrl = await AsyncStorage.getItem("profilePicUrl");
+      const cachedUri = await AsyncStorage.getItem("profilePicUri");
+      if (cachedUrl === url && cachedUri) {
+        setCachedProfilePicUri(cachedUri);
+        return;
+      }
+      // Download and cache the image
+      const fileUri = FileSystem.cacheDirectory + "profile_pic.jpg";
+      const downloadRes = await FileSystem.downloadAsync(url, fileUri);
+      if (downloadRes.status === 200) {
+        await AsyncStorage.setItem("profilePicUri", downloadRes.uri);
+        await AsyncStorage.setItem("profilePicUrl", url);
+        setCachedProfilePicUri(downloadRes.uri);
+      } else {
+        setCachedProfilePicUri(null);
+      }
+    } catch (e) {
+      setCachedProfilePicUri(null);
+    }
+  };
+
+  // Fetch user data and cache profile picture
   const fetchUserData = useCallback(async () => {
     const user = auth.currentUser;
     if (user) {
@@ -73,6 +105,14 @@ export default function ProfileScreen({
           setUserGradYear(data.gradYear || "No Grad Year");
           setFavorites(data.favorites || []);
           setProfilePic(data.profilePic);
+          // Cache the profile picture if present
+          if (data.profilePic) {
+            cacheProfilePic(data.profilePic);
+          } else {
+            setCachedProfilePicUri(null);
+            await AsyncStorage.removeItem("profilePicUri");
+            await AsyncStorage.removeItem("profilePicUrl");
+          }
         } else {
           console.error("User document does not exist");
         }
@@ -96,6 +136,15 @@ export default function ProfileScreen({
       setEditedProfilePic(null); // Reset preview to icon when modal closes
     }
   }, [isModalVisible, profilePic]);
+
+  // When profilePic changes, update cache
+  useEffect(() => {
+    if (profilePic) {
+      cacheProfilePic(profilePic);
+    } else {
+      setCachedProfilePicUri(null);
+    }
+  }, [profilePic]);
 
   // Helper for "last updated" display
   function getLastUpdatedLabel(ratings) {
@@ -313,6 +362,7 @@ export default function ProfileScreen({
           if (downloadUrl) {
             updateData.profilePic = downloadUrl;
             setProfilePic(downloadUrl);
+            await cacheProfilePic(downloadUrl); // Cache new profile pic
           }
         }
         await setDoc(doc(db, "users", user.uid), updateData, { merge: true });
@@ -496,7 +546,12 @@ export default function ProfileScreen({
             onPress={handlePickProfilePic}
             style={{ alignItems: "center" }}
           >
-            {profilePic ? (
+            {cachedProfilePicUri ? (
+              <Image
+                source={{ uri: cachedProfilePicUri }}
+                style={{ width: 125, height: 125, borderRadius: 75 }}
+              />
+            ) : profilePic ? (
               <Image
                 source={{ uri: profilePic }}
                 style={{ width: 125, height: 125, borderRadius: 75 }}

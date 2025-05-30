@@ -41,6 +41,8 @@ import { colors } from "../constants/colors";
 import { auth } from "../firebaseConfig"; // Import auth
 import Slider from "@react-native-community/slider"; // Add this import for Slider
 import { ThemeContext } from "../App"; // Import ThemeContext
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as FileSystem from "expo-file-system";
 
 export default function SpotDetailScreen({ route, navigation }) {
   const themeCtx = useContext(ThemeContext);
@@ -60,6 +62,7 @@ export default function SpotDetailScreen({ route, navigation }) {
   const [isSubmittingOverall, setIsSubmittingOverall] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false); // Add state for report modal
+  const [cachedPhotoUri, setCachedPhotoUri] = useState(null);
 
   // Helper for "last updated" display
   function getLastUpdatedLabel(ratings) {
@@ -182,6 +185,43 @@ export default function SpotDetailScreen({ route, navigation }) {
       setIsLoading(false); // Set loading to false after fetching data
     }
   };
+
+  // Helper to cache spot image
+  const cacheSpotImage = async (spotId, photoUrl) => {
+    if (!photoUrl) {
+      setCachedPhotoUri(null);
+      return;
+    }
+    try {
+      const cacheKey = `spotImageUri_${spotId}`;
+      const cachedUri = await AsyncStorage.getItem(cacheKey);
+      const cachedUrl = await AsyncStorage.getItem(`${cacheKey}_url`);
+      if (cachedUri && cachedUrl === photoUrl) {
+        setCachedPhotoUri(cachedUri);
+        return;
+      }
+      const fileUri = FileSystem.cacheDirectory + `spot_${spotId}.jpg`;
+      const downloadRes = await FileSystem.downloadAsync(photoUrl, fileUri);
+      if (downloadRes.status === 200) {
+        await AsyncStorage.setItem(cacheKey, downloadRes.uri);
+        await AsyncStorage.setItem(`${cacheKey}_url`, photoUrl);
+        setCachedPhotoUri(downloadRes.uri);
+      } else {
+        setCachedPhotoUri(null);
+      }
+    } catch (e) {
+      setCachedPhotoUri(null);
+    }
+  };
+
+  // When spot is loaded or photoUrl changes, cache the image
+  useEffect(() => {
+    if (spot && spot.photoUrl) {
+      cacheSpotImage(spotId, spot.photoUrl);
+    } else {
+      setCachedPhotoUri(null);
+    }
+  }, [spotId, spot?.photoUrl]);
 
   useEffect(() => {
     const fetchCurrentUserName = async () => {
@@ -570,7 +610,12 @@ export default function SpotDetailScreen({ route, navigation }) {
                 }}
               >
                 <Image
-                  source={{ uri: spot.photoUrl }}
+                  source={{
+                    uri:
+                      cachedPhotoUri && cachedPhotoUri.length > 0
+                        ? cachedPhotoUri
+                        : spot.photoUrl,
+                  }}
                   style={{ width: "100%", height: "100%" }}
                   resizeMode="cover"
                 />
