@@ -670,7 +670,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                 borderRadius: 8,
                 flex: 1,
                 marginRight: 8,
-                borderColor: themeColors.purple,
+                borderColor: themeColors.black,
                 borderWidth: 0.5,
               }}
             >
@@ -693,7 +693,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                 backgroundColor: themeColors.white,
                 borderRadius: 8,
                 flex: 1,
-                borderColor: themeColors.purple,
+                borderColor: themeColors.black,
                 borderWidth: 0.5,
               }}
             >
@@ -1072,7 +1072,7 @@ function LiveUpdateModal({
                 backgroundColor: themeColors.white,
                 borderRadius: 8,
                 alignItems: "center",
-                borderColor: themeColors.purple,
+                borderColor: themeColors.black,
                 borderWidth: 0.5,
               }}
             >

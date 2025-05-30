@@ -442,7 +442,7 @@ export default function AddSpotScreen({
                   ? themeColors.purple
                   : themeColors.white,
                 borderRadius: 8,
-                borderColor: themeColors.purple,
+                borderColor: themeColors.black,
                 borderWidth: 0.5,
               }}
             >
@@ -466,7 +466,7 @@ export default function AddSpotScreen({
                   ? themeColors.purple
                   : themeColors.white,
                 borderRadius: 8,
-                borderColor: themeColors.purple,
+                borderColor: themeColors.black,
                 borderWidth: 0.5,
               }}
             >
@@ -507,7 +507,7 @@ export default function AddSpotScreen({
                   color: themeColors.purple,
                   fontSize: 18,
                   backgroundColor: themeColors.white,
-                  borderColor: themeColors.purple,
+                  borderColor: themeColors.black,
                   borderWidth: 0.5,
                   borderRadius: 8,
                 }}
@@ -546,7 +546,7 @@ export default function AddSpotScreen({
                 onChangeText={setCustomBuilding}
                 style={{
                   borderWidth: 0.5,
-                  borderColor: themeColors.purple,
+                  borderColor: themeColors.black,
                   borderRadius: 8,
                   padding: 12,
                   marginBottom: 16,
@@ -562,7 +562,7 @@ export default function AddSpotScreen({
                 onChangeText={setRoomNumber}
                 style={{
                   borderWidth: 0.5,
-                  borderColor: themeColors.purple,
+                  borderColor: themeColors.black,
                   borderRadius: 8,
                   padding: 12,
                   marginBottom: 16,
@@ -599,7 +599,7 @@ export default function AddSpotScreen({
                       borderRadius: 8,
                       overflow: "hidden",
                       borderWidth: 0.5,
-                      borderColor: themeColors.purple,
+                      borderColor: themeColors.black,
                       marginTop: 4,
                     }}
                   >
@@ -637,7 +637,7 @@ export default function AddSpotScreen({
                     ? themeColors.purple
                     : themeColors.white,
                   borderRadius: 8,
-                  borderColor: themeColors.purple,
+                  borderColor: themeColors.black,
                   borderWidth: 0.5,
                 }}
               >
@@ -662,7 +662,7 @@ export default function AddSpotScreen({
                     ? themeColors.purple
                     : themeColors.white,
                   borderRadius: 8,
-                  borderColor: themeColors.purple,
+                  borderColor: themeColors.black,
                   borderWidth: 0.5,
                 }}
               >
@@ -686,7 +686,7 @@ export default function AddSpotScreen({
               onChangeText={setDepartment}
               style={{
                 borderWidth: 0.5,
-                borderColor: themeColors.purple,
+                borderColor: themeColors.black,
                 borderRadius: 8,
                 padding: 12,
                 marginBottom: 16,
@@ -726,7 +726,7 @@ export default function AddSpotScreen({
                   shadowRadius: 4,
                   elevation: 2,
                   borderWidth: 1,
-                  borderColor: themeColors.purple,
+                  borderColor: themeColors.black,
                 }}
               >
                 <Text
@@ -759,7 +759,7 @@ export default function AddSpotScreen({
                 backgroundColor: themeColors.white,
                 borderRadius: 20,
                 borderWidth: 1,
-                borderColor: themeColors.purple,
+                borderColor: themeColors.black,
                 padding: 8,
                 marginRight: 12,
                 alignItems: "center",
@@ -786,7 +786,7 @@ export default function AddSpotScreen({
             onChangeText={setOpenHours}
             style={{
               borderWidth: 0.5,
-              borderColor: themeColors.purple,
+              borderColor: themeColors.black,
               borderRadius: 8,
               padding: 12,
               marginBottom: 16,
