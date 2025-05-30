@@ -100,14 +100,14 @@ export default function ProfileScreen({
   // Helper for "last updated" display
   function getLastUpdatedLabel(ratings) {
     if (!ratings || !ratings.lastUpdated) return "";
-    if (ratings.lastUpdatedType === "recent") {
-      const mins = Math.round((Date.now() - ratings.lastUpdated) / 60000);
-      return mins <= 1
-        ? "Last updated: just now"
-        : `Last updated: ${mins} min ago`;
+    if (ratings.lastUpdatedType === "window" && ratings.lastWindowHours) {
+      if (ratings.lastWindowHours === 1) {
+        return "Last updated: within 1 hour";
+      }
+      return `Last updated: within ${ratings.lastWindowHours} hours`;
     }
     if (ratings.lastUpdatedType === "today") {
-      return "Last updated: Today (today's avg)";
+      return "Last updated: Today (daily avg)";
     }
     return "";
   }
@@ -123,40 +123,66 @@ export default function ProfileScreen({
     );
     const ratingsSnapshot = await getDocs(ratingsQuery);
 
-    let noiseSum = 0,
-      crowdSum = 0,
-      count = 0;
-    let lastRecentTimestamp = null;
-    let recentRatings = [];
-    let todayRatings = [];
     const now = Date.now();
-    const thirtyMinutesAgo = now - 30 * 60 * 1000;
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const todayStartMillis = todayStart.getTime();
 
-    ratingsSnapshot.forEach((ratingDoc) => {
-      const ratingData = ratingDoc.data();
-      const ts = ratingData.timestamp.toMillis();
-      if (ts >= thirtyMinutesAgo) {
-        noiseSum += ratingData.noise || 0;
-        crowdSum += ratingData.crowd || 0;
-        count++;
-        recentRatings.push(ratingData);
-        if (!lastRecentTimestamp || ts > lastRecentTimestamp)
-          lastRecentTimestamp = ts;
+    // Find best window (1-6 hours)
+    let bestWindow = null;
+    let bestWindowRatings = [];
+    let bestWindowStart = null;
+    let bestWindowEnd = null;
+    let lastRecentTimestamp = null;
+    let found = false;
+    for (let hours = 1; hours <= 6; hours++) {
+      const windowStart = now - hours * 60 * 60 * 1000;
+      let windowRatings = [];
+      let windowLastTimestamp = null;
+      ratingsSnapshot.forEach((ratingDoc) => {
+        const ratingData = ratingDoc.data();
+        const ts = ratingData.timestamp.toMillis();
+        if (ts >= windowStart) {
+          windowRatings.push(ratingData);
+          if (!windowLastTimestamp || ts > windowLastTimestamp)
+            windowLastTimestamp = ts;
+        }
+      });
+      if (windowRatings.length > 0) {
+        bestWindow = hours;
+        bestWindowRatings = windowRatings;
+        bestWindowStart = windowStart;
+        bestWindowEnd = now;
+        lastRecentTimestamp = windowLastTimestamp;
+        found = true;
+        break;
       }
-      if (ts >= todayStartMillis) {
-        todayRatings.push(ratingData);
-      }
-    });
+    }
+    // If no ratings in last 6 hours, fallback to today's ratings
+    let todayRatings = [];
+    if (!found) {
+      ratingsSnapshot.forEach((ratingDoc) => {
+        const ratingData = ratingDoc.data();
+        const ts = ratingData.timestamp.toMillis();
+        if (ts >= todayStartMillis) {
+          todayRatings.push(ratingData);
+        }
+      });
+    }
 
-    let noiseRating, crowdRating, lastUpdated, lastUpdatedType;
-    if (count > 0) {
-      noiseRating = (noiseSum / count).toFixed(1);
-      crowdRating = (crowdSum / count).toFixed(1);
+    let noiseRating, crowdRating, lastUpdated, lastUpdatedType, lastWindowHours;
+    if (found && bestWindowRatings.length > 0) {
+      let noiseSum = 0,
+        crowdSum = 0;
+      bestWindowRatings.forEach((r) => {
+        noiseSum += r.noise || 0;
+        crowdSum += r.crowd || 0;
+      });
+      noiseRating = (noiseSum / bestWindowRatings.length).toFixed(1);
+      crowdRating = (crowdSum / bestWindowRatings.length).toFixed(1);
       lastUpdated = lastRecentTimestamp;
-      lastUpdatedType = "recent";
+      lastUpdatedType = "window";
+      lastWindowHours = bestWindow;
     } else if (todayRatings.length > 0) {
       let noiseSumDay = 0,
         crowdSumDay = 0;
@@ -170,11 +196,13 @@ export default function ProfileScreen({
         ...todayRatings.map((r) => r.timestamp.toMillis())
       );
       lastUpdatedType = "today";
+      lastWindowHours = null;
     } else {
       noiseRating = "N/A";
       crowdRating = "N/A";
       lastUpdated = null;
       lastUpdatedType = null;
+      lastWindowHours = null;
     }
 
     return {
@@ -182,6 +210,7 @@ export default function ProfileScreen({
       crowd: crowdRating,
       lastUpdated,
       lastUpdatedType,
+      lastWindowHours,
     };
   }
 
