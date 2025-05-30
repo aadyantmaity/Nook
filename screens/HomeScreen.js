@@ -1475,7 +1475,7 @@ export default function HomeScreen({
                       fontSize: 16,
                     }}
                   >
-                    Focus Mode
+                    Nook Mode
                   </Text>
                 </TouchableOpacity>
                 {/* Divider */}
