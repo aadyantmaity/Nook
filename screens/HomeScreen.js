@@ -34,6 +34,7 @@ import {
   MagnifyingGlass, // <-- Add this import
   ExclamationMark, // <-- Add this import for the report button
   List, // <-- Add hamburger menu icon
+  Timer, // <-- Add this import for the timer icon
 } from "phosphor-react-native"; // Add Heart icon
 import { colors } from "../constants/colors"; // Import colors
 import { auth, db } from "../firebaseConfig"; // Import Firebase
@@ -1442,6 +1443,49 @@ export default function HomeScreen({
                     Profile
                   </Text>
                 </TouchableOpacity>
+                {/* Divider */}
+                <View
+                  style={{
+                    height: 1,
+                    backgroundColor: themeColors.lightGrayBorder || "#eee",
+                    marginHorizontal: 10,
+                  }}
+                />
+                {/* Focus Mode */}
+                <TouchableOpacity
+                  onPress={() => {
+                    setMenuOpen(false);
+                    setTimeout(() => {
+                      navigation.navigate("FocusTimer");
+                    }, 250);
+                  }}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 12,
+                    paddingHorizontal: 20,
+                  }}
+                >
+                  <Timer size={22} color={themeColors.purple} weight="bold" />
+                  <Text
+                    style={{
+                      marginLeft: 12,
+                      color: themeColors.purple,
+                      fontWeight: "bold",
+                      fontSize: 16,
+                    }}
+                  >
+                    Focus Mode
+                  </Text>
+                </TouchableOpacity>
+                {/* Divider */}
+                <View
+                  style={{
+                    height: 1,
+                    backgroundColor: themeColors.lightGrayBorder || "#eee",
+                    marginHorizontal: 10,
+                  }}
+                />
               </View>
             </TouchableOpacity>
           </Modal>
