@@ -204,6 +204,7 @@ export default function AddSpotScreen({
         revealIdentity: showAddedBy,
         photoUrl: "", // Placeholder, will update after upload
         openHours,
+        locationAlert,
       };
       const docRef = await addDoc(collection(db, "studySpots"), spotDetails);
 

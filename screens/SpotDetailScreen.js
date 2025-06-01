@@ -1252,6 +1252,7 @@ function LiveUpdateModal({
 
   const [noiseLevel, setNoiseLevel] = useState(safeNoise);
   const [crowdLevel, setCrowdLevel] = useState(safeCrowd);
+  const [locationAlert, setLocationAlert] = useState('');
 
   useEffect(() => {
     if (visible) {
@@ -1269,10 +1270,12 @@ function LiveUpdateModal({
         noise: noiseLevel,
         crowd: crowdLevel,
         timestamp: Timestamp.now(),
+        locationAlert,
       });
-      onClose();
+      onClose(); // Close the modal
     } catch (error) {
-      alert("Unable to submit live update. Please check your permissions.");
+      console.error('Error in handleSubmitUpdate:', error);
+      alert('Failed to update study space. Please check your permissions.');
     }
   };
 
@@ -1364,6 +1367,21 @@ function LiveUpdateModal({
             />
             {renderSliderLabels()}
           </View>
+          {/* Location Alert Input */}
+          <TextInput
+            style={{
+              marginBottom: 16,
+              padding: 8,
+              borderWidth: 1,
+              borderColor: themeColors.gray,
+              borderRadius: 8,
+              color: themeColors.black,
+            }}
+            placeholder="Enter location alert (optional)"
+            placeholderTextColor={themeColors.black}
+            value={locationAlert}
+            onChangeText={setLocationAlert}
+          />
           <View
             style={{ flexDirection: "row", justifyContent: "space-between" }}
           >
