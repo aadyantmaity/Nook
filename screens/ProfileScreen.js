@@ -583,10 +583,10 @@ export default function ProfileScreen({
         {/* Back Button */}
         <View style={{ flex: 0.2 }}>
           <TouchableOpacity
-            style={[styles.backButton, { backgroundColor: themeColors.purple }]}
+            style={[styles.backButton]}
             onPress={() => navigation.navigate("Home")}
           >
-            <ArrowLeft size={24} color={themeColors.white} />
+            <ArrowLeft size={24} color={themeColors.purple} />
           </TouchableOpacity>
         </View>
         {/* Profile Picture */}
@@ -1192,7 +1192,6 @@ const styles = StyleSheet.create({
     left: 16,
     padding: 8,
     // backgroundColor: themeColors.purple, // Remove this line
-    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
     zIndex: 10,
