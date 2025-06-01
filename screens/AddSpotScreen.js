@@ -133,7 +133,7 @@ export default function AddSpotScreen({
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [4, 3],
+      aspect: [5, 2], // Match HomeScreen aspect ratio: width:height = 10:14 (same as 100:140)
     });
     if (!result.cancelled) {
       // Use the file URI and filename
@@ -374,6 +374,12 @@ export default function AddSpotScreen({
     </Modal>
   );
 
+  // Add this helper to handle toggle and reset image
+  const handleUWBuildingToggle = (isUW) => {
+    setIsUWBuilding(isUW);
+    setCustomImage(null); // Reset image on toggle
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
       <ScrollView
@@ -400,15 +406,13 @@ export default function AddSpotScreen({
                 flexDirection: "row",
                 alignItems: "center",
                 padding: 10,
-                backgroundColor: themeColors.purple,
-                borderRadius: 8,
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.2,
                 shadowRadius: 4,
               }}
             >
-              <ArrowLeft size={20} color={themeColors.white} />
+              <ArrowLeft size={20} color={themeColors.purple} />
             </TouchableOpacity>
           </View>
 
@@ -421,7 +425,7 @@ export default function AddSpotScreen({
             }}
           >
             <TouchableOpacity
-              onPress={() => setIsUWBuilding(true)}
+              onPress={() => handleUWBuildingToggle(true)}
               style={{
                 flex: 1,
                 alignItems: "center",
@@ -445,7 +449,7 @@ export default function AddSpotScreen({
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => setIsUWBuilding(false)}
+              onPress={() => handleUWBuildingToggle(false)}
               style={{
                 flex: 1,
                 alignItems: "center",
@@ -483,8 +487,6 @@ export default function AddSpotScreen({
             <>
               <View
                 style={{
-                  borderWidth: 1,
-                  borderColor: themeColors.gray,
                   borderRadius: 8,
                   marginBottom: 16,
                   backgroundColor: themeColors.white,
@@ -526,6 +528,23 @@ export default function AddSpotScreen({
                     />
                   ))}
                 </Picker>
+
+                <TextInput
+                  placeholder="Floor Number (if applicable)"
+                  placeholderTextColor={themeColors.darkGray}
+                  value={roomNumber}
+                  onChangeText={setRoomNumber}
+                  style={{
+                    borderWidth: 0.5,
+                    borderColor: themeColors.black,
+                    borderRadius: 8,
+                    padding: 12,
+                    marginTop: 16,
+                    marginBottom: 16,
+                    backgroundColor: themeColors.white,
+                    color: themeColors.purple,
+                  }}
+                />
               </View>
               {/* Move upload image button and preview just outside the picker view */}
               {isAmaity && (
@@ -553,8 +572,8 @@ export default function AddSpotScreen({
                   {customImage && (
                     <View
                       style={{
-                        width: 180,
-                        height: 120,
+                        width: 350,
+                        height: 140,
                         borderRadius: 8,
                         overflow: "hidden",
                         borderWidth: 0.5,
@@ -615,7 +634,6 @@ export default function AddSpotScreen({
                     paddingVertical: 10,
                     paddingHorizontal: 18,
                     alignItems: "center",
-                    marginBottom: 8,
                   }}
                   accessibilityLabel="Pick an image for this location"
                   accessible={true}
@@ -629,13 +647,12 @@ export default function AddSpotScreen({
                 {customImage && (
                   <View
                     style={{
-                      width: 180,
-                      height: 120,
+                      width: 350,
+                      height: 140,
                       borderRadius: 8,
                       overflow: "hidden",
                       borderWidth: 0.5,
                       borderColor: themeColors.black,
-                      marginTop: 4,
                     }}
                   >
                     <Image

@@ -826,8 +826,6 @@ export default function SpotDetailScreen({ route, navigation }) {
               flexDirection: "row",
               alignItems: "center",
               padding: 10,
-              backgroundColor: themeColors.purple,
-              borderRadius: 8,
               shadowColor: themeColors.black,
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.2,
@@ -835,7 +833,7 @@ export default function SpotDetailScreen({ route, navigation }) {
               marginBottom: 8,
             }}
           >
-            <House size={20} color={themeColors.white} />
+            <House size={20} color={themeColors.purple} />
           </TouchableOpacity>
         </View>
         {/* Spot Image */}

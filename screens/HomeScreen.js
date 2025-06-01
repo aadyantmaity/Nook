@@ -200,6 +200,8 @@ function StudySpots({
   setSearch,
   isDarkMode,
   themeColors,
+  onRefresh, // <-- add onRefresh prop
+  refreshing, // <-- add refreshing prop
 }) {
   return (
     <FlatList
@@ -285,10 +287,9 @@ function StudySpots({
           <View
             style={{
               width: "100%",
-              height: 120,
-              backgroundColor: themeColors.darkGray || "#EEE", // changed
-              borderTopLeftRadius: 8,
-              borderTopRightRadius: 8,
+              height: 140, // Increased height for full corner visibility
+              backgroundColor: themeColors.darkGray || "#EEE",
+              borderRadius: 8, // Use full borderRadius for all corners
               alignItems: "center",
               justifyContent: "center",
               overflow: "hidden",
@@ -302,7 +303,11 @@ function StudySpots({
                     ? item.cachedPhotoUri
                     : item.photoUrl,
                 }}
-                style={{ width: "100%", height: "100%" }}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: 8, // Ensure image corners match container
+                }}
                 resizeMode="cover"
               />
             ) : (
@@ -514,6 +519,8 @@ function StudySpots({
           {/* ...existing code... */}
         </TouchableOpacity>
       )}
+      onRefresh={onRefresh}
+      refreshing={refreshing}
     />
   );
 }
@@ -872,6 +879,7 @@ export default function HomeScreen({
   const [showGeneralReport, setShowGeneralReport] = useState(false); // Add state for modal
   const [menuOpen, setMenuOpen] = useState(false); // <-- Hamburger menu state
   const [imageCache, setImageCache] = useState({}); // spotId -> local file URI
+  const [isRefreshing, setIsRefreshing] = useState(false); // <-- Add refreshing state
 
   // Load image cache from AsyncStorage on mount
   useEffect(() => {
@@ -1188,6 +1196,13 @@ export default function HomeScreen({
     }
   }, [route.params?.refresh]);
 
+  // Pull-to-refresh handler
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchStudySpots();
+    setIsRefreshing(false);
+  };
+
   if (isLoading)
     return (
       <SafeAreaView
@@ -1277,8 +1292,6 @@ export default function HomeScreen({
               justifyContent: "center",
               width: 36,
               height: 36,
-              backgroundColor: themeColors.purple,
-              borderRadius: 18,
               marginLeft: 8,
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 2 },
@@ -1288,7 +1301,7 @@ export default function HomeScreen({
               zIndex: 100,
             }}
           >
-            <List size={26} color={themeColors.white} weight="bold" />
+            <List size={26} color={themeColors.purple} weight="bold" />
           </TouchableOpacity>
         </View>
         {/* --- END TOP BAR --- */}
@@ -1328,44 +1341,7 @@ export default function HomeScreen({
                   zIndex: 1000,
                 }}
               >
-                {/* Restart */}
-                <TouchableOpacity
-                  onPress={() => {
-                    setMenuOpen(false);
-                    setIsLoading(true);
-                    fetchStudySpots();
-                  }}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    paddingVertical: 12,
-                    paddingHorizontal: 20,
-                  }}
-                >
-                  <ArrowClockwise
-                    size={22}
-                    color={themeColors.purple}
-                    weight="bold"
-                  />
-                  <Text
-                    style={{
-                      marginLeft: 12,
-                      color: themeColors.purple,
-                      fontWeight: "bold",
-                      fontSize: 16,
-                    }}
-                  >
-                    Refresh
-                  </Text>
-                </TouchableOpacity>
-                {/* Divider */}
-                <View
-                  style={{
-                    height: 1,
-                    backgroundColor: themeColors.lightGrayBorder || "#eee",
-                    marginHorizontal: 10,
-                  }}
-                />
+                {/* Remove Refresh button and divider */}
                 {/* Report */}
                 <TouchableOpacity
                   onPress={() => {
@@ -1541,6 +1517,8 @@ export default function HomeScreen({
             setSearch={setSearch}
             isDarkMode={isDarkMode}
             themeColors={themeColors}
+            onRefresh={handleRefresh} // <-- pass handler
+            refreshing={isRefreshing} // <-- pass refreshing state
           />
         ) : (
           <StudySpots
@@ -1560,6 +1538,8 @@ export default function HomeScreen({
             setSearch={setSearch}
             isDarkMode={isDarkMode}
             themeColors={themeColors}
+            onRefresh={handleRefresh} // <-- pass handler
+            refreshing={isRefreshing} // <-- pass refreshing state
           />
         )}
         <TouchableOpacity

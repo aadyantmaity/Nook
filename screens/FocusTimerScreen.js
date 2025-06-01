@@ -673,7 +673,7 @@ export default function FocusTimerScreen({ navigation }) {
               fontSize: 16,
             }}
           >
-            Total Focus Time This Week
+            Total Focus Time
           </Text>
           <Text
             style={{ color: themeColors.white, fontSize: 18, marginTop: 2 }}
@@ -899,36 +899,18 @@ export default function FocusTimerScreen({ navigation }) {
         <TouchableOpacity
           onPress={async () => {
             if (isRunning) {
-              Alert.alert(
-                "Pause Timer?",
-                "Navigating back will pause your timer and save your progress.",
-                [
-                  {
-                    text: "Cancel",
-                    style: "cancel",
-                  },
-                  {
-                    text: "Pause & Go Back",
-                    style: "destructive",
-                    onPress: async () => {
-                      await recalculateTimerOnBack();
-                      navigation.goBack();
-                    },
-                  },
-                ]
-              );
+              await recalculateTimerOnBack();
+              navigation.goBack();
             } else {
               navigation.goBack();
             }
           }}
           style={{
-            backgroundColor: themeColors.purple,
-            borderRadius: 8,
             padding: 8,
             marginRight: 12,
           }}
         >
-          <ArrowLeft size={22} color={themeColors.white} />
+          <ArrowLeft size={22} color={themeColors.purple} />
         </TouchableOpacity>
       </View>
       {/* Make the entire main content scrollable */}
@@ -1024,6 +1006,18 @@ export default function FocusTimerScreen({ navigation }) {
             </TouchableOpacity>
             {/* Removed Reset Button */}
           </View>
+          {/* Small red warning text below pause/stop buttons */}
+          <Text
+            style={{
+              color: themeColors.red,
+              fontSize: 12,
+              marginTop: 16,
+              marginBottom: 0,
+              fontWeight: "bold",
+            }}
+          >
+            Leaving this screen will pause the timer
+          </Text>
           {/* Goal display and set button */}
           <View
             style={{
@@ -1148,7 +1142,7 @@ export default function FocusTimerScreen({ navigation }) {
                   fontSize: 16,
                 }}
               >
-                Total Focus Time This Week
+                Total Focus Time
               </Text>
               <Text
                 style={{ color: themeColors.white, fontSize: 18, marginTop: 2 }}
@@ -1688,6 +1682,10 @@ export default function FocusTimerScreen({ navigation }) {
                   if (!isNaN(min) && min > 0) {
                     setGoalMinutes(min);
                     setGoalTitle(goalTitleInput.trim());
+                    setGoalProgressSeconds(0); // <-- Reset progress bar on new goal
+                    AsyncStorage.setItem(GOAL_PROGRESS_KEY, "0").catch(
+                      () => {}
+                    );
                     setShowGoalModal(false);
                   } else {
                     Alert.alert(
