@@ -122,6 +122,10 @@ export default function AddSpotScreen({
     setCustomImage(null); // Reset image
   };
 
+  // Helper: check if user is amaity@uw.edu
+  const isAmaity =
+    auth.currentUser && auth.currentUser.email === "amaity@uw.edu";
+
   // Image picker handler
   const MAX_IMAGE_SIZE_BYTES = 700 * 1024; // 700KB for safety
 
@@ -204,7 +208,10 @@ export default function AddSpotScreen({
       const docRef = await addDoc(collection(db, "studySpots"), spotDetails);
 
       // If custom image, upload to storage and update Firestore with download URL
-      if (!isUWBuilding && customImage) {
+      if (
+        (!isUWBuilding && customImage) ||
+        (isUWBuilding && isAmaity && customImage)
+      ) {
         photoUrl = await uploadImageToStorage(customImage, docRef.id);
         await updateDoc(docRef, { photoUrl });
       }
@@ -536,6 +543,50 @@ export default function AddSpotScreen({
                   />
                 ))}
               </Picker>
+              {/* Allow amaity@uw.edu to upload an image for UW buildings */}
+              {isAmaity && (
+                <View style={{ marginBottom: 16, alignItems: "center" }}>
+                  <TouchableOpacity
+                    onPress={handlePickCustomImage}
+                    style={{
+                      backgroundColor: themeColors.purple,
+                      borderRadius: 8,
+                      paddingVertical: 10,
+                      paddingHorizontal: 18,
+                      alignItems: "center",
+                      marginBottom: 8,
+                      marginTop: 8,
+                    }}
+                    accessibilityLabel="Pick an image for this location"
+                    accessible={true}
+                  >
+                    <Text
+                      style={{ color: themeColors.white, fontWeight: "bold" }}
+                    >
+                      {customImage ? "Change Image" : "Upload Image"}
+                    </Text>
+                  </TouchableOpacity>
+                  {customImage && (
+                    <View
+                      style={{
+                        width: 180,
+                        height: 120,
+                        borderRadius: 8,
+                        overflow: "hidden",
+                        borderWidth: 0.5,
+                        borderColor: themeColors.black,
+                        marginTop: 4,
+                      }}
+                    >
+                      <Image
+                        source={{ uri: customImage.uri }}
+                        style={{ width: "100%", height: "100%" }}
+                        resizeMode="cover"
+                      />
+                    </View>
+                  )}
+                </View>
+              )}
             </View>
           ) : (
             <>
@@ -570,7 +621,7 @@ export default function AddSpotScreen({
                   color: themeColors.purple,
                 }}
               />
-              {/* Image picker for custom location */}
+              {/* Image picker for custom location (always shown for custom) */}
               <View style={{ marginBottom: 16, alignItems: "center" }}>
                 <TouchableOpacity
                   onPress={handlePickCustomImage}
