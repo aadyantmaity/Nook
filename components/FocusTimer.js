@@ -3,27 +3,22 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   Modal,
   FlatList,
   Alert,
   AppState,
   ScrollView,
-  TextInput, // <-- add this
-  Switch, // add Switch import
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
-  Timer,
   MapPin,
   Play,
   Pause,
   Stop,
-  Gear,
-  ArrowCounterClockwise,
   Trash,
   CaretRight,
-  Info, // <-- add this for info icon
+  Archive,
 } from "phosphor-react-native";
 import { db, auth } from "../firebaseConfig";
 import {
@@ -33,19 +28,18 @@ import {
   Timestamp,
   query,
   where,
-  deleteDoc, // <-- add this
-  doc, // <-- add this import
+  deleteDoc,
+  doc,
 } from "firebase/firestore";
 import { ThemeContext } from "../App";
 import { colors } from "../constants/colors";
-import { View as RNView } from "react-native"; // for progress bar container
 import * as Notifications from "expo-notifications";
 
 // Timer durations are defined as constants at the top of the file:
 const DEFAULT_POMODORO_MINUTES = 1;
 const DEFAULT_BREAK_MINUTES = 5;
 
-export function FocusTimerView() {
+export function FocusTimerView({ navigation }) {
   const themeCtx = useContext(ThemeContext);
   const themeColors = themeCtx?.themeColors ?? colors;
 
@@ -66,51 +60,8 @@ export function FocusTimerView() {
   // Add a unique key for saving timer state
   const TIMER_STATE_KEY = "focusTimerState";
 
-  // Goal state
-  const [goalMinutes, setGoalMinutes] = useState(null);
-  const [goalInput, setGoalInput] = useState("");
-  const [goalSecondsInput, setGoalSecondsInput] = useState(""); // <-- add this line
-  const [goalTitle, setGoalTitle] = useState("");
-  const [goalTitleInput, setGoalTitleInput] = useState("");
-  const [showGoalModal, setShowGoalModal] = useState(false);
-
-  // Session note state
-  const [showNoteModal, setShowNoteModal] = useState(false);
-  const [sessionNote, setSessionNote] = useState("");
-  const [pendingSession, setPendingSession] = useState(null);
-
   // Auto-start next session state
   const [autoStartNext, setAutoStartNext] = useState(false);
-
-  // Track achieved goals this week
-  const [achievedGoalsThisWeek, setAchievedGoalsThisWeek] = useState([]);
-
-  // Key for storing achieved goals
-  const ACHIEVED_GOALS_KEY = "achievedGoalsThisWeek";
-
-  // Global goal progress state
-  const [goalProgressSeconds, setGoalProgressSeconds] = useState(0);
-  const GOAL_PROGRESS_KEY = "globalGoalProgressSeconds";
-
-  // Track session progress for live goal progress bar
-  const [sessionProgressSeconds, setSessionProgressSeconds] = useState(0);
-
-  // Add this state to prevent duplicate alerts for the same goal
-  const [goalJustAchieved, setGoalJustAchieved] = useState(false);
-
-  // Add a state to track which sessionIds contributed to the current goal
-  const [goalSessionIds, setGoalSessionIds] = useState([]);
-
-  // Add this function definition after all useState hooks and before useEffect hooks
-  function handleSetGoal(min, title) {
-    setGoalMinutes(min);
-    setGoalTitle(title);
-    setGoalProgressSeconds(0);
-    setGoalSessionIds([]); // Reset session ids for new goal
-    AsyncStorage.setItem(GOAL_PROGRESS_KEY, "0").catch(() => {});
-    AsyncStorage.setItem("goalSessionIds", JSON.stringify([])).catch(() => {});
-    setShowGoalModal(false);
-  }
 
   // Fetch study spots for location selection
   useEffect(() => {
@@ -161,24 +112,6 @@ export function FocusTimerView() {
     // eslint-disable-next-line
   }, [isBreak]);
 
-  // Restore goal progress on mount
-  useEffect(() => {
-    const restoreGoalProgress = async () => {
-      try {
-        const saved = await AsyncStorage.getItem(GOAL_PROGRESS_KEY);
-        if (saved) setGoalProgressSeconds(Number(saved) || 0);
-      } catch {}
-    };
-    restoreGoalProgress();
-  }, []);
-
-  // Save goal progress when it changes
-  useEffect(() => {
-    AsyncStorage.setItem(GOAL_PROGRESS_KEY, String(goalProgressSeconds)).catch(
-      () => {}
-    );
-  }, [goalProgressSeconds]);
-
   // Add this helper function before the component return
   const recalculateTimerOnBack = async () => {
     if (isRunning && timerStartRef.current) {
@@ -186,10 +119,6 @@ export function FocusTimerView() {
       const elapsed = Math.floor((now - timerStartRef.current.start) / 1000);
       const newTime = Math.max(timerStartRef.current.duration - elapsed, 0);
       setTimer(newTime);
-      // Do not pause or clear timerStartRef here
-      // timerStartRef.current = null;
-      // setIsRunning(false);
-      // Timer state will be saved by effect
     }
   };
 
@@ -213,13 +142,6 @@ export function FocusTimerView() {
               isBreak,
               selectedSpot,
               sessionStart,
-              goalMinutes,
-              goalTitle,
-              goalProgressSeconds,
-              goalInput,
-              goalTitleInput,
-              goalSecondsInput,
-              sessionProgressSeconds,
               lastBackgroundTime: Date.now(),
             })
           );
@@ -243,13 +165,6 @@ export function FocusTimerView() {
             isBreak: savedIsBreak,
             selectedSpot: savedSpot,
             sessionStart: savedSessionStart,
-            goalMinutes: savedGoalMinutes,
-            goalTitle: savedGoalTitle,
-            goalProgressSeconds: savedGoalProgressSeconds,
-            goalInput: savedGoalInput,
-            goalTitleInput: savedGoalTitleInput,
-            goalSecondsInput: savedGoalSecondsInput,
-            sessionProgressSeconds: savedSessionProgressSeconds,
             lastBackgroundTime,
           } = JSON.parse(runningState);
 
@@ -266,35 +181,6 @@ export function FocusTimerView() {
                   )
                 : savedSessionStart
             );
-          if (savedGoalMinutes !== undefined) setGoalMinutes(savedGoalMinutes);
-          if (savedGoalTitle !== undefined) setGoalTitle(savedGoalTitle);
-          if (savedGoalInput !== undefined) setGoalInput(savedGoalInput);
-          if (savedGoalTitleInput !== undefined)
-            setGoalTitleInput(savedGoalTitleInput);
-          if (savedGoalSecondsInput !== undefined)
-            setGoalSecondsInput(savedGoalSecondsInput);
-
-          // Calculate elapsed time while away
-          let sessionProgress = savedSessionProgressSeconds || 0;
-          let newGoalProgressSeconds = savedGoalProgressSeconds || 0;
-          if (
-            wasRunning &&
-            lastBackgroundTime &&
-            timerStart &&
-            typeof timerStart.start === "number"
-          ) {
-            const now = Date.now();
-            const elapsedWhileAway = Math.floor(
-              (now - lastBackgroundTime) / 1000
-            );
-            sessionProgress += Math.max(elapsedWhileAway, 0);
-            // Only add to goalProgressSeconds if Pomodoro (not break)
-            if (!savedIsBreak) {
-              newGoalProgressSeconds += Math.max(elapsedWhileAway, 0);
-            }
-          }
-          setSessionProgressSeconds(sessionProgress);
-          setGoalProgressSeconds(newGoalProgressSeconds);
 
           if (
             timerStart &&
@@ -349,16 +235,9 @@ export function FocusTimerView() {
         setTimer((t) => {
           if (t <= 1) {
             clearInterval(id);
-            // Do not increment sessionProgressSeconds on last tick
             handleSessionEnd();
             return 0;
           }
-          // Only increment sessionProgressSeconds if timer > 1
-          setSessionProgressSeconds((prev) => {
-            // Prevent off-by-one: only increment if t > 1
-            if (t > 1) return prev + 1;
-            return prev;
-          });
           return t - 1;
         });
       }, 1000);
@@ -370,17 +249,6 @@ export function FocusTimerView() {
     };
     // eslint-disable-next-line
   }, [isRunning]);
-
-  // Reset session progress when timer resets or session starts
-  useEffect(() => {
-    if (
-      !isRunning ||
-      timer === DEFAULT_POMODORO_MINUTES * 60 ||
-      timer === DEFAULT_BREAK_MINUTES * 60
-    ) {
-      setSessionProgressSeconds(0);
-    }
-  }, [isRunning, timer, isBreak]);
 
   // Restore timer running state on mount (when screen is opened)
   useEffect(() => {
@@ -395,13 +263,6 @@ export function FocusTimerView() {
             isBreak: savedIsBreak,
             selectedSpot: savedSpot,
             sessionStart: savedSessionStart,
-            goalMinutes: savedGoalMinutes,
-            goalTitle: savedGoalTitle,
-            goalProgressSeconds: savedGoalProgressSeconds,
-            goalInput: savedGoalInput,
-            goalTitleInput: savedGoalTitleInput,
-            goalSecondsInput: savedGoalSecondsInput,
-            sessionProgressSeconds: savedSessionProgressSeconds,
             lastBackgroundTime,
           } = JSON.parse(runningState);
 
@@ -418,35 +279,6 @@ export function FocusTimerView() {
                   )
                 : savedSessionStart
             );
-          if (savedGoalMinutes !== undefined) setGoalMinutes(savedGoalMinutes);
-          if (savedGoalTitle !== undefined) setGoalTitle(savedGoalTitle);
-          if (savedGoalInput !== undefined) setGoalInput(savedGoalInput);
-          if (savedGoalTitleInput !== undefined)
-            setGoalTitleInput(savedGoalTitleInput);
-          if (savedGoalSecondsInput !== undefined)
-            setGoalSecondsInput(savedGoalSecondsInput);
-
-          // Calculate elapsed time while away
-          let sessionProgress = savedSessionProgressSeconds || 0;
-          let newGoalProgressSeconds = savedGoalProgressSeconds || 0;
-          if (
-            wasRunning &&
-            lastBackgroundTime &&
-            timerStart &&
-            typeof timerStart.start === "number"
-          ) {
-            const now = Date.now();
-            const elapsedWhileAway = Math.floor(
-              (now - lastBackgroundTime) / 1000
-            );
-            sessionProgress += Math.max(elapsedWhileAway, 0);
-            // Only add to goalProgressSeconds if Pomodoro (not break)
-            if (!savedIsBreak) {
-              newGoalProgressSeconds += Math.max(elapsedWhileAway, 0);
-            }
-          }
-          setSessionProgressSeconds(sessionProgress);
-          setGoalProgressSeconds(newGoalProgressSeconds);
 
           if (
             timerStart &&
@@ -472,28 +304,6 @@ export function FocusTimerView() {
             }
           }
           await AsyncStorage.removeItem(TIMER_RUNNING_KEY);
-          return;
-        }
-        // If no running state, restore paused state as fallback
-        const saved = await AsyncStorage.getItem(TIMER_STATE_KEY);
-        if (saved) {
-          const state = JSON.parse(saved);
-          if (state && typeof state.timer === "number") {
-            setTimer(state.timer);
-            setIsBreak(state.isBreak || false);
-            setSelectedSpot(state.selectedSpot || null);
-            setSessionStart(
-              state.sessionStart
-                ? new Timestamp(
-                    state.sessionStart.seconds,
-                    state.sessionStart.nanoseconds
-                  )
-                : null
-            );
-            setGoalMinutes(state.goalMinutes || null);
-            setGoalTitle(state.goalTitle || ""); // restore title
-            setIsRunning(false); // Always paused on restore
-          }
         }
       } catch {}
     };
@@ -513,8 +323,6 @@ export function FocusTimerView() {
               isBreak,
               selectedSpot,
               sessionStart,
-              goalMinutes,
-              goalTitle, // save title
             })
           );
         } catch {}
@@ -522,94 +330,19 @@ export function FocusTimerView() {
     };
     saveTimerState();
     // eslint-disable-next-line
-  }, [
-    isRunning,
-    timer,
-    isBreak,
-    selectedSpot,
-    sessionStart,
-    goalMinutes,
-    goalTitle,
-  ]);
+  }, [isRunning, timer, isBreak, selectedSpot, sessionStart]);
 
   // Clear timer state from storage when stopped or completed
   const clearTimerState = async () => {
     try {
       await AsyncStorage.removeItem(TIMER_STATE_KEY);
     } catch {}
-    // Do NOT clear goalMinutes here
   };
-
-  // Update getGoalProgress to use global progress
-  const getGoalProgress = () => {
-    if (!goalMinutes) return null;
-    const min = parseInt(goalMinutes, 10);
-    const sec = goalSecondsInput ? parseInt(goalSecondsInput, 10) : 0;
-    // Defensive: treat NaN as 0
-    const safeMin = isNaN(min) ? 0 : min;
-    const safeSec = isNaN(sec) ? 0 : sec;
-    const totalGoalSeconds = safeMin * 60 + safeSec;
-    return {
-      progressSeconds: goalProgressSeconds,
-      totalGoalSeconds,
-    };
-  };
-
-  // Calculate progress for goal
-  const getGoalProgressV2 = () => {
-    if (!goalMinutes) return null;
-    const min = parseInt(goalMinutes, 10);
-    const sec = goalSecondsInput ? parseInt(goalSecondsInput, 10) : 0;
-    // Defensive: treat NaN as 0
-    const safeMin = isNaN(min) ? 0 : min;
-    const safeSec = isNaN(sec) ? 0 : sec;
-    const totalGoalSeconds = safeMin * 60 + safeSec;
-    const totalSessionSeconds = DEFAULT_POMODORO_MINUTES * 60;
-    const elapsed =
-      sessionStart && timerStartRef.current
-        ? Math.floor((Date.now() - timerStartRef.current.start) / 1000)
-        : totalSessionSeconds - timer;
-    const progressSeconds = Math.max(elapsed, 0);
-    return {
-      progressSeconds,
-      totalGoalSeconds,
-    };
-  };
-
-  // Auto-clear goal if achieved
-  useEffect(() => {
-    if (goalMinutes) {
-      const progress = getGoalProgress();
-      if (progress && progress.progressMinutes >= goalMinutes) {
-        // Add to achieved goals
-        setAchievedGoalsThisWeek((prev) => [
-          ...prev,
-          {
-            title: goalTitle || "Untitled",
-            minutes: goalMinutes,
-            timestamp: Date.now(),
-          },
-        ]);
-        Alert.alert("Goal Achieved!", "You reached your study goal.");
-        setGoalMinutes(null);
-        setGoalTitle(""); // clear title when goal is cleared
-      }
-    }
-    // eslint-disable-next-line
-  }, [timer, isRunning]);
 
   // Helper to add a session to Firestore and update stats immediately
-  const addSessionAndUpdateStats = async (
-    start,
-    end,
-    isBreakSession,
-    note
-    // tags
-  ) => {
+  const addSessionAndUpdateStats = async (start, end, isBreakSession, note) => {
     if (start && end && auth.currentUser && selectedSpot) {
-      // Use actual duration (end - start) for all sessions
       const duration = end.toMillis() - start.toMillis();
-      // Generate a unique sessionId
       const sessionId = `${
         auth.currentUser.uid
       }_${start.toMillis()}_${Math.floor(Math.random() * 1000000)}`;
@@ -622,34 +355,26 @@ export function FocusTimerView() {
         isBreak: isBreakSession,
         note: note || "",
         sessionId,
-        // tags: tags || [],
       };
       await addDoc(collection(db, "focusSessions"), sessionObj);
       // Update stats locally for immediate feedback
       const weekAgo = Timestamp.now().toMillis() - 7 * 24 * 60 * 60 * 1000;
       if (end.toMillis() > weekAgo) {
         setFocusStats((prev) => {
-          const prevArr = Array.isArray(prev[selectedSpot.id])
-            ? prev[selectedSpot.id]
-            : [];
+          const weekStats = prev[selectedSpot.id] || [];
           return {
             ...prev,
             [selectedSpot.id]: [
-              ...prevArr,
+              ...weekStats,
               {
                 ...sessionObj,
                 duration,
                 start: start.toMillis(),
                 end: end.toMillis(),
-                // tags: tags || [],
               },
             ],
           };
         });
-      }
-      // If this session is Pomodoro and a goal is active, add to goalSessionIds
-      if (!isBreakSession && goalMinutes) {
-        setGoalSessionIds((prev) => [...prev, sessionId]);
       }
     }
   };
@@ -668,16 +393,23 @@ export function FocusTimerView() {
     } catch (e) {
       // Ignore notification errors
     }
+
     setIsRunning(false);
     timerStartRef.current = null;
     await clearTimerState();
+
     if (sessionStart) {
       if (!isBreak) {
-        // Record the end time immediately when Pomodoro ends
-        const sessionEnd = Timestamp.now();
+        // Always use the default Pomodoro duration for work session
+        const sessionEnd = new Timestamp(
+          sessionStart.seconds !== undefined
+            ? sessionStart.seconds + DEFAULT_POMODORO_MINUTES * 60
+            : Math.floor(sessionStart / 1000) + DEFAULT_POMODORO_MINUTES * 60,
+          sessionStart.nanoseconds !== undefined ? sessionStart.nanoseconds : 0
+        );
         setPendingSession({
           start: sessionStart,
-          end: sessionEnd, // <-- store end time here
+          end: sessionEnd,
           isBreak: isBreak,
           sessionDuration: DEFAULT_POMODORO_MINUTES * 60,
         });
@@ -703,15 +435,14 @@ export function FocusTimerView() {
         return;
       }
     }
+
     setSessionStart(null);
     if (!isBreak) {
       setIsBreak(true);
       setTimer(DEFAULT_BREAK_MINUTES * 60);
       Alert.alert("Pomodoro complete!", "Time for a break.");
-      // Auto-start break if enabled and no note modal
       if (autoStartNext) {
         setTimeout(() => {
-          // Only auto-start if note modal is not open
           if (!showNoteModal) {
             setIsRunning(true);
             setSessionStart(Timestamp.now());
@@ -742,9 +473,11 @@ export function FocusTimerView() {
   };
 
   // Save session with note after modal
+  const [pendingSession, setPendingSession] = useState(null);
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [sessionNote, setSessionNote] = useState("");
   const handleSaveSessionNote = async () => {
     if (pendingSession) {
-      // Use the end time recorded when Pomodoro ended
       const end = pendingSession.end;
       await addSessionAndUpdateStats(
         pendingSession.start,
@@ -752,14 +485,6 @@ export function FocusTimerView() {
         pendingSession.isBreak,
         sessionNote
       );
-      // Add sessionId to goalSessionIds if Pomodoro and not already present
-      if (
-        !pendingSession.isBreak &&
-        pendingSession.sessionDuration &&
-        goalMinutes
-      ) {
-        setGoalSessionIds((prev) => [...prev, sessionId]);
-      }
       setSessionNote("");
       setPendingSession(null);
       setShowNoteModal(false);
@@ -776,7 +501,7 @@ export function FocusTimerView() {
     }
   };
 
-  // Start handler: require tags before starting
+  // Start handler
   const handleStart = () => {
     if (!selectedSpot) {
       Alert.alert("Select a location to start Focus Mode.");
@@ -794,12 +519,6 @@ export function FocusTimerView() {
   const handlePause = () => {
     setIsRunning(false);
     timerStartRef.current = null;
-    // Add current session progress to total progress
-    if (sessionProgressSeconds > 0) {
-      setGoalProgressSeconds((prev) => prev + sessionProgressSeconds);
-      setSessionProgressSeconds(0);
-    }
-    // Timer state will be saved by effect above
   };
 
   // Stop and save session (add to Firestore and update stats)
@@ -808,18 +527,24 @@ export function FocusTimerView() {
     setTimer(DEFAULT_POMODORO_MINUTES * 60);
     setIsBreak(false);
     timerStartRef.current = null;
-    // Add current session progress to total progress
-    if (sessionProgressSeconds > 0) {
-      setGoalProgressSeconds((prev) => prev + sessionProgressSeconds);
-      setSessionProgressSeconds(0);
-    }
     await clearTimerState();
     if (sessionStart) {
       const end = Timestamp.now();
-      await addSessionAndUpdateStats(sessionStart, end, isBreak);
-      // Do NOT update goalProgressSeconds here; handled above
+      if (!isBreak) {
+        setPendingSession({
+          start: sessionStart,
+          end: end,
+          isBreak: isBreak,
+          sessionDuration: DEFAULT_POMODORO_MINUTES * 60,
+        });
+        setShowNoteModal(true);
+      } else {
+        await addSessionAndUpdateStats(sessionStart, end, isBreak);
+        setSessionStart(null);
+      }
+    } else {
+      setSessionStart(null);
     }
-    setSessionStart(null);
   };
 
   // Modal state for stat card
@@ -840,22 +565,6 @@ export function FocusTimerView() {
         where("spotId", "==", spotId)
       );
       const snapshot = await getDocs(q);
-
-      // Calculate total Pomodoro duration to subtract
-      let totalPomodoroSeconds = 0;
-      snapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        const end = data.end?.seconds
-          ? data.end.seconds * 1000
-          : data.end?.toMillis?.() ?? 0;
-        if (
-          end > weekAgo &&
-          !data.isBreak &&
-          typeof data.duration === "number"
-        ) {
-          totalPomodoroSeconds += Math.floor(data.duration / 1000);
-        }
-      });
 
       // Delete all sessions for this spot (optionally, only those in the last week)
       const batch = [];
@@ -878,17 +587,6 @@ export function FocusTimerView() {
       });
       setShowStatModal(false);
       setSelectedStatSpot(null);
-
-      // Subtract total Pomodoro duration from goal progress
-      if (totalPomodoroSeconds > 0) {
-        setGoalProgressSeconds((prev) =>
-          Math.max(prev - totalPomodoroSeconds, 0)
-        );
-        AsyncStorage.setItem(
-          GOAL_PROGRESS_KEY,
-          String(Math.max(goalProgressSeconds - totalPomodoroSeconds, 0))
-        ).catch(() => {});
-      }
     } catch (e) {
       Alert.alert("Error", "Failed to delete stats for this spot.");
     }
@@ -897,7 +595,15 @@ export function FocusTimerView() {
 
   // Show stats for the week (grouped by spot, show each session's tags)
   const renderStats = () => {
-    if (!Object.keys(focusStats).length) {
+    // Only consider non-break sessions for stats
+    const nonBreakStats = Object.entries(focusStats)
+      .map(([spotId, sessions]) => [
+        spotId,
+        Array.isArray(sessions) ? sessions.filter((b) => !b.isBreak) : [],
+      ])
+      .filter(([, sessions]) => sessions.length > 0);
+
+    if (nonBreakStats.length === 0) {
       return (
         <Text style={{ color: themeColors.darkGray, marginTop: 8 }}>
           No focus sessions this week.
@@ -906,9 +612,8 @@ export function FocusTimerView() {
     }
 
     // Calculate total focus time (only Pomodoro, not break)
-    const totalMs = Object.values(focusStats)
-      .flat()
-      .filter((b) => !b.isBreak) // Only work sessions
+    const totalMs = nonBreakStats
+      .flatMap(([, sessions]) => sessions)
       .reduce((a, b) => a + (b.duration || 0), 0);
     const totalSeconds = Math.floor(totalMs / 1000);
     const totalHours = Math.floor(totalSeconds / 3600);
@@ -951,14 +656,9 @@ export function FocusTimerView() {
           contentContainerStyle={{ paddingBottom: 8 }}
           showsVerticalScrollIndicator={true}
         >
-          {Object.entries(focusStats).map(([spotId, sessions]) => {
+          {nonBreakStats.map(([spotId, sessions]) => {
             const spot = studySpots.find((s) => s.id === spotId);
-            // Fix: Only render if sessions is an array
-            if (!Array.isArray(sessions) || sessions.length === 0) return null;
-            // Sum durations for this spot (only Pomodoro)
-            const ms = sessions
-              .filter((b) => !b.isBreak)
-              .reduce((a, b) => a + (b.duration || 0), 0);
+            const ms = sessions.reduce((a, b) => a + (b.duration || 0), 0);
             const totalSeconds = Math.floor(ms / 1000);
             const hours = Math.floor(totalSeconds / 3600);
             const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -992,7 +692,7 @@ export function FocusTimerView() {
                   elevation: 1,
                   flexDirection: "row",
                   alignItems: "center",
-                  width: "94%", // Make sub cards a bit smaller than full width
+                  width: "94%",
                   alignSelf: "center",
                 }}
               >
@@ -1016,7 +716,26 @@ export function FocusTimerView() {
                   >
                     {hours}h {minutes}m {seconds}s
                   </Text>
-                  {/* Remove tags display */}
+                </View>
+                <View
+                  style={{
+                    borderRadius: 8,
+                    paddingHorizontal: 8,
+                    paddingVertical: 2,
+                    marginLeft: 4,
+                    borderWidth: 1,
+                    borderColor: themeColors.purple,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: themeColors.purple,
+                      fontSize: 13,
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {`${totalHours}h ${totalMinutes}m ${totalSecs}s`}
+                  </Text>
                 </View>
               </TouchableOpacity>
             );
@@ -1035,94 +754,6 @@ export function FocusTimerView() {
     return `${m}:${s}`;
   };
 
-  // Remove handleResetSession and its usages
-
-  const GoalProgressBar = ({ progress, total, color, height = 12 }) => {
-    const percent = total > 0 ? Math.min(progress / total, 1) : 0;
-    return (
-      <RNView
-        style={{
-          width: "100%",
-          height,
-          backgroundColor: themeColors.gray,
-          borderRadius: height / 2,
-          overflow: "hidden",
-          marginTop: 4,
-          marginBottom: 8,
-        }}
-      >
-        <RNView
-          style={{
-            width: `${percent * 100}%`,
-            height: "100%",
-            backgroundColor: color,
-            borderRadius: height / 2,
-            transition: "width 0.2s",
-          }}
-        />
-      </RNView>
-    );
-  };
-
-  // Live goal progress (updates as timer runs)
-  const liveGoalProgress = useMemo(() => {
-    if (!goalMinutes) return null;
-    const min = parseInt(goalMinutes, 10);
-    const sec = goalSecondsInput ? parseInt(goalSecondsInput, 10) : 0;
-    const safeMin = isNaN(min) ? 0 : min;
-    const safeSec = isNaN(sec) ? 0 : sec;
-    const totalGoalSeconds = safeMin * 60 + safeSec;
-    // Only count Pomodoro sessions toward goal
-    const sessionAdd = isRunning && !isBreak ? sessionProgressSeconds : 0;
-    return {
-      progressSeconds: goalProgressSeconds + sessionAdd,
-      totalGoalSeconds,
-    };
-  }, [
-    goalMinutes,
-    goalSecondsInput,
-    goalProgressSeconds,
-    isRunning,
-    isBreak,
-    sessionProgressSeconds,
-  ]);
-
-  // Goal completion effect (use liveGoalProgress)
-  useEffect(() => {
-    if (!goalMinutes) {
-      setGoalJustAchieved(false);
-      return;
-    }
-    const progress = liveGoalProgress;
-    if (
-      progress &&
-      progress.totalGoalSeconds > 0 &&
-      progress.progressSeconds >= progress.totalGoalSeconds &&
-      !goalJustAchieved
-    ) {
-      setGoalJustAchieved(true);
-      setAchievedGoalsThisWeek((prev) => [
-        ...prev,
-        {
-          title: goalTitle || "Untitled",
-          minutes: goalMinutes,
-          timestamp: Date.now(),
-        },
-      ]);
-      Alert.alert("Goal Achieved!", "You reached your study goal.");
-      setGoalMinutes(null);
-      setGoalTitle("");
-      setGoalProgressSeconds(0);
-      AsyncStorage.removeItem(GOAL_PROGRESS_KEY).catch(() => {});
-    }
-  }, [
-    liveGoalProgress,
-    goalMinutes,
-    goalTitle,
-    setAchievedGoalsThisWeek,
-    goalJustAchieved,
-  ]);
-
   const handleDeleteSession = async (sessionId, spotId) => {
     if (!auth.currentUser || !sessionId || !spotId) return;
     try {
@@ -1135,10 +766,8 @@ export function FocusTimerView() {
       );
       const snapshot = await getDocs(q);
       let docIdToDelete = null;
-      let sessionToDelete = null;
       snapshot.forEach((docSnap) => {
         docIdToDelete = docSnap.id;
-        sessionToDelete = docSnap.data();
       });
       if (docIdToDelete) {
         await deleteDoc(doc(db, "focusSessions", docIdToDelete));
@@ -1160,34 +789,6 @@ export function FocusTimerView() {
           );
           return { ...prev, sessions: newSessions };
         });
-
-        // Only subtract if this sessionId is in goalSessionIds
-        if (
-          sessionToDelete &&
-          !sessionToDelete.isBreak &&
-          typeof sessionToDelete.duration === "number" &&
-          sessionToDelete.duration > 0 &&
-          goalSessionIds.includes(sessionId)
-        ) {
-          setGoalProgressSeconds((prev) =>
-            Math.max(prev - Math.floor(sessionToDelete.duration / 1000), 0)
-          );
-          setGoalSessionIds((prev) => prev.filter((id) => id !== sessionId));
-          AsyncStorage.setItem(
-            GOAL_PROGRESS_KEY,
-            String(
-              Math.max(
-                goalProgressSeconds -
-                  Math.floor(sessionToDelete.duration / 1000),
-                0
-              )
-            )
-          ).catch(() => {});
-          AsyncStorage.setItem(
-            "goalSessionIds",
-            JSON.stringify(goalSessionIds.filter((id) => id !== sessionId))
-          ).catch(() => {});
-        }
       }
     } catch (e) {
       Alert.alert("Error", "Failed to delete this session.");
@@ -1208,326 +809,757 @@ export function FocusTimerView() {
     Notifications.requestPermissionsAsync();
   }, []);
 
-  // Add state for toggling stats dropdown
-  const [showStatsDropdown, setShowStatsDropdown] = useState(true);
-  // Add state for toggling goals achieved dropdown
-  const [showGoalsDropdown, setShowGoalsDropdown] = useState(true);
+  // Archive modal state and data
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [archiveData, setArchiveData] = useState({}); // { weekKey: { stats: {} } }
+
+  // Helper: get week key (e.g. "2024-W23")
+  function getWeekKey(date = new Date()) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+    const yearStart = new Date(d.getFullYear(), 0, 1);
+    const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+    return `${d.getFullYear()}-W${weekNo}`;
+  }
+
+  // Persist focus stats per week (store session details)
+  useEffect(() => {
+    const saveArchive = async () => {
+      const weekKey = getWeekKey();
+      try {
+        // Load previous archive
+        const raw = await AsyncStorage.getItem("focusArchive");
+        let archive = raw ? JSON.parse(raw) : {};
+        // Prepare sessions with location, time, and notes
+        const statsWithDetails = {};
+        Object.entries(focusStats).forEach(([spotId, sessions]) => {
+          statsWithDetails[spotId] = (sessions || []).map((s) => ({
+            buildingName:
+              studySpots.find((sp) => sp.id === spotId)?.buildingName || spotId,
+            roomNumber:
+              studySpots.find((sp) => sp.id === spotId)?.roomNumber || "",
+            start: s.start,
+            end: s.end,
+            duration: s.duration,
+            note: s.note || "",
+            isBreak: s.isBreak || false,
+          }));
+        });
+        archive[weekKey] = {
+          stats: statsWithDetails,
+        };
+        await AsyncStorage.setItem("focusArchive", JSON.stringify(archive));
+        setArchiveData(archive);
+      } catch {}
+    };
+    saveArchive();
+    // eslint-disable-next-line
+  }, [focusStats, studySpots]);
+
+  // Load archive on mount
+  useEffect(() => {
+    const loadArchive = async () => {
+      try {
+        const raw = await AsyncStorage.getItem("focusArchive");
+        if (raw) setArchiveData(JSON.parse(raw));
+      } catch {}
+    };
+    loadArchive();
+  }, []);
+
+  // Add this state and function for the week's dropdown open/close
+  const [openWeekLocations, setOpenWeekLocations] = useState({});
+  const toggleWeekLocation = (spotId) => {
+    setOpenWeekLocations((prev) => ({
+      ...prev,
+      [spotId]: !prev[spotId],
+    }));
+  };
 
   return (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={{
-        alignItems: "center",
-        paddingBottom: 32,
-        paddingTop: 16,
-      }}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={{ alignItems: "center", marginTop: 2, width: "100%" }}>
-        <TouchableOpacity
-          onPress={() => {
-            if (isRunning) {
-              Alert.alert(
-                "Cannot Switch Location",
-                "Please finish or stop your current session before changing location."
-              );
-              return;
-            }
-            setShowSpotModal(true);
-          }}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            backgroundColor: themeColors.purple,
-            borderRadius: 20,
-            paddingHorizontal: 18,
-            paddingVertical: 10,
-            marginBottom: 18,
-          }}
-        >
-          <MapPin size={20} color={themeColors.white} />
-          <Text
-            style={{
-              color: themeColors.white,
-              fontWeight: "bold",
-              marginLeft: 8,
-            }}
-          >
-            {selectedSpot ? selectedSpot.buildingName : "Select Location"}
-          </Text>
-        </TouchableOpacity>
-        <Text
-          style={{
-            fontSize: 48,
-            fontWeight: "bold",
-            color: themeColors.purple,
-          }}
-        >
-          {formatTime(timer)}
-        </Text>
-        <Text style={{ color: themeColors.darkGray, marginBottom: 18 }}>
-          {isBreak ? "Break" : "Pomodoro"}
-        </Text>
-        {/* Timer control buttons row */}
-        <View style={{ flexDirection: "row", marginTop: 12 }}>
-          {!isRunning && (
-            <TouchableOpacity
-              onPress={handleStart}
-              style={{
-                backgroundColor: themeColors.green,
-                borderRadius: 30,
-                padding: 18,
-                marginHorizontal: 8,
-              }}
-            >
-              <Play size={28} color={themeColors.white} />
-            </TouchableOpacity>
-          )}
-          {isRunning && (
-            <TouchableOpacity
-              onPress={handlePause}
-              style={{
-                backgroundColor: themeColors.purple,
-                borderRadius: 30,
-                padding: 18,
-                marginHorizontal: 8,
-              }}
-            >
-              <Pause size={28} color={themeColors.white} />
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity
-            onPress={handleStop}
-            style={{
-              backgroundColor: themeColors.red,
-              borderRadius: 30,
-              padding: 18,
-              marginHorizontal: 8,
-            }}
-          >
-            <Stop size={28} color={themeColors.white} />
-          </TouchableOpacity>
-          {/* Removed Reset Button */}
-        </View>
-
-        {/* Goal display and set button */}
+    <>
+      {/* Archive Modal */}
+      <Modal visible={showArchiveModal} transparent animationType="fade">
         <View
           style={{
-            flexDirection: "row",
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.3)",
+            justifyContent: "center",
             alignItems: "center",
-            marginBottom: 10,
-            marginTop: 16,
           }}
         >
-          {goalMinutes ? (
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text
-                style={{
-                  color: themeColors.purple,
-                  fontWeight: "bold",
-                  fontSize: 16,
-                }}
-              >
-                {goalTitle ? `${goalTitle}` : "Untitled"}
-              </Text>
-            </View>
-          ) : (
-            <Text style={{ color: themeColors.darkGray, fontSize: 15 }}>
-              No goal set
-            </Text>
-          )}
-          <TouchableOpacity
-            onPress={() => {
-              setGoalInput(goalMinutes ? String(goalMinutes) : "");
-              setGoalTitleInput(goalTitle || "");
-              setShowGoalModal(true);
-            }}
+          <View
             style={{
-              marginLeft: 12,
-              backgroundColor: themeColors.purple,
-              borderRadius: 8,
-              paddingHorizontal: 10,
-              paddingVertical: 4,
-            }}
-          >
-            <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
-              {goalMinutes ? "Edit Goal" : "Set Goal"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-        {/* Progress display */}
-        {goalMinutes &&
-          (() => {
-            const progress = liveGoalProgress;
-            if (!progress || !progress.totalGoalSeconds) return null;
-            const percent =
-              progress.totalGoalSeconds > 0
-                ? Math.min(
-                    progress.progressSeconds / progress.totalGoalSeconds,
-                    1
-                  )
-                : 0;
-            const mins = Math.floor(progress.progressSeconds / 60)
-              .toString()
-              .padStart(2, "0");
-            const secs = (progress.progressSeconds % 60)
-              .toString()
-              .padStart(2, "0");
-            const totalMins = Math.floor(progress.totalGoalSeconds / 60)
-              .toString()
-              .padStart(2, "0");
-            const totalSecs = (progress.totalGoalSeconds % 60)
-              .toString()
-              .padStart(2, "0");
-            return (
-              <View style={{ width: "80%", alignItems: "center" }}>
-                <GoalProgressBar
-                  progress={progress.progressSeconds}
-                  total={progress.totalGoalSeconds}
-                  color={themeColors.green}
-                  height={14}
-                />
-                <Text
-                  style={{
-                    color: themeColors.green,
-                    fontSize: 15,
-                    marginBottom: 8,
-                  }}
-                >
-                  {mins}:{secs} / {totalMins}:{totalSecs} min
-                </Text>
-              </View>
-            );
-          })()}
-        <View style={{ marginTop: 32, width: "80%" }}>
-          {/* Total Focus Time Card as dropdown toggle */}
-          <TouchableOpacity
-            onPress={() => setShowStatsDropdown((prev) => !prev)}
-            activeOpacity={0.8}
-            style={{
-              backgroundColor: themeColors.purple,
-              borderRadius: 12,
-              padding: 16,
-              marginBottom: 0,
+              backgroundColor: themeColors.white,
+              borderRadius: 16,
+              padding: 20,
+              width: "94%",
+              maxHeight: "90%",
               alignItems: "center",
               shadowColor: themeColors.black,
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.08,
-              shadowRadius: 4,
-              elevation: 2,
-              flexDirection: "row",
-              justifyContent: "space-between",
-              width: "100%",
-              borderWidth: showStatsDropdown ? 2 : 0,
-              borderColor: themeColors.purple,
-              transform: [{ scale: showStatsDropdown ? 1.02 : 1 }],
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.13,
+              shadowRadius: 8,
+              elevation: 5,
             }}
           >
-            <View style={{ flex: 1 }}>
-              <Text
-                style={{
-                  color: themeColors.white,
-                  fontWeight: "bold",
-                  fontSize: 17,
-                  letterSpacing: 0.2,
-                }}
-              >
-                Focus Time This Week
-              </Text>
-              <Text
-                style={{
-                  color: themeColors.white,
-                  fontSize: 20,
-                  marginTop: 2,
-                  fontWeight: "bold",
-                  letterSpacing: 0.5,
-                }}
-              >
-                {(() => {
-                  // Only count Pomodoro sessions (not break)
-                  const totalMs = Object.values(focusStats)
-                    .flat()
-                    .filter((b) => !b.isBreak)
-                    .reduce((a, b) => a + (b.duration || 0), 0);
+            <Text
+              style={{
+                fontSize: 22,
+                fontWeight: "bold",
+                marginBottom: 16,
+                color: themeColors.purple,
+                letterSpacing: 0.5,
+              }}
+            >
+              Focus Archive
+            </Text>
+            <ScrollView
+              style={{ width: "100%" }}
+              contentContainerStyle={{ paddingBottom: 16 }}
+            >
+              {/* Archive location dropdown state */}
+              {(() => {
+                // State for open weeks and open locations per week
+                const [openWeeks, setOpenWeeks] = React.useState({});
+                const [openLocations, setOpenLocations] = React.useState({});
+                // Helper to toggle a week dropdown
+                const toggleWeek = (weekKey) => {
+                  setOpenWeeks((prev) => ({
+                    ...prev,
+                    [weekKey]: !prev[weekKey],
+                  }));
+                };
+                // Helper to toggle a location dropdown
+                const toggleLocation = (weekKey, spotId) => {
+                  setOpenLocations((prev) => ({
+                    ...prev,
+                    [weekKey]: {
+                      ...(prev[weekKey] || {}),
+                      [spotId]: !(prev[weekKey] || {})[spotId],
+                    },
+                  }));
+                };
+
+                // --- LIFETIME ARCHIVE: Show all weeks in archiveData ---
+                // Helper to get user-friendly week range string
+                function weekKeyToRange(weekKey) {
+                  // weekKey: "2024-W24"
+                  const [year, w] = weekKey.split("-W");
+                  const weekNum = parseInt(w, 10);
+                  const y = parseInt(year, 10);
+                  // Get Monday of the week
+                  const firstDayOfYear = new Date(y, 0, 1);
+                  const daysOffset =
+                    (weekNum - 1) * 7 +
+                    (firstDayOfYear.getDay() <= 4
+                      ? 1
+                      : 8 - firstDayOfYear.getDay());
+                  const monday = new Date(y, 0, 1 + daysOffset);
+                  // Sunday is 6 days after Monday
+                  const sunday = new Date(monday);
+                  sunday.setDate(monday.getDate() + 6);
+                  // Format: "Jun 10–16, 2024"
+                  const options = { month: "short", day: "numeric" };
+                  const startStr = monday.toLocaleDateString(
+                    undefined,
+                    options
+                  );
+                  const endStr = sunday.toLocaleDateString(undefined, options);
+                  return `${startStr} – ${endStr}, ${y}`;
+                }
+
+                const weekKeys = Object.keys(archiveData).sort((a, b) =>
+                  a < b ? 1 : -1
+                );
+                return weekKeys.map((weekKey) => {
+                  const week = archiveData[weekKey];
+                  // Calculate total focus time for this week (exclude breaks)
+                  let totalMs = 0;
+                  if (week.stats) {
+                    Object.values(week.stats)
+                      .flat()
+                      .filter((b) => !b.isBreak) // <-- Only count non-break sessions
+                      .forEach((b) => {
+                        totalMs += b.duration || 0;
+                      });
+                  }
                   const totalSeconds = Math.floor(totalMs / 1000);
                   const totalHours = Math.floor(totalSeconds / 3600);
                   const totalMinutes = Math.floor((totalSeconds % 3600) / 60);
                   const totalSecs = totalSeconds % 60;
-                  return `${totalHours}h ${totalMinutes}m ${totalSecs}s`;
-                })()}
-              </Text>
-            </View>
-            <View
-              style={{
-                marginLeft: 16,
-                backgroundColor: themeColors.white,
-                borderRadius: 20,
-                padding: 6,
-                alignItems: "center",
-                justifyContent: "center",
-                borderWidth: 1,
-                borderColor: themeColors.purple,
-                shadowColor: themeColors.black,
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.08,
-                shadowRadius: 2,
-                elevation: 1,
-                width: 32,
-                height: 32,
-                transform: [{ rotate: showStatsDropdown ? "90deg" : "0deg" }],
-              }}
-            >
-              <CaretRight size={20} color={themeColors.purple} weight="bold" />
-            </View>
-          </TouchableOpacity>
-          {/* Stats List dropdown */}
-          {showStatsDropdown &&
-            (() => {
-              // Reduce top margin to tighten gap
-              return (
-                <View style={{ marginTop: 4 }}>
-                  {Object.entries(focusStats).map(([spotId, sessions]) => {
-                    const spot = studySpots.find((s) => s.id === spotId);
-                    if (!Array.isArray(sessions) || sessions.length === 0)
-                      return null;
-                    // Only sum Pomodoro sessions (not break)
-                    const ms = sessions
-                      .filter((b) => !b.isBreak)
-                      .reduce((a, b) => a + (b.duration || 0), 0);
-                    const totalSeconds = Math.floor(ms / 1000);
-                    const hours = Math.floor(totalSeconds / 3600);
-                    const minutes = Math.floor((totalSeconds % 3600) / 60);
-                    const seconds = totalSeconds % 60;
-                    return (
-                      <View
-                        key={spotId}
+
+                  const isWeekOpen = openWeeks[weekKey] || false;
+
+                  return (
+                    <View
+                      key={weekKey}
+                      style={{
+                        marginBottom: 20,
+                        backgroundColor: themeColors.gray + "18",
+                        borderRadius: 14,
+                        padding: 0,
+                        borderWidth: 1.5,
+                        borderColor: themeColors.purple + "33",
+                        shadowColor: themeColors.black,
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.07,
+                        shadowRadius: 4,
+                        elevation: 2,
+                        // Always show all corners rounded
+                        borderTopLeftRadius: 14,
+                        borderTopRightRadius: 14,
+                        borderBottomLeftRadius: 14,
+                        borderBottomRightRadius: 14,
+                        overflow: "hidden",
+                      }}
+                    >
+                      {/* Week Header as dropdown toggle */}
+                      <TouchableOpacity
+                        onPress={() => toggleWeek(weekKey)}
+                        activeOpacity={0.85}
                         style={{
-                          backgroundColor: themeColors.white,
-                          borderRadius: 8,
-                          padding: 10,
-                          marginBottom: 8,
-                          borderWidth: 1,
-                          borderColor: themeColors.purple,
-                          shadowColor: themeColors.black,
-                          shadowOffset: { width: 0, height: 1 },
-                          shadowOpacity: 0.04,
-                          shadowRadius: 2,
-                          elevation: 1,
                           flexDirection: "row",
                           alignItems: "center",
-                          width: "94%",
-                          alignSelf: "center",
+                          padding: 16,
+                          borderTopLeftRadius: 14,
+                          borderTopRightRadius: 14,
+                          backgroundColor: themeColors.white,
+                          borderBottomWidth: isWeekOpen ? 1 : 0,
+                          borderBottomColor: themeColors.purple + "33",
+                          // If collapsed, round bottom corners too
+                          borderBottomLeftRadius: isWeekOpen ? 0 : 14,
+                          borderBottomRightRadius: isWeekOpen ? 0 : 14,
                         }}
                       >
-                        <View style={{ flex: 1 }}>
+                        <Text
+                          style={{
+                            fontWeight: "bold",
+                            color: themeColors.purple,
+                            fontSize: 17,
+                            marginRight: 8,
+                            flex: 1,
+                          }}
+                        >
+                          {weekKeyToRange(weekKey)}
+                        </Text>
+                        <View
+                          style={{
+                            // Remove backgroundColor: themeColors.purple,
+                            borderRadius: 8,
+                            paddingHorizontal: 8,
+                            paddingVertical: 2,
+                            marginLeft: 4,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: themeColors.black,
+                              fontSize: 13,
+                              fontWeight: "bold",
+                            }}
+                          >
+                            {`${totalHours}h ${totalMinutes}m ${totalSecs}s`}
+                          </Text>
+                        </View>
+                        <CaretRight
+                          size={22}
+                          color={themeColors.purple}
+                          weight="bold"
+                          style={{
+                            marginLeft: 12,
+                            transform: [
+                              { rotate: isWeekOpen ? "90deg" : "0deg" },
+                            ],
+                          }}
+                        />
+                      </TouchableOpacity>
+                      {isWeekOpen && (
+                        <View
+                          style={{
+                            padding: 16,
+                            paddingTop: 8,
+                            borderBottomLeftRadius: 14,
+                            borderBottomRightRadius: 14,
+                            backgroundColor: themeColors.gray + "18",
+                          }}
+                        >
+                          {/* Focus Sessions as dropdowns per location */}
                           <Text
                             style={{
                               color: themeColors.purple,
                               fontWeight: "bold",
                               fontSize: 15,
+                              marginTop: 6,
+                              marginBottom: 4,
+                              letterSpacing: 0.2,
                             }}
                           >
-                            {spot?.buildingName || "Unknown"}
+                            Focus Sessions
+                          </Text>
+                          {week.stats &&
+                          Object.entries(week.stats)
+                            .map(([spotId, sessions]) => [
+                              spotId,
+                              Array.isArray(sessions)
+                                ? sessions.filter((b) => !b.isBreak)
+                                : [],
+                            ])
+                            .filter(([, sessions]) => sessions.length > 0)
+                            .length > 0 ? (
+                            Object.entries(week.stats)
+                              .map(([spotId, sessions]) => [
+                                spotId,
+                                Array.isArray(sessions)
+                                  ? sessions.filter((b) => !b.isBreak)
+                                  : [],
+                              ])
+                              .filter(([, sessions]) => sessions.length > 0)
+                              .map(([spotId, nonBreakSessions]) => {
+                                const isOpen =
+                                  openLocations[weekKey]?.[spotId] || false;
+                                const ms = nonBreakSessions.reduce(
+                                  (a, b) => a + (b.duration || 0),
+                                  0
+                                );
+                                const totalSeconds = Math.floor(ms / 1000);
+                                const hours = Math.floor(totalSeconds / 3600);
+                                const minutes = Math.floor(
+                                  (totalSeconds % 3600) / 60
+                                );
+                                const seconds = totalSeconds % 60;
+                                return (
+                                  <View
+                                    key={spotId}
+                                    style={{ marginBottom: 8 }}
+                                  >
+                                    <TouchableOpacity
+                                      onPress={() =>
+                                        toggleLocation(weekKey, spotId)
+                                      }
+                                      style={{
+                                        flexDirection: "row",
+                                        alignItems: "center",
+                                        backgroundColor: themeColors.white,
+                                        borderRadius: 8,
+                                        padding: 10,
+                                        borderWidth: 1,
+                                        borderColor: themeColors.purple,
+                                        shadowColor: themeColors.black,
+                                        shadowOffset: { width: 0, height: 1 },
+                                        shadowOpacity: 0.04,
+                                        shadowRadius: 2,
+                                        elevation: 1,
+                                        marginBottom: isOpen ? 4 : 0,
+                                      }}
+                                      activeOpacity={0.85}
+                                    >
+                                      <Text
+                                        style={{
+                                          color: themeColors.purple,
+                                          fontWeight: "bold",
+                                          fontSize: 14,
+                                          flex: 1,
+                                        }}
+                                      >
+                                        {nonBreakSessions[0]?.buildingName ||
+                                          spotId}
+                                        {nonBreakSessions[0]?.roomNumber
+                                          ? ` - Floor ${nonBreakSessions[0].roomNumber}`
+                                          : ""}
+                                      </Text>
+                                      <Text
+                                        style={{
+                                          color: themeColors.black,
+                                          fontSize: 13,
+                                          marginRight: 8,
+                                          fontWeight: "bold",
+                                        }}
+                                      >
+                                        {hours}h {minutes}m {seconds}s
+                                      </Text>
+                                      <CaretRight
+                                        size={20}
+                                        color={themeColors.purple}
+                                        weight="bold"
+                                        style={{
+                                          transform: [
+                                            {
+                                              rotate: isOpen ? "90deg" : "0deg",
+                                            },
+                                          ],
+                                        }}
+                                      />
+                                    </TouchableOpacity>
+                                    {isOpen && (
+                                      <View style={{ marginTop: 2 }}>
+                                        {nonBreakSessions.length > 0 ? (
+                                          nonBreakSessions
+                                            .sort((a, b) => b.start - a.start)
+                                            .map((s, idx) => (
+                                              <View
+                                                key={idx}
+                                                style={{
+                                                  marginLeft: 8,
+                                                  marginBottom: 4,
+                                                  backgroundColor:
+                                                    themeColors.gray + "10",
+                                                  borderRadius: 8,
+                                                  padding: 8,
+                                                  borderWidth: 1,
+                                                  borderColor:
+                                                    themeColors.gray + "44",
+                                                  shadowColor:
+                                                    themeColors.black,
+                                                  shadowOffset: {
+                                                    width: 0,
+                                                    height: 1,
+                                                  },
+                                                  shadowOpacity: 0.04,
+                                                  shadowRadius: 2,
+                                                  elevation: 1,
+                                                }}
+                                              >
+                                                <Text
+                                                  style={{
+                                                    color: themeColors.black,
+                                                    fontSize: 13,
+                                                    fontWeight: "bold",
+                                                  }}
+                                                >
+                                                  {s.start
+                                                    ? new Date(
+                                                        s.start
+                                                      ).toLocaleString([], {
+                                                        month: "short",
+                                                        day: "numeric",
+                                                        hour: "2-digit",
+                                                        minute: "2-digit",
+                                                      })
+                                                    : ""}
+                                                  {" - "}
+                                                  <Text
+                                                    style={{
+                                                      color: themeColors.black,
+                                                    }}
+                                                  >
+                                                    {(() => {
+                                                      const sec = Math.floor(
+                                                        (s.duration || 0) / 1000
+                                                      );
+                                                      const h = Math.floor(
+                                                        sec / 3600
+                                                      );
+                                                      const m = Math.floor(
+                                                        (sec % 3600) / 60
+                                                      );
+                                                      const sec2 = sec % 60;
+                                                      let out = [];
+                                                      if (h > 0)
+                                                        out.push(`${h}h`);
+                                                      if (m > 0 || h > 0)
+                                                        out.push(`${m}m`);
+                                                      out.push(`${sec2}s`);
+                                                      return out.join(" ");
+                                                    })()}
+                                                  </Text>
+                                                </Text>
+                                              </View>
+                                            ))
+                                        ) : (
+                                          <Text
+                                            style={{
+                                              color: themeColors.darkGray,
+                                              fontSize: 13,
+                                              marginLeft: 8,
+                                            }}
+                                          >
+                                            No sessions.
+                                          </Text>
+                                        )}
+                                      </View>
+                                    )}
+                                  </View>
+                                );
+                              })
+                          ) : (
+                            <Text
+                              style={{
+                                color: themeColors.darkGray,
+                                fontSize: 13,
+                                marginLeft: 4,
+                              }}
+                            >
+                              No focus sessions.
+                            </Text>
+                          )}
+                        </View>
+                      )}
+                    </View>
+                  );
+                });
+              })()}
+            </ScrollView>
+            <TouchableOpacity
+              onPress={() => setShowArchiveModal(false)}
+              style={{
+                marginTop: 10,
+                backgroundColor: themeColors.purple,
+                borderRadius: 8,
+                paddingVertical: 12,
+                paddingHorizontal: 32,
+                alignItems: "center",
+                shadowColor: themeColors.black,
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.08,
+                shadowRadius: 2,
+                elevation: 2,
+              }}
+            >
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontSize: 16,
+                }}
+              >
+                Close
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          alignItems: "center",
+          paddingBottom: 32,
+          paddingTop: 16,
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={{ alignItems: "center", marginTop: 2, width: "100%" }}>
+          {/* Archive icon button moved here, above location picker */}
+          <TouchableOpacity
+            onPress={() => setShowArchiveModal(true)}
+            style={{
+              alignSelf: "flex-end",
+              marginRight: 18,
+              marginBottom: 24,
+              backgroundColor: themeColors.gray,
+              borderRadius: 24,
+              paddingVertical: 7,
+              paddingHorizontal: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              shadowColor: themeColors.black,
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.08,
+              shadowRadius: 2,
+              elevation: 2,
+            }}
+            accessibilityLabel="View Focus Archive"
+            activeOpacity={0.85}
+          >
+            <Archive size={20} color={themeColors.purple} weight="bold" />
+            <Text
+              style={{
+                color: themeColors.purple,
+                fontSize: 15,
+                fontWeight: "bold",
+                marginLeft: 8,
+                letterSpacing: 0.2,
+              }}
+            >
+              Archive
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              if (isRunning) {
+                Alert.alert(
+                  "Cannot Switch Location",
+                  "Please finish or stop your current session before changing location."
+                );
+                return;
+              }
+              setShowSpotModal(true);
+            }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: themeColors.purple,
+              borderRadius: 20,
+              paddingHorizontal: 18,
+              paddingVertical: 10,
+              marginBottom: 18,
+            }}
+          >
+            <MapPin size={20} color={themeColors.white} />
+            <Text
+              style={{
+                color: themeColors.white,
+                fontWeight: "bold",
+                marginLeft: 8,
+              }}
+            >
+              {selectedSpot ? selectedSpot.buildingName : "Select Location"}
+            </Text>
+          </TouchableOpacity>
+          <Text
+            style={{
+              fontSize: 48,
+              fontWeight: "bold",
+              color: themeColors.purple,
+            }}
+          >
+            {formatTime(timer)}
+          </Text>
+          <Text style={{ color: themeColors.darkGray, marginBottom: 18 }}>
+            {isBreak ? "Break" : "Pomodoro"}
+          </Text>
+          {/* Timer control buttons row */}
+          <View style={{ flexDirection: "row", marginTop: 12 }}>
+            {!isRunning && (
+              <TouchableOpacity
+                onPress={handleStart}
+                style={{
+                  backgroundColor: themeColors.green,
+                  borderRadius: 30,
+                  padding: 18,
+                  marginHorizontal: 8,
+                }}
+              >
+                <Play size={28} color={themeColors.white} />
+              </TouchableOpacity>
+            )}
+            {isRunning && (
+              <TouchableOpacity
+                onPress={handlePause}
+                style={{
+                  backgroundColor: themeColors.purple,
+                  borderRadius: 30,
+                  padding: 18,
+                  marginHorizontal: 8,
+                }}
+              >
+                <Pause size={28} color={themeColors.white} />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              onPress={handleStop}
+              style={{
+                backgroundColor: themeColors.red,
+                borderRadius: 30,
+                padding: 18,
+                marginHorizontal: 8,
+              }}
+            >
+              <Stop size={28} color={themeColors.white} />
+            </TouchableOpacity>
+          </View>
+
+          {/* --- This Week's Focus Stats Dropdown --- */}
+          <View
+            style={{
+              width: "94%",
+              alignSelf: "center",
+              marginTop: 24,
+              marginBottom: 8,
+              backgroundColor: themeColors.gray + "18",
+              borderRadius: 14,
+              borderWidth: 1.5,
+              borderColor: themeColors.purple + "33",
+              shadowColor: themeColors.black,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.07,
+              shadowRadius: 4,
+              elevation: 2,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                padding: 16,
+                borderTopLeftRadius: 14,
+                borderTopRightRadius: 14,
+                backgroundColor: themeColors.white,
+                borderBottomWidth: 1,
+                borderBottomColor: themeColors.purple + "33",
+              }}
+            >
+              <Text
+                style={{
+                  fontWeight: "bold",
+                  color: themeColors.purple,
+                  fontSize: 17,
+                  flex: 1,
+                }}
+              >
+                This Week's Focus Stats
+              </Text>
+            </View>
+            <View style={{ padding: 16, paddingTop: 8 }}>
+              {/* Per-location dropdowns */}
+              {Object.entries(focusStats)
+                .map(([spotId, sessions]) => [
+                  spotId,
+                  Array.isArray(sessions)
+                    ? sessions.filter((b) => !b.isBreak)
+                    : [],
+                ])
+                .filter(([, sessions]) => sessions.length > 0).length > 0 ? (
+                Object.entries(focusStats)
+                  .map(([spotId, sessions]) => [
+                    spotId,
+                    Array.isArray(sessions)
+                      ? sessions.filter((b) => !b.isBreak)
+                      : [],
+                  ])
+                  .filter(([, sessions]) => sessions.length > 0)
+                  .map(([spotId, nonBreakSessions]) => {
+                    const isOpen = openWeekLocations[spotId] || false;
+                    const ms = nonBreakSessions.reduce(
+                      (a, b) => a + (b.duration || 0),
+                      0
+                    );
+                    const totalSeconds = Math.floor(ms / 1000);
+                    const hours = Math.floor(totalSeconds / 3600);
+                    const minutes = Math.floor((totalSeconds % 3600) / 60);
+                    const seconds = totalSeconds % 60;
+                    const spot = studySpots.find((s) => s.id === spotId);
+                    return (
+                      <View key={spotId} style={{ marginBottom: 8 }}>
+                        <TouchableOpacity
+                          onPress={() => toggleWeekLocation(spotId)}
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            backgroundColor: themeColors.white,
+                            borderRadius: 8,
+                            padding: 10,
+                            borderWidth: 1,
+                            borderColor: themeColors.purple,
+                            shadowColor: themeColors.black,
+                            shadowOffset: { width: 0, height: 1 },
+                            shadowOpacity: 0.04,
+                            shadowRadius: 2,
+                            elevation: 1,
+                            marginBottom: isOpen ? 4 : 0,
+                          }}
+                          activeOpacity={0.85}
+                        >
+                          <Text
+                            style={{
+                              color: themeColors.purple,
+                              fontWeight: "bold",
+                              fontSize: 14,
+                              flex: 1,
+                            }}
+                          >
+                            {spot?.buildingName || spotId}
                             {spot?.roomNumber
                               ? ` - Floor ${spot.roomNumber}`
                               : ""}
@@ -1535,721 +1567,474 @@ export function FocusTimerView() {
                           <Text
                             style={{
                               color: themeColors.black,
-                              fontSize: 14,
-                              marginTop: 2,
+                              fontSize: 13,
+                              marginRight: 8,
+                              fontWeight: "bold",
                             }}
                           >
                             {hours}h {minutes}m {seconds}s
                           </Text>
-                        </View>
-                        <TouchableOpacity
-                          onPress={() => {
-                            setSelectedStatSpot({
-                              spotId,
-                              spot,
-                              ms,
-                              hours,
-                              minutes,
-                              seconds,
-                              sessions,
-                            });
-                            setShowStatModal(true);
-                          }}
-                          style={{
-                            marginLeft: 8,
-                            padding: 4,
-                            borderRadius: 16,
-                          }}
-                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                        >
-                          <Info
+                          <CaretRight
                             size={20}
                             color={themeColors.purple}
                             weight="bold"
+                            style={{
+                              transform: [
+                                { rotate: isOpen ? "90deg" : "0deg" },
+                              ],
+                            }}
                           />
                         </TouchableOpacity>
-                      </View>
-                    );
-                  })}
-                </View>
-              );
-            })()}
-          {/* Goals Achieved This Week Section as dropdown */}
-          <TouchableOpacity
-            onPress={() => setShowGoalsDropdown((prev) => !prev)}
-            activeOpacity={0.8}
-            style={{
-              marginTop: 24,
-              backgroundColor: themeColors.green,
-              borderRadius: 12,
-              padding: 16,
-              alignItems: "center",
-              flexDirection: "row",
-              justifyContent: "space-between",
-              width: "100%",
-              borderWidth: showGoalsDropdown ? 2 : 0,
-              borderColor: themeColors.green,
-              transform: [{ scale: showGoalsDropdown ? 1.02 : 1 }],
-              shadowColor: themeColors.black,
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.08,
-              shadowRadius: 4,
-              elevation: 2,
-            }}
-          >
-            <View style={{ flex: 1 }}>
-              <Text
-                style={{
-                  fontSize: 17,
-                  fontWeight: "bold",
-                  color: themeColors.white,
-                  paddingBottom: 0,
-                  letterSpacing: 0.2,
-                }}
-              >
-                Goals Achieved This Week
-              </Text>
-              <Text
-                style={{
-                  color: themeColors.white,
-                  fontSize: 20,
-                  marginTop: 2,
-                  fontWeight: "bold",
-                  letterSpacing: 0.5,
-                }}
-              >
-                {achievedGoalsThisWeek.length}
-              </Text>
-            </View>
-            <View
-              style={{
-                marginLeft: 16,
-                backgroundColor: themeColors.white,
-                borderRadius: 20,
-                padding: 6,
-                alignItems: "center",
-                justifyContent: "center",
-                borderWidth: 1,
-                borderColor: themeColors.green,
-                shadowColor: themeColors.black,
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.08,
-                shadowRadius: 2,
-                elevation: 1,
-                width: 32,
-                height: 32,
-                transform: [{ rotate: showGoalsDropdown ? "90deg" : "0deg" }],
-              }}
-            >
-              <CaretRight size={20} color={themeColors.green} weight="bold" />
-            </View>
-          </TouchableOpacity>
-          {showGoalsDropdown && (
-            <View style={{ marginTop: 4 }}>
-              {achievedGoalsThisWeek.length === 0 ? (
-                <Text
-                  style={{
-                    color: themeColors.darkGray,
-                    fontSize: 15,
-                    paddingLeft: 16,
-                  }}
-                >
-                  No goals achieved yet this week.
-                </Text>
-              ) : (
-                achievedGoalsThisWeek
-                  .sort((a, b) => b.timestamp - a.timestamp)
-                  .map((goal, idx) => (
-                    <View
-                      key={idx}
-                      style={{
-                        backgroundColor: themeColors.green + "18",
-                        borderRadius: 8,
-                        padding: 10,
-                        marginBottom: 6,
-                        borderWidth: 1,
-                        borderColor: themeColors.green,
-                        width: "94%",
-                        alignSelf: "center",
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: themeColors.green,
-                          fontWeight: "bold",
-                          fontSize: 15,
-                        }}
-                      >
-                        {goal.title || "Untitled"} ({goal.minutes} min)
-                      </Text>
-                      <Text
-                        style={{ color: themeColors.darkGray, fontSize: 13 }}
-                      >
-                        {new Date(goal.timestamp).toLocaleDateString()}{" "}
-                        {new Date(goal.timestamp).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </Text>
-                    </View>
-                  ))
-              )}
-            </View>
-          )}
-        </View>
-      </View>
-      {/* Location Picker Modal */}
-      <Modal visible={showSpotModal} transparent animationType="slide">
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.3)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: themeColors.white,
-              borderRadius: 12,
-              padding: 16,
-              width: "85%",
-              maxHeight: "70%",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "bold",
-                color: themeColors.black,
-                marginBottom: 12,
-              }}
-            >
-              Select Location
-            </Text>
-            <FlatList
-              data={studySpots}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  onPress={() => {
-                    if (isRunning) {
-                      Alert.alert(
-                        "Cannot Switch Location",
-                        "Please finish or stop your current session before changing location."
-                      );
-                      return;
-                    }
-                    setSelectedSpot(item);
-                    setShowSpotModal(false);
-                  }}
-                  style={{
-                    padding: 12,
-                    borderBottomWidth: 0.5,
-                    borderBottomColor: themeColors.gray,
-                  }}
-                >
-                  <Text
-                    style={{ color: themeColors.purple, fontWeight: "bold" }}
-                  >
-                    {item.buildingName}
-                  </Text>
-                  {item.roomNumber && (
-                    <Text style={{ color: themeColors.darkGray, fontSize: 13 }}>
-                      Floor {item.roomNumber}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              )}
-            />
-            <TouchableOpacity
-              onPress={() => setShowSpotModal(false)}
-              style={{
-                marginTop: 12,
-                backgroundColor: themeColors.purple,
-                borderRadius: 8,
-                paddingVertical: 10,
-                alignItems: "center",
-              }}
-            >
-              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
-                Close
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-      {/* Stat Card Modal */}
-      <Modal
-        visible={showStatModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowStatModal(false)}
-      >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.3)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: themeColors.white,
-              borderRadius: 12,
-              padding: 20,
-              width: "85%",
-              alignItems: "center",
-              maxHeight: "85%",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "bold",
-                color: themeColors.black,
-                marginBottom: 8,
-              }}
-            >
-              {selectedStatSpot?.spot?.buildingName || "Unknown"}
-              {selectedStatSpot?.spot?.roomNumber
-                ? ` - Floor ${selectedStatSpot.spot.roomNumber}`
-                : ""}
-            </Text>
-            <Text
-              style={{
-                fontSize: 16,
-                color: themeColors.purple,
-                marginBottom: 8,
-              }}
-            >
-              Focused for:{" "}
-              {selectedStatSpot
-                ? `${selectedStatSpot.hours}h ${selectedStatSpot.minutes}m ${selectedStatSpot.seconds}s`
-                : ""}
-            </Text>
-            {/* Session List with Notes and Delete Button */}
-            <ScrollView
-              style={{ width: "100%", maxHeight: 220, marginBottom: 12 }}
-              showsVerticalScrollIndicator={false}
-            >
-              {selectedStatSpot?.sessions?.filter((s) => !s.isBreak)?.length >
-              0 ? (
-                selectedStatSpot.sessions
-                  .filter((session) => !session.isBreak) // Only show non-break sessions
-                  .sort((a, b) => b.start - a.start) // newest first
-                  .map((session, idx, arr) => {
-                    // Format start time
-                    const date = new Date(session.start);
-                    const endDate = new Date(session.end);
-                    const durationSec = Math.floor(
-                      (session.duration || 0) / 1000
-                    );
-                    const hours = Math.floor(durationSec / 3600);
-                    const minutes = Math.floor((durationSec % 3600) / 60);
-                    const seconds = durationSec % 60;
-                    // Always use session.sessionId as key and for deletion
-                    const sessionKey = session.sessionId;
-                    return (
-                      <View
-                        key={sessionKey}
-                        style={{
-                          borderBottomWidth: idx === arr.length - 1 ? 0 : 1,
-                          borderBottomColor: themeColors.gray,
-                          paddingVertical: 8,
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <View style={{ flex: 1, marginRight: 8 }}>
-                          <Text
-                            style={{
-                              color: themeColors.black,
-                              fontWeight: "bold",
-                              fontSize: 15,
-                            }}
-                          >
-                            {date.toLocaleDateString()}{" "}
-                            {date.toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </Text>
-                          <Text
-                            style={{
-                              color: themeColors.darkGray,
-                              fontSize: 13,
-                            }}
-                          >
-                            Duration: {hours}h {minutes}m {seconds}s
-                          </Text>
-                          {session.note ? (
-                            <Text
-                              style={{
-                                color: themeColors.purple,
-                                fontSize: 14,
-                                marginTop: 2,
-                                fontStyle: "italic",
-                              }}
-                            >
-                              “{session.note}”
-                            </Text>
-                          ) : (
-                            <Text
-                              style={{
-                                color: themeColors.gray,
-                                fontSize: 13,
-                                marginTop: 2,
-                                fontStyle: "italic",
-                              }}
-                            >
-                              No reflection
-                            </Text>
-                          )}
-                        </View>
-                        <TouchableOpacity
-                          onPress={() =>
-                            Alert.alert(
-                              "Delete Session?",
-                              "Are you sure you want to delete this session?",
-                              [
-                                { text: "Cancel", style: "cancel" },
-                                {
-                                  text: "Delete",
-                                  style: "destructive",
-                                  onPress: async () => {
-                                    await handleDeleteSession(
-                                      session.sessionId,
-                                      selectedStatSpot.spotId
-                                    );
-                                    // After deletion, update the modal's time
-                                    setSelectedStatSpot((prev) => {
-                                      if (!prev) return prev;
-                                      if (
-                                        prev.spotId !== selectedStatSpot.spotId
-                                      )
-                                        return prev;
-                                      const newSessions = prev.sessions.filter(
-                                        (s) => s.sessionId !== session.sessionId
-                                      );
-                                      // Recalculate ms, hours, minutes, seconds
-                                      const ms = newSessions
-                                        .filter((b) => !b.isBreak)
-                                        .reduce(
-                                          (a, b) => a + (b.duration || 0),
-                                          0
-                                        );
-                                      const totalSeconds = Math.floor(
-                                        ms / 1000
-                                      );
-                                      const hours = Math.floor(
-                                        totalSeconds / 3600
-                                      );
-                                      const minutes = Math.floor(
-                                        (totalSeconds % 3600) / 60
-                                      );
-                                      const seconds = totalSeconds % 60;
-                                      return {
-                                        ...prev,
-                                        sessions: newSessions,
-                                        ms,
-                                        hours,
-                                        minutes,
-                                        seconds,
-                                      };
-                                    });
-                                  },
-                                },
-                              ]
-                            )
-                          }
-                          style={{
-                            padding: 6,
-                            backgroundColor: themeColors.red,
-                            borderRadius: 6,
-                            alignSelf: "flex-start",
-                          }}
-                        >
-                          <Trash size={18} color={themeColors.white} />
-                        </TouchableOpacity>
+                        {isOpen && (
+                          <View style={{ marginTop: 2 }}>
+                            {nonBreakSessions.length > 0 ? (
+                              nonBreakSessions
+                                .sort((a, b) => b.start - a.start)
+                                .map((s, idx) => {
+                                  const date = new Date(s.start);
+                                  const durationSec = Math.floor(
+                                    (s.duration || 0) / 1000
+                                  );
+                                  const h = Math.floor(durationSec / 3600);
+                                  const m = Math.floor(
+                                    (durationSec % 3600) / 60
+                                  );
+                                  const sec2 = durationSec % 60;
+                                  return (
+                                    <View
+                                      key={s.sessionId || idx}
+                                      style={{
+                                        marginLeft: 8,
+                                        marginBottom: 4,
+                                        backgroundColor:
+                                          themeColors.gray + "10",
+                                        borderRadius: 8,
+                                        padding: 8,
+                                        borderWidth: 1,
+                                        borderColor: themeColors.gray + "44",
+                                        shadowColor: themeColors.black,
+                                        shadowOffset: { width: 0, height: 1 },
+                                        shadowOpacity: 0.04,
+                                        shadowRadius: 2,
+                                        elevation: 1,
+                                      }}
+                                    >
+                                      <Text
+                                        style={{
+                                          color: themeColors.black,
+                                          fontSize: 13,
+                                          fontWeight: "bold",
+                                        }}
+                                      >
+                                        {date.toLocaleDateString()}{" "}
+                                        {date.toLocaleTimeString([], {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })}
+                                        {" - "}
+                                        <Text
+                                          style={{ color: themeColors.black }}
+                                        >
+                                          {h > 0 ? `${h}h ` : ""}
+                                          {m > 0 || h > 0 ? `${m}m ` : ""}
+                                          {`${sec2}s`}
+                                        </Text>
+                                      </Text>
+                                      {s.note ? (
+                                        <Text
+                                          style={{
+                                            color: themeColors.purple,
+                                            fontSize: 14,
+                                            marginTop: 2,
+                                            fontStyle: "italic",
+                                          }}
+                                        >
+                                          “{s.note}”
+                                        </Text>
+                                      ) : null}
+                                    </View>
+                                  );
+                                })
+                            ) : (
+                              <Text
+                                style={{
+                                  color: themeColors.darkGray,
+                                  fontSize: 13,
+                                  marginLeft: 8,
+                                }}
+                              >
+                                No sessions.
+                              </Text>
+                            )}
+                          </View>
+                        )}
                       </View>
                     );
                   })
               ) : (
-                <Text style={{ color: themeColors.darkGray, fontSize: 14 }}>
-                  No sessions for this spot this week.
+                <Text
+                  style={{
+                    color: themeColors.darkGray,
+                    fontSize: 13,
+                    marginLeft: 4,
+                  }}
+                >
+                  No focus sessions this week.
                 </Text>
               )}
-            </ScrollView>
-            <Text
-              style={{
-                fontSize: 14,
-                color: themeColors.darkGray,
-                marginBottom: 18,
-                textAlign: "center",
-              }}
-            >
-              {/* Updated text */}
-              You can delete individual sessions from this spot.
-            </Text>
-            <View style={{ flexDirection: "row", width: "100%" }}>
-              {/* Cancel (negative) on left, Delete All (positive) on right */}
-              <TouchableOpacity
-                onPress={() => setShowStatModal(false)}
-                disabled={deletingStat}
-                style={{
-                  flex: 1,
-                  backgroundColor: themeColors.white,
-                  borderRadius: 8,
-                  padding: 12,
-                  alignItems: "center",
-                  borderColor: themeColors.black,
-                  borderWidth: 0.5,
-                  marginRight: 8,
-                }}
-              >
-                <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
-                  Close
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => handleDeleteStat(selectedStatSpot?.spotId)}
-                disabled={deletingStat}
-                style={{
-                  flex: 1,
-                  backgroundColor: themeColors.red,
-                  borderRadius: 8,
-                  padding: 12,
-                  alignItems: "center",
-                  opacity: deletingStat ? 0.7 : 1,
-                }}
-              >
-                <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
-                  {deletingStat ? "Deleting..." : "Delete All"}
-                </Text>
-              </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </Modal>
-      {/* Goal Modal */}
-      <Modal visible={showGoalModal} transparent animationType="fade">
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.3)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: themeColors.white,
-              borderRadius: 12,
-              padding: 20,
-              width: "80%",
-              alignItems: "center",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "bold",
-                marginBottom: 12,
-                color: themeColors.black,
-              }}
-            >
-              Set Study Goal
-            </Text>
-            <TextInput
-              value={goalTitleInput}
-              onChangeText={setGoalTitleInput}
-              placeholder="Goal Title (e.g. Orgo Exam)"
-              style={{
-                borderWidth: 1,
-                borderColor: themeColors.purple,
-                borderRadius: 8,
-                padding: 10,
-                width: "80%",
-                marginBottom: 12,
-                color: themeColors.black,
-                fontSize: 16,
-                backgroundColor: themeColors.gray + "10",
-              }}
-              maxLength={40}
-            />
-            <TextInput
-              value={goalInput}
-              onChangeText={setGoalInput}
-              placeholder="Enter minutes"
-              keyboardType="numeric"
-              style={{
-                borderWidth: 1,
-                borderColor: themeColors.purple,
-                borderRadius: 8,
-                padding: 10,
-                width: "80%",
-                marginBottom: 18,
-                color: themeColors.black,
-                fontSize: 16,
-                backgroundColor: themeColors.gray + "10",
-              }}
-              maxLength={4}
-            />
+
+          {/* Location Picker Modal */}
+          <Modal visible={showSpotModal} transparent animationType="slide">
             <View
-              style={{ flexDirection: "row", width: "100%", marginBottom: 8 }}
+              style={{
+                flex: 1,
+                backgroundColor: "rgba(0,0,0,0.3)",
+                justifyContent: "center",
+
+                alignItems: "center",
+              }}
             >
-              {/* Cancel (negative) on left, Save (positive) on right */}
-              <TouchableOpacity
-                onPress={() => setShowGoalModal(false)}
+              <View
                 style={{
-                  flex: 1,
                   backgroundColor: themeColors.white,
-                  borderRadius: 8,
-                  padding: 12,
-                  alignItems: "center",
-                  borderColor: themeColors.black,
-                  borderWidth: 0.5,
-                  marginRight: 8,
+                  borderRadius: 12,
+                  padding: 16,
+                  width: "85%",
+                  maxHeight: "70%",
                 }}
               >
-                <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
-                  Cancel
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "bold",
+                    color: themeColors.black,
+                    marginBottom: 12,
+                  }}
+                >
+                  Select Location
                 </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  const min = parseInt(goalInput, 10);
-                  if (!isNaN(min) && min > 0) {
-                    handleSetGoal(min, goalTitleInput.trim());
-                  } else {
-                    Alert.alert(
-                      "Invalid input",
-                      "Please enter a valid number of minutes."
-                    );
-                  }
-                }}
-                style={{
-                  flex: 1,
-                  backgroundColor: themeColors.green,
-                  borderRadius: 8,
-                  padding: 12,
-                  alignItems: "center",
-                }}
-              >
-                <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
-                  Save
-                </Text>
-              </TouchableOpacity>
+                <FlatList
+                  data={studySpots}
+                  keyExtractor={(item) => item.id}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      onPress={() => {
+                        if (isRunning) {
+                          Alert.alert(
+                            "Cannot Switch Location",
+                            "Please finish or stop your current session before changing location."
+                          );
+                          return;
+                        }
+                        setSelectedSpot(item);
+                        setShowSpotModal(false);
+                      }}
+                      style={{
+                        padding: 12,
+                        borderBottomWidth: 0.5,
+                        borderBottomColor: themeColors.gray,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: themeColors.purple,
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {item.buildingName}
+                      </Text>
+                      {item.roomNumber && (
+                        <Text
+                          style={{ color: themeColors.darkGray, fontSize: 13 }}
+                        >
+                          Floor {item.roomNumber}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  )}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowSpotModal(false)}
+                  style={{
+                    marginTop: 12,
+                    backgroundColor: themeColors.purple,
+                    borderRadius: 8,
+                    paddingVertical: 10,
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{ color: themeColors.white, fontWeight: "bold" }}
+                  >
+                    Close
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            {goalMinutes && (
-              <TouchableOpacity
-                onPress={() => {
-                  setGoalMinutes(null);
-                  setGoalTitle("");
-                  setGoalProgressSeconds(0);
-                  AsyncStorage.removeItem(GOAL_PROGRESS_KEY).catch(() => {});
-                  setShowGoalModal(false);
-                }}
-                style={{
-                  marginTop: 4,
-                  backgroundColor: themeColors.red,
-                  borderRadius: 8,
-                  paddingVertical: 8,
-                  paddingHorizontal: 16,
-                  alignItems: "center",
-                }}
-              >
-                <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
-                  Delete Goal
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-      </Modal>
-      {/* Session Note Modal */}
-      <Modal visible={showNoteModal} transparent animationType="fade">
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.3)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: themeColors.white,
-              borderRadius: 12,
-              padding: 20,
-              width: "80%",
-              alignItems: "center",
-            }}
+          </Modal>
+          {/* Stat Card Modal */}
+          <Modal
+            visible={showStatModal}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setShowStatModal(false)}
           >
-            <Text
+            <View
               style={{
-                fontSize: 18,
-                fontWeight: "bold",
-                marginBottom: 4,
-                color: themeColors.purple,
+                flex: 1,
+                backgroundColor: "rgba(0,0,0,0.3)",
+                justifyContent: "center",
+                alignItems: "center",
               }}
             >
-              Session Notes
-            </Text>
-            <Text
-              style={{
-                fontSize: 14,
-                color: themeColors.darkGray,
-                marginBottom: 12,
-                textAlign: "center",
-              }}
-            >
-              (Optional) What did you work on? How did it go?
-            </Text>
-            <TextInput
-              value={sessionNote}
-              onChangeText={setSessionNote}
-              placeholder="Type your notes here..."
-              multiline
-              style={{
-                borderWidth: 1,
-                borderColor: themeColors.purple,
-                borderRadius: 8,
-                padding: 10,
-                width: "100%",
-                minHeight: 80,
-                marginBottom: 18,
-                color: themeColors.black,
-                fontSize: 16,
-                backgroundColor: themeColors.gray + "10",
-                textAlignVertical: "top",
-              }}
-              maxLength={500}
-            />
-            <View style={{ flexDirection: "row", width: "100%" }}>
-              {/* Only Save button, no Cancel */}
-              <TouchableOpacity
-                onPress={handleSaveSessionNote}
+              <View
                 style={{
-                  flex: 1,
-                  backgroundColor: themeColors.green,
-                  borderRadius: 8,
-                  padding: 12,
+                  backgroundColor: themeColors.white,
+                  borderRadius: 12,
+                  padding: 20,
+                  width: "85%",
                   alignItems: "center",
+                  maxHeight: "85%",
                 }}
               >
-                <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
-                  Save
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "bold",
+                    color: themeColors.black,
+                    marginBottom: 8,
+                  }}
+                >
+                  {selectedStatSpot?.spot?.buildingName || "Unknown"}
+                  {selectedStatSpot?.spot?.roomNumber
+                    ? ` - Floor ${selectedStatSpot.spot.roomNumber}`
+                    : ""}
                 </Text>
-              </TouchableOpacity>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: themeColors.purple,
+                    marginBottom: 8,
+                  }}
+                >
+                  Focused for:{" "}
+                  {selectedStatSpot
+                    ? `${selectedStatSpot.hours}h ${selectedStatSpot.minutes}m ${selectedStatSpot.seconds}s`
+                    : ""}
+                </Text>
+                {/* Session List with Notes and Delete Button */}
+                <ScrollView
+                  style={{ width: "100%", maxHeight: 220, marginBottom: 12 }}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {selectedStatSpot?.sessions?.length > 0 ? (
+                    selectedStatSpot.sessions
+                      .filter((session) => !session.isBreak) // Only show non-break sessions
+                      .sort((a, b) => b.start - a.start) // newest first
+                      .map((session, idx, arr) => {
+                        // Format start time
+                        const date = new Date(session.start);
+                        const endDate = new Date(session.end);
+                        const durationSec = Math.floor(
+                          (session.duration || 0) / 1000
+                        );
+                        const hours = Math.floor(durationSec / 3600);
+                        const minutes = Math.floor((durationSec % 3600) / 60);
+                        const seconds = durationSec % 60;
+                        // Always use session.sessionId as key and for deletion
+                        const sessionKey = session.sessionId;
+                        return (
+                          <View
+                            key={sessionKey}
+                            style={{
+                              borderBottomWidth: idx === arr.length - 1 ? 0 : 1,
+                              borderBottomColor: themeColors.gray,
+                              paddingVertical: 8,
+                              flexDirection: "row",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                            }}
+                          >
+                            <View style={{ flex: 1, marginRight: 8 }}>
+                              <Text
+                                style={{
+                                  color: themeColors.black,
+                                  fontWeight: "bold",
+                                  fontSize: 15,
+                                }}
+                              >
+                                {date.toLocaleDateString()}{" "}
+                                {date.toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </Text>
+                              <Text
+                                style={{
+                                  color: themeColors.darkGray,
+                                  fontSize: 13,
+                                }}
+                              >
+                                Duration: {hours}h {minutes}m {seconds}s
+                              </Text>
+                              {session.note ? (
+                                <Text
+                                  style={{
+                                    color: themeColors.purple,
+                                    fontSize: 14,
+                                    marginTop: 2,
+                                    fontStyle: "italic",
+                                  }}
+                                >
+                                  “{session.note}”
+                                </Text>
+                              ) : (
+                                <Text
+                                  style={{
+                                    color: themeColors.gray,
+                                    fontSize: 13,
+                                    marginTop: 2,
+                                    fontStyle: "italic",
+                                  }}
+                                >
+                                  No reflection
+                                </Text>
+                              )}
+                            </View>
+                            <TouchableOpacity
+                              onPress={() =>
+                                Alert.alert(
+                                  "Delete Session?",
+                                  "Are you sure you want to delete this session?",
+                                  [
+                                    { text: "Cancel", style: "cancel" },
+                                    {
+                                      text: "Delete",
+                                      style: "destructive",
+                                      onPress: async () => {
+                                        await handleDeleteSession(
+                                          session.sessionId,
+                                          selectedStatSpot.spotId
+                                        );
+                                        setSelectedStatSpot((prev) => {
+                                          if (!prev) return prev;
+                                          if (
+                                            prev.spotId !==
+                                            selectedStatSpot.spotId
+                                          )
+                                            return prev;
+                                          const newSessions =
+                                            prev.sessions.filter(
+                                              (s) =>
+                                                s.sessionId !==
+                                                session.sessionId
+                                            );
+                                          const ms = newSessions
+                                            .filter((b) => !b.isBreak)
+                                            .reduce(
+                                              (a, b) => a + (b.duration || 0),
+                                              0
+                                            );
+                                          const totalSeconds = Math.floor(
+                                            ms / 1000
+                                          );
+                                          const hours = Math.floor(
+                                            totalSeconds / 3600
+                                          );
+                                          const minutes = Math.floor(
+                                            (totalSeconds % 3600) / 60
+                                          );
+                                          const seconds = totalSeconds % 60;
+                                          return {
+                                            ...prev,
+                                            sessions: newSessions,
+                                            ms,
+                                            hours,
+                                            minutes,
+                                            seconds,
+                                          };
+                                        });
+                                      },
+                                    },
+                                  ]
+                                )
+                              }
+                              style={{
+                                padding: 6,
+                                backgroundColor: themeColors.red,
+                                borderRadius: 6,
+                                alignSelf: "flex-start",
+                              }}
+                            >
+                              <Trash size={18} color={themeColors.white} />
+                            </TouchableOpacity>
+                          </View>
+                        );
+                      })
+                  ) : (
+                    <Text style={{ color: themeColors.darkGray, fontSize: 14 }}>
+                      No sessions for this spot this week.
+                    </Text>
+                  )}
+                </ScrollView>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: themeColors.darkGray,
+                    marginBottom: 18,
+                    textAlign: "center",
+                  }}
+                >
+                  You can delete individual sessions from this spot.
+                </Text>
+                <View style={{ flexDirection: "row", width: "100%" }}>
+                  <TouchableOpacity
+                    onPress={() => setShowStatModal(false)}
+                    disabled={deletingStat}
+                    style={{
+                      flex: 1,
+                      backgroundColor: themeColors.white,
+                      borderRadius: 8,
+                      padding: 12,
+                      alignItems: "center",
+                      borderColor: themeColors.black,
+                      borderWidth: 0.5,
+                      marginRight: 8,
+                    }}
+                  >
+                    <Text
+                      style={{ color: themeColors.purple, fontWeight: "bold" }}
+                    >
+                      Close
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => handleDeleteStat(selectedStatSpot?.spotId)}
+                    disabled={deletingStat}
+                    style={{
+                      flex: 1,
+                      backgroundColor: themeColors.red,
+                      borderRadius: 8,
+                      padding: 12,
+                      alignItems: "center",
+                      opacity: deletingStat ? 0.7 : 1,
+                    }}
+                  >
+                    <Text
+                      style={{ color: themeColors.white, fontWeight: "bold" }}
+                    >
+                      {deletingStat ? "Deleting..." : "Delete All"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
-          </View>
+          </Modal>
         </View>
-      </Modal>
-    </ScrollView>
+      </ScrollView>
+    </>
   );
 }
 
