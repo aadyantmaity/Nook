@@ -20,8 +20,10 @@ import {
   Pause,
   Stop,
   Gear,
-  ArrowCounterClockwise, // <-- add this for reset icon
-  Trash, // <-- add this for delete icon
+  ArrowCounterClockwise,
+  Trash,
+  CaretRight,
+  Info, // <-- add this for info icon
 } from "phosphor-react-native";
 import { db, auth } from "../firebaseConfig";
 import {
@@ -333,7 +335,7 @@ export function FocusTimerView() {
     // eslint-disable-next-line
   }, [isRunning, timer]);
 
-  // Timer logic (fix double decrement)
+  // Timer logic (fix double decrement and off-by-one)
   useEffect(() => {
     let id;
     if (isRunning) {
@@ -347,12 +349,18 @@ export function FocusTimerView() {
         setTimer((t) => {
           if (t <= 1) {
             clearInterval(id);
+            // Do not increment sessionProgressSeconds on last tick
             handleSessionEnd();
             return 0;
           }
+          // Only increment sessionProgressSeconds if timer > 1
+          setSessionProgressSeconds((prev) => {
+            // Prevent off-by-one: only increment if t > 1
+            if (t > 1) return prev + 1;
+            return prev;
+          });
           return t - 1;
         });
-        setSessionProgressSeconds((prev) => prev + 1);
       }, 1000);
       setIntervalId(id);
     }
@@ -982,28 +990,34 @@ export function FocusTimerView() {
                   shadowOpacity: 0.04,
                   shadowRadius: 2,
                   elevation: 1,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  width: "94%", // Make sub cards a bit smaller than full width
+                  alignSelf: "center",
                 }}
               >
-                <Text
-                  style={{
-                    color: themeColors.purple,
-                    fontWeight: "bold",
-                    fontSize: 15,
-                  }}
-                >
-                  {spot?.buildingName || "Unknown"}
-                  {spot?.roomNumber ? ` - Floor ${spot.roomNumber}` : ""}
-                </Text>
-                <Text
-                  style={{
-                    color: themeColors.black,
-                    fontSize: 14,
-                    marginTop: 2,
-                  }}
-                >
-                  {hours}h {minutes}m {seconds}s
-                </Text>
-                {/* Remove tags display */}
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      color: themeColors.purple,
+                      fontWeight: "bold",
+                      fontSize: 15,
+                    }}
+                  >
+                    {spot?.buildingName || "Unknown"}
+                    {spot?.roomNumber ? ` - Floor ${spot.roomNumber}` : ""}
+                  </Text>
+                  <Text
+                    style={{
+                      color: themeColors.black,
+                      fontSize: 14,
+                      marginTop: 2,
+                    }}
+                  >
+                    {hours}h {minutes}m {seconds}s
+                  </Text>
+                  {/* Remove tags display */}
+                </View>
               </TouchableOpacity>
             );
           })}
@@ -1194,6 +1208,11 @@ export function FocusTimerView() {
     Notifications.requestPermissionsAsync();
   }, []);
 
+  // Add state for toggling stats dropdown
+  const [showStatsDropdown, setShowStatsDropdown] = useState(true);
+  // Add state for toggling goals achieved dropdown
+  const [showGoalsDropdown, setShowGoalsDropdown] = useState(true);
+
   return (
     <ScrollView
       style={{ flex: 1 }}
@@ -1309,8 +1328,7 @@ export function FocusTimerView() {
                   fontSize: 16,
                 }}
               >
-                Goal: {goalTitle ? `"${goalTitle}"` : "Untitled"} ({goalMinutes}{" "}
-                min)
+                {goalTitle ? `${goalTitle}` : "Untitled"}
               </Text>
             </View>
           ) : (
@@ -1381,26 +1399,197 @@ export function FocusTimerView() {
               </View>
             );
           })()}
-        {/* Remove the old Reset Timer Button from below progress display */}
         <View style={{ marginTop: 32, width: "80%" }}>
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "bold",
-              color: themeColors.black,
-              paddingBottom: 12,
-            }}
-          >
-            This Week's Focus Stats
-          </Text>
-          {/* Total Focus Time Card */}
-          <View
+          {/* Total Focus Time Card as dropdown toggle */}
+          <TouchableOpacity
+            onPress={() => setShowStatsDropdown((prev) => !prev)}
+            activeOpacity={0.8}
             style={{
               backgroundColor: themeColors.purple,
-              borderRadius: 10,
-              padding: 12,
-              marginBottom: 12,
+              borderRadius: 12,
+              padding: 16,
+              marginBottom: 0,
               alignItems: "center",
+              shadowColor: themeColors.black,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.08,
+              shadowRadius: 4,
+              elevation: 2,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              width: "100%",
+              borderWidth: showStatsDropdown ? 2 : 0,
+              borderColor: themeColors.purple,
+              transform: [{ scale: showStatsDropdown ? 1.02 : 1 }],
+            }}
+          >
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontSize: 17,
+                  letterSpacing: 0.2,
+                }}
+              >
+                Focus Time This Week
+              </Text>
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontSize: 20,
+                  marginTop: 2,
+                  fontWeight: "bold",
+                  letterSpacing: 0.5,
+                }}
+              >
+                {(() => {
+                  // Only count Pomodoro sessions (not break)
+                  const totalMs = Object.values(focusStats)
+                    .flat()
+                    .filter((b) => !b.isBreak)
+                    .reduce((a, b) => a + (b.duration || 0), 0);
+                  const totalSeconds = Math.floor(totalMs / 1000);
+                  const totalHours = Math.floor(totalSeconds / 3600);
+                  const totalMinutes = Math.floor((totalSeconds % 3600) / 60);
+                  const totalSecs = totalSeconds % 60;
+                  return `${totalHours}h ${totalMinutes}m ${totalSecs}s`;
+                })()}
+              </Text>
+            </View>
+            <View
+              style={{
+                marginLeft: 16,
+                backgroundColor: themeColors.white,
+                borderRadius: 20,
+                padding: 6,
+                alignItems: "center",
+                justifyContent: "center",
+                borderWidth: 1,
+                borderColor: themeColors.purple,
+                shadowColor: themeColors.black,
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.08,
+                shadowRadius: 2,
+                elevation: 1,
+                width: 32,
+                height: 32,
+                transform: [{ rotate: showStatsDropdown ? "90deg" : "0deg" }],
+              }}
+            >
+              <CaretRight size={20} color={themeColors.purple} weight="bold" />
+            </View>
+          </TouchableOpacity>
+          {/* Stats List dropdown */}
+          {showStatsDropdown &&
+            (() => {
+              // Reduce top margin to tighten gap
+              return (
+                <View style={{ marginTop: 4 }}>
+                  {Object.entries(focusStats).map(([spotId, sessions]) => {
+                    const spot = studySpots.find((s) => s.id === spotId);
+                    if (!Array.isArray(sessions) || sessions.length === 0)
+                      return null;
+                    // Only sum Pomodoro sessions (not break)
+                    const ms = sessions
+                      .filter((b) => !b.isBreak)
+                      .reduce((a, b) => a + (b.duration || 0), 0);
+                    const totalSeconds = Math.floor(ms / 1000);
+                    const hours = Math.floor(totalSeconds / 3600);
+                    const minutes = Math.floor((totalSeconds % 3600) / 60);
+                    const seconds = totalSeconds % 60;
+                    return (
+                      <View
+                        key={spotId}
+                        style={{
+                          backgroundColor: themeColors.white,
+                          borderRadius: 8,
+                          padding: 10,
+                          marginBottom: 8,
+                          borderWidth: 1,
+                          borderColor: themeColors.purple,
+                          shadowColor: themeColors.black,
+                          shadowOffset: { width: 0, height: 1 },
+                          shadowOpacity: 0.04,
+                          shadowRadius: 2,
+                          elevation: 1,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          width: "94%",
+                          alignSelf: "center",
+                        }}
+                      >
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={{
+                              color: themeColors.purple,
+                              fontWeight: "bold",
+                              fontSize: 15,
+                            }}
+                          >
+                            {spot?.buildingName || "Unknown"}
+                            {spot?.roomNumber
+                              ? ` - Floor ${spot.roomNumber}`
+                              : ""}
+                          </Text>
+                          <Text
+                            style={{
+                              color: themeColors.black,
+                              fontSize: 14,
+                              marginTop: 2,
+                            }}
+                          >
+                            {hours}h {minutes}m {seconds}s
+                          </Text>
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => {
+                            setSelectedStatSpot({
+                              spotId,
+                              spot,
+                              ms,
+                              hours,
+                              minutes,
+                              seconds,
+                              sessions,
+                            });
+                            setShowStatModal(true);
+                          }}
+                          style={{
+                            marginLeft: 8,
+                            padding: 4,
+                            borderRadius: 16,
+                          }}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                          <Info
+                            size={20}
+                            color={themeColors.purple}
+                            weight="bold"
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })}
+                </View>
+              );
+            })()}
+          {/* Goals Achieved This Week Section as dropdown */}
+          <TouchableOpacity
+            onPress={() => setShowGoalsDropdown((prev) => !prev)}
+            activeOpacity={0.8}
+            style={{
+              marginTop: 24,
+              backgroundColor: themeColors.green,
+              borderRadius: 12,
+              padding: 16,
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              width: "100%",
+              borderWidth: showGoalsDropdown ? 2 : 0,
+              borderColor: themeColors.green,
+              transform: [{ scale: showGoalsDropdown ? 1.02 : 1 }],
               shadowColor: themeColors.black,
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.08,
@@ -1408,160 +1597,105 @@ export function FocusTimerView() {
               elevation: 2,
             }}
           >
-            <Text
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 17,
+                  fontWeight: "bold",
+                  color: themeColors.white,
+                  paddingBottom: 0,
+                  letterSpacing: 0.2,
+                }}
+              >
+                Goals Achieved This Week
+              </Text>
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontSize: 20,
+                  marginTop: 2,
+                  fontWeight: "bold",
+                  letterSpacing: 0.5,
+                }}
+              >
+                {achievedGoalsThisWeek.length}
+              </Text>
+            </View>
+            <View
               style={{
-                color: themeColors.white,
-                fontWeight: "bold",
-                fontSize: 16,
+                marginLeft: 16,
+                backgroundColor: themeColors.white,
+                borderRadius: 20,
+                padding: 6,
+                alignItems: "center",
+                justifyContent: "center",
+                borderWidth: 1,
+                borderColor: themeColors.green,
+                shadowColor: themeColors.black,
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.08,
+                shadowRadius: 2,
+                elevation: 1,
+                width: 32,
+                height: 32,
+                transform: [{ rotate: showGoalsDropdown ? "90deg" : "0deg" }],
               }}
             >
-              Total Focus Time
-            </Text>
-            <Text
-              style={{ color: themeColors.white, fontSize: 18, marginTop: 2 }}
-            >
-              {(() => {
-                // Only count Pomodoro sessions (not break)
-                const totalMs = Object.values(focusStats)
-                  .flat()
-                  .filter((b) => !b.isBreak)
-                  .reduce((a, b) => a + (b.duration || 0), 0);
-                const totalSeconds = Math.floor(totalMs / 1000);
-                const totalHours = Math.floor(totalSeconds / 3600);
-                const totalMinutes = Math.floor((totalSeconds % 3600) / 60);
-                const totalSecs = totalSeconds % 60;
-                return `${totalHours}h ${totalMinutes}m ${totalSecs}s`;
-              })()}
-            </Text>
-          </View>
-          {/* Stats List */}
-          {(() => {
-            if (!Object.keys(focusStats).length) {
-              return (
-                <Text style={{ color: themeColors.darkGray, marginTop: 8 }}>
-                  No focus sessions this week.
+              <CaretRight size={20} color={themeColors.green} weight="bold" />
+            </View>
+          </TouchableOpacity>
+          {showGoalsDropdown && (
+            <View style={{ marginTop: 4 }}>
+              {achievedGoalsThisWeek.length === 0 ? (
+                <Text
+                  style={{
+                    color: themeColors.darkGray,
+                    fontSize: 15,
+                    paddingLeft: 16,
+                  }}
+                >
+                  No goals achieved yet this week.
                 </Text>
-              );
-            }
-            return (
-              <View style={{ marginTop: 12 }}>
-                {Object.entries(focusStats).map(([spotId, sessions]) => {
-                  const spot = studySpots.find((s) => s.id === spotId);
-                  if (!Array.isArray(sessions) || sessions.length === 0)
-                    return null;
-                  // Only sum Pomodoro sessions (not break)
-                  const ms = sessions
-                    .filter((b) => !b.isBreak)
-                    .reduce((a, b) => a + (b.duration || 0), 0);
-                  const totalSeconds = Math.floor(ms / 1000);
-                  const hours = Math.floor(totalSeconds / 3600);
-                  const minutes = Math.floor((totalSeconds % 3600) / 60);
-                  const seconds = totalSeconds % 60;
-                  return (
-                    <TouchableOpacity
-                      key={spotId}
-                      onPress={() => {
-                        setSelectedStatSpot({
-                          spotId,
-                          spot,
-                          ms,
-                          hours,
-                          minutes,
-                          seconds,
-                          sessions,
-                        });
-                        setShowStatModal(true);
-                      }}
+              ) : (
+                achievedGoalsThisWeek
+                  .sort((a, b) => b.timestamp - a.timestamp)
+                  .map((goal, idx) => (
+                    <View
+                      key={idx}
                       style={{
-                        backgroundColor: themeColors.white,
+                        backgroundColor: themeColors.green + "18",
                         borderRadius: 8,
                         padding: 10,
-                        marginBottom: 8,
+                        marginBottom: 6,
                         borderWidth: 1,
-                        borderColor: themeColors.purple,
-                        shadowColor: themeColors.black,
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.04,
-                        shadowRadius: 2,
-                        elevation: 1,
+                        borderColor: themeColors.green,
+                        width: "94%",
+                        alignSelf: "center",
                       }}
                     >
                       <Text
                         style={{
-                          color: themeColors.purple,
+                          color: themeColors.green,
                           fontWeight: "bold",
                           fontSize: 15,
                         }}
                       >
-                        {spot?.buildingName || "Unknown"}
-                        {spot?.roomNumber ? ` - Floor ${spot.roomNumber}` : ""}
+                        {goal.title || "Untitled"} ({goal.minutes} min)
                       </Text>
                       <Text
-                        style={{
-                          color: themeColors.black,
-                          fontSize: 14,
-                          marginTop: 2,
-                        }}
+                        style={{ color: themeColors.darkGray, fontSize: 13 }}
                       >
-                        {hours}h {minutes}m {seconds}s
+                        {new Date(goal.timestamp).toLocaleDateString()}{" "}
+                        {new Date(goal.timestamp).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            );
-          })()}
-          {/* Goals Achieved This Week Section */}
-          <View style={{ marginTop: 24 }}>
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "bold",
-                color: themeColors.black,
-                paddingBottom: 12,
-              }}
-            >
-              Goals Achieved This Week
-            </Text>
-            {achievedGoalsThisWeek.length === 0 ? (
-              <Text style={{ color: themeColors.darkGray, fontSize: 15 }}>
-                No goals achieved yet this week.
-              </Text>
-            ) : (
-              achievedGoalsThisWeek
-                .sort((a, b) => b.timestamp - a.timestamp)
-                .map((goal, idx) => (
-                  <View
-                    key={idx}
-                    style={{
-                      backgroundColor: themeColors.green + "18",
-                      borderRadius: 8,
-                      padding: 10,
-                      marginBottom: 6,
-                      borderWidth: 1,
-                      borderColor: themeColors.green,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: themeColors.green,
-                        fontWeight: "bold",
-                        fontSize: 15,
-                      }}
-                    >
-                      {goal.title || "Untitled"} ({goal.minutes} min)
-                    </Text>
-                    <Text style={{ color: themeColors.darkGray, fontSize: 13 }}>
-                      {new Date(goal.timestamp).toLocaleDateString()}{" "}
-                      {new Date(goal.timestamp).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </Text>
-                  </View>
-                ))
-            )}
-          </View>
+                    </View>
+                  ))
+              )}
+            </View>
+          )}
         </View>
       </View>
       {/* Location Picker Modal */}
@@ -1700,10 +1834,12 @@ export function FocusTimerView() {
               style={{ width: "100%", maxHeight: 220, marginBottom: 12 }}
               showsVerticalScrollIndicator={false}
             >
-              {selectedStatSpot?.sessions?.length > 0 ? (
+              {selectedStatSpot?.sessions?.filter((s) => !s.isBreak)?.length >
+              0 ? (
                 selectedStatSpot.sessions
+                  .filter((session) => !session.isBreak) // Only show non-break sessions
                   .sort((a, b) => b.start - a.start) // newest first
-                  .map((session, idx) => {
+                  .map((session, idx, arr) => {
                     // Format start time
                     const date = new Date(session.start);
                     const endDate = new Date(session.end);
@@ -1713,18 +1849,13 @@ export function FocusTimerView() {
                     const hours = Math.floor(durationSec / 3600);
                     const minutes = Math.floor((durationSec % 3600) / 60);
                     const seconds = durationSec % 60;
-                    // Use session.id if available, else fallback to session.start as unique key
-                    const sessionKey = session.sessionId
-                      ? `${session.sessionId}_${idx}`
-                      : `${session.start}_${idx}`;
+                    // Always use session.sessionId as key and for deletion
+                    const sessionKey = session.sessionId;
                     return (
                       <View
                         key={sessionKey}
                         style={{
-                          borderBottomWidth:
-                            idx === selectedStatSpot.sessions.length - 1
-                              ? 0
-                              : 1,
+                          borderBottomWidth: idx === arr.length - 1 ? 0 : 1,
                           borderBottomColor: themeColors.gray,
                           paddingVertical: 8,
                           flexDirection: "row",
@@ -1745,8 +1876,6 @@ export function FocusTimerView() {
                               hour: "2-digit",
                               minute: "2-digit",
                             })}
-                            {" - "}
-                            {session.isBreak ? "Break" : "Pomodoro"}
                           </Text>
                           <Text
                             style={{
@@ -1790,11 +1919,48 @@ export function FocusTimerView() {
                                 {
                                   text: "Delete",
                                   style: "destructive",
-                                  onPress: () =>
-                                    handleDeleteSession(
-                                      sessionKey,
+                                  onPress: async () => {
+                                    await handleDeleteSession(
+                                      session.sessionId,
                                       selectedStatSpot.spotId
-                                    ),
+                                    );
+                                    // After deletion, update the modal's time
+                                    setSelectedStatSpot((prev) => {
+                                      if (!prev) return prev;
+                                      if (
+                                        prev.spotId !== selectedStatSpot.spotId
+                                      )
+                                        return prev;
+                                      const newSessions = prev.sessions.filter(
+                                        (s) => s.sessionId !== session.sessionId
+                                      );
+                                      // Recalculate ms, hours, minutes, seconds
+                                      const ms = newSessions
+                                        .filter((b) => !b.isBreak)
+                                        .reduce(
+                                          (a, b) => a + (b.duration || 0),
+                                          0
+                                        );
+                                      const totalSeconds = Math.floor(
+                                        ms / 1000
+                                      );
+                                      const hours = Math.floor(
+                                        totalSeconds / 3600
+                                      );
+                                      const minutes = Math.floor(
+                                        (totalSeconds % 3600) / 60
+                                      );
+                                      const seconds = totalSeconds % 60;
+                                      return {
+                                        ...prev,
+                                        sessions: newSessions,
+                                        ms,
+                                        hours,
+                                        minutes,
+                                        seconds,
+                                      };
+                                    });
+                                  },
                                 },
                               ]
                             )
@@ -2027,16 +2193,26 @@ export function FocusTimerView() {
               style={{
                 fontSize: 18,
                 fontWeight: "bold",
-                marginBottom: 12,
-                color: themeColors.white,
+                marginBottom: 4,
+                color: themeColors.purple,
               }}
             >
-              Session Notes / Reflection
+              Session Notes
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                color: themeColors.darkGray,
+                marginBottom: 12,
+                textAlign: "center",
+              }}
+            >
+              (Optional) What did you work on? How did it go?
             </Text>
             <TextInput
               value={sessionNote}
               onChangeText={setSessionNote}
-              placeholder="What did you work on? How did it go?"
+              placeholder="Type your notes here..."
               multiline
               style={{
                 borderWidth: 1,
@@ -2054,27 +2230,7 @@ export function FocusTimerView() {
               maxLength={500}
             />
             <View style={{ flexDirection: "row", width: "100%" }}>
-              <TouchableOpacity
-                onPress={() => {
-                  setShowNoteModal(false);
-                  setSessionNote("");
-                  setPendingSession(null);
-                }}
-                style={{
-                  flex: 1,
-                  backgroundColor: themeColors.white,
-                  borderRadius: 8,
-                  padding: 12,
-                  alignItems: "center",
-                  borderColor: themeColors.black,
-                  borderWidth: 0.5,
-                  marginRight: 8,
-                }}
-              >
-                <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
+              {/* Only Save button, no Cancel */}
               <TouchableOpacity
                 onPress={handleSaveSessionNote}
                 style={{
