@@ -42,6 +42,7 @@ import { doc, getDoc } from "firebase/firestore"; // Import Firestore functions
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system"; // <-- Add this import
 import { ThemeContext } from "../App"; // Import ThemeContext
+import { FocusTimerView } from "../components/FocusTimer"; // <-- Use correct import
 let imageCache = {};
 
 const TAGS = [
@@ -521,6 +522,7 @@ function StudySpots({
       )}
       onRefresh={onRefresh}
       refreshing={refreshing}
+      showsVerticalScrollIndicator={false} // <-- Hide vertical scrollbar
     />
   );
 }
@@ -537,174 +539,21 @@ function fuzzyMatch(str, query) {
   return qi === query.length;
 }
 
-function RecentlyViewed({
-  spots,
-  navigation,
-  favorites,
-  handleToggleFavorite,
-  themeColors, // <-- add themeColors prop
-}) {
-  if (!spots.length) return null;
-  return (
-    <View style={{ marginBottom: 16 }}>
-      <Text
-        style={{
-          fontSize: 18,
-          fontWeight: "bold",
-          color: themeColors.black, // Use black for recently viewed title
-          marginLeft: 16,
-          marginBottom: 8,
-        }}
-      >
-        Recently Viewed
-      </Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingLeft: 16 }}
-      >
-        {spots.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            onPress={() =>
-              navigation.navigate("SpotDetail", { spotId: item.id })
-            }
-            style={{
-              width: 180,
-              marginRight: 12,
-              backgroundColor: themeColors.white, // changed
-              borderRadius: 8,
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 4,
-              elevation: 2,
-              position: "relative",
-              paddingBottom: 8,
-            }}
-          >
-            <View
-              style={{
-                width: "100%",
-                height: 80,
-                backgroundColor: themeColors.lightGray || "#EEE", // changed
-                borderTopLeftRadius: 8,
-                borderTopRightRadius: 8,
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                marginBottom: 8,
-              }}
-            >
-              {item.cachedPhotoUri || item.photoUrl ? (
-                <Image
-                  source={{
-                    uri: item.cachedPhotoUri
-                      ? item.cachedPhotoUri
-                      : item.photoUrl,
-                  }}
-                  style={{ width: "100%", height: "100%" }}
-                  resizeMode="cover"
-                />
-              ) : (
-                <Text style={{ color: themeColors.black }}>No Image</Text>
-              )}
-            </View>
-            <TouchableOpacity
-              onPress={() => handleToggleFavorite(item.id)}
-              style={{
-                position: "absolute",
-                top: 8,
-                right: 8,
-                zIndex: 10,
-                backgroundColor: themeColors.white, // changed
-                borderRadius: 20,
-                padding: 4,
-                borderWidth: 0.5,
-                borderColor: themeColors.black, // changed
-              }}
-              onPressOut={(e) => e.stopPropagation && e.stopPropagation()}
-            >
-              <Heart
-                size={18}
-                color={
-                  favorites.includes(item.id)
-                    ? themeColors.purple
-                    : themeColors.darkGray
-                }
-                weight={favorites.includes(item.id) ? "fill" : "regular"}
-              />
-            </TouchableOpacity>
-            <Text
-              style={{
-                fontSize: 15,
-                fontWeight: "bold",
-                color: themeColors.black, // Use black for spot name
-                marginBottom: 2,
-                marginLeft: 8,
-              }}
-              numberOfLines={1}
-            >
-              {item.name}
-            </Text>
-            <Text
-              style={{
-                fontSize: 12,
-                color: themeColors.darkGray, // changed
-                marginLeft: 8,
-                marginBottom: 2,
-              }}
-              numberOfLines={1}
-            >
-              {item.roomNumber || ""}
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginLeft: 8,
-              }}
-            >
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star
-                  key={star}
-                  size={12}
-                  color={
-                    star <= (item.averageOverallRating || 0)
-                      ? themeColors.purple // changed
-                      : themeColors.darkGray // changed
-                  }
-                  weight={
-                    star <= (item.averageOverallRating || 0)
-                      ? "fill"
-                      : "regular"
-                  }
-                  style={{ marginRight: 1 }}
-                />
-              ))}
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
-  );
-}
-
 function TabBar({ activeTab, setActiveTab, themeColors }) {
-  // <-- add themeColors prop
+  // Only show Home and Focus Mode tabs
   return (
     <View
       style={{
         flexDirection: "row",
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: themeColors.white, // changed
+        backgroundColor: themeColors.white,
         borderBottomWidth: 1,
-        borderBottomColor: themeColors.lightGrayBorder || "#E0E0E0", // changed
+        borderBottomColor: themeColors.lightGrayBorder || "#E0E0E0",
         marginBottom: 0,
       }}
     >
-      {["Home", "Recently Viewed"].map((tab, idx) => (
+      {["Home", "Focus Mode"].map((tab, idx) => (
         <TouchableOpacity
           key={tab}
           onPress={() => setActiveTab(tab)}
@@ -713,14 +562,14 @@ function TabBar({ activeTab, setActiveTab, themeColors }) {
             paddingVertical: 10,
             borderBottomWidth: 3,
             borderBottomColor:
-              activeTab === tab ? themeColors.purple : "transparent", // changed
+              activeTab === tab ? themeColors.purple : "transparent",
             alignItems: "center",
           }}
         >
           <Text
             style={{
               color:
-                activeTab === tab ? themeColors.black : themeColors.darkGray, // Use black for active tab
+                activeTab === tab ? themeColors.black : themeColors.darkGray,
               fontWeight: activeTab === tab ? "bold" : "normal",
               fontSize: 16,
               letterSpacing: 0.5,
@@ -874,7 +723,6 @@ export default function HomeScreen({
   const [isLoading, setIsLoading] = useState(true);
   const [favorites, setFavorites] = useState([]);
   const [search, setSearch] = useState(""); // <-- Add search state
-  const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [activeTab, setActiveTab] = useState("Home");
   const [showGeneralReport, setShowGeneralReport] = useState(false); // Add state for modal
   const [menuOpen, setMenuOpen] = useState(false); // <-- Hamburger menu state
@@ -1148,44 +996,6 @@ export default function HomeScreen({
     }
   };
 
-  // Load recently viewed from AsyncStorage
-  useEffect(() => {
-    const loadRecentlyViewed = async () => {
-      try {
-        const stored = await AsyncStorage.getItem("recentlyViewedSpots");
-        if (stored) setRecentlyViewed(JSON.parse(stored));
-      } catch {}
-    };
-    loadRecentlyViewed();
-  }, []);
-
-  // Helper to update recently viewed
-  const addRecentlyViewed = async (spotId) => {
-    let updated = [spotId, ...recentlyViewed.filter((id) => id !== spotId)];
-    if (updated.length > 8) updated = updated.slice(0, 8);
-    setRecentlyViewed(updated);
-    try {
-      await AsyncStorage.setItem(
-        "recentlyViewedSpots",
-        JSON.stringify(updated)
-      );
-    } catch {}
-  };
-
-  useEffect(() => {
-    const fetchUserName = async () => {
-      const user = auth.currentUser;
-      if (user) {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          setUserName(userDoc.data().name);
-        }
-      }
-    };
-
-    fetchUserName();
-  }, []);
-
   useEffect(() => {
     fetchStudySpots(); // Fetch spots on initial load
   }, []);
@@ -1244,16 +1054,6 @@ export default function HomeScreen({
   const filteredSpots = studySpots.filter(
     (spot) => matchFilters(spot) && searchFilter(spot)
   );
-
-  const filteredRecentlyViewedSpots = recentlyViewed
-    .map((id) => studySpots.find((s) => s.id === id))
-    .filter(Boolean)
-    .filter((spot) => matchFilters(spot) && searchFilter(spot));
-
-  // Get recently viewed spot objects
-  const recentlyViewedSpots = recentlyViewed
-    .map((id) => studySpots.find((s) => s.id === id))
-    .filter(Boolean);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
@@ -1454,132 +1254,85 @@ export default function HomeScreen({
                     marginHorizontal: 10,
                   }}
                 />
-                {/* Focus Mode */}
-                <TouchableOpacity
-                  onPress={() => {
-                    setMenuOpen(false);
-                    setTimeout(() => {
-                      navigation.navigate("FocusTimer");
-                    }, 250);
-                  }}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    paddingVertical: 12,
-                    paddingHorizontal: 20,
-                  }}
-                >
-                  <Timer size={22} color={themeColors.purple} weight="bold" />
-                  <Text
-                    style={{
-                      marginLeft: 12,
-                      color: themeColors.purple,
-                      fontWeight: "bold",
-                      fontSize: 16,
-                    }}
-                  >
-                    Focus Mode
-                  </Text>
-                </TouchableOpacity>
-                {/* Divider */}
-                <View
-                  style={{
-                    height: 1,
-                    backgroundColor: themeColors.lightGrayBorder || "#eee",
-                    marginHorizontal: 10,
-                  }}
-                />
               </View>
             </TouchableOpacity>
           </Modal>
         )}
 
-        <Filters
-          filters={filters}
-          setFilters={setFilters}
+        {/* ADD TAB BAR HERE */}
+        <TabBar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
           themeColors={themeColors}
         />
+        {activeTab === "Home" && <View style={{ height: 16 }} />}
+
+        {activeTab === "Home" && (
+          <Filters
+            filters={filters}
+            setFilters={setFilters}
+            themeColors={themeColors}
+          />
+        )}
         {activeTab === "Home" ? (
           <StudySpots
             filteredSpots={filteredSpots}
-            navigation={{
-              ...navigation,
-              navigate: (screen, params) => {
-                if (screen === "SpotDetail" && params?.spotId) {
-                  addRecentlyViewed(params.spotId);
-                }
-                navigation.navigate(screen, params);
-              },
-            }}
+            navigation={navigation}
             favorites={favorites}
             handleToggleFavorite={handleToggleFavorite}
             search={search}
             setSearch={setSearch}
             isDarkMode={isDarkMode}
             themeColors={themeColors}
-            onRefresh={handleRefresh} // <-- pass handler
-            refreshing={isRefreshing} // <-- pass refreshing state
+            onRefresh={handleRefresh}
+            refreshing={isRefreshing}
+            showsVerticalScrollIndicator={false}
           />
-        ) : (
-          <StudySpots
-            filteredSpots={filteredRecentlyViewedSpots}
-            navigation={{
-              ...navigation,
-              navigate: (screen, params) => {
-                if (screen === "SpotDetail" && params?.spotId) {
-                  addRecentlyViewed(params.spotId);
-                }
-                navigation.navigate(screen, params);
-              },
+        ) : activeTab === "Focus Mode" ? (
+          <FocusTimerView /> // <-- Use FocusTimerView, not FocusTimer
+        ) : null}
+        {activeTab === "Home" && (
+          <TouchableOpacity
+            onPress={() => {
+              try {
+                navigation.navigate("AddSpot");
+              } catch (error) {
+                console.error("Error adding spot:", error);
+                alert(
+                  "Unable to add a new spot. Please check your permissions."
+                );
+              }
             }}
-            favorites={favorites}
-            handleToggleFavorite={handleToggleFavorite}
-            search={search}
-            setSearch={setSearch}
-            isDarkMode={isDarkMode}
-            themeColors={themeColors}
-            onRefresh={handleRefresh} // <-- pass handler
-            refreshing={isRefreshing} // <-- pass refreshing state
-          />
-        )}
-        <TouchableOpacity
-          onPress={() => {
-            try {
-              navigation.navigate("AddSpot");
-            } catch (error) {
-              console.error("Error adding spot:", error);
-              alert("Unable to add a new spot. Please check your permissions.");
-            }
-          }}
-          style={{
-            position: "absolute",
-            bottom: 16,
-            right: 16,
-            flexDirection: "row",
-            alignItems: "center",
-            paddingVertical: 12,
-            paddingHorizontal: 16,
-            backgroundColor: themeColors.purple, // changed
-            borderRadius: 50,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.2,
-            shadowRadius: 4,
-            elevation: 3,
-          }}
-        >
-          <Plus size={24} color={themeColors.white} />
-          <Text
             style={{
-              color: themeColors.white, // changed
-              fontWeight: "bold",
-              fontSize: 14,
-              marginLeft: 8,
+              position: "absolute",
+              bottom: 16,
+              right: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              backgroundColor: themeColors.purple,
+              borderRadius: 50,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.2,
+              shadowRadius: 4,
+              elevation: 3,
             }}
           >
-            Add a Nook
-          </Text>
-        </TouchableOpacity>
+            <Plus size={24} color={themeColors.white} />
+            <Text
+              style={{
+                color: themeColors.white,
+                fontWeight: "bold",
+                fontSize: 14,
+                marginLeft: 8,
+              }}
+            >
+              Add a Nook
+            </Text>
+          </TouchableOpacity>
+        )}
         <GeneralReportModal
           visible={showGeneralReport}
           onClose={() => setShowGeneralReport(false)}
