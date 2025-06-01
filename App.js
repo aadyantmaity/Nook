@@ -35,14 +35,6 @@ export default function App() {
     return unsubscribe;
   }, []);
 
-  const handleScreenTransition = (callback) => {
-    setIsLoading(true); // Show loading indicator
-    setTimeout(() => {
-      callback(); // Execute the navigation callback
-      setIsLoading(false); // Hide loading indicator
-    }, 500); // Simulate loading delay
-  };
-
   if (isAuthenticated === null) {
     // Show a loading screen while checking authentication state
     return (
@@ -59,7 +51,7 @@ export default function App() {
                 }}
               >
                 <ActivityIndicator size="large" color={colors.purple} />
-                <Text>Loading...</Text>
+                <Text style={{ color: colors.black }}>Loading...</Text>
               </View>
             )}
           />
@@ -72,22 +64,8 @@ export default function App() {
     return (
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Login">
-            {(props) => (
-              <LoginScreen
-                {...props}
-                onNavigate={(callback) => handleScreenTransition(callback)}
-              />
-            )}
-          </Stack.Screen>
-          <Stack.Screen name="SignUp">
-            {(props) => (
-              <SignUpScreen
-                {...props}
-                onNavigate={(callback) => handleScreenTransition(callback)}
-              />
-            )}
-          </Stack.Screen>
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="SignUp" component={SignUpScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     );
@@ -101,73 +79,12 @@ export default function App() {
           initialRouteName="Home"
           screenOptions={{ headerShown: false }}
         >
-          <Stack.Screen name="Home">
-            {(props) => (
-              <HomeScreen
-                {...props}
-                onNavigate={(callback) => handleScreenTransition(callback)}
-                isDarkMode={isDarkMode}
-                themeColors={themeColors}
-              />
-            )}
-          </Stack.Screen>
-          <Stack.Screen name="SpotDetail">
-            {(props) => (
-              <SpotDetailScreen
-                {...props}
-                onNavigate={(callback) => handleScreenTransition(callback)}
-                isDarkMode={isDarkMode}
-                themeColors={themeColors}
-              />
-            )}
-          </Stack.Screen>
-          <Stack.Screen name="AddSpot">
-            {(props) => (
-              <AddSpotScreen
-                {...props}
-                onNavigate={(callback) => handleScreenTransition(callback)}
-                isDarkMode={isDarkMode}
-                themeColors={themeColors}
-              />
-            )}
-          </Stack.Screen>
-          <Stack.Screen name="Profile">
-            {(props) => (
-              <ProfileScreen
-                {...props}
-                onNavigate={(callback) => handleScreenTransition(callback)}
-                isDarkMode={isDarkMode}
-                themeColors={themeColors}
-              />
-            )}
-          </Stack.Screen>
-          <Stack.Screen name="FocusTimer">
-            {(props) => (
-              <FocusTimerScreen
-                {...props}
-                onNavigate={(callback) => handleScreenTransition(callback)}
-                isDarkMode={isDarkMode}
-                themeColors={themeColors}
-              />
-            )}
-          </Stack.Screen>
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="SpotDetail" component={SpotDetailScreen} />
+          <Stack.Screen name="AddSpot" component={AddSpotScreen} />
+          <Stack.Screen name="Profile" component={ProfileScreen} />
+          <Stack.Screen name="FocusTimer" component={FocusTimerScreen} />
         </Stack.Navigator>
-        {isLoading && (
-          <View
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              justifyContent: "center",
-              alignItems: "center",
-              backgroundColor: "rgba(0,0,0,0.3)",
-            }}
-          >
-            <ActivityIndicator size="large" color={colors.purple} />
-          </View>
-        )}
       </NavigationContainer>
     </ThemeContext.Provider>
   );

@@ -242,24 +242,6 @@ export default function AddSpotScreen({
     }
   };
 
-  if (isLoading)
-    return (
-      <SafeAreaView
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: themeColors.white,
-        }}
-        accessibilityLabel="Loading"
-        accessible={true}
-      >
-        <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
-          Loading...
-        </Text>
-      </SafeAreaView>
-    );
-
   // Spot preview modal
   const renderPreview = () => (
     <Modal visible={showPreview} transparent animationType="slide">
@@ -498,52 +480,54 @@ export default function AddSpotScreen({
             {isUWBuilding ? "Select Building:" : "Enter Location Name:"}
           </Text>
           {isUWBuilding ? (
-            <View
-              style={{
-                borderWidth: 1,
-                borderColor: themeColors.gray,
-                borderRadius: 8,
-                marginBottom: 16,
-                backgroundColor: themeColors.white,
-              }}
-            >
-              <Picker
-                selectedValue={selectedBuilding}
-                onValueChange={(itemValue) => setSelectedBuilding(itemValue)}
+            <>
+              <View
                 style={{
-                  color: themeColors.purple,
-                  fontSize: 18,
-                  backgroundColor: themeColors.white,
-                  borderColor: themeColors.black,
-                  borderWidth: 0.5,
+                  borderWidth: 1,
+                  borderColor: themeColors.gray,
                   borderRadius: 8,
-                }}
-                itemStyle={{
-                  fontSize: 18,
-                  color: themeColors.purple,
+                  marginBottom: 16,
+                  backgroundColor: themeColors.white,
                 }}
               >
-                <Picker.Item
-                  label="Select a building"
-                  value=""
+                <Picker
+                  selectedValue={selectedBuilding}
+                  onValueChange={(itemValue) => setSelectedBuilding(itemValue)}
                   style={{
+                    color: themeColors.purple,
+                    fontSize: 18,
+                    backgroundColor: themeColors.white,
+                    borderColor: themeColors.black,
+                    borderWidth: 0.5,
+                    borderRadius: 8,
+                  }}
+                  itemStyle={{
                     fontSize: 18,
                     color: themeColors.purple,
                   }}
-                />
-                {BUILDINGS.map((building) => (
+                >
                   <Picker.Item
-                    key={building}
-                    label={building}
-                    value={building}
+                    label="Select a building"
+                    value=""
                     style={{
                       fontSize: 18,
                       color: themeColors.purple,
                     }}
                   />
-                ))}
-              </Picker>
-              {/* Allow amaity@uw.edu to upload an image for UW buildings */}
+                  {BUILDINGS.map((building) => (
+                    <Picker.Item
+                      key={building}
+                      label={building}
+                      value={building}
+                      style={{
+                        fontSize: 18,
+                        color: themeColors.purple,
+                      }}
+                    />
+                  ))}
+                </Picker>
+              </View>
+              {/* Move upload image button and preview just outside the picker view */}
               {isAmaity && (
                 <View style={{ marginBottom: 16, alignItems: "center" }}>
                   <TouchableOpacity
@@ -555,7 +539,7 @@ export default function AddSpotScreen({
                       paddingHorizontal: 18,
                       alignItems: "center",
                       marginBottom: 8,
-                      marginTop: 8,
+                      marginTop: 0,
                     }}
                     accessibilityLabel="Pick an image for this location"
                     accessible={true}
@@ -587,7 +571,7 @@ export default function AddSpotScreen({
                   )}
                 </View>
               )}
-            </View>
+            </>
           ) : (
             <>
               <TextInput
