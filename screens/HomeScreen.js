@@ -295,13 +295,12 @@ function StudySpots({
               marginBottom: 12,
             }}
           >
-            {item.photoUrl ? (
+            {item.cachedPhotoUri || item.photoUrl ? (
               <Image
                 source={{
-                  uri:
-                    imageCache[item.id] && imageCache[item.id].length > 0
-                      ? imageCache[item.id]
-                      : item.photoUrl,
+                  uri: item.cachedPhotoUri
+                    ? item.cachedPhotoUri
+                    : item.photoUrl,
                 }}
                 style={{ width: "100%", height: "100%" }}
                 resizeMode="cover"
@@ -590,13 +589,12 @@ function RecentlyViewed({
                 marginBottom: 8,
               }}
             >
-              {item.photoUrl ? (
+              {item.cachedPhotoUri || item.photoUrl ? (
                 <Image
                   source={{
-                    uri:
-                      imageCache[item.id] && imageCache[item.id].length > 0
-                        ? imageCache[item.id]
-                        : item.photoUrl,
+                    uri: item.cachedPhotoUri
+                      ? item.cachedPhotoUri
+                      : item.photoUrl,
                   }}
                   style={{ width: "100%", height: "100%" }}
                   resizeMode="cover"
@@ -875,6 +873,19 @@ export default function HomeScreen({
   const [menuOpen, setMenuOpen] = useState(false); // <-- Hamburger menu state
   const [imageCache, setImageCache] = useState({}); // spotId -> local file URI
 
+  // Load image cache from AsyncStorage on mount
+  useEffect(() => {
+    const loadImageCache = async () => {
+      try {
+        const cacheRaw = await AsyncStorage.getItem("spotImageCache");
+        if (cacheRaw) {
+          setImageCache(JSON.parse(cacheRaw));
+        }
+      } catch {}
+    };
+    loadImageCache();
+  }, []);
+
   // Fetch user's favorites
   useEffect(() => {
     const fetchFavorites = async () => {
@@ -909,7 +920,7 @@ export default function HomeScreen({
     }
   };
 
-  // Helper to cache spot images
+  // Helper to cache spot images and persist cache
   const cacheSpotImage = async (spotId, photoUrl) => {
     if (!photoUrl) return null;
     try {
@@ -917,6 +928,13 @@ export default function HomeScreen({
       const cachedUri = await AsyncStorage.getItem(cacheKey);
       const cachedUrl = await AsyncStorage.getItem(`${cacheKey}_url`);
       if (cachedUri && cachedUrl === photoUrl) {
+        // Update in-memory cache if not present
+        setImageCache((prev) => {
+          if (prev[spotId] === cachedUri) return prev;
+          const updated = { ...prev, [spotId]: cachedUri };
+          AsyncStorage.setItem("spotImageCache", JSON.stringify(updated));
+          return updated;
+        });
         return cachedUri;
       }
       const fileUri = FileSystem.cacheDirectory + `spot_${spotId}.jpg`;
@@ -924,6 +942,11 @@ export default function HomeScreen({
       if (downloadRes.status === 200) {
         await AsyncStorage.setItem(cacheKey, downloadRes.uri);
         await AsyncStorage.setItem(`${cacheKey}_url`, photoUrl);
+        setImageCache((prev) => {
+          const updated = { ...prev, [spotId]: downloadRes.uri };
+          AsyncStorage.setItem("spotImageCache", JSON.stringify(updated));
+          return updated;
+        });
         return downloadRes.uri;
       }
     } catch (e) {}
@@ -1085,7 +1108,7 @@ export default function HomeScreen({
             id: docSnap.id,
             ...spotData,
             photoUrl: spotData.photoUrl || "",
-            cachedPhotoUri: cachedUri || "", // Add cached URI
+            cachedPhotoUri: cachedUri || spotData.photoUrl || "", // <-- always provide a uri for instant display
             ratings: {
               noise: averageNoise,
               crowd: averageCrowd,
@@ -1103,7 +1126,11 @@ export default function HomeScreen({
       spots.forEach((spot) => {
         if (spot.cachedPhotoUri) cacheMap[spot.id] = spot.cachedPhotoUri;
       });
-      setImageCache(cacheMap);
+      setImageCache((prev) => {
+        const merged = { ...prev, ...cacheMap };
+        AsyncStorage.setItem("spotImageCache", JSON.stringify(merged));
+        return merged;
+      });
       setStudySpots(spots);
     } catch (error) {
       console.error("Error fetching study spots:", error);
