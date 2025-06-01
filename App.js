@@ -7,6 +7,7 @@ import AddSpotScreen from "./screens/AddSpotScreen";
 import LoginScreen from "./screens/LoginScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import ProfileScreen from "./screens/ProfileScreen";
+import FocusArchiveScreen from "./screens/FocusArchiveScreen"; // <-- Add this import
 import { auth } from "./firebaseConfig"; // Import Firebase auth
 import { Text, View, ActivityIndicator, Appearance } from "react-native"; // For system color scheme
 import { colors, getThemeColors } from "./constants/colors"; // <-- Import getThemeColors
@@ -82,6 +83,8 @@ export default function App() {
           <Stack.Screen name="SpotDetail" component={SpotDetailScreen} />
           <Stack.Screen name="AddSpot" component={AddSpotScreen} />
           <Stack.Screen name="Profile" component={ProfileScreen} />
+          <Stack.Screen name="FocusArchive" component={FocusArchiveScreen} />
+          {/* <-- Add this line */}
         </Stack.Navigator>
       </NavigationContainer>
     </ThemeContext.Provider>

@@ -1141,7 +1141,39 @@ export default function HomeScreen({
                   zIndex: 1000,
                 }}
               >
-                {/* Remove Refresh button and divider */}
+                {/* Add Archive Button */}
+                <TouchableOpacity
+                  onPress={() => {
+                    setMenuOpen(false);
+                    setTimeout(() => navigation.navigate("FocusArchive"), 250);
+                  }}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 12,
+                    paddingHorizontal: 20,
+                  }}
+                >
+                  <Timer size={22} color={themeColors.purple} weight="bold" />
+                  <Text
+                    style={{
+                      marginLeft: 12,
+                      color: themeColors.purple,
+                      fontWeight: "bold",
+                      fontSize: 16,
+                    }}
+                  >
+                    Goals & Focus Archive
+                  </Text>
+                </TouchableOpacity>
+                {/* Divider */}
+                <View
+                  style={{
+                    height: 1,
+                    backgroundColor: themeColors.lightGrayBorder || "#eee",
+                    marginHorizontal: 10,
+                  }}
+                />
                 {/* Report */}
                 <TouchableOpacity
                   onPress={() => {
