@@ -39,9 +39,10 @@ import {
 import { ThemeContext } from "../App";
 import { colors } from "../constants/colors";
 import { View as RNView } from "react-native"; // for progress bar container
+import * as Notifications from "expo-notifications";
 
 // Timer durations are defined as constants at the top of the file:
-const DEFAULT_POMODORO_MINUTES = 15;
+const DEFAULT_POMODORO_MINUTES = 1;
 const DEFAULT_BREAK_MINUTES = 5;
 
 export default function FocusTimerScreen({ navigation }) {
@@ -96,6 +97,20 @@ export default function FocusTimerScreen({ navigation }) {
 
   // Add this state to prevent duplicate alerts for the same goal
   const [goalJustAchieved, setGoalJustAchieved] = useState(false);
+
+  // Add a state to track which sessionIds contributed to the current goal
+  const [goalSessionIds, setGoalSessionIds] = useState([]);
+
+  // Add this function definition after all useState hooks and before useEffect hooks
+  function handleSetGoal(min, title) {
+    setGoalMinutes(min);
+    setGoalTitle(title);
+    setGoalProgressSeconds(0);
+    setGoalSessionIds([]); // Reset session ids for new goal
+    AsyncStorage.setItem(GOAL_PROGRESS_KEY, "0").catch(() => {});
+    AsyncStorage.setItem("goalSessionIds", JSON.stringify([])).catch(() => {});
+    setShowGoalModal(false);
+  }
 
   // Fetch study spots for location selection
   useEffect(() => {
@@ -171,8 +186,9 @@ export default function FocusTimerScreen({ navigation }) {
       const elapsed = Math.floor((now - timerStartRef.current.start) / 1000);
       const newTime = Math.max(timerStartRef.current.duration - elapsed, 0);
       setTimer(newTime);
-      setIsRunning(false);
-      timerStartRef.current = null;
+      // Do not pause or clear timerStartRef here
+      // timerStartRef.current = null;
+      // setIsRunning(false);
       // Timer state will be saved by effect
     }
   };
@@ -185,24 +201,125 @@ export default function FocusTimerScreen({ navigation }) {
         nextAppState.match(/inactive|background/)
       ) {
         // App is going to background or closed: pause timer and save state
+        if (isRunning && timerStartRef.current) {
+          wasRunningRef.current = true;
+          // Save the time of leaving and the current session progress
+          await AsyncStorage.setItem(
+            TIMER_RUNNING_KEY,
+            JSON.stringify({
+              wasRunning: true,
+              timerStart: timerStartRef.current,
+              timer,
+              isBreak,
+              selectedSpot,
+              sessionStart,
+              goalMinutes,
+              goalTitle,
+              goalProgressSeconds,
+              goalInput,
+              goalTitleInput,
+              goalSecondsInput,
+              sessionProgressSeconds,
+              lastBackgroundTime: Date.now(),
+            })
+          );
+        }
+        lastBackgroundTimeRef.current = Date.now();
         await recalculateTimerOnBack();
+        setIsRunning(false);
+        timerStartRef.current = null;
       }
       if (
         appState.current.match(/inactive|background/) &&
         nextAppState === "active"
       ) {
         // App has come to the foreground
-        if (isRunning && timerStartRef.current) {
-          const now = Date.now();
-          const elapsed = Math.floor(
-            (now - timerStartRef.current.start) / 1000
-          );
-          const newTime = Math.max(timerStartRef.current.duration - elapsed, 0);
-          setTimer(newTime);
-          if (newTime === 0) {
-            setIsRunning(false);
-            handleSessionEnd();
+        const runningState = await AsyncStorage.getItem(TIMER_RUNNING_KEY);
+        if (runningState) {
+          const {
+            wasRunning,
+            timerStart,
+            timer: savedTimer,
+            isBreak: savedIsBreak,
+            selectedSpot: savedSpot,
+            sessionStart: savedSessionStart,
+            goalMinutes: savedGoalMinutes,
+            goalTitle: savedGoalTitle,
+            goalProgressSeconds: savedGoalProgressSeconds,
+            goalInput: savedGoalInput,
+            goalTitleInput: savedGoalTitleInput,
+            goalSecondsInput: savedGoalSecondsInput,
+            sessionProgressSeconds: savedSessionProgressSeconds,
+            lastBackgroundTime,
+          } = JSON.parse(runningState);
+
+          // Restore state values
+          if (typeof savedTimer === "number") setTimer(savedTimer);
+          if (typeof savedIsBreak === "boolean") setIsBreak(savedIsBreak);
+          if (savedSpot) setSelectedSpot(savedSpot);
+          if (savedSessionStart)
+            setSessionStart(
+              savedSessionStart.seconds !== undefined
+                ? new Timestamp(
+                    savedSessionStart.seconds,
+                    savedSessionStart.nanoseconds
+                  )
+                : savedSessionStart
+            );
+          if (savedGoalMinutes !== undefined) setGoalMinutes(savedGoalMinutes);
+          if (savedGoalTitle !== undefined) setGoalTitle(savedGoalTitle);
+          if (savedGoalInput !== undefined) setGoalInput(savedGoalInput);
+          if (savedGoalTitleInput !== undefined)
+            setGoalTitleInput(savedGoalTitleInput);
+          if (savedGoalSecondsInput !== undefined)
+            setGoalSecondsInput(savedGoalSecondsInput);
+
+          // Calculate elapsed time while away
+          let sessionProgress = savedSessionProgressSeconds || 0;
+          let newGoalProgressSeconds = savedGoalProgressSeconds || 0;
+          if (
+            wasRunning &&
+            lastBackgroundTime &&
+            timerStart &&
+            typeof timerStart.start === "number"
+          ) {
+            const now = Date.now();
+            const elapsedWhileAway = Math.floor(
+              (now - lastBackgroundTime) / 1000
+            );
+            sessionProgress += Math.max(elapsedWhileAway, 0);
+            // Only add to goalProgressSeconds if Pomodoro (not break)
+            if (!savedIsBreak) {
+              newGoalProgressSeconds += Math.max(elapsedWhileAway, 0);
+            }
           }
+          setSessionProgressSeconds(sessionProgress);
+          setGoalProgressSeconds(newGoalProgressSeconds);
+
+          if (
+            timerStart &&
+            typeof timerStart.start === "number" &&
+            typeof timerStart.duration === "number"
+          ) {
+            const now = Date.now();
+            const elapsed = Math.floor((now - timerStart.start) / 1000);
+            const newTime = Math.max(timerStart.duration - elapsed, 0);
+            setTimer(newTime);
+            if (wasRunning && newTime > 0) {
+              setIsRunning(true);
+              timerStartRef.current = {
+                start: Date.now(),
+                duration: newTime,
+              };
+            } else {
+              setIsRunning(false);
+              timerStartRef.current = null;
+              if (newTime === 0) {
+                handleSessionEnd();
+              }
+            }
+          }
+          await AsyncStorage.removeItem(TIMER_RUNNING_KEY);
         }
       }
       appState.current = nextAppState;
@@ -259,10 +376,99 @@ export default function FocusTimerScreen({ navigation }) {
     }
   }, [isRunning, timer, isBreak]);
 
-  // Restore timer state on mount or when screen regains focus
+  // Restore timer running state on mount (when screen is opened)
   useEffect(() => {
-    const restoreTimerState = async () => {
+    const restoreRunningState = async () => {
       try {
+        const runningState = await AsyncStorage.getItem(TIMER_RUNNING_KEY);
+        if (runningState) {
+          const {
+            wasRunning,
+            timerStart,
+            timer: savedTimer,
+            isBreak: savedIsBreak,
+            selectedSpot: savedSpot,
+            sessionStart: savedSessionStart,
+            goalMinutes: savedGoalMinutes,
+            goalTitle: savedGoalTitle,
+            goalProgressSeconds: savedGoalProgressSeconds,
+            goalInput: savedGoalInput,
+            goalTitleInput: savedGoalTitleInput,
+            goalSecondsInput: savedGoalSecondsInput,
+            sessionProgressSeconds: savedSessionProgressSeconds,
+            lastBackgroundTime,
+          } = JSON.parse(runningState);
+
+          // Restore state values
+          if (typeof savedTimer === "number") setTimer(savedTimer);
+          if (typeof savedIsBreak === "boolean") setIsBreak(savedIsBreak);
+          if (savedSpot) setSelectedSpot(savedSpot);
+          if (savedSessionStart)
+            setSessionStart(
+              savedSessionStart.seconds !== undefined
+                ? new Timestamp(
+                    savedSessionStart.seconds,
+                    savedSessionStart.nanoseconds
+                  )
+                : savedSessionStart
+            );
+          if (savedGoalMinutes !== undefined) setGoalMinutes(savedGoalMinutes);
+          if (savedGoalTitle !== undefined) setGoalTitle(savedGoalTitle);
+          if (savedGoalInput !== undefined) setGoalInput(savedGoalInput);
+          if (savedGoalTitleInput !== undefined)
+            setGoalTitleInput(savedGoalTitleInput);
+          if (savedGoalSecondsInput !== undefined)
+            setGoalSecondsInput(savedGoalSecondsInput);
+
+          // Calculate elapsed time while away
+          let sessionProgress = savedSessionProgressSeconds || 0;
+          let newGoalProgressSeconds = savedGoalProgressSeconds || 0;
+          if (
+            wasRunning &&
+            lastBackgroundTime &&
+            timerStart &&
+            typeof timerStart.start === "number"
+          ) {
+            const now = Date.now();
+            const elapsedWhileAway = Math.floor(
+              (now - lastBackgroundTime) / 1000
+            );
+            sessionProgress += Math.max(elapsedWhileAway, 0);
+            // Only add to goalProgressSeconds if Pomodoro (not break)
+            if (!savedIsBreak) {
+              newGoalProgressSeconds += Math.max(elapsedWhileAway, 0);
+            }
+          }
+          setSessionProgressSeconds(sessionProgress);
+          setGoalProgressSeconds(newGoalProgressSeconds);
+
+          if (
+            timerStart &&
+            typeof timerStart.start === "number" &&
+            typeof timerStart.duration === "number"
+          ) {
+            const now = Date.now();
+            const elapsed = Math.floor((now - timerStart.start) / 1000);
+            const newTime = Math.max(timerStart.duration - elapsed, 0);
+            setTimer(newTime);
+            if (wasRunning && newTime > 0) {
+              setIsRunning(true);
+              timerStartRef.current = {
+                start: Date.now(),
+                duration: newTime,
+              };
+            } else {
+              setIsRunning(false);
+              timerStartRef.current = null;
+              if (newTime === 0) {
+                handleSessionEnd();
+              }
+            }
+          }
+          await AsyncStorage.removeItem(TIMER_RUNNING_KEY);
+          return;
+        }
+        // If no running state, restore paused state as fallback
         const saved = await AsyncStorage.getItem(TIMER_STATE_KEY);
         if (saved) {
           const state = JSON.parse(saved);
@@ -285,7 +491,7 @@ export default function FocusTimerScreen({ navigation }) {
         }
       } catch {}
     };
-    restoreTimerState();
+    restoreRunningState();
     // eslint-disable-next-line
   }, []);
 
@@ -394,7 +600,8 @@ export default function FocusTimerScreen({ navigation }) {
     note
     // tags
   ) => {
-    if (start && auth.currentUser && selectedSpot) {
+    if (start && end && auth.currentUser && selectedSpot) {
+      // Use actual duration (end - start) for all sessions
       const duration = end.toMillis() - start.toMillis();
       // Generate a unique sessionId
       const sessionId = `${
@@ -408,7 +615,7 @@ export default function FocusTimerScreen({ navigation }) {
         duration,
         isBreak: isBreakSession,
         note: note || "",
-        sessionId, // <-- add sessionId
+        sessionId,
         // tags: tags || [],
       };
       await addDoc(collection(db, "focusSessions"), sessionObj);
@@ -434,21 +641,39 @@ export default function FocusTimerScreen({ navigation }) {
           };
         });
       }
+      // If this session is Pomodoro and a goal is active, add to goalSessionIds
+      if (!isBreakSession && goalMinutes) {
+        setGoalSessionIds((prev) => [...prev, sessionId]);
+      }
     }
   };
 
   // When timer ends (Pomodoro or break complete)
   const handleSessionEnd = async () => {
+    // Send a local notification
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: isBreak ? "Break Over!" : "Pomodoro Complete!",
+          body: isBreak ? "Ready for another Pomodoro?" : "Time for a break.",
+        },
+        trigger: null, // Send immediately
+      });
+    } catch (e) {
+      // Ignore notification errors
+    }
     setIsRunning(false);
     timerStartRef.current = null;
     await clearTimerState();
     if (sessionStart) {
       if (!isBreak) {
-        // Only show note modal when Pomodoro ends
+        // Record the end time immediately when Pomodoro ends
+        const sessionEnd = Timestamp.now();
         setPendingSession({
           start: sessionStart,
+          end: sessionEnd, // <-- store end time here
           isBreak: isBreak,
-          sessionDuration: DEFAULT_POMODORO_MINUTES * 60 - timer, // duration in seconds
+          sessionDuration: DEFAULT_POMODORO_MINUTES * 60,
         });
         setShowNoteModal(true);
       } else {
@@ -513,16 +738,21 @@ export default function FocusTimerScreen({ navigation }) {
   // Save session with note after modal
   const handleSaveSessionNote = async () => {
     if (pendingSession) {
-      const end = Timestamp.now();
+      // Use the end time recorded when Pomodoro ended
+      const end = pendingSession.end;
       await addSessionAndUpdateStats(
         pendingSession.start,
         end,
         pendingSession.isBreak,
         sessionNote
       );
-      // Add session duration to global goal progress if not break
-      if (!pendingSession.isBreak && pendingSession.sessionDuration) {
-        setGoalProgressSeconds((prev) => prev + pendingSession.sessionDuration);
+      // Add sessionId to goalSessionIds if Pomodoro and not already present
+      if (
+        !pendingSession.isBreak &&
+        pendingSession.sessionDuration &&
+        goalMinutes
+      ) {
+        setGoalSessionIds((prev) => [...prev, sessionId]);
       }
       setSessionNote("");
       setPendingSession(null);
@@ -604,6 +834,23 @@ export default function FocusTimerScreen({ navigation }) {
         where("spotId", "==", spotId)
       );
       const snapshot = await getDocs(q);
+
+      // Calculate total Pomodoro duration to subtract
+      let totalPomodoroSeconds = 0;
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const end = data.end?.seconds
+          ? data.end.seconds * 1000
+          : data.end?.toMillis?.() ?? 0;
+        if (
+          end > weekAgo &&
+          !data.isBreak &&
+          typeof data.duration === "number"
+        ) {
+          totalPomodoroSeconds += Math.floor(data.duration / 1000);
+        }
+      });
+
       // Delete all sessions for this spot (optionally, only those in the last week)
       const batch = [];
       snapshot.forEach((docSnap) => {
@@ -612,10 +859,11 @@ export default function FocusTimerScreen({ navigation }) {
           ? data.end.seconds * 1000
           : data.end?.toMillis?.() ?? 0;
         if (end > weekAgo) {
-          batch.push(deleteDoc(docSnap.ref)); // <-- fix: use deleteDoc
+          batch.push(deleteDoc(docSnap.ref));
         }
       });
       await Promise.all(batch);
+
       // Remove from local stats
       setFocusStats((prev) => {
         const copy = { ...prev };
@@ -624,6 +872,17 @@ export default function FocusTimerScreen({ navigation }) {
       });
       setShowStatModal(false);
       setSelectedStatSpot(null);
+
+      // Subtract total Pomodoro duration from goal progress
+      if (totalPomodoroSeconds > 0) {
+        setGoalProgressSeconds((prev) =>
+          Math.max(prev - totalPomodoroSeconds, 0)
+        );
+        AsyncStorage.setItem(
+          GOAL_PROGRESS_KEY,
+          String(Math.max(goalProgressSeconds - totalPomodoroSeconds, 0))
+        ).catch(() => {});
+      }
     } catch (e) {
       Alert.alert("Error", "Failed to delete stats for this spot.");
     }
@@ -864,8 +1123,10 @@ export default function FocusTimerScreen({ navigation }) {
       );
       const snapshot = await getDocs(q);
       let docIdToDelete = null;
+      let sessionToDelete = null;
       snapshot.forEach((docSnap) => {
         docIdToDelete = docSnap.id;
+        sessionToDelete = docSnap.data();
       });
       if (docIdToDelete) {
         await deleteDoc(doc(db, "focusSessions", docIdToDelete));
@@ -887,23 +1148,98 @@ export default function FocusTimerScreen({ navigation }) {
           );
           return { ...prev, sessions: newSessions };
         });
+
+        // Only subtract if this sessionId is in goalSessionIds
+        if (
+          sessionToDelete &&
+          !sessionToDelete.isBreak &&
+          typeof sessionToDelete.duration === "number" &&
+          sessionToDelete.duration > 0 &&
+          goalSessionIds.includes(sessionId)
+        ) {
+          setGoalProgressSeconds((prev) =>
+            Math.max(prev - Math.floor(sessionToDelete.duration / 1000), 0)
+          );
+          setGoalSessionIds((prev) => prev.filter((id) => id !== sessionId));
+          AsyncStorage.setItem(
+            GOAL_PROGRESS_KEY,
+            String(
+              Math.max(
+                goalProgressSeconds -
+                  Math.floor(sessionToDelete.duration / 1000),
+                0
+              )
+            )
+          ).catch(() => {});
+          AsyncStorage.setItem(
+            "goalSessionIds",
+            JSON.stringify(goalSessionIds.filter((id) => id !== sessionId))
+          ).catch(() => {});
+        }
       }
     } catch (e) {
       Alert.alert("Error", "Failed to delete this session.");
     }
   };
 
+  // Add a ref to track if timer was running before leaving screen
+  const wasRunningRef = useRef(false);
+
+  // Add a unique key for saving timer running state and start info
+  const TIMER_RUNNING_KEY = "focusTimerRunningState";
+
+  // Track when timer was last backgrounded for progress bar calculation
+  const lastBackgroundTimeRef = useRef(null);
+
+  // Request notification permissions on mount
+  useEffect(() => {
+    Notifications.requestPermissionsAsync();
+  }, []);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
       <View style={{ flexDirection: "row", alignItems: "center", padding: 16 }}>
         <TouchableOpacity
           onPress={async () => {
-            if (isRunning) {
-              await recalculateTimerOnBack();
-              navigation.goBack();
-            } else {
-              navigation.goBack();
+            // Save if timer was running
+            wasRunningRef.current = isRunning;
+            // Save all relevant state for restoration
+            await AsyncStorage.setItem(
+              TIMER_RUNNING_KEY,
+              JSON.stringify({
+                wasRunning: isRunning,
+                timerStart: timerStartRef.current,
+                timer,
+                isBreak,
+                selectedSpot,
+                sessionStart,
+                goalMinutes,
+                goalTitle,
+                goalProgressSeconds,
+                goalInput,
+                goalTitleInput,
+                goalSecondsInput,
+                sessionProgressSeconds,
+                lastBackgroundTime: Date.now(), // Save the time of leaving
+              })
+            );
+            lastBackgroundTimeRef.current = Date.now();
+            if (timerStartRef.current) {
+              const now = Date.now();
+              const elapsed = Math.floor(
+                (now - timerStartRef.current.start) / 1000
+              );
+              const newTime = Math.max(
+                timerStartRef.current.duration - elapsed,
+                0
+              );
+              setTimer(newTime);
+              timerStartRef.current = {
+                start: Date.now(),
+                duration: newTime,
+              };
             }
+            navigation.goBack();
           }}
           style={{
             padding: 8,
@@ -931,7 +1267,16 @@ export default function FocusTimerScreen({ navigation }) {
             Focus Mode
           </Text>
           <TouchableOpacity
-            onPress={() => setShowSpotModal(true)}
+            onPress={() => {
+              if (isRunning) {
+                Alert.alert(
+                  "Cannot Switch Location",
+                  "Please finish or stop your current session before changing location."
+                );
+                return;
+              }
+              setShowSpotModal(true);
+            }}
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -1006,18 +1351,7 @@ export default function FocusTimerScreen({ navigation }) {
             </TouchableOpacity>
             {/* Removed Reset Button */}
           </View>
-          {/* Small red warning text below pause/stop buttons */}
-          <Text
-            style={{
-              color: themeColors.red,
-              fontSize: 12,
-              marginTop: 16,
-              marginBottom: 0,
-              fontWeight: "bold",
-            }}
-          >
-            Leaving this screen will pause the timer
-          </Text>
+
           {/* Goal display and set button */}
           <View
             style={{
@@ -1176,10 +1510,10 @@ export default function FocusTimerScreen({ navigation }) {
                     const spot = studySpots.find((s) => s.id === spotId);
                     if (!Array.isArray(sessions) || sessions.length === 0)
                       return null;
-                    const ms = sessions.reduce(
-                      (a, b) => a + (b.duration || 0),
-                      0
-                    );
+                    // Only sum Pomodoro sessions (not break)
+                    const ms = sessions
+                      .filter((b) => !b.isBreak)
+                      .reduce((a, b) => a + (b.duration || 0), 0);
                     const totalSeconds = Math.floor(ms / 1000);
                     const hours = Math.floor(totalSeconds / 3600);
                     const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -1331,6 +1665,13 @@ export default function FocusTimerScreen({ navigation }) {
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() => {
+                    if (isRunning) {
+                      Alert.alert(
+                        "Cannot Switch Location",
+                        "Please finish or stop your current session before changing location."
+                      );
+                      return;
+                    }
                     setSelectedSpot(item);
                     setShowSpotModal(false);
                   }}
@@ -1439,7 +1780,9 @@ export default function FocusTimerScreen({ navigation }) {
                     const minutes = Math.floor((durationSec % 3600) / 60);
                     const seconds = durationSec % 60;
                     // Use session.id if available, else fallback to session.start as unique key
-                    const sessionKey = session.sessionId;
+                    const sessionKey = session.sessionId
+                      ? `${session.sessionId}_${idx}`
+                      : `${session.start}_${idx}`;
                     return (
                       <View
                         key={sessionKey}
@@ -1680,13 +2023,7 @@ export default function FocusTimerScreen({ navigation }) {
                 onPress={() => {
                   const min = parseInt(goalInput, 10);
                   if (!isNaN(min) && min > 0) {
-                    setGoalMinutes(min);
-                    setGoalTitle(goalTitleInput.trim());
-                    setGoalProgressSeconds(0); // <-- Reset progress bar on new goal
-                    AsyncStorage.setItem(GOAL_PROGRESS_KEY, "0").catch(
-                      () => {}
-                    );
-                    setShowGoalModal(false);
+                    handleSetGoal(min, goalTitleInput.trim());
                   } else {
                     Alert.alert(
                       "Invalid input",
