@@ -34,6 +34,7 @@ import {
   query,
   where,
   deleteDoc, // <-- add this
+  doc, // <-- add this import
 } from "firebase/firestore";
 import { ThemeContext } from "../App";
 import { colors } from "../constants/colors";
@@ -395,6 +396,10 @@ export default function FocusTimerScreen({ navigation }) {
   ) => {
     if (start && auth.currentUser && selectedSpot) {
       const duration = end.toMillis() - start.toMillis();
+      // Generate a unique sessionId
+      const sessionId = `${
+        auth.currentUser.uid
+      }_${start.toMillis()}_${Math.floor(Math.random() * 1000000)}`;
       const sessionObj = {
         userId: auth.currentUser.uid,
         spotId: selectedSpot.id,
@@ -403,6 +408,7 @@ export default function FocusTimerScreen({ navigation }) {
         duration,
         isBreak: isBreakSession,
         note: note || "",
+        sessionId, // <-- add sessionId
         // tags: tags || [],
       };
       await addDoc(collection(db, "focusSessions"), sessionObj);
@@ -845,6 +851,47 @@ export default function FocusTimerScreen({ navigation }) {
     setAchievedGoalsThisWeek,
     goalJustAchieved,
   ]);
+
+  const handleDeleteSession = async (sessionId, spotId) => {
+    if (!auth.currentUser || !sessionId || !spotId) return;
+    try {
+      // Find the session doc in Firestore by matching sessionId and spotId
+      const q = query(
+        collection(db, "focusSessions"),
+        where("userId", "==", auth.currentUser.uid),
+        where("spotId", "==", spotId),
+        where("sessionId", "==", sessionId)
+      );
+      const snapshot = await getDocs(q);
+      let docIdToDelete = null;
+      snapshot.forEach((docSnap) => {
+        docIdToDelete = docSnap.id;
+      });
+      if (docIdToDelete) {
+        await deleteDoc(doc(db, "focusSessions", docIdToDelete));
+        setFocusStats((prev) => {
+          const updated = { ...prev };
+          if (Array.isArray(updated[spotId])) {
+            updated[spotId] = updated[spotId].filter(
+              (s) => s.sessionId !== sessionId
+            );
+            if (updated[spotId].length === 0) delete updated[spotId];
+          }
+          return updated;
+        });
+        setSelectedStatSpot((prev) => {
+          if (!prev) return prev;
+          if (prev.spotId !== spotId) return prev;
+          const newSessions = prev.sessions.filter(
+            (s) => s.sessionId !== sessionId
+          );
+          return { ...prev, sessions: newSessions };
+        });
+      }
+    } catch (e) {
+      Alert.alert("Error", "Failed to delete this session.");
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
@@ -1398,7 +1445,7 @@ export default function FocusTimerScreen({ navigation }) {
                     const minutes = Math.floor((durationSec % 3600) / 60);
                     const seconds = durationSec % 60;
                     // Use session.id if available, else fallback to session.start as unique key
-                    const sessionKey = session.id || session.start;
+                    const sessionKey = session.sessionId;
                     return (
                       <View
                         key={sessionKey}
