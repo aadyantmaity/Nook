@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from "react";
+import React, { useState, useEffect, useContext, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -22,6 +22,8 @@ import {
   Pause,
   Stop,
   Gear,
+  ArrowCounterClockwise, // <-- add this for reset icon
+  Trash, // <-- add this for delete icon
 } from "phosphor-react-native";
 import { db, auth } from "../firebaseConfig";
 import {
@@ -35,8 +37,10 @@ import {
 } from "firebase/firestore";
 import { ThemeContext } from "../App";
 import { colors } from "../constants/colors";
+import { View as RNView } from "react-native"; // for progress bar container
 
-const DEFAULT_POMODORO_MINUTES = 25;
+// Timer durations are defined as constants at the top of the file:
+const DEFAULT_POMODORO_MINUTES = 15;
 const DEFAULT_BREAK_MINUTES = 5;
 
 export default function FocusTimerScreen({ navigation }) {
@@ -63,36 +67,34 @@ export default function FocusTimerScreen({ navigation }) {
   // Goal state
   const [goalMinutes, setGoalMinutes] = useState(null);
   const [goalInput, setGoalInput] = useState("");
-  const [goalTitle, setGoalTitle] = useState(""); // <-- add this
-  const [goalTitleInput, setGoalTitleInput] = useState(""); // <-- add this
+  const [goalSecondsInput, setGoalSecondsInput] = useState(""); // <-- add this line
+  const [goalTitle, setGoalTitle] = useState("");
+  const [goalTitleInput, setGoalTitleInput] = useState("");
   const [showGoalModal, setShowGoalModal] = useState(false);
-
-  // Custom durations state
-  const [pomodoroMinutes, setPomodoroMinutes] = useState(
-    DEFAULT_POMODORO_MINUTES
-  );
-  const [breakMinutes, setBreakMinutes] = useState(DEFAULT_BREAK_MINUTES);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   // Session note state
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [sessionNote, setSessionNote] = useState("");
   const [pendingSession, setPendingSession] = useState(null);
 
-  // Session tags state
-  // const [sessionTags, setSessionTags] = useState([]);
-  // const [sessionTagInput, setSessionTagInput] = useState("");
-  // const [showTagModal, setShowTagModal] = useState(false);
-  // const [pendingStart, setPendingStart] = useState(false); // <-- add this
-
-  // Add these states for modal input fields
-  const [pomodoroInput, setPomodoroInput] = useState(
-    String(DEFAULT_POMODORO_MINUTES)
-  );
-  const [breakInput, setBreakInput] = useState(String(DEFAULT_BREAK_MINUTES));
-
   // Auto-start next session state
   const [autoStartNext, setAutoStartNext] = useState(false);
+
+  // Track achieved goals this week
+  const [achievedGoalsThisWeek, setAchievedGoalsThisWeek] = useState([]);
+
+  // Key for storing achieved goals
+  const ACHIEVED_GOALS_KEY = "achievedGoalsThisWeek";
+
+  // Global goal progress state
+  const [goalProgressSeconds, setGoalProgressSeconds] = useState(0);
+  const GOAL_PROGRESS_KEY = "globalGoalProgressSeconds";
+
+  // Track session progress for live goal progress bar
+  const [sessionProgressSeconds, setSessionProgressSeconds] = useState(0);
+
+  // Add this state to prevent duplicate alerts for the same goal
+  const [goalJustAchieved, setGoalJustAchieved] = useState(false);
 
   // Fetch study spots for location selection
   useEffect(() => {
@@ -143,9 +145,47 @@ export default function FocusTimerScreen({ navigation }) {
     // eslint-disable-next-line
   }, [isBreak]);
 
+  // Restore goal progress on mount
+  useEffect(() => {
+    const restoreGoalProgress = async () => {
+      try {
+        const saved = await AsyncStorage.getItem(GOAL_PROGRESS_KEY);
+        if (saved) setGoalProgressSeconds(Number(saved) || 0);
+      } catch {}
+    };
+    restoreGoalProgress();
+  }, []);
+
+  // Save goal progress when it changes
+  useEffect(() => {
+    AsyncStorage.setItem(GOAL_PROGRESS_KEY, String(goalProgressSeconds)).catch(
+      () => {}
+    );
+  }, [goalProgressSeconds]);
+
+  // Add this helper function before the component return
+  const recalculateTimerOnBack = async () => {
+    if (isRunning && timerStartRef.current) {
+      const now = Date.now();
+      const elapsed = Math.floor((now - timerStartRef.current.start) / 1000);
+      const newTime = Math.max(timerStartRef.current.duration - elapsed, 0);
+      setTimer(newTime);
+      setIsRunning(false);
+      timerStartRef.current = null;
+      // Timer state will be saved by effect
+    }
+  };
+
   // AppState effect to handle background/foreground
   useEffect(() => {
-    const handleAppStateChange = (nextAppState) => {
+    const handleAppStateChange = async (nextAppState) => {
+      if (
+        appState.current.match(/active/) &&
+        nextAppState.match(/inactive|background/)
+      ) {
+        // App is going to background or closed: pause timer and save state
+        await recalculateTimerOnBack();
+      }
       if (
         appState.current.match(/inactive|background/) &&
         nextAppState === "active"
@@ -196,6 +236,7 @@ export default function FocusTimerScreen({ navigation }) {
           }
           return t - 1;
         });
+        setSessionProgressSeconds((prev) => prev + 1);
       }, 1000);
       setIntervalId(id);
     }
@@ -205,6 +246,17 @@ export default function FocusTimerScreen({ navigation }) {
     };
     // eslint-disable-next-line
   }, [isRunning]);
+
+  // Reset session progress when timer resets or session starts
+  useEffect(() => {
+    if (
+      !isRunning ||
+      timer === DEFAULT_POMODORO_MINUTES * 60 ||
+      timer === DEFAULT_BREAK_MINUTES * 60
+    ) {
+      setSessionProgressSeconds(0);
+    }
+  }, [isRunning, timer, isBreak]);
 
   // Restore timer state on mount or when screen regains focus
   useEffect(() => {
@@ -275,45 +327,39 @@ export default function FocusTimerScreen({ navigation }) {
     // Do NOT clear goalMinutes here
   };
 
-  // Load custom durations from AsyncStorage
-  useEffect(() => {
-    const loadDurations = async () => {
-      try {
-        const pom = await AsyncStorage.getItem("pomodoroMinutes");
-        const brk = await AsyncStorage.getItem("breakMinutes");
-        if (pom) setPomodoroMinutes(Number(pom));
-        if (brk) setBreakMinutes(Number(brk));
-        setTimer((Number(pom) || DEFAULT_POMODORO_MINUTES) * 60);
-      } catch {}
-    };
-    loadDurations();
-  }, []);
-
-  // Save custom durations to AsyncStorage
-  const saveDurations = async (pom, brk) => {
-    try {
-      await AsyncStorage.setItem("pomodoroMinutes", String(pom));
-      await AsyncStorage.setItem("breakMinutes", String(brk));
-    } catch {}
-  };
-
-  // Update timer when durations change
-  useEffect(() => {
-    setTimer(pomodoroMinutes * 60);
-  }, [pomodoroMinutes]);
-
-  // Calculate progress for goal
+  // Update getGoalProgress to use global progress
   const getGoalProgress = () => {
     if (!goalMinutes) return null;
+    const min = parseInt(goalMinutes, 10);
+    const sec = goalSecondsInput ? parseInt(goalSecondsInput, 10) : 0;
+    // Defensive: treat NaN as 0
+    const safeMin = isNaN(min) ? 0 : min;
+    const safeSec = isNaN(sec) ? 0 : sec;
+    const totalGoalSeconds = safeMin * 60 + safeSec;
+    return {
+      progressSeconds: goalProgressSeconds,
+      totalGoalSeconds,
+    };
+  };
+
+  // Calculate progress for goal
+  const getGoalProgressV2 = () => {
+    if (!goalMinutes) return null;
+    const min = parseInt(goalMinutes, 10);
+    const sec = goalSecondsInput ? parseInt(goalSecondsInput, 10) : 0;
+    // Defensive: treat NaN as 0
+    const safeMin = isNaN(min) ? 0 : min;
+    const safeSec = isNaN(sec) ? 0 : sec;
+    const totalGoalSeconds = safeMin * 60 + safeSec;
     const totalSessionSeconds = DEFAULT_POMODORO_MINUTES * 60;
     const elapsed =
       sessionStart && timerStartRef.current
         ? Math.floor((Date.now() - timerStartRef.current.start) / 1000)
         : totalSessionSeconds - timer;
-    const progressMinutes = Math.floor(elapsed / 60);
+    const progressSeconds = Math.max(elapsed, 0);
     return {
-      progressMinutes: Math.max(progressMinutes, 0),
-      goalMinutes,
+      progressSeconds,
+      totalGoalSeconds,
     };
   };
 
@@ -322,6 +368,15 @@ export default function FocusTimerScreen({ navigation }) {
     if (goalMinutes) {
       const progress = getGoalProgress();
       if (progress && progress.progressMinutes >= goalMinutes) {
+        // Add to achieved goals
+        setAchievedGoalsThisWeek((prev) => [
+          ...prev,
+          {
+            title: goalTitle || "Untitled",
+            minutes: goalMinutes,
+            timestamp: Date.now(),
+          },
+        ]);
         Alert.alert("Goal Achieved!", "You reached your study goal.");
         setGoalMinutes(null);
         setGoalTitle(""); // clear title when goal is cleared
@@ -382,18 +437,39 @@ export default function FocusTimerScreen({ navigation }) {
     timerStartRef.current = null;
     await clearTimerState();
     if (sessionStart) {
-      // Show note modal before saving session
-      setPendingSession({
-        start: sessionStart,
-        isBreak: isBreak,
-        // tags: sessionTags,
-      });
-      setShowNoteModal(true);
+      if (!isBreak) {
+        // Only show note modal when Pomodoro ends
+        setPendingSession({
+          start: sessionStart,
+          isBreak: isBreak,
+          sessionDuration: DEFAULT_POMODORO_MINUTES * 60 - timer, // duration in seconds
+        });
+        setShowNoteModal(true);
+      } else {
+        // If break ends, just transition to Pomodoro, no reflection
+        setSessionStart(null);
+        setIsBreak(false);
+        setTimer(DEFAULT_POMODORO_MINUTES * 60);
+        Alert.alert("Break over!", "Ready for another Pomodoro?");
+        if (autoStartNext) {
+          setTimeout(() => {
+            if (!showNoteModal) {
+              setIsRunning(true);
+              setSessionStart(Timestamp.now());
+              timerStartRef.current = {
+                start: Date.now(),
+                duration: DEFAULT_POMODORO_MINUTES * 60,
+              };
+            }
+          }, 1200);
+        }
+        return;
+      }
     }
     setSessionStart(null);
     if (!isBreak) {
       setIsBreak(true);
-      setTimer(breakMinutes * 60);
+      setTimer(DEFAULT_BREAK_MINUTES * 60);
       Alert.alert("Pomodoro complete!", "Time for a break.");
       // Auto-start break if enabled and no note modal
       if (autoStartNext) {
@@ -404,14 +480,14 @@ export default function FocusTimerScreen({ navigation }) {
             setSessionStart(Timestamp.now());
             timerStartRef.current = {
               start: Date.now(),
-              duration: breakMinutes * 60,
+              duration: DEFAULT_BREAK_MINUTES * 60,
             };
           }
         }, 1200);
       }
     } else {
       setIsBreak(false);
-      setTimer(pomodoroMinutes * 60);
+      setTimer(DEFAULT_POMODORO_MINUTES * 60);
       Alert.alert("Break over!", "Ready for another Pomodoro?");
       if (autoStartNext) {
         setTimeout(() => {
@@ -420,7 +496,7 @@ export default function FocusTimerScreen({ navigation }) {
             setSessionStart(Timestamp.now());
             timerStartRef.current = {
               start: Date.now(),
-              duration: pomodoroMinutes * 60,
+              duration: DEFAULT_POMODORO_MINUTES * 60,
             };
           }
         }, 1200);
@@ -437,35 +513,23 @@ export default function FocusTimerScreen({ navigation }) {
         end,
         pendingSession.isBreak,
         sessionNote
-        // pendingSession.tags
       );
+      // Add session duration to global goal progress if not break
+      if (!pendingSession.isBreak && pendingSession.sessionDuration) {
+        setGoalProgressSeconds((prev) => prev + pendingSession.sessionDuration);
+      }
       setSessionNote("");
       setPendingSession(null);
-      // setSessionTags([]);
       setShowNoteModal(false);
-      // Always auto-start next session after reflection is submitted
       setTimeout(() => {
-        if (isBreak) {
-          // Just finished Pomodoro, now break
-          setIsRunning(true);
-          setSessionStart(Timestamp.now());
-          timerStartRef.current = {
-            start: Date.now(),
-            duration: breakMinutes * 60,
-          };
-          setIsBreak(true);
-          setTimer(breakMinutes * 60);
-        } else {
-          // Just finished break, now Pomodoro
-          setIsRunning(true);
-          setSessionStart(Timestamp.now());
-          timerStartRef.current = {
-            start: Date.now(),
-            duration: pomodoroMinutes * 60,
-          };
-          setIsBreak(false);
-          setTimer(pomodoroMinutes * 60);
-        }
+        setIsRunning(true);
+        setSessionStart(Timestamp.now());
+        timerStartRef.current = {
+          start: Date.now(),
+          duration: DEFAULT_BREAK_MINUTES * 60,
+        };
+        setIsBreak(true);
+        setTimer(DEFAULT_BREAK_MINUTES * 60);
       }, 500);
     }
   };
@@ -473,14 +537,9 @@ export default function FocusTimerScreen({ navigation }) {
   // Start handler: require tags before starting
   const handleStart = () => {
     if (!selectedSpot) {
-      Alert.alert("Select a location to start Nook mode.");
+      Alert.alert("Select a location to start Focus Mode.");
       return;
     }
-    // if (sessionTags.length === 0) {
-    //   setPendingStart(true); // <-- set pending start
-    //   setShowTagModal(true);
-    //   return;
-    // }
     setIsRunning(true);
     setSessionStart(Timestamp.now());
     timerStartRef.current = {
@@ -493,6 +552,11 @@ export default function FocusTimerScreen({ navigation }) {
   const handlePause = () => {
     setIsRunning(false);
     timerStartRef.current = null;
+    // Add current session progress to total progress
+    if (sessionProgressSeconds > 0) {
+      setGoalProgressSeconds((prev) => prev + sessionProgressSeconds);
+      setSessionProgressSeconds(0);
+    }
     // Timer state will be saved by effect above
   };
 
@@ -500,14 +564,20 @@ export default function FocusTimerScreen({ navigation }) {
   const handleStop = async () => {
     setIsRunning(false);
     setTimer(DEFAULT_POMODORO_MINUTES * 60);
+    setIsBreak(false);
     timerStartRef.current = null;
-    await clearTimerState(); // <-- clear saved timer state
+    // Add current session progress to total progress
+    if (sessionProgressSeconds > 0) {
+      setGoalProgressSeconds((prev) => prev + sessionProgressSeconds);
+      setSessionProgressSeconds(0);
+    }
+    await clearTimerState();
     if (sessionStart) {
       const end = Timestamp.now();
       await addSessionAndUpdateStats(sessionStart, end, isBreak);
+      // Do NOT update goalProgressSeconds here; handled above
     }
     setSessionStart(null);
-    setIsBreak(false);
   };
 
   // Modal state for stat card
@@ -564,9 +634,10 @@ export default function FocusTimerScreen({ navigation }) {
       );
     }
 
-    // Calculate total focus time
+    // Calculate total focus time (only Pomodoro, not break)
     const totalMs = Object.values(focusStats)
       .flat()
+      .filter((b) => !b.isBreak) // Only work sessions
       .reduce((a, b) => a + (b.duration || 0), 0);
     const totalSeconds = Math.floor(totalMs / 1000);
     const totalHours = Math.floor(totalSeconds / 3600);
@@ -613,8 +684,10 @@ export default function FocusTimerScreen({ navigation }) {
             const spot = studySpots.find((s) => s.id === spotId);
             // Fix: Only render if sessions is an array
             if (!Array.isArray(sessions) || sessions.length === 0) return null;
-            // Sum durations for this spot
-            const ms = sessions.reduce((a, b) => a + (b.duration || 0), 0);
+            // Sum durations for this spot (only Pomodoro)
+            const ms = sessions
+              .filter((b) => !b.isBreak)
+              .reduce((a, b) => a + (b.duration || 0), 0);
             const totalSeconds = Math.floor(ms / 1000);
             const hours = Math.floor(totalSeconds / 3600);
             const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -685,11 +758,122 @@ export default function FocusTimerScreen({ navigation }) {
     return `${m}:${s}`;
   };
 
+  // Remove handleResetSession and its usages
+
+  const GoalProgressBar = ({ progress, total, color, height = 12 }) => {
+    const percent = total > 0 ? Math.min(progress / total, 1) : 0;
+    return (
+      <RNView
+        style={{
+          width: "100%",
+          height,
+          backgroundColor: themeColors.gray,
+          borderRadius: height / 2,
+          overflow: "hidden",
+          marginTop: 4,
+          marginBottom: 8,
+        }}
+      >
+        <RNView
+          style={{
+            width: `${percent * 100}%`,
+            height: "100%",
+            backgroundColor: color,
+            borderRadius: height / 2,
+            transition: "width 0.2s",
+          }}
+        />
+      </RNView>
+    );
+  };
+
+  // Live goal progress (updates as timer runs)
+  const liveGoalProgress = useMemo(() => {
+    if (!goalMinutes) return null;
+    const min = parseInt(goalMinutes, 10);
+    const sec = goalSecondsInput ? parseInt(goalSecondsInput, 10) : 0;
+    const safeMin = isNaN(min) ? 0 : min;
+    const safeSec = isNaN(sec) ? 0 : sec;
+    const totalGoalSeconds = safeMin * 60 + safeSec;
+    // Only count Pomodoro sessions toward goal
+    const sessionAdd = isRunning && !isBreak ? sessionProgressSeconds : 0;
+    return {
+      progressSeconds: goalProgressSeconds + sessionAdd,
+      totalGoalSeconds,
+    };
+  }, [
+    goalMinutes,
+    goalSecondsInput,
+    goalProgressSeconds,
+    isRunning,
+    isBreak,
+    sessionProgressSeconds,
+  ]);
+
+  // Goal completion effect (use liveGoalProgress)
+  useEffect(() => {
+    if (!goalMinutes) {
+      setGoalJustAchieved(false);
+      return;
+    }
+    const progress = liveGoalProgress;
+    if (
+      progress &&
+      progress.totalGoalSeconds > 0 &&
+      progress.progressSeconds >= progress.totalGoalSeconds &&
+      !goalJustAchieved
+    ) {
+      setGoalJustAchieved(true);
+      setAchievedGoalsThisWeek((prev) => [
+        ...prev,
+        {
+          title: goalTitle || "Untitled",
+          minutes: goalMinutes,
+          timestamp: Date.now(),
+        },
+      ]);
+      Alert.alert("Goal Achieved!", "You reached your study goal.");
+      setGoalMinutes(null);
+      setGoalTitle("");
+      setGoalProgressSeconds(0);
+      AsyncStorage.removeItem(GOAL_PROGRESS_KEY).catch(() => {});
+    }
+  }, [
+    liveGoalProgress,
+    goalMinutes,
+    goalTitle,
+    setAchievedGoalsThisWeek,
+    goalJustAchieved,
+  ]);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
       <View style={{ flexDirection: "row", alignItems: "center", padding: 16 }}>
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={async () => {
+            if (isRunning) {
+              Alert.alert(
+                "Pause Timer?",
+                "Navigating back will pause your timer and save your progress.",
+                [
+                  {
+                    text: "Cancel",
+                    style: "cancel",
+                  },
+                  {
+                    text: "Pause & Go Back",
+                    style: "destructive",
+                    onPress: async () => {
+                      await recalculateTimerOnBack();
+                      navigation.goBack();
+                    },
+                  },
+                ]
+              );
+            } else {
+              navigation.goBack();
+            }
+          }}
           style={{
             backgroundColor: themeColors.purple,
             borderRadius: 8,
@@ -698,17 +882,6 @@ export default function FocusTimerScreen({ navigation }) {
           }}
         >
           <ArrowLeft size={22} color={themeColors.white} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setShowSettingsModal(true)}
-          style={{
-            marginLeft: "auto",
-            backgroundColor: themeColors.purple,
-            borderRadius: 8,
-            padding: 8,
-          }}
-        >
-          <Gear size={22} color={themeColors.white} />
         </TouchableOpacity>
       </View>
       {/* Make the entire main content scrollable */}
@@ -726,7 +899,7 @@ export default function FocusTimerScreen({ navigation }) {
               paddingBottom: 24,
             }}
           >
-            Nook Mode
+            Focus Mode
           </Text>
           <TouchableOpacity
             onPress={() => setShowSpotModal(true)}
@@ -763,6 +936,7 @@ export default function FocusTimerScreen({ navigation }) {
           <Text style={{ color: themeColors.darkGray, marginBottom: 18 }}>
             {isBreak ? "Break" : "Pomodoro"}
           </Text>
+          {/* Timer control buttons row */}
           <View style={{ flexDirection: "row", marginTop: 12 }}>
             {!isRunning && (
               <TouchableOpacity
@@ -771,7 +945,7 @@ export default function FocusTimerScreen({ navigation }) {
                   backgroundColor: themeColors.green,
                   borderRadius: 30,
                   padding: 18,
-                  marginHorizontal: 12,
+                  marginHorizontal: 8,
                 }}
               >
                 <Play size={28} color={themeColors.white} />
@@ -784,7 +958,7 @@ export default function FocusTimerScreen({ navigation }) {
                   backgroundColor: themeColors.purple,
                   borderRadius: 30,
                   padding: 18,
-                  marginHorizontal: 12,
+                  marginHorizontal: 8,
                 }}
               >
                 <Pause size={28} color={themeColors.white} />
@@ -796,11 +970,12 @@ export default function FocusTimerScreen({ navigation }) {
                 backgroundColor: themeColors.red,
                 borderRadius: 30,
                 padding: 18,
-                marginHorizontal: 12,
+                marginHorizontal: 8,
               }}
             >
               <Stop size={28} color={themeColors.white} />
             </TouchableOpacity>
+            {/* Removed Reset Button */}
           </View>
           {/* Goal display and set button */}
           <View
@@ -849,18 +1024,50 @@ export default function FocusTimerScreen({ navigation }) {
             </TouchableOpacity>
           </View>
           {/* Progress display */}
-          {goalMinutes && (
-            <Text
-              style={{
-                color: themeColors.green,
-                fontSize: 15,
-                marginBottom: 8,
-              }}
-            >
-              Progress: {getGoalProgress()?.progressMinutes ?? 0}/{goalMinutes}{" "}
-              min
-            </Text>
-          )}
+          {goalMinutes &&
+            (() => {
+              const progress = liveGoalProgress;
+              if (!progress || !progress.totalGoalSeconds) return null;
+              const percent =
+                progress.totalGoalSeconds > 0
+                  ? Math.min(
+                      progress.progressSeconds / progress.totalGoalSeconds,
+                      1
+                    )
+                  : 0;
+              const mins = Math.floor(progress.progressSeconds / 60)
+                .toString()
+                .padStart(2, "0");
+              const secs = (progress.progressSeconds % 60)
+                .toString()
+                .padStart(2, "0");
+              const totalMins = Math.floor(progress.totalGoalSeconds / 60)
+                .toString()
+                .padStart(2, "0");
+              const totalSecs = (progress.totalGoalSeconds % 60)
+                .toString()
+                .padStart(2, "0");
+              return (
+                <View style={{ width: "80%", alignItems: "center" }}>
+                  <GoalProgressBar
+                    progress={progress.progressSeconds}
+                    total={progress.totalGoalSeconds}
+                    color={themeColors.green}
+                    height={14}
+                  />
+                  <Text
+                    style={{
+                      color: themeColors.green,
+                      fontSize: 15,
+                      marginBottom: 8,
+                    }}
+                  >
+                    {mins}:{secs} / {totalMins}:{totalSecs} min
+                  </Text>
+                </View>
+              );
+            })()}
+          {/* Remove the old Reset Timer Button from below progress display */}
           <View style={{ marginTop: 32, width: "80%" }}>
             <Text
               style={{
@@ -900,8 +1107,10 @@ export default function FocusTimerScreen({ navigation }) {
                 style={{ color: themeColors.white, fontSize: 18, marginTop: 2 }}
               >
                 {(() => {
+                  // Only count Pomodoro sessions (not break)
                   const totalMs = Object.values(focusStats)
                     .flat()
+                    .filter((b) => !b.isBreak)
                     .reduce((a, b) => a + (b.duration || 0), 0);
                   const totalSeconds = Math.floor(totalMs / 1000);
                   const totalHours = Math.floor(totalSeconds / 3600);
@@ -990,6 +1199,59 @@ export default function FocusTimerScreen({ navigation }) {
                 </View>
               );
             })()}
+            {/* Goals Achieved This Week Section */}
+            <View style={{ marginTop: 24 }}>
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "bold",
+                  color: themeColors.black,
+                  paddingBottom: 12,
+                }}
+              >
+                Goals Achieved This Week
+              </Text>
+              {achievedGoalsThisWeek.length === 0 ? (
+                <Text style={{ color: themeColors.darkGray, fontSize: 15 }}>
+                  No goals achieved yet this week.
+                </Text>
+              ) : (
+                achievedGoalsThisWeek
+                  .sort((a, b) => b.timestamp - a.timestamp)
+                  .map((goal, idx) => (
+                    <View
+                      key={idx}
+                      style={{
+                        backgroundColor: themeColors.green + "18",
+                        borderRadius: 8,
+                        padding: 10,
+                        marginBottom: 6,
+                        borderWidth: 1,
+                        borderColor: themeColors.green,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: themeColors.green,
+                          fontWeight: "bold",
+                          fontSize: 15,
+                        }}
+                      >
+                        {goal.title || "Untitled"} ({goal.minutes} min)
+                      </Text>
+                      <Text
+                        style={{ color: themeColors.darkGray, fontSize: 13 }}
+                      >
+                        {new Date(goal.timestamp).toLocaleDateString()}{" "}
+                        {new Date(goal.timestamp).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </Text>
+                    </View>
+                  ))
+              )}
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -1117,9 +1379,10 @@ export default function FocusTimerScreen({ navigation }) {
                 ? `${selectedStatSpot.hours}h ${selectedStatSpot.minutes}m ${selectedStatSpot.seconds}s`
                 : ""}
             </Text>
-            {/* Session List with Notes */}
+            {/* Session List with Notes and Delete Button */}
             <ScrollView
               style={{ width: "100%", maxHeight: 220, marginBottom: 12 }}
+              showsVerticalScrollIndicator={false}
             >
               {selectedStatSpot?.sessions?.length > 0 ? (
                 selectedStatSpot.sessions
@@ -1134,9 +1397,11 @@ export default function FocusTimerScreen({ navigation }) {
                     const hours = Math.floor(durationSec / 3600);
                     const minutes = Math.floor((durationSec % 3600) / 60);
                     const seconds = durationSec % 60;
+                    // Use session.id if available, else fallback to session.start as unique key
+                    const sessionKey = session.id || session.start;
                     return (
                       <View
-                        key={idx}
+                        key={sessionKey}
                         style={{
                           borderBottomWidth:
                             idx === selectedStatSpot.sessions.length - 1
@@ -1144,51 +1409,87 @@ export default function FocusTimerScreen({ navigation }) {
                               : 1,
                           borderBottomColor: themeColors.gray,
                           paddingVertical: 8,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "space-between",
                         }}
                       >
-                        <Text
+                        <View style={{ flex: 1, marginRight: 8 }}>
+                          <Text
+                            style={{
+                              color: themeColors.black,
+                              fontWeight: "bold",
+                              fontSize: 15,
+                            }}
+                          >
+                            {date.toLocaleDateString()}{" "}
+                            {date.toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                            {" - "}
+                            {session.isBreak ? "Break" : "Pomodoro"}
+                          </Text>
+                          <Text
+                            style={{
+                              color: themeColors.darkGray,
+                              fontSize: 13,
+                            }}
+                          >
+                            Duration: {hours}h {minutes}m {seconds}s
+                          </Text>
+                          {session.note ? (
+                            <Text
+                              style={{
+                                color: themeColors.purple,
+                                fontSize: 14,
+                                marginTop: 2,
+                                fontStyle: "italic",
+                              }}
+                            >
+                              “{session.note}”
+                            </Text>
+                          ) : (
+                            <Text
+                              style={{
+                                color: themeColors.gray,
+                                fontSize: 13,
+                                marginTop: 2,
+                                fontStyle: "italic",
+                              }}
+                            >
+                              No reflection
+                            </Text>
+                          )}
+                        </View>
+                        <TouchableOpacity
+                          onPress={() =>
+                            Alert.alert(
+                              "Delete Session?",
+                              "Are you sure you want to delete this session?",
+                              [
+                                { text: "Cancel", style: "cancel" },
+                                {
+                                  text: "Delete",
+                                  style: "destructive",
+                                  onPress: () =>
+                                    handleDeleteSession(
+                                      sessionKey,
+                                      selectedStatSpot.spotId
+                                    ),
+                                },
+                              ]
+                            )
+                          }
                           style={{
-                            color: themeColors.black,
-                            fontWeight: "bold",
-                            fontSize: 15,
+                            padding: 6,
+                            backgroundColor: themeColors.red,
+                            borderRadius: 6,
+                            alignSelf: "flex-start",
                           }}
                         >
-                          {date.toLocaleDateString()}{" "}
-                          {date.toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                          {" - "}
-                          {session.isBreak ? "Break" : "Pomodoro"}
-                        </Text>
-                        <Text
-                          style={{ color: themeColors.darkGray, fontSize: 13 }}
-                        >
-                          Duration: {hours}h {minutes}m {seconds}s
-                        </Text>
-                        {session.note ? (
-                          <Text
-                            style={{
-                              color: themeColors.purple,
-                              fontSize: 14,
-                              marginTop: 2,
-                              fontStyle: "italic",
-                            }}
-                          >
-                            “{session.note}”
-                          </Text>
-                        ) : (
-                          <Text
-                            style={{
-                              color: themeColors.gray,
-                              fontSize: 13,
-                              marginTop: 2,
-                              fontStyle: "italic",
-                            }}
-                          >
-                            No reflection
-                          </Text>
-                        )}
+                          <Trash size={18} color={themeColors.white} />
+                        </TouchableOpacity>
                       </View>
                     );
                   })
@@ -1206,10 +1507,11 @@ export default function FocusTimerScreen({ navigation }) {
                 textAlign: "center",
               }}
             >
-              This will delete all focus sessions for this spot from this week.
+              {/* Updated text */}
+              You can delete individual sessions from this spot.
             </Text>
             <View style={{ flexDirection: "row", width: "100%" }}>
-              {/* Cancel (negative) on left, Delete (positive) on right */}
+              {/* Cancel (negative) on left, Delete All (positive) on right */}
               <TouchableOpacity
                 onPress={() => setShowStatModal(false)}
                 disabled={deletingStat}
@@ -1225,7 +1527,7 @@ export default function FocusTimerScreen({ navigation }) {
                 }}
               >
                 <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
-                  Cancel
+                  Close
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -1241,7 +1543,7 @@ export default function FocusTimerScreen({ navigation }) {
                 }}
               >
                 <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
-                  {deletingStat ? "Deleting..." : "Delete"}
+                  {deletingStat ? "Deleting..." : "Delete All"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1365,6 +1667,8 @@ export default function FocusTimerScreen({ navigation }) {
                 onPress={() => {
                   setGoalMinutes(null);
                   setGoalTitle("");
+                  setGoalProgressSeconds(0);
+                  AsyncStorage.removeItem(GOAL_PROGRESS_KEY).catch(() => {});
                   setShowGoalModal(false);
                 }}
                 style={{
@@ -1381,155 +1685,6 @@ export default function FocusTimerScreen({ navigation }) {
                 </Text>
               </TouchableOpacity>
             )}
-          </View>
-        </View>
-      </Modal>
-      {/* Settings Modal */}
-      <Modal visible={showSettingsModal} transparent animationType="fade">
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.3)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: themeColors.white,
-              borderRadius: 12,
-              padding: 20,
-              width: "80%",
-              alignItems: "center",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "bold",
-                marginBottom: 12,
-                color: themeColors.black,
-              }}
-            >
-              Timer Settings
-            </Text>
-            <TextInput
-              value={pomodoroInput}
-              onChangeText={(v) => setPomodoroInput(v.replace(/[^0-9]/g, ""))}
-              placeholder="Pomodoro Minutes"
-              keyboardType="numeric"
-              style={{
-                borderWidth: 1,
-                borderColor: themeColors.purple,
-                borderRadius: 8,
-                padding: 10,
-                width: "80%",
-                marginBottom: 12,
-                color: themeColors.black,
-                fontSize: 16,
-                backgroundColor: themeColors.gray + "10",
-              }}
-              maxLength={3}
-            />
-            <TextInput
-              value={breakInput}
-              onChangeText={(v) => setBreakInput(v.replace(/[^0-9]/g, ""))}
-              placeholder="Break Minutes"
-              keyboardType="numeric"
-              style={{
-                borderWidth: 1,
-                borderColor: themeColors.purple,
-                borderRadius: 8,
-                padding: 10,
-                width: "80%",
-                marginBottom: 18,
-                color: themeColors.black,
-                fontSize: 16,
-                backgroundColor: themeColors.gray + "10",
-              }}
-              maxLength={3}
-            />
-            {/* Auto-Start Next Session Toggle */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 18,
-                width: "80%",
-                justifyContent: "center",
-              }}
-            >
-              <Text
-                style={{
-                  color: themeColors.black,
-                  fontSize: 16,
-                  fontWeight: "bold",
-                  padding: 8,
-                }}
-              >
-                Auto-Start Next Session
-              </Text>
-              <Switch
-                value={autoStartNext}
-                onValueChange={(val) => {
-                  setAutoStartNext(val);
-                  saveAutoStart(val);
-                }}
-                thumbColor={
-                  autoStartNext ? themeColors.green : themeColors.gray
-                }
-                trackColor={{
-                  false: themeColors.gray,
-                  true: themeColors.green + "80",
-                }}
-              />
-            </View>
-            <View style={{ flexDirection: "row", width: "100%" }}>
-              <TouchableOpacity
-                onPress={() => {
-                  // Validate and save
-                  const pom = parseInt(pomodoroInput, 10);
-                  const brk = parseInt(breakInput, 10);
-                  const validPom =
-                    !isNaN(pom) && pom > 0 ? pom : DEFAULT_POMODORO_MINUTES;
-                  const validBrk =
-                    !isNaN(brk) && brk > 0 ? brk : DEFAULT_BREAK_MINUTES;
-                  setPomodoroMinutes(validPom);
-                  setBreakMinutes(validBrk);
-                  saveDurations(validPom, validBrk);
-                  setShowSettingsModal(false);
-                  setTimer(validPom * 60);
-                }}
-                style={{
-                  flex: 1,
-                  backgroundColor: themeColors.green,
-                  borderRadius: 8,
-                  padding: 12,
-                  alignItems: "center",
-                  marginRight: 8,
-                }}
-              >
-                <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
-                  Save
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setShowSettingsModal(false)}
-                style={{
-                  flex: 1,
-                  backgroundColor: themeColors.white,
-                  borderRadius: 8,
-                  padding: 12,
-                  alignItems: "center",
-                  borderColor: themeColors.black,
-                  borderWidth: 0.5,
-                }}
-              >
-                <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-            </View>
           </View>
         </View>
       </Modal>
@@ -1622,168 +1777,6 @@ export default function FocusTimerScreen({ navigation }) {
           </View>
         </View>
       </Modal>
-      {/* Session Tag Modal */}
-      {/* <Modal visible={showTagModal} transparent animationType="fade">
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.3)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: themeColors.white,
-              borderRadius: 12,
-              padding: 20,
-              width: "80%",
-              alignItems: "center",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "bold",
-                marginBottom: 12,
-                color: themeColors.black,
-              }}
-            >
-              Session Tags (e.g. Math, Reading, CS 312)
-            </Text>
-            <Text
-              style={{
-                color: themeColors.darkGray,
-                fontSize: 13,
-                marginBottom: 6,
-              }}
-            >
-              Type a tag and press{" "}
-              <Text style={{ fontWeight: "bold" }}>space</Text> to add.
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                flexWrap: "wrap",
-                marginBottom: 12,
-              }}
-            >
-              {sessionTags.map((tag, idx) => (
-                <TouchableOpacity
-                  key={idx}
-                  onPress={() =>
-                    setSessionTags(sessionTags.filter((t, i) => i !== idx))
-                  }
-                  style={{
-                    backgroundColor: themeColors.purple,
-                    borderRadius: 12,
-                    paddingHorizontal: 8,
-                    paddingVertical: 2,
-                    marginRight: 6,
-                    marginBottom: 6,
-                  }}
-                >
-                  <Text style={{ color: themeColors.white, fontSize: 13 }}>
-                    {tag} ✕
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <TextInput
-              value={sessionTagInput}
-              onChangeText={(text) => {
-                // If the last character is a space, add the tag
-                if (text.endsWith(" ")) {
-                  const trimmed = text.trim();
-                  if (trimmed.length > 0) {
-                    setSessionTags([...sessionTags, trimmed]);
-                  }
-                  setSessionTagInput("");
-                } else {
-                  setSessionTagInput(text);
-                }
-              }}
-              placeholder="Add tag (press space to add)"
-              style={{
-                borderWidth: 1,
-                borderColor: themeColors.purple,
-                borderRadius: 8,
-                padding: 10,
-                width: "100%",
-                marginBottom: 12,
-                color: themeColors.black,
-                fontSize: 16,
-                backgroundColor: themeColors.gray + "10",
-              }}
-              maxLength={30}
-              // Remove onSubmitEditing, not needed for space-based add
-            />
-            <View style={{ flexDirection: "row", width: "100%" }}>
-              <TouchableOpacity
-                onPress={() => {
-                  setShowTagModal(false);
-                  setPendingStart(false);
-                }}
-                style={{
-                  flex: 1,
-                  backgroundColor: themeColors.white,
-                  borderRadius: 8,
-                  padding: 12,
-                  alignItems: "center",
-                  borderColor: themeColors.black,
-                  borderWidth: 0.5,
-                  marginRight: 8,
-                }}
-              >
-                <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  setShowTagModal(false);
-                  // Do not start timer here; effect above will handle it
-                }}
-                style={{
-                  flex: 1,
-                  backgroundColor: themeColors.green,
-                  borderRadius: 8,
-                  padding: 12,
-                  alignItems: "center",
-                }}
-              >
-                <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
-                  Done
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal> */}
     </SafeAreaView>
   );
 }
-
-// Firestore "focusSessions" is a COLLECTION at the root of your Firestore database.
-// Each document in this collection represents a single focus session.
-// Example Firestore structure:
-//
-// /focusSessions (COLLECTION)
-//   /abc123 (DOCUMENT)
-//     userId: "uid1"
-//     spotId: "spot1"
-//     start: <Timestamp>
-//     end: <Timestamp>
-//     duration: <number>
-//     isBreak: <boolean>
-//
-// The code uses:
-//   collection(db, "focusSessions")
-// to refer to this collection.
-//
-// Note: Firestore collections are created automatically when you add the first document to them.
-// You do NOT need to manually create the "focusSessions" collection in the Firebase Console.
-// When you call addDoc(collection(db, "focusSessions"), {...}), Firestore will create the collection if it doesn't exist.
-
-// If you do not see the "focusSessions" collection in your Firebase Console, make sure at least one session has been completed and saved successfully.
-// Check for any errors in your addDoc calls or Firestore security rules that might prevent writing to the collection.
