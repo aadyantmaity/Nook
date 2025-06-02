@@ -39,7 +39,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
 
 // Timer durations are defined as constants at the top of the file:
-const DEFAULT_POMODORO_MINUTES = 1;
+const DEFAULT_POMODORO_MINUTES = 25;
 const DEFAULT_BREAK_MINUTES = 5;
 
 export function FocusTimerView({ navigation }) {
@@ -983,7 +983,7 @@ export function FocusTimerView({ navigation }) {
                 setIsRunning(false);
                 timerStartRef.current = null;
                 if (newTime === 0) {
-                  handleSessionEnd();
+                  timerEndedOnFocusRef.current = true; // <-- defer session end
                 }
               }
             }
@@ -1087,6 +1087,17 @@ export function FocusTimerView({ navigation }) {
       ]
     );
   };
+
+  // Add this ref at the top-level of the component
+  const timerEndedOnFocusRef = useRef(false);
+
+  // After all state declarations, add this effect:
+  useEffect(() => {
+    if (timerEndedOnFocusRef.current && sessionStart) {
+      timerEndedOnFocusRef.current = false;
+      handleSessionEnd();
+    }
+  }, [sessionStart]);
 
   return (
     <>
@@ -1406,119 +1417,116 @@ export function FocusTimerView({ navigation }) {
                                     {isOpen && (
                                       <View style={{ marginTop: 2 }}>
                                         {nonBreakSessions.length > 0 ? (
-                                          nonBreakSessions
-                                            .sort((a, b) => b.start - a.start)
-                                            .map((s, idx) => (
-                                              <View
-                                                key={idx}
-                                                style={{
-                                                  marginLeft: 8,
-                                                  marginBottom: 4,
-                                                  backgroundColor:
-                                                    themeColors.gray + "10",
-                                                  borderRadius: 8,
-                                                  padding: 8,
-                                                  borderWidth: 1,
-                                                  borderColor:
-                                                    themeColors.gray + "44",
-                                                  shadowColor:
-                                                    themeColors.black,
-                                                  shadowOffset: {
-                                                    width: 0,
-                                                    height: 1,
-                                                  },
-                                                  shadowOpacity: 0.04,
-                                                  shadowRadius: 2,
-                                                  elevation: 1,
-                                                  flexDirection: "row",
-                                                  alignItems: "center",
-                                                }}
-                                              >
-                                                <View style={{ flex: 1 }}>
-                                                  <Text
-                                                    style={{
-                                                      color: themeColors.black,
-                                                      fontSize: 13,
-                                                      fontWeight: "bold",
-                                                    }}
-                                                  >
-                                                    {s.start
-                                                      ? new Date(
-                                                          s.start
-                                                        ).toLocaleString([], {
-                                                          month: "short",
-                                                          day: "numeric",
-                                                          hour: "2-digit",
-                                                          minute: "2-digit",
-                                                        })
-                                                      : ""}
-                                                    {" - "}
+                                          <ScrollView
+                                            style={{ maxHeight: 180 }}
+                                            contentContainerStyle={{
+                                              paddingBottom: 4,
+                                            }}
+                                            showsVerticalScrollIndicator={false} // changed from true to false
+                                          >
+                                            {nonBreakSessions
+                                              .sort((a, b) => b.start - a.start)
+                                              .map((s, idx) => (
+                                                <View
+                                                  key={idx}
+                                                  style={{
+                                                    marginLeft: 8,
+                                                    marginBottom: 4,
+                                                    backgroundColor:
+                                                      themeColors.gray + "10",
+                                                    borderRadius: 8,
+                                                    padding: 8,
+                                                    borderWidth: 1,
+                                                    borderColor:
+                                                      themeColors.gray + "44",
+                                                    shadowColor:
+                                                      themeColors.black,
+                                                    shadowOffset: {
+                                                      width: 0,
+                                                      height: 1,
+                                                    },
+                                                    shadowOpacity: 0.04,
+                                                    shadowRadius: 2,
+                                                    elevation: 1,
+                                                    flexDirection: "row",
+                                                    alignItems: "center",
+                                                  }}
+                                                >
+                                                  <View style={{ flex: 1 }}>
                                                     <Text
                                                       style={{
                                                         color:
                                                           themeColors.black,
-                                                      }}
-                                                    >
-                                                      {(() => {
-                                                        const sec = Math.floor(
-                                                          (s.duration || 0) /
-                                                            1000
-                                                        );
-                                                        const h = Math.floor(
-                                                          sec / 3600
-                                                        );
-                                                        const m = Math.floor(
-                                                          (sec % 3600) / 60
-                                                        );
-                                                        const sec2 = sec % 60;
-                                                        let out = [];
-                                                        if (h > 0)
-                                                          out.push(`${h}h`);
-                                                        if (m > 0 || h > 0)
-                                                          out.push(`${m}m`);
-                                                        out.push(`${sec2}s`);
-                                                        return out.join(" ");
-                                                      })()}
-                                                    </Text>
-                                                  </Text>
-                                                  {s.note ? (
-                                                    <Text
-                                                      style={{
-                                                        color:
-                                                          themeColors.purple,
                                                         fontSize: 13,
-                                                        marginTop: 2,
-                                                        fontStyle: "italic",
+                                                        fontWeight: "bold",
                                                       }}
                                                     >
-                                                      “{s.note}”
+                                                      {s.start
+                                                        ? new Date(
+                                                            s.start
+                                                          ).toLocaleString([], {
+                                                            month: "short",
+                                                            day: "numeric",
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                          })
+                                                        : ""}
+                                                      {" - "}
+                                                      <Text
+                                                        style={{
+                                                          color:
+                                                            themeColors.black,
+                                                        }}
+                                                      >
+                                                        {(() => {
+                                                          const sec =
+                                                            Math.floor(
+                                                              (s.duration ||
+                                                                0) / 1000
+                                                            );
+                                                          const h = Math.floor(
+                                                            sec / 3600
+                                                          );
+                                                          const m = Math.floor(
+                                                            (sec % 3600) / 60
+                                                          );
+                                                          const sec2 = sec % 60;
+                                                          let out = [];
+                                                          if (h > 0)
+                                                            out.push(`${h}h`);
+                                                          if (m > 0 || h > 0)
+                                                            out.push(`${m}m`);
+                                                          out.push(`${sec2}s`);
+                                                          return out.join(" ");
+                                                        })()}
+                                                      </Text>
                                                     </Text>
-                                                  ) : null}
+                                                  </View>
+                                                  <TouchableOpacity
+                                                    onPress={() =>
+                                                      handleDeleteSession(
+                                                        s,
+                                                        spotId
+                                                      )
+                                                    }
+                                                    style={{
+                                                      marginLeft: 8,
+                                                      padding: 4,
+                                                      borderRadius: 6,
+                                                      backgroundColor:
+                                                        themeColors.red + "22",
+                                                    }}
+                                                    accessibilityLabel="Delete session"
+                                                  >
+                                                    <Trash
+                                                      size={18}
+                                                      color={themeColors.red}
+                                                      weight="bold"
+                                                    />
+                                                  </TouchableOpacity>
                                                 </View>
-                                                <TouchableOpacity
-                                                  onPress={() =>
-                                                    handleDeleteSession(
-                                                      s,
-                                                      spotId
-                                                    )
-                                                  }
-                                                  style={{
-                                                    marginLeft: 8,
-                                                    padding: 4,
-                                                    borderRadius: 6,
-                                                    backgroundColor:
-                                                      themeColors.red + "22",
-                                                  }}
-                                                  accessibilityLabel="Delete session"
-                                                >
-                                                  <Trash
-                                                    size={18}
-                                                    color={themeColors.red}
-                                                    weight="bold"
-                                                  />
-                                                </TouchableOpacity>
-                                              </View>
-                                            ))
+                                              ))}
+                                          </ScrollView>
                                         ) : (
                                           <Text
                                             style={{
@@ -1646,7 +1654,7 @@ export function FocusTimerView({ navigation }) {
                 backgroundColor: themeColors.gray + "18",
               }}
               placeholder="E.g. Stayed focused, got distracted, what did you work on, etc."
-              placeholderTextColor={themeColors.gray}
+              placeholderTextColor={themeColors.darkGray}
               value={sessionNote}
               onChangeText={setSessionNote}
               multiline
@@ -1711,7 +1719,7 @@ export function FocusTimerView({ navigation }) {
             style={{
               alignSelf: "flex-end",
               marginRight: 18,
-              marginBottom: 24,
+              marginBottom: 48,
               backgroundColor: themeColors.gray,
               borderRadius: 24,
               paddingVertical: 7,
@@ -1830,7 +1838,7 @@ export function FocusTimerView({ navigation }) {
             style={{
               width: "94%",
               alignSelf: "center",
-              marginTop: 24,
+              marginTop: 60,
               marginBottom: 8,
               backgroundColor: themeColors.gray + "18",
               borderRadius: 14,
@@ -1843,29 +1851,73 @@ export function FocusTimerView({ navigation }) {
               elevation: 2,
             }}
           >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                padding: 16,
-                borderTopLeftRadius: 14,
-                borderTopRightRadius: 14,
-                backgroundColor: themeColors.white,
-                borderBottomWidth: 1,
-                borderBottomColor: themeColors.purple + "33",
-              }}
-            >
-              <Text
-                style={{
-                  fontWeight: "bold",
-                  color: themeColors.purple,
-                  fontSize: 17,
-                  flex: 1,
-                }}
-              >
-                This Week's Focus Stats
-              </Text>
-            </View>
+            {/* --- Calculate total focus time for the week (excluding breaks) --- */}
+            {(() => {
+              // Only consider non-break sessions for stats
+              const nonBreakStats = Object.entries(focusStats)
+                .map(([spotId, sessions]) => [
+                  spotId,
+                  Array.isArray(sessions)
+                    ? sessions.filter((b) => !b.isBreak)
+                    : [],
+                ])
+                .filter(([, sessions]) => sessions.length > 0);
+
+              const totalMs = nonBreakStats
+                .flatMap(([, sessions]) => sessions)
+                .reduce((a, b) => a + (b.duration || 0), 0);
+              const totalSeconds = Math.floor(totalMs / 1000);
+              const totalHours = Math.floor(totalSeconds / 3600);
+              const totalMinutes = Math.floor((totalSeconds % 3600) / 60);
+              const totalSecs = totalSeconds % 60;
+
+              // Render the header with total time
+              return (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    padding: 16,
+                    borderTopLeftRadius: 14,
+                    borderTopRightRadius: 14,
+                    backgroundColor: themeColors.white,
+                    borderBottomWidth: 1,
+                    borderBottomColor: themeColors.purple + "33",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontWeight: "bold",
+                      color: themeColors.purple,
+                      fontSize: 17,
+                      flex: 1,
+                    }}
+                  >
+                    This Week's Focus Stats
+                  </Text>
+                  <View
+                    style={{
+                      borderRadius: 8,
+                      paddingHorizontal: 8,
+                      paddingVertical: 2,
+                      marginLeft: 4,
+                      borderWidth: 1,
+                      borderColor: themeColors.purple,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: themeColors.purple,
+                        fontSize: 13,
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {`${totalHours}h ${totalMinutes}m ${totalSecs}s`}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })()}
             <View style={{ padding: 16, paddingTop: 8 }}>
               {/* Per-location dropdowns */}
               {Object.entries(focusStats)
@@ -1953,107 +2005,115 @@ export function FocusTimerView({ navigation }) {
                         {isOpen && (
                           <View style={{ marginTop: 2 }}>
                             {nonBreakSessions.length > 0 ? (
-                              nonBreakSessions
-                                .sort((a, b) => b.start - a.start)
-                                .map((s, idx) => (
-                                  <View
-                                    key={s.sessionId || idx}
-                                    style={{
-                                      marginLeft: 8,
-                                      marginBottom: 4,
-                                      backgroundColor: themeColors.gray + "10",
-                                      borderRadius: 8,
-                                      padding: 8,
-                                      borderWidth: 1,
-                                      borderColor: themeColors.gray + "44",
-                                      shadowColor: themeColors.black,
-                                      shadowOffset: {
-                                        width: 0,
-                                        height: 1,
-                                      },
-                                      shadowOpacity: 0.04,
-                                      shadowRadius: 2,
-                                      elevation: 1,
-                                      flexDirection: "row",
-                                      alignItems: "center",
-                                    }}
-                                  >
-                                    <View style={{ flex: 1 }}>
-                                      <Text
-                                        style={{
-                                          color: themeColors.black,
-                                          fontSize: 13,
-                                          fontWeight: "bold",
-                                        }}
-                                      >
-                                        {s.start
-                                          ? new Date(s.start).toLocaleString(
-                                              [],
-                                              {
-                                                month: "short",
-                                                day: "numeric",
-                                                hour: "2-digit",
-                                                minute: "2-digit",
-                                              }
-                                            )
-                                          : ""}
-                                        {" - "}
+                              <ScrollView
+                                style={{ maxHeight: 180 }}
+                                contentContainerStyle={{ paddingBottom: 4 }}
+                                showsVerticalScrollIndicator={false} // changed from true to false
+                              >
+                                {nonBreakSessions
+                                  .sort((a, b) => b.start - a.start)
+                                  .map((s, idx) => (
+                                    <View
+                                      key={idx}
+                                      style={{
+                                        marginLeft: 8,
+                                        marginBottom: 4,
+                                        backgroundColor:
+                                          themeColors.gray + "10",
+                                        borderRadius: 8,
+                                        padding: 8,
+                                        borderWidth: 1,
+                                        borderColor: themeColors.gray + "44",
+                                        shadowColor: themeColors.black,
+                                        shadowOffset: {
+                                          width: 0,
+                                          height: 1,
+                                        },
+                                        shadowOpacity: 0.04,
+                                        shadowRadius: 2,
+                                        elevation: 1,
+                                        flexDirection: "row",
+                                        alignItems: "center",
+                                      }}
+                                    >
+                                      <View style={{ flex: 1 }}>
                                         <Text
                                           style={{
                                             color: themeColors.black,
-                                          }}
-                                        >
-                                          {(() => {
-                                            const sec = Math.floor(
-                                              (s.duration || 0) / 1000
-                                            );
-                                            const h = Math.floor(sec / 3600);
-                                            const m = Math.floor(
-                                              (sec % 3600) / 60
-                                            );
-                                            const sec2 = sec % 60;
-                                            let out = [];
-                                            if (h > 0) out.push(`${h}h`);
-                                            if (m > 0 || h > 0)
-                                              out.push(`${m}m`);
-                                            out.push(`${sec2}s`);
-                                            return out.join(" ");
-                                          })()}
-                                        </Text>
-                                      </Text>
-                                      {s.note ? (
-                                        <Text
-                                          style={{
-                                            color: themeColors.purple,
                                             fontSize: 13,
-                                            marginTop: 2,
-                                            fontStyle: "italic",
+                                            fontWeight: "bold",
                                           }}
                                         >
-                                          “{s.note}”
+                                          {s.start
+                                            ? new Date(s.start).toLocaleString(
+                                                [],
+                                                {
+                                                  month: "short",
+                                                  day: "numeric",
+                                                  hour: "2-digit",
+                                                  minute: "2-digit",
+                                                }
+                                              )
+                                            : ""}
+                                          {" - "}
+                                          <Text
+                                            style={{
+                                              color: themeColors.black,
+                                            }}
+                                          >
+                                            {(() => {
+                                              const sec = Math.floor(
+                                                (s.duration || 0) / 1000
+                                              );
+                                              const h = Math.floor(sec / 3600);
+                                              const m = Math.floor(
+                                                (sec % 3600) / 60
+                                              );
+                                              const sec2 = sec % 60;
+                                              let out = [];
+                                              if (h > 0) out.push(`${h}h`);
+                                              if (m > 0 || h > 0)
+                                                out.push(`${m}m`);
+                                              out.push(`${sec2}s`);
+                                              return out.join(" ");
+                                            })()}
+                                          </Text>
                                         </Text>
-                                      ) : null}
+                                        {s.note ? (
+                                          <Text
+                                            style={{
+                                              color: themeColors.purple,
+                                              fontSize: 13,
+                                              marginTop: 2,
+                                              fontStyle: "italic",
+                                            }}
+                                          >
+                                            “{s.note}”
+                                          </Text>
+                                        ) : null}
+                                      </View>
+                                      <TouchableOpacity
+                                        onPress={() =>
+                                          handleDeleteSession(s, spotId)
+                                        }
+                                        style={{
+                                          marginLeft: 8,
+                                          padding: 4,
+                                          borderRadius: 6,
+                                          backgroundColor:
+                                            themeColors.red + "22",
+                                        }}
+                                        accessibilityLabel="Delete session"
+                                      >
+                                        <Trash
+                                          size={18}
+                                          color={themeColors.red}
+                                          weight="bold"
+                                        />
+                                      </TouchableOpacity>
                                     </View>
-                                    <TouchableOpacity
-                                      onPress={() =>
-                                        handleDeleteSession(s, spotId)
-                                      }
-                                      style={{
-                                        marginLeft: 8,
-                                        padding: 4,
-                                        borderRadius: 6,
-                                        backgroundColor: themeColors.red + "22",
-                                      }}
-                                      accessibilityLabel="Delete session"
-                                    >
-                                      <Trash
-                                        size={18}
-                                        color={themeColors.red}
-                                        weight="bold"
-                                      />
-                                    </TouchableOpacity>
-                                  </View>
-                                ))
+                                  ))}
+                              </ScrollView>
                             ) : (
                               <Text
                                 style={{
