@@ -43,6 +43,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system"; // <-- Add this import
 import { ThemeContext } from "../App"; // Import ThemeContext
 import { FocusTimerView } from "../components/FocusTimer"; // <-- Use correct import
+import { TabView, SceneMap } from "react-native-tab-view";
+import { Dimensions } from "react-native";
 let imageCache = {};
 
 const TAGS = [
@@ -539,50 +541,7 @@ function fuzzyMatch(str, query) {
   return qi === query.length;
 }
 
-function TabBar({ activeTab, setActiveTab, themeColors }) {
-  // Only show Home and Focus Mode tabs
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: themeColors.white,
-        borderBottomWidth: 1,
-        borderBottomColor: themeColors.lightGrayBorder || "#E0E0E0",
-        marginBottom: 0,
-      }}
-    >
-      {["Home", "Focus Mode"].map((tab, idx) => (
-        <TouchableOpacity
-          key={tab}
-          onPress={() => setActiveTab(tab)}
-          style={{
-            flex: 1,
-            paddingVertical: 10,
-            borderBottomWidth: 3,
-            borderBottomColor:
-              activeTab === tab ? themeColors.purple : "transparent",
-            alignItems: "center",
-          }}
-        >
-          <Text
-            style={{
-              color:
-                activeTab === tab ? themeColors.black : themeColors.darkGray,
-              fontWeight: activeTab === tab ? "bold" : "normal",
-              fontSize: 16,
-              letterSpacing: 0.5,
-            }}
-          >
-            {tab}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
-}
-
+// Move this component above HomeScreen:
 function GeneralReportModal({ visible, onClose }) {
   const [reportText, setReportText] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -723,7 +682,12 @@ export default function HomeScreen({
   const [isLoading, setIsLoading] = useState(true);
   const [favorites, setFavorites] = useState([]);
   const [search, setSearch] = useState(""); // <-- Add search state
-  const [activeTab, setActiveTab] = useState("Home");
+  const layout = Dimensions.get("window");
+  const [index, setIndex] = useState(0);
+  const [routes] = useState([
+    { key: "home", title: "Home" },
+    { key: "focus", title: "Focus Mode" },
+  ]);
   const [showGeneralReport, setShowGeneralReport] = useState(false); // Add state for modal
   const [menuOpen, setMenuOpen] = useState(false); // <-- Hamburger menu state
   const [imageCache, setImageCache] = useState({}); // spotId -> local file URI
@@ -1013,17 +977,6 @@ export default function HomeScreen({
     setIsRefreshing(false);
   };
 
-  if (isLoading)
-    return (
-      <SafeAreaView
-        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-      >
-        <Text style={{ fontSize: 16, color: themeColors.black }}>
-          Loading...
-        </Text>
-      </SafeAreaView>
-    );
-
   // Fuzzy search filter
   const searchFilter = (spot) => {
     if (!search.trim()) return true;
@@ -1055,321 +1008,346 @@ export default function HomeScreen({
     (spot) => matchFilters(spot) && searchFilter(spot)
   );
 
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
-      <View style={{ flex: 1 }}>
-        {/* --- TOP BAR: Title and Hamburger --- */}
-        <View
+  // --- TabView scenes ---
+  const HomeTab = () => (
+    <>
+      <View style={{ height: 16 }} />
+      <Filters
+        filters={filters}
+        setFilters={setFilters}
+        themeColors={themeColors}
+      />
+      <StudySpots
+        filteredSpots={filteredSpots}
+        navigation={navigation}
+        favorites={favorites}
+        handleToggleFavorite={handleToggleFavorite}
+        search={search}
+        setSearch={setSearch}
+        isDarkMode={isDarkMode}
+        themeColors={themeColors}
+        onRefresh={handleRefresh}
+        refreshing={isRefreshing}
+      />
+      <TouchableOpacity
+        onPress={() => {
+          try {
+            navigation.navigate("AddSpot");
+          } catch (error) {
+            console.error("Error adding spot:", error);
+            alert("Unable to add a new spot. Please check your permissions.");
+          }
+        }}
+        style={{
+          position: "absolute",
+          bottom: 16,
+          right: 16,
+          flexDirection: "row",
+          alignItems: "center",
+          paddingVertical: 12,
+          paddingHorizontal: 16,
+          backgroundColor: themeColors.purple,
+          borderRadius: 50,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.2,
+          shadowRadius: 4,
+          elevation: 3,
+        }}
+      >
+        <Plus size={24} color={themeColors.white} />
+        <Text
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            paddingHorizontal: 16,
-            paddingTop: 16,
-            marginBottom: 8,
-            zIndex: 10,
+            color: themeColors.white,
+            fontWeight: "bold",
+            fontSize: 14,
+            marginLeft: 8,
           }}
         >
-          {/* Left: Title */}
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text
-              style={{
-                fontSize: 40,
-                fontWeight: "bold",
-                color: themeColors.purple,
-                fontFamily: Platform.OS === "ios" ? "Helvetica" : "sans-serif",
-                marginRight: 12,
-              }}
-            >
-              Nook
-            </Text>
-          </View>
-          {/* Hamburger menu button */}
-          <TouchableOpacity
-            onPress={() => setMenuOpen(true)}
-            style={{
-              alignItems: "center",
-              justifyContent: "center",
-              width: 36,
-              height: 36,
-              marginLeft: 8,
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.2,
-              shadowRadius: 4,
-              elevation: 5,
-              zIndex: 100,
-            }}
-          >
-            <List size={26} color={themeColors.purple} weight="bold" />
-          </TouchableOpacity>
+          Add a Nook
+        </Text>
+      </TouchableOpacity>
+    </>
+  );
+
+  // Use FocusTimerView directly in SceneMap
+  const renderScene = SceneMap({
+    home: HomeTab,
+    focus: FocusTimerView,
+  });
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
+      {isLoading ? (
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <Text style={{ fontSize: 16, color: themeColors.black }}>
+            Loading...
+          </Text>
         </View>
-        {/* --- END TOP BAR --- */}
-
-        {/* Hamburger Menu Modal */}
-        {menuOpen && (
-          <Modal
-            visible={menuOpen}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setMenuOpen(false)}
-          >
-            <TouchableOpacity
-              style={{
-                flex: 1,
-                backgroundColor: "rgba(0,0,0,0.35)",
-                zIndex: 999,
-              }}
-              activeOpacity={1}
-              onPressOut={() => setMenuOpen(false)}
-            >
-              <View
-                style={{
-                  position: "absolute",
-                  top: 60,
-                  right: 16,
-                  backgroundColor: themeColors.white,
-                  borderRadius: 12,
-                  paddingVertical: 8,
-                  paddingHorizontal: 0,
-                  minWidth: 180,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.2,
-                  shadowRadius: 8,
-                  elevation: 20,
-                  zIndex: 1000,
-                }}
-              >
-                {/* Add Archive Button */}
-                <TouchableOpacity
-                  onPress={() => {
-                    setMenuOpen(false);
-                    setTimeout(() => navigation.navigate("FocusArchive"), 250);
-                  }}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    paddingVertical: 12,
-                    paddingHorizontal: 20,
-                  }}
-                >
-                  <Timer size={22} color={themeColors.purple} weight="bold" />
-                  <Text
-                    style={{
-                      marginLeft: 12,
-                      color: themeColors.purple,
-                      fontWeight: "bold",
-                      fontSize: 16,
-                    }}
-                  >
-                    Goals & Focus Archive
-                  </Text>
-                </TouchableOpacity>
-                {/* Divider */}
-                <View
-                  style={{
-                    height: 1,
-                    backgroundColor: themeColors.lightGrayBorder || "#eee",
-                    marginHorizontal: 10,
-                  }}
-                />
-                {/* Report */}
-                <TouchableOpacity
-                  onPress={() => {
-                    setMenuOpen(false);
-                    // Delay showing the modal until after the menu closes to avoid flicker
-                    setTimeout(() => setShowGeneralReport(true), 250);
-                  }}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    paddingVertical: 12,
-                    paddingHorizontal: 20,
-                  }}
-                >
-                  <ExclamationMark
-                    size={22}
-                    color={themeColors.purple}
-                    weight="bold"
-                  />
-                  <Text
-                    style={{
-                      marginLeft: 12,
-                      color: themeColors.purple,
-                      fontWeight: "bold",
-                      fontSize: 16,
-                    }}
-                  >
-                    Suggestion / Report
-                  </Text>
-                </TouchableOpacity>
-                {/* Divider */}
-                <View
-                  style={{
-                    height: 1,
-                    backgroundColor: themeColors.lightGrayBorder || "#eee",
-                    marginHorizontal: 10,
-                  }}
-                />
-                {/* Dark Mode */}
-                <TouchableOpacity
-                  onPress={() => {
-                    setMenuOpen(false);
-                    setIsDarkMode && setIsDarkMode(!isDarkMode);
-                  }}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    paddingVertical: 12,
-                    paddingHorizontal: 20,
-                  }}
-                >
-                  {isDarkMode ? (
-                    <Sun size={22} color={themeColors.purple} weight="bold" />
-                  ) : (
-                    <Moon size={22} color={themeColors.purple} weight="bold" />
-                  )}
-                  <Text
-                    style={{
-                      marginLeft: 12,
-                      color: themeColors.purple,
-                      fontWeight: "bold",
-                      fontSize: 16,
-                    }}
-                  >
-                    {isDarkMode ? "Light Mode" : "Dark Mode"}
-                  </Text>
-                </TouchableOpacity>
-                {/* Divider */}
-                <View
-                  style={{
-                    height: 1,
-                    backgroundColor: themeColors.lightGrayBorder || "#eee",
-                    marginHorizontal: 10,
-                  }}
-                />
-                {/* Profile */}
-                <TouchableOpacity
-                  onPress={() => {
-                    // Always close the report modal before navigating to Profile
-                    setShowGeneralReport(false);
-                    setMenuOpen(false);
-                    setTimeout(() => {
-                      navigation.navigate("Profile");
-                    }, 250);
-                  }}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    paddingVertical: 12,
-                    paddingHorizontal: 20,
-                  }}
-                >
-                  <User size={20} color={themeColors.purple} weight="bold" />
-                  <Text
-                    style={{
-                      marginLeft: 12,
-                      color: themeColors.purple,
-                      fontWeight: "bold",
-                      fontSize: 16,
-                    }}
-                  >
-                    Profile
-                  </Text>
-                </TouchableOpacity>
-                {/* Divider */}
-                <View
-                  style={{
-                    height: 1,
-                    backgroundColor: themeColors.lightGrayBorder || "#eee",
-                    marginHorizontal: 10,
-                  }}
-                />
-              </View>
-            </TouchableOpacity>
-          </Modal>
-        )}
-
-        {/* ADD TAB BAR HERE */}
-        <TabBar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          themeColors={themeColors}
-        />
-        {activeTab === "Home" && <View style={{ height: 16 }} />}
-
-        {activeTab === "Home" && (
-          <Filters
-            filters={filters}
-            setFilters={setFilters}
-            themeColors={themeColors}
-          />
-        )}
-        {activeTab === "Home" ? (
-          <StudySpots
-            filteredSpots={filteredSpots}
-            navigation={navigation}
-            favorites={favorites}
-            handleToggleFavorite={handleToggleFavorite}
-            search={search}
-            setSearch={setSearch}
-            isDarkMode={isDarkMode}
-            themeColors={themeColors}
-            onRefresh={handleRefresh}
-            refreshing={isRefreshing}
-            showsVerticalScrollIndicator={false}
-          />
-        ) : activeTab === "Focus Mode" ? (
-          <FocusTimerView /> // <-- Use FocusTimerView, not FocusTimer
-        ) : null}
-        {activeTab === "Home" && (
-          <TouchableOpacity
-            onPress={() => {
-              try {
-                navigation.navigate("AddSpot");
-              } catch (error) {
-                console.error("Error adding spot:", error);
-                alert(
-                  "Unable to add a new spot. Please check your permissions."
-                );
-              }
-            }}
+      ) : (
+        <View style={{ flex: 1 }}>
+          {/* --- TOP BAR: Title and Hamburger --- */}
+          <View
             style={{
-              position: "absolute",
-              bottom: 16,
-              right: 16,
               flexDirection: "row",
               alignItems: "center",
-              paddingVertical: 12,
+              justifyContent: "space-between",
               paddingHorizontal: 16,
-              backgroundColor: themeColors.purple,
-              borderRadius: 50,
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.2,
-              shadowRadius: 4,
-              elevation: 3,
+              paddingTop: 16,
+              marginBottom: 8,
+              zIndex: 10,
             }}
           >
-            <Plus size={24} color={themeColors.white} />
-            <Text
+            {/* Left: Title */}
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Text
+                style={{
+                  fontSize: 40,
+                  fontWeight: "bold",
+                  color: themeColors.purple,
+                  fontFamily:
+                    Platform.OS === "ios" ? "Helvetica" : "sans-serif",
+                  marginRight: 12,
+                }}
+              >
+                Nook
+              </Text>
+            </View>
+            {/* Hamburger menu button */}
+            <TouchableOpacity
+              onPress={() => setMenuOpen(true)}
               style={{
-                color: themeColors.white,
-                fontWeight: "bold",
-                fontSize: 14,
+                alignItems: "center",
+                justifyContent: "center",
+                width: 36,
+                height: 36,
                 marginLeft: 8,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 4,
+                elevation: 5,
+                zIndex: 100,
               }}
             >
-              Add a Nook
-            </Text>
-          </TouchableOpacity>
-        )}
-        <GeneralReportModal
-          visible={showGeneralReport}
-          onClose={() => setShowGeneralReport(false)}
-        />
-      </View>
+              <List size={26} color={themeColors.purple} weight="bold" />
+            </TouchableOpacity>
+          </View>
+          {/* --- END TOP BAR --- */}
+
+          {/* Hamburger Menu Modal */}
+          {menuOpen && (
+            <Modal
+              visible={menuOpen}
+              transparent
+              animationType="fade"
+              onRequestClose={() => setMenuOpen(false)}
+            >
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: "rgba(0,0,0,0.35)",
+                  zIndex: 999,
+                }}
+                activeOpacity={1}
+                onPressOut={() => setMenuOpen(false)}
+              >
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 60,
+                    right: 16,
+                    backgroundColor: themeColors.white,
+                    borderRadius: 12,
+                    paddingVertical: 8,
+                    paddingHorizontal: 0,
+                    minWidth: 180,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 8,
+                    elevation: 20,
+                    zIndex: 1000,
+                  }}
+                >
+                  {/* Report */}
+                  <TouchableOpacity
+                    onPress={() => {
+                      setMenuOpen(false);
+                      // Delay showing the modal until after the menu closes to avoid flicker
+                      setTimeout(() => setShowGeneralReport(true), 250);
+                    }}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      paddingVertical: 12,
+                      paddingHorizontal: 20,
+                    }}
+                  >
+                    <ExclamationMark
+                      size={22}
+                      color={themeColors.purple}
+                      weight="bold"
+                    />
+                    <Text
+                      style={{
+                        marginLeft: 12,
+                        color: themeColors.purple,
+                        fontWeight: "bold",
+                        fontSize: 16,
+                      }}
+                    >
+                      Suggestion / Report
+                    </Text>
+                  </TouchableOpacity>
+                  {/* Divider */}
+                  <View
+                    style={{
+                      height: 1,
+                      backgroundColor: themeColors.lightGrayBorder || "#eee",
+                      marginHorizontal: 10,
+                    }}
+                  />
+                  {/* Dark Mode */}
+                  <TouchableOpacity
+                    onPress={() => {
+                      setMenuOpen(false);
+                      setIsDarkMode && setIsDarkMode(!isDarkMode);
+                    }}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      paddingVertical: 12,
+                      paddingHorizontal: 20,
+                    }}
+                  >
+                    {isDarkMode ? (
+                      <Sun size={22} color={themeColors.purple} weight="bold" />
+                    ) : (
+                      <Moon
+                        size={22}
+                        color={themeColors.purple}
+                        weight="bold"
+                      />
+                    )}
+                    <Text
+                      style={{
+                        marginLeft: 12,
+                        color: themeColors.purple,
+                        fontWeight: "bold",
+                        fontSize: 16,
+                      }}
+                    >
+                      {isDarkMode ? "Light Mode" : "Dark Mode"}
+                    </Text>
+                  </TouchableOpacity>
+                  {/* Divider */}
+                  <View
+                    style={{
+                      height: 1,
+                      backgroundColor: themeColors.lightGrayBorder || "#eee",
+                      marginHorizontal: 10,
+                    }}
+                  />
+                  {/* Profile */}
+                  <TouchableOpacity
+                    onPress={() => {
+                      // Always close the report modal before navigating to Profile
+                      setShowGeneralReport(false);
+                      setMenuOpen(false);
+                      setTimeout(() => {
+                        navigation.navigate("Profile");
+                      }, 250);
+                    }}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      paddingVertical: 12,
+                      paddingHorizontal: 20,
+                    }}
+                  >
+                    <User size={20} color={themeColors.purple} weight="bold" />
+                    <Text
+                      style={{
+                        marginLeft: 12,
+                        color: themeColors.purple,
+                        fontWeight: "bold",
+                        fontSize: 16,
+                      }}
+                    >
+                      Profile
+                    </Text>
+                  </TouchableOpacity>
+                  {/* Divider */}
+                  <View
+                    style={{
+                      height: 1,
+                      backgroundColor: themeColors.lightGrayBorder || "#eee",
+                      marginHorizontal: 10,
+                    }}
+                  />
+                </View>
+              </TouchableOpacity>
+            </Modal>
+          )}
+
+          {/* --- TabView replaces TabBar and tab content --- */}
+          <TabView
+            navigationState={{ index, routes }}
+            renderScene={renderScene}
+            onIndexChange={setIndex}
+            initialLayout={{ width: layout.width }}
+            lazy
+            renderLazyPlaceholder={() => (
+              <View style={{ flex: 1, backgroundColor: themeColors.white }} />
+            )}
+            style={{ flex: 1 }}
+            renderTabBar={({ navigationState }) => (
+              <View
+                style={{
+                  flexDirection: "row",
+                  backgroundColor: themeColors.white,
+                }}
+              >
+                {navigationState.routes.map((route, i) => (
+                  <TouchableOpacity
+                    key={route.key}
+                    onPress={() => setIndex(i)}
+                    style={{
+                      flex: 1,
+                      paddingVertical: 12,
+                      borderBottomWidth: 3,
+                      borderBottomColor:
+                        i === index ? themeColors.purple : "transparent",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color:
+                          i === index
+                            ? themeColors.black
+                            : themeColors.darkGray,
+                        fontWeight: i === index ? "bold" : "normal",
+                        fontSize: 16,
+                      }}
+                    >
+                      {route.title}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          />
+
+          <GeneralReportModal
+            visible={showGeneralReport}
+            onClose={() => setShowGeneralReport(false)}
+          />
+        </View>
+      )}
     </SafeAreaView>
   );
 }
