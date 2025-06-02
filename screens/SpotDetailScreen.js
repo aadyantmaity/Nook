@@ -1288,155 +1288,157 @@ export default function SpotDetailScreen({ route, navigation }) {
             </View>
           )}
           {/* --- Private Nook Section --- */}
-          <View
-            style={{
-              marginTop: 24,
-              marginBottom: 24,
-              backgroundColor: themeColors.gray + "18",
-              borderRadius: 12,
-              padding: 16,
-            }}
-          >
-            <Text
-              style={{
-                fontWeight: "bold",
-                fontSize: 18,
-                color: themeColors.purple,
-                marginBottom: 8,
-              }}
-            >
-              Focus Stats
-            </Text>
-            <Text
-              style={{
-                color: themeColors.black,
-                fontSize: 15,
-                marginBottom: 4,
-              }}
-            >
-              Total sessions: {focusStats?.sessions?.length || 0}
-            </Text>
-            <Text
-              style={{
-                color: themeColors.black,
-                fontSize: 15,
-                marginBottom: 4,
-              }}
-            >
-              Total focus time:{" "}
-              {focusStats?.total ? formatHMS(focusStats.total) : "0h 0m 0s"}
-            </Text>
-            {/* Private notes */}
-            <Text
-              style={{
-                fontWeight: "bold",
-                fontSize: 16,
-                color: themeColors.purple,
-                marginTop: 18,
-                marginBottom: 4,
-              }}
-            >
-              Private Notes
-            </Text>
-            <TextInput
-              value={privateNote}
-              onChangeText={(text) => {
-                if (text.length <= 200) setPrivateNote(text);
-              }}
-              placeholder="Add a private note for this nook..."
-              placeholderTextColor={themeColors.darkGray}
-              multiline
-              maxLength={200}
-              style={{
-                minHeight: 60,
-                borderWidth: 1,
-                borderColor: themeColors.purple,
-                borderRadius: 8,
-                padding: 10,
-                color: themeColors.black,
-                backgroundColor: themeColors.white,
-                marginBottom: 4,
-              }}
-              editable={!savingNote}
-            />
+          {isPrivateNook && (
             <View
               style={{
-                flexDirection: "row",
-                justifyContent: "flex-end",
-                marginBottom: 8,
+                marginTop: 24,
+                marginBottom: 24,
+                backgroundColor: themeColors.gray + "18",
+                borderRadius: 12,
+                padding: 16,
               }}
             >
               <Text
                 style={{
-                  color:
-                    privateNote.length >= 200
-                      ? themeColors.red
-                      : themeColors.darkGray,
-                  fontSize: 12,
+                  fontWeight: "bold",
+                  fontSize: 18,
+                  color: themeColors.purple,
+                  marginBottom: 8,
                 }}
               >
-                {privateNote.length}/200
+                Focus Stats
               </Text>
-            </View>
-            <TouchableOpacity
-              onPress={handleSaveNote}
-              disabled={savingNote || privateNote.trim().length === 0}
-              style={{
-                backgroundColor:
-                  privateNote.trim().length === 0
-                    ? themeColors.gray
-                    : themeColors.purple,
-                borderRadius: 8,
-                paddingVertical: 8,
-                alignItems: "center",
-                opacity: savingNote ? 0.7 : 1,
-              }}
-            >
-              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
-                {savingNote ? "Saving..." : "Save Note"}
+              <Text
+                style={{
+                  color: themeColors.black,
+                  fontSize: 15,
+                  marginBottom: 4,
+                }}
+              >
+                Total sessions: {focusStats?.sessions?.length || 0}
               </Text>
-            </TouchableOpacity>
-
-            {/* Dropdown for all saved notes */}
-            <NotesDropdown
-              notes={allNotes}
-              themeColors={themeColors}
-              isPrivateNook={true}
-              spotId={spotId}
-            />
-
-            <View style={{ marginTop: 16, flexDirection: "row" }}>
-              {spot.addedBy === auth.currentUser?.uid && (
-                <TouchableOpacity
-                  onPress={handleDeleteSpot}
+              <Text
+                style={{
+                  color: themeColors.black,
+                  fontSize: 15,
+                  marginBottom: 4,
+                }}
+              >
+                Total focus time:{" "}
+                {focusStats?.total ? formatHMS(focusStats.total) : "0h 0m 0s"}
+              </Text>
+              {/* Private notes */}
+              <Text
+                style={{
+                  fontWeight: "bold",
+                  fontSize: 16,
+                  color: themeColors.purple,
+                  marginTop: 18,
+                  marginBottom: 4,
+                }}
+              >
+                Private Notes
+              </Text>
+              <TextInput
+                value={privateNote}
+                onChangeText={(text) => {
+                  if (text.length <= 200) setPrivateNote(text);
+                }}
+                placeholder="Add a private note for this nook..."
+                placeholderTextColor={themeColors.darkGray}
+                multiline
+                maxLength={200}
+                style={{
+                  minHeight: 60,
+                  borderWidth: 1,
+                  borderColor: themeColors.purple,
+                  borderRadius: 8,
+                  padding: 10,
+                  color: themeColors.black,
+                  backgroundColor: themeColors.white,
+                  marginBottom: 4,
+                }}
+                editable={!savingNote}
+              />
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "flex-end",
+                  marginBottom: 8,
+                }}
+              >
+                <Text
                   style={{
-                    flex: 1,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    paddingVertical: 12,
-                    paddingHorizontal: 16,
-                    backgroundColor: themeColors.red,
-                    borderRadius: 8,
-                    marginRight: 8,
-                    marginTop: 16,
+                    color:
+                      privateNote.length >= 200
+                        ? themeColors.red
+                        : themeColors.darkGray,
+                    fontSize: 12,
                   }}
                 >
-                  <X size={20} color={themeColors.white} weight="bold" />
-                  <Text
+                  {privateNote.length}/200
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={handleSaveNote}
+                disabled={savingNote || privateNote.trim().length === 0}
+                style={{
+                  backgroundColor:
+                    privateNote.trim().length === 0
+                      ? themeColors.gray
+                      : themeColors.purple,
+                  borderRadius: 8,
+                  paddingVertical: 8,
+                  alignItems: "center",
+                  opacity: savingNote ? 0.7 : 1,
+                }}
+              >
+                <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+                  {savingNote ? "Saving..." : "Save Note"}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Dropdown for all saved notes */}
+              <NotesDropdown
+                notes={allNotes}
+                themeColors={themeColors}
+                isPrivateNook={true}
+                spotId={spotId}
+              />
+
+              <View style={{ marginTop: 16, flexDirection: "row" }}>
+                {spot.addedBy === auth.currentUser?.uid && (
+                  <TouchableOpacity
+                    onPress={handleDeleteSpot}
                     style={{
-                      marginLeft: 8,
-                      color: themeColors.white,
-                      fontWeight: "bold",
-                      fontSize: 16,
+                      flex: 1,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      paddingVertical: 12,
+                      paddingHorizontal: 16,
+                      backgroundColor: themeColors.red,
+                      borderRadius: 8,
+                      marginRight: 8,
+                      marginTop: 16,
                     }}
                   >
-                    Delete Nook
-                  </Text>
-                </TouchableOpacity>
-              )}
+                    <X size={20} color={themeColors.white} weight="bold" />
+                    <Text
+                      style={{
+                        marginLeft: 8,
+                        color: themeColors.white,
+                        fontWeight: "bold",
+                        fontSize: 16,
+                      }}
+                    >
+                      Delete Nook
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
-          </View>
+          )}
           {/* Bottom action area */}
           <View
             style={{
@@ -1854,155 +1856,157 @@ export default function SpotDetailScreen({ route, navigation }) {
             </View>
           )}
           {/* --- Private Nook Section --- */}
-          <View
-            style={{
-              marginTop: 24,
-              marginBottom: 24,
-              backgroundColor: themeColors.gray + "18",
-              borderRadius: 12,
-              padding: 16,
-            }}
-          >
-            <Text
-              style={{
-                fontWeight: "bold",
-                fontSize: 18,
-                color: themeColors.purple,
-                marginBottom: 8,
-              }}
-            >
-              Focus Stats
-            </Text>
-            <Text
-              style={{
-                color: themeColors.black,
-                fontSize: 15,
-                marginBottom: 4,
-              }}
-            >
-              Total sessions: {focusStats?.sessions?.length || 0}
-            </Text>
-            <Text
-              style={{
-                color: themeColors.black,
-                fontSize: 15,
-                marginBottom: 4,
-              }}
-            >
-              Total focus time:{" "}
-              {focusStats?.total ? formatHMS(focusStats.total) : "0h 0m 0s"}
-            </Text>
-            {/* Private notes */}
-            <Text
-              style={{
-                fontWeight: "bold",
-                fontSize: 16,
-                color: themeColors.purple,
-                marginTop: 18,
-                marginBottom: 4,
-              }}
-            >
-              Private Notes
-            </Text>
-            <TextInput
-              value={privateNote}
-              onChangeText={(text) => {
-                if (text.length <= 200) setPrivateNote(text);
-              }}
-              placeholder="Add a private note for this nook..."
-              placeholderTextColor={themeColors.darkGray}
-              multiline
-              maxLength={200}
-              style={{
-                minHeight: 60,
-                borderWidth: 1,
-                borderColor: themeColors.purple,
-                borderRadius: 8,
-                padding: 10,
-                color: themeColors.black,
-                backgroundColor: themeColors.white,
-                marginBottom: 4,
-              }}
-              editable={!savingNote}
-            />
+          {isPrivateNook && (
             <View
               style={{
-                flexDirection: "row",
-                justifyContent: "flex-end",
-                marginBottom: 8,
+                marginTop: 24,
+                marginBottom: 24,
+                backgroundColor: themeColors.gray + "18",
+                borderRadius: 12,
+                padding: 16,
               }}
             >
               <Text
                 style={{
-                  color:
-                    privateNote.length >= 200
-                      ? themeColors.red
-                      : themeColors.darkGray,
-                  fontSize: 12,
+                  fontWeight: "bold",
+                  fontSize: 18,
+                  color: themeColors.purple,
+                  marginBottom: 8,
                 }}
               >
-                {privateNote.length}/200
+                Focus Stats
               </Text>
-            </View>
-            <TouchableOpacity
-              onPress={handleSaveNote}
-              disabled={savingNote || privateNote.trim().length === 0}
-              style={{
-                backgroundColor:
-                  privateNote.trim().length === 0
-                    ? themeColors.gray
-                    : themeColors.purple,
-                borderRadius: 8,
-                paddingVertical: 8,
-                alignItems: "center",
-                opacity: savingNote ? 0.7 : 1,
-              }}
-            >
-              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
-                {savingNote ? "Saving..." : "Save Note"}
+              <Text
+                style={{
+                  color: themeColors.black,
+                  fontSize: 15,
+                  marginBottom: 4,
+                }}
+              >
+                Total sessions: {focusStats?.sessions?.length || 0}
               </Text>
-            </TouchableOpacity>
-
-            {/* Dropdown for all saved notes */}
-            <NotesDropdown
-              notes={allNotes}
-              themeColors={themeColors}
-              isPrivateNook={true}
-              spotId={spotId}
-            />
-
-            <View style={{ marginTop: 16, flexDirection: "row" }}>
-              {spot.addedBy === auth.currentUser?.uid && (
-                <TouchableOpacity
-                  onPress={handleDeleteSpot}
+              <Text
+                style={{
+                  color: themeColors.black,
+                  fontSize: 15,
+                  marginBottom: 4,
+                }}
+              >
+                Total focus time:{" "}
+                {focusStats?.total ? formatHMS(focusStats.total) : "0h 0m 0s"}
+              </Text>
+              {/* Private notes */}
+              <Text
+                style={{
+                  fontWeight: "bold",
+                  fontSize: 16,
+                  color: themeColors.purple,
+                  marginTop: 18,
+                  marginBottom: 4,
+                }}
+              >
+                Private Notes
+              </Text>
+              <TextInput
+                value={privateNote}
+                onChangeText={(text) => {
+                  if (text.length <= 200) setPrivateNote(text);
+                }}
+                placeholder="Add a private note for this nook..."
+                placeholderTextColor={themeColors.darkGray}
+                multiline
+                maxLength={200}
+                style={{
+                  minHeight: 60,
+                  borderWidth: 1,
+                  borderColor: themeColors.purple,
+                  borderRadius: 8,
+                  padding: 10,
+                  color: themeColors.black,
+                  backgroundColor: themeColors.white,
+                  marginBottom: 4,
+                }}
+                editable={!savingNote}
+              />
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "flex-end",
+                  marginBottom: 8,
+                }}
+              >
+                <Text
                   style={{
-                    flex: 1,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    paddingVertical: 12,
-                    paddingHorizontal: 16,
-                    backgroundColor: themeColors.red,
-                    borderRadius: 8,
-                    marginRight: 8,
-                    marginTop: 16,
+                    color:
+                      privateNote.length >= 200
+                        ? themeColors.red
+                        : themeColors.darkGray,
+                    fontSize: 12,
                   }}
                 >
-                  <X size={20} color={themeColors.white} weight="bold" />
-                  <Text
+                  {privateNote.length}/200
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={handleSaveNote}
+                disabled={savingNote || privateNote.trim().length === 0}
+                style={{
+                  backgroundColor:
+                    privateNote.trim().length === 0
+                      ? themeColors.gray
+                      : themeColors.purple,
+                  borderRadius: 8,
+                  paddingVertical: 8,
+                  alignItems: "center",
+                  opacity: savingNote ? 0.7 : 1,
+                }}
+              >
+                <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+                  {savingNote ? "Saving..." : "Save Note"}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Dropdown for all saved notes */}
+              <NotesDropdown
+                notes={allNotes}
+                themeColors={themeColors}
+                isPrivateNook={true}
+                spotId={spotId}
+              />
+
+              <View style={{ marginTop: 16, flexDirection: "row" }}>
+                {spot.addedBy === auth.currentUser?.uid && (
+                  <TouchableOpacity
+                    onPress={handleDeleteSpot}
                     style={{
-                      marginLeft: 8,
-                      color: themeColors.white,
-                      fontWeight: "bold",
-                      fontSize: 16,
+                      flex: 1,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      paddingVertical: 12,
+                      paddingHorizontal: 16,
+                      backgroundColor: themeColors.red,
+                      borderRadius: 8,
+                      marginRight: 8,
+                      marginTop: 16,
                     }}
                   >
-                    Delete Nook
-                  </Text>
-                </TouchableOpacity>
-              )}
+                    <X size={20} color={themeColors.white} weight="bold" />
+                    <Text
+                      style={{
+                        marginLeft: 8,
+                        color: themeColors.white,
+                        fontWeight: "bold",
+                        fontSize: 16,
+                      }}
+                    >
+                      Delete Nook
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
-          </View>
+          )}
           {/* Bottom action area */}
           <View
             style={{
