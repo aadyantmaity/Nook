@@ -8,6 +8,7 @@ import {
   Alert,
   AppState,
   ScrollView,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -34,6 +35,8 @@ import {
 import { ThemeContext } from "../App";
 import { colors } from "../constants/colors";
 import * as Notifications from "expo-notifications";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
 
 // Timer durations are defined as constants at the top of the file:
 const DEFAULT_POMODORO_MINUTES = 1;
@@ -63,6 +66,42 @@ export function FocusTimerView({ navigation }) {
   // Auto-start next session state
   const [autoStartNext, setAutoStartNext] = useState(false);
 
+  // --- Goal Feature State ---
+  const GOAL_STATE_KEY = "focusGoalState";
+  const [goal, setGoal] = useState({
+    title: "",
+    target: 0,
+    progress: 0,
+    sessionIds: [],
+    achieved: false,
+  });
+  const [goalInput, setGoalInput] = useState({ h: "", m: "", s: "" });
+  const [goalTitleInput, setGoalTitleInput] = useState("");
+  const [showGoalModal, setShowGoalModal] = useState(false);
+
+  // Persist goal to AsyncStorage whenever it changes
+  useEffect(() => {
+    AsyncStorage.setItem(GOAL_STATE_KEY, JSON.stringify(goal)).catch(() => {});
+  }, [goal]);
+
+  // --- Robust Goal Restore on Tab/Screen Focus ---
+  useFocusEffect(
+    useCallback(() => {
+      const restoreGoal = async () => {
+        try {
+          const raw = await AsyncStorage.getItem(GOAL_STATE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === "object") {
+              setGoal(parsed);
+            }
+          }
+        } catch {}
+      };
+      restoreGoal();
+    }, [])
+  );
+
   // Fetch study spots for location selection
   useEffect(() => {
     const fetchSpots = async () => {
@@ -75,39 +114,40 @@ export function FocusTimerView({ navigation }) {
   }, []);
 
   // Fetch focus stats for the current user (sessions for the week, grouped by spotId)
-  useEffect(() => {
-    const fetchStats = async () => {
-      if (!auth.currentUser) return;
-      const stats = {};
-      const weekAgo = Timestamp.now().toMillis() - 7 * 24 * 60 * 60 * 1000;
-      const q = query(
-        collection(db, "focusSessions"),
-        where("userId", "==", auth.currentUser.uid)
-      );
-      const snapshot = await getDocs(q);
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        if (data.spotId && data.start && data.end) {
-          const start = data.start.seconds
-            ? data.start.seconds * 1000
-            : data.start.toMillis();
-          const end = data.end.seconds
-            ? data.end.seconds * 1000
-            : data.end.toMillis();
-          if (end > weekAgo) {
-            if (!stats[data.spotId]) stats[data.spotId] = [];
-            stats[data.spotId].push({
-              ...data,
-              duration: end - start,
-              start,
-              end,
-              tags: data.tags || [],
-            });
-          }
+  const fetchStats = async () => {
+    if (!auth.currentUser) return;
+    const stats = {};
+    const weekAgo = Timestamp.now().toMillis() - 7 * 24 * 60 * 60 * 1000;
+    const q = query(
+      collection(db, "focusSessions"),
+      where("userId", "==", auth.currentUser.uid)
+    );
+    const snapshot = await getDocs(q);
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      if (data.spotId && data.start && data.end) {
+        const start = data.start.seconds
+          ? data.start.seconds * 1000
+          : data.start.toMillis();
+        const end = data.end.seconds
+          ? data.end.seconds * 1000
+          : data.end.toMillis();
+        if (end > weekAgo) {
+          if (!stats[data.spotId]) stats[data.spotId] = [];
+          stats[data.spotId].push({
+            ...data,
+            duration: end - start,
+            start,
+            end,
+            tags: data.tags || [],
+          });
         }
-      });
-      setFocusStats(stats);
-    };
+      }
+    });
+    setFocusStats(stats);
+  };
+
+  useEffect(() => {
     fetchStats();
     // eslint-disable-next-line
   }, [isBreak]);
@@ -119,6 +159,17 @@ export function FocusTimerView({ navigation }) {
       const elapsed = Math.floor((now - timerStartRef.current.start) / 1000);
       const newTime = Math.max(timerStartRef.current.duration - elapsed, 0);
       setTimer(newTime);
+    } else {
+      await AsyncStorage.setItem(
+        TIMER_RUNNING_KEY,
+        JSON.stringify({
+          wasRunning: false,
+          timer,
+          isBreak,
+          selectedSpot,
+          sessionStart,
+        })
+      );
     }
   };
 
@@ -148,8 +199,6 @@ export function FocusTimerView({ navigation }) {
         }
         lastBackgroundTimeRef.current = Date.now();
         await recalculateTimerOnBack();
-        setIsRunning(false);
-        timerStartRef.current = null;
       }
       if (
         appState.current.match(/inactive|background/) &&
@@ -182,29 +231,34 @@ export function FocusTimerView({ navigation }) {
                 : savedSessionStart
             );
 
-          if (
-            timerStart &&
-            typeof timerStart.start === "number" &&
-            typeof timerStart.duration === "number"
-          ) {
-            const now = Date.now();
-            const elapsed = Math.floor((now - timerStart.start) / 1000);
-            const newTime = Math.max(timerStart.duration - elapsed, 0);
-            setTimer(newTime);
-            if (wasRunning && newTime > 0) {
-              setIsRunning(true);
-              timerStartRef.current = {
-                start: Date.now(),
-                duration: newTime,
-              };
-            } else {
-              setIsRunning(false);
-              timerStartRef.current = null;
-              if (newTime === 0) {
+          if (wasRunning) {
+            if (
+              timerStart &&
+              typeof timerStart.start === "number" &&
+              typeof timerStart.duration === "number"
+            ) {
+              const now = Date.now();
+              const elapsed = Math.floor((now - timerStart.start) / 1000);
+              const newTime = Math.max(timerStart.duration - elapsed, 0);
+              setTimer(newTime);
+              if (newTime > 0) {
+                setIsRunning(true);
+                timerStartRef.current = {
+                  start: Date.now(),
+                  duration: newTime,
+                };
+              } else {
+                setIsRunning(false);
+                timerStartRef.current = null;
                 handleSessionEnd();
               }
             }
+          } else {
+            // Paused state restore
+            setIsRunning(false);
+            timerStartRef.current = null;
           }
+
           await AsyncStorage.removeItem(TIMER_RUNNING_KEY);
         }
       }
@@ -249,67 +303,6 @@ export function FocusTimerView({ navigation }) {
     };
     // eslint-disable-next-line
   }, [isRunning]);
-
-  // Restore timer running state on mount (when screen is opened)
-  useEffect(() => {
-    const restoreRunningState = async () => {
-      try {
-        const runningState = await AsyncStorage.getItem(TIMER_RUNNING_KEY);
-        if (runningState) {
-          const {
-            wasRunning,
-            timerStart,
-            timer: savedTimer,
-            isBreak: savedIsBreak,
-            selectedSpot: savedSpot,
-            sessionStart: savedSessionStart,
-            lastBackgroundTime,
-          } = JSON.parse(runningState);
-
-          // Restore state values
-          if (typeof savedTimer === "number") setTimer(savedTimer);
-          if (typeof savedIsBreak === "boolean") setIsBreak(savedIsBreak);
-          if (savedSpot) setSelectedSpot(savedSpot);
-          if (savedSessionStart)
-            setSessionStart(
-              savedSessionStart.seconds !== undefined
-                ? new Timestamp(
-                    savedSessionStart.seconds,
-                    savedSessionStart.nanoseconds
-                  )
-                : savedSessionStart
-            );
-
-          if (
-            timerStart &&
-            typeof timerStart.start === "number" &&
-            typeof timerStart.duration === "number"
-          ) {
-            const now = Date.now();
-            const elapsed = Math.floor((now - timerStart.start) / 1000);
-            const newTime = Math.max(timerStart.duration - elapsed, 0);
-            setTimer(newTime);
-            if (wasRunning && newTime > 0) {
-              setIsRunning(true);
-              timerStartRef.current = {
-                start: Date.now(),
-                duration: newTime,
-              };
-            } else {
-              setIsRunning(false);
-              timerStartRef.current = null;
-              if (newTime === 0) {
-                handleSessionEnd();
-              }
-            }
-          }
-          await AsyncStorage.removeItem(TIMER_RUNNING_KEY);
-        }
-      } catch {}
-    };
-    restoreRunningState();
-    // eslint-disable-next-line
-  }, []);
 
   // Save timer state when paused or before leaving the screen
   useEffect(() => {
@@ -376,6 +369,8 @@ export function FocusTimerView({ navigation }) {
           };
         });
       }
+      // --- Fetch stats from Firestore to ensure up-to-date ---
+      await fetchStats();
     }
   };
 
@@ -472,6 +467,38 @@ export function FocusTimerView({ navigation }) {
     }
   };
 
+  // Stop and save session (add to Firestore and update stats)
+  const handleStop = async () => {
+    setIsRunning(false);
+    timerStartRef.current = null;
+    await clearTimerState();
+
+    if (sessionStart) {
+      const end = Timestamp.now();
+      if (!isBreak) {
+        // If Pomodoro, show note modal and after saving, start break
+        setPendingSession({
+          start: sessionStart,
+          end: end,
+          isBreak: isBreak,
+          sessionDuration: DEFAULT_POMODORO_MINUTES * 60,
+        });
+        setShowNoteModal(true);
+        // Don't reset timer/isBreak here, do it after note is saved
+      } else {
+        // If break, just save session and reset state
+        await addSessionAndUpdateStats(sessionStart, end, isBreak);
+        setSessionStart(null);
+        setTimer(DEFAULT_POMODORO_MINUTES * 60);
+        setIsBreak(false);
+      }
+    } else {
+      setSessionStart(null);
+      setTimer(DEFAULT_POMODORO_MINUTES * 60);
+      setIsBreak(false);
+    }
+  };
+
   // Save session with note after modal
   const [pendingSession, setPendingSession] = useState(null);
   const [showNoteModal, setShowNoteModal] = useState(false);
@@ -488,62 +515,17 @@ export function FocusTimerView({ navigation }) {
       setSessionNote("");
       setPendingSession(null);
       setShowNoteModal(false);
+      // After saving note, start break timer
       setTimeout(() => {
-        setIsRunning(true);
+        setIsBreak(true);
+        setTimer(DEFAULT_BREAK_MINUTES * 60);
         setSessionStart(Timestamp.now());
         timerStartRef.current = {
           start: Date.now(),
           duration: DEFAULT_BREAK_MINUTES * 60,
         };
-        setIsBreak(true);
-        setTimer(DEFAULT_BREAK_MINUTES * 60);
+        setIsRunning(true);
       }, 500);
-    }
-  };
-
-  // Start handler
-  const handleStart = () => {
-    if (!selectedSpot) {
-      Alert.alert("Select a location to start Focus Mode.");
-      return;
-    }
-    setIsRunning(true);
-    setSessionStart(Timestamp.now());
-    timerStartRef.current = {
-      start: Date.now(),
-      duration: timer,
-    };
-  };
-
-  // Pause
-  const handlePause = () => {
-    setIsRunning(false);
-    timerStartRef.current = null;
-  };
-
-  // Stop and save session (add to Firestore and update stats)
-  const handleStop = async () => {
-    setIsRunning(false);
-    setTimer(DEFAULT_POMODORO_MINUTES * 60);
-    setIsBreak(false);
-    timerStartRef.current = null;
-    await clearTimerState();
-    if (sessionStart) {
-      const end = Timestamp.now();
-      if (!isBreak) {
-        setPendingSession({
-          start: sessionStart,
-          end: end,
-          isBreak: isBreak,
-          sessionDuration: DEFAULT_POMODORO_MINUTES * 60,
-        });
-        setShowNoteModal(true);
-      } else {
-        await addSessionAndUpdateStats(sessionStart, end, isBreak);
-        setSessionStart(null);
-      }
-    } else {
-      setSessionStart(null);
     }
   };
 
@@ -551,47 +533,6 @@ export function FocusTimerView({ navigation }) {
   const [selectedStatSpot, setSelectedStatSpot] = useState(null);
   const [showStatModal, setShowStatModal] = useState(false);
   const [deletingStat, setDeletingStat] = useState(false);
-
-  // Delete all focus sessions for a spot for this user (this week)
-  const handleDeleteStat = async (spotId) => {
-    if (!auth.currentUser) return;
-    setDeletingStat(true);
-    try {
-      // Fetch all sessions for this user and spot
-      const weekAgo = Timestamp.now().toMillis() - 7 * 24 * 60 * 60 * 1000;
-      const q = query(
-        collection(db, "focusSessions"),
-        where("userId", "==", auth.currentUser.uid),
-        where("spotId", "==", spotId)
-      );
-      const snapshot = await getDocs(q);
-
-      // Delete all sessions for this spot (optionally, only those in the last week)
-      const batch = [];
-      snapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        const end = data.end?.seconds
-          ? data.end.seconds * 1000
-          : data.end?.toMillis?.() ?? 0;
-        if (end > weekAgo) {
-          batch.push(deleteDoc(docSnap.ref));
-        }
-      });
-      await Promise.all(batch);
-
-      // Remove from local stats
-      setFocusStats((prev) => {
-        const copy = { ...prev };
-        delete copy[spotId];
-        return copy;
-      });
-      setShowStatModal(false);
-      setSelectedStatSpot(null);
-    } catch (e) {
-      Alert.alert("Error", "Failed to delete stats for this spot.");
-    }
-    setDeletingStat(false);
-  };
 
   // Show stats for the week (grouped by spot, show each session's tags)
   const renderStats = () => {
@@ -754,45 +695,91 @@ export function FocusTimerView({ navigation }) {
     return `${m}:${s}`;
   };
 
-  const handleDeleteSession = async (sessionId, spotId) => {
-    if (!auth.currentUser || !sessionId || !spotId) return;
+  // Helper: format seconds to h m s
+  const formatHMS = (secs) => {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    return `${h}h ${m}m ${s}s`;
+  };
+
+  // --- Add session to goal progress ---
+  const addSessionToGoal = async (sessionObj) => {
+    if (!sessionObj || !sessionObj.sessionId || sessionObj.isBreak) return;
+    if (goal.sessionIds.includes(sessionObj.sessionId)) return;
+    const newProgress =
+      goal.progress + Math.floor((sessionObj.duration || 0) / 1000);
+    const achieved =
+      goal.target > 0 && newProgress >= goal.target && !goal.achieved;
+    const updatedGoal = {
+      ...goal,
+      progress: newProgress,
+      sessionIds: [...goal.sessionIds, sessionObj.sessionId],
+      achieved: achieved ? true : goal.achieved,
+    };
+    setGoal(updatedGoal);
     try {
-      // Find the session doc in Firestore by matching sessionId and spotId
-      const q = query(
-        collection(db, "focusSessions"),
-        where("userId", "==", auth.currentUser.uid),
-        where("spotId", "==", spotId),
-        where("sessionId", "==", sessionId)
-      );
-      const snapshot = await getDocs(q);
-      let docIdToDelete = null;
-      snapshot.forEach((docSnap) => {
-        docIdToDelete = docSnap.id;
-      });
-      if (docIdToDelete) {
-        await deleteDoc(doc(db, "focusSessions", docIdToDelete));
-        setFocusStats((prev) => {
-          const updated = { ...prev };
-          if (Array.isArray(updated[spotId])) {
-            updated[spotId] = updated[spotId].filter(
-              (s) => s.sessionId !== sessionId
-            );
-            if (updated[spotId].length === 0) delete updated[spotId];
-          }
-          return updated;
-        });
-        setSelectedStatSpot((prev) => {
-          if (!prev) return prev;
-          if (prev.spotId !== spotId) return prev;
-          const newSessions = prev.sessions.filter(
-            (s) => s.sessionId !== sessionId
-          );
-          return { ...prev, sessions: newSessions };
-        });
-      }
+      await AsyncStorage.setItem(GOAL_STATE_KEY, JSON.stringify(updatedGoal));
     } catch (e) {
-      Alert.alert("Error", "Failed to delete this session.");
+      // optional: log or handle error
     }
+    if (achieved) {
+      Alert.alert(
+        "Goal Achieved!",
+        "Congratulations, you've reached your focus goal!"
+      );
+    }
+  };
+
+  // --- Remove session from goal progress ---
+  const removeSessionFromGoal = async (sessionId, duration) => {
+    if (!goal.sessionIds.includes(sessionId)) return;
+    const durSec = Math.floor((duration || 0) / 1000);
+    const newIds = goal.sessionIds.filter((id) => id !== sessionId);
+    let newProgress = goal.progress - durSec;
+    if (newProgress < 0) newProgress = 0;
+    const updatedGoal = {
+      ...goal,
+      progress: newProgress,
+      sessionIds: newIds,
+      achieved: newProgress >= goal.target && goal.target > 0,
+    };
+    setGoal(updatedGoal);
+    try {
+      await AsyncStorage.setItem(GOAL_STATE_KEY, JSON.stringify(updatedGoal));
+    } catch (e) {
+      // optional: log or handle error
+    }
+  };
+
+  // --- Goal Modal Handlers ---
+  const handleGoalSave = () => {
+    const h = parseInt(goalInput.h) || 0;
+    const m = parseInt(goalInput.m) || 0;
+    const s = parseInt(goalInput.s) || 0;
+    const total = h * 3600 + m * 60 + s;
+    setGoal({
+      title: goalTitleInput.trim() || "Focus Goal",
+      target: total,
+      progress: 0,
+      sessionIds: [],
+      achieved: false,
+    });
+    setShowGoalModal(false);
+  };
+
+  // Add this function to handle deleting the goal
+  const handleGoalDelete = () => {
+    setGoal({
+      title: "",
+      target: 0,
+      progress: 0,
+      sessionIds: [],
+      achieved: false,
+    });
+    setGoalTitleInput("");
+    setGoalInput({ h: "", m: "", s: "" });
+    setShowGoalModal(false);
   };
 
   // Add a ref to track if timer was running before leaving screen
@@ -875,6 +862,230 @@ export function FocusTimerView({ navigation }) {
       ...prev,
       [spotId]: !prev[spotId],
     }));
+  };
+
+  // Start handler
+  const handleStart = () => {
+    if (!selectedSpot) {
+      Alert.alert("Select a location to start Focus Mode.");
+      return;
+    }
+    setIsRunning(true);
+    setSessionStart(Timestamp.now());
+    timerStartRef.current = {
+      start: Date.now(),
+      duration: timer,
+    };
+  };
+
+  // Pause handler: recalculate remaining time and persist
+  const handlePause = () => {
+    if (timerStartRef.current) {
+      const elapsed = Math.floor(
+        (Date.now() - timerStartRef.current.start) / 1000
+      );
+      const remaining = Math.max(timerStartRef.current.duration - elapsed, 0);
+      setTimer(remaining);
+    }
+    timerStartRef.current = null;
+    setIsRunning(false);
+  };
+
+  // --- Save timer state on blur (tab switch/navigation away) ---
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        // On blur, save timer state if running
+        if (isRunning && timerStartRef.current) {
+          AsyncStorage.setItem(
+            TIMER_RUNNING_KEY,
+            JSON.stringify({
+              wasRunning: true,
+              timerStart: timerStartRef.current,
+              timer,
+              isBreak,
+              selectedSpot,
+              sessionStart,
+              lastBackgroundTime: Date.now(),
+            })
+          );
+        } else {
+          AsyncStorage.setItem(
+            TIMER_RUNNING_KEY,
+            JSON.stringify({
+              wasRunning: false,
+              timer,
+              isBreak,
+              selectedSpot,
+              sessionStart,
+            })
+          );
+        }
+      };
+    }, [isRunning, timer, isBreak, selectedSpot, sessionStart])
+  );
+
+  // --- Restore goal and timer state on focus ---
+  useFocusEffect(
+    useCallback(() => {
+      const restoreGoalAndTimer = async () => {
+        try {
+          // Restore goal
+          const rawGoal = await AsyncStorage.getItem(GOAL_STATE_KEY);
+          if (rawGoal) {
+            const parsed = JSON.parse(rawGoal);
+            if (parsed && typeof parsed === "object") {
+              setGoal(parsed);
+            }
+          }
+
+          // Restore running timer (if it was running before leaving)
+          const runningState = await AsyncStorage.getItem(TIMER_RUNNING_KEY);
+          if (runningState) {
+            const {
+              wasRunning,
+              timerStart,
+              timer: savedTimer,
+              isBreak: savedIsBreak,
+              selectedSpot: savedSpot,
+              sessionStart: savedSessionStart,
+            } = JSON.parse(runningState);
+
+            if (typeof savedTimer === "number") setTimer(savedTimer);
+            if (typeof savedIsBreak === "boolean") setIsBreak(savedIsBreak);
+            if (savedSpot) setSelectedSpot(savedSpot);
+            if (savedSessionStart)
+              setSessionStart(
+                savedSessionStart.seconds !== undefined
+                  ? new Timestamp(
+                      savedSessionStart.seconds,
+                      savedSessionStart.nanoseconds
+                    )
+                  : savedSessionStart
+              );
+
+            if (
+              timerStart &&
+              typeof timerStart.start === "number" &&
+              typeof timerStart.duration === "number"
+            ) {
+              const now = Date.now();
+              const elapsed = Math.floor((now - timerStart.start) / 1000);
+              const newTime = Math.max(timerStart.duration - elapsed, 0);
+              setTimer(newTime);
+              if (wasRunning && newTime > 0) {
+                setIsRunning(true);
+                timerStartRef.current = {
+                  start: Date.now(),
+                  duration: newTime,
+                };
+              } else {
+                setIsRunning(false);
+                timerStartRef.current = null;
+                if (newTime === 0) {
+                  handleSessionEnd();
+                }
+              }
+            }
+
+            await AsyncStorage.removeItem(TIMER_RUNNING_KEY);
+          } else {
+            // --- Restore paused timer state if present and not running ---
+            const pausedState = await AsyncStorage.getItem(TIMER_STATE_KEY);
+            if (pausedState) {
+              const {
+                timer: savedTimer,
+                isBreak: savedIsBreak,
+                selectedSpot: savedSpot,
+                sessionStart: savedSessionStart,
+              } = JSON.parse(pausedState);
+
+              if (typeof savedTimer === "number") setTimer(savedTimer);
+              if (typeof savedIsBreak === "boolean") setIsBreak(savedIsBreak);
+              if (savedSpot) setSelectedSpot(savedSpot);
+              if (savedSessionStart)
+                setSessionStart(
+                  savedSessionStart.seconds !== undefined
+                    ? new Timestamp(
+                        savedSessionStart.seconds,
+                        savedSessionStart.nanoseconds
+                      )
+                    : savedSessionStart
+                );
+              setIsRunning(false); // Ensure timer stays paused
+              timerStartRef.current = null;
+            }
+          }
+        } catch (e) {
+          // Optionally log error
+        }
+      };
+
+      restoreGoalAndTimer();
+    }, [])
+  );
+
+  // Add this function before the return statement
+  const handleDeleteSession = async (session, spotId) => {
+    Alert.alert(
+      "Delete Session",
+      "Are you sure you want to delete this session?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              if (!session.sessionId) {
+                Alert.alert(
+                  "Cannot Delete",
+                  "This session does not have a valid sessionId and cannot be deleted from Firestore."
+                );
+                return;
+              }
+
+              const q = query(
+                collection(db, "focusSessions"),
+                where("sessionId", "==", session.sessionId)
+              );
+              const snapshot = await getDocs(q);
+
+              if (snapshot.empty) {
+                Alert.alert(
+                  "Not Found",
+                  "This session could not be found in Firestore."
+                );
+                return;
+              }
+
+              for (const docSnap of snapshot.docs) {
+                await deleteDoc(doc(db, "focusSessions", docSnap.id));
+              }
+
+              // Remove from local stats
+              setFocusStats((prev) => {
+                const updated = { ...prev };
+                if (updated[spotId]) {
+                  updated[spotId] = updated[spotId].filter(
+                    (s) => s.sessionId !== session.sessionId
+                  );
+                  if (updated[spotId].length === 0) {
+                    delete updated[spotId];
+                  }
+                }
+                return updated;
+              });
+
+              // Remove from goal progress if present
+              await removeSessionFromGoal(session.sessionId, session.duration);
+            } catch (e) {
+              Alert.alert("Error", `Failed to delete session: ${e.message}`);
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -1219,52 +1430,93 @@ export function FocusTimerView({ navigation }) {
                                                   shadowOpacity: 0.04,
                                                   shadowRadius: 2,
                                                   elevation: 1,
+                                                  flexDirection: "row",
+                                                  alignItems: "center",
                                                 }}
                                               >
-                                                <Text
-                                                  style={{
-                                                    color: themeColors.black,
-                                                    fontSize: 13,
-                                                    fontWeight: "bold",
-                                                  }}
-                                                >
-                                                  {s.start
-                                                    ? new Date(
-                                                        s.start
-                                                      ).toLocaleString([], {
-                                                        month: "short",
-                                                        day: "numeric",
-                                                        hour: "2-digit",
-                                                        minute: "2-digit",
-                                                      })
-                                                    : ""}
-                                                  {" - "}
+                                                <View style={{ flex: 1 }}>
                                                   <Text
                                                     style={{
                                                       color: themeColors.black,
+                                                      fontSize: 13,
+                                                      fontWeight: "bold",
                                                     }}
                                                   >
-                                                    {(() => {
-                                                      const sec = Math.floor(
-                                                        (s.duration || 0) / 1000
-                                                      );
-                                                      const h = Math.floor(
-                                                        sec / 3600
-                                                      );
-                                                      const m = Math.floor(
-                                                        (sec % 3600) / 60
-                                                      );
-                                                      const sec2 = sec % 60;
-                                                      let out = [];
-                                                      if (h > 0)
-                                                        out.push(`${h}h`);
-                                                      if (m > 0 || h > 0)
-                                                        out.push(`${m}m`);
-                                                      out.push(`${sec2}s`);
-                                                      return out.join(" ");
-                                                    })()}
+                                                    {s.start
+                                                      ? new Date(
+                                                          s.start
+                                                        ).toLocaleString([], {
+                                                          month: "short",
+                                                          day: "numeric",
+                                                          hour: "2-digit",
+                                                          minute: "2-digit",
+                                                        })
+                                                      : ""}
+                                                    {" - "}
+                                                    <Text
+                                                      style={{
+                                                        color:
+                                                          themeColors.black,
+                                                      }}
+                                                    >
+                                                      {(() => {
+                                                        const sec = Math.floor(
+                                                          (s.duration || 0) /
+                                                            1000
+                                                        );
+                                                        const h = Math.floor(
+                                                          sec / 3600
+                                                        );
+                                                        const m = Math.floor(
+                                                          (sec % 3600) / 60
+                                                        );
+                                                        const sec2 = sec % 60;
+                                                        let out = [];
+                                                        if (h > 0)
+                                                          out.push(`${h}h`);
+                                                        if (m > 0 || h > 0)
+                                                          out.push(`${m}m`);
+                                                        out.push(`${sec2}s`);
+                                                        return out.join(" ");
+                                                      })()}
+                                                    </Text>
                                                   </Text>
-                                                </Text>
+                                                  {s.note ? (
+                                                    <Text
+                                                      style={{
+                                                        color:
+                                                          themeColors.purple,
+                                                        fontSize: 13,
+                                                        marginTop: 2,
+                                                        fontStyle: "italic",
+                                                      }}
+                                                    >
+                                                      “{s.note}”
+                                                    </Text>
+                                                  ) : null}
+                                                </View>
+                                                <TouchableOpacity
+                                                  onPress={() =>
+                                                    handleDeleteSession(
+                                                      s,
+                                                      spotId
+                                                    )
+                                                  }
+                                                  style={{
+                                                    marginLeft: 8,
+                                                    padding: 4,
+                                                    borderRadius: 6,
+                                                    backgroundColor:
+                                                      themeColors.red + "22",
+                                                  }}
+                                                  accessibilityLabel="Delete session"
+                                                >
+                                                  <Trash
+                                                    size={18}
+                                                    color={themeColors.red}
+                                                    weight="bold"
+                                                  />
+                                                </TouchableOpacity>
                                               </View>
                                             ))
                                         ) : (
@@ -1327,6 +1579,119 @@ export function FocusTimerView({ navigation }) {
                 Close
               </Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+      {/* Session Note Modal */}
+      <Modal visible={showNoteModal} transparent animationType="fade">
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.3)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: themeColors.white,
+              borderRadius: 18,
+              padding: 26,
+              width: "92%",
+              alignItems: "center",
+              shadowColor: themeColors.black,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.13,
+              shadowRadius: 8,
+              elevation: 5,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 22,
+                fontWeight: "bold",
+                color: themeColors.purple,
+                marginBottom: 4,
+                textAlign: "center",
+                letterSpacing: 0.2,
+              }}
+            >
+              Session Reflection
+            </Text>
+            <Text
+              style={{
+                fontSize: 15,
+                color: themeColors.darkGray,
+                marginBottom: 18,
+                textAlign: "center",
+                lineHeight: 20,
+              }}
+            >
+              How did your Pomodoro session go? Write a quick note or reflection
+              (optional).
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: themeColors.purple,
+                borderRadius: 10,
+                width: "100%",
+                minHeight: 80,
+                maxHeight: 120,
+                marginBottom: 10,
+                padding: 12,
+                fontSize: 16,
+                color: themeColors.black,
+                textAlignVertical: "top",
+                backgroundColor: themeColors.gray + "18",
+              }}
+              placeholder="E.g. Stayed focused, got distracted, what did you work on, etc."
+              placeholderTextColor={themeColors.gray}
+              value={sessionNote}
+              onChangeText={setSessionNote}
+              multiline
+              maxLength={200}
+              returnKeyType="done"
+            />
+            <View
+              style={{
+                width: "100%",
+                alignItems: "flex-end",
+                marginBottom: 10,
+              }}
+            >
+              <Text style={{ color: themeColors.darkGray, fontSize: 13 }}>
+                {sessionNote.length}/200
+              </Text>
+            </View>
+            <View style={{ flexDirection: "row", width: "100%" }}>
+              <TouchableOpacity
+                onPress={handleSaveSessionNote}
+                style={{
+                  flex: 1,
+                  backgroundColor: themeColors.purple,
+                  borderRadius: 8,
+                  paddingVertical: 12,
+                  alignItems: "center",
+                  marginRight: 8,
+                  shadowColor: themeColors.black,
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.08,
+                  shadowRadius: 2,
+                  elevation: 2,
+                }}
+              >
+                <Text
+                  style={{
+                    color: themeColors.white,
+                    fontWeight: "bold",
+                    fontSize: 16,
+                  }}
+                >
+                  Save
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -1590,35 +1955,30 @@ export function FocusTimerView({ navigation }) {
                             {nonBreakSessions.length > 0 ? (
                               nonBreakSessions
                                 .sort((a, b) => b.start - a.start)
-                                .map((s, idx) => {
-                                  const date = new Date(s.start);
-                                  const durationSec = Math.floor(
-                                    (s.duration || 0) / 1000
-                                  );
-                                  const h = Math.floor(durationSec / 3600);
-                                  const m = Math.floor(
-                                    (durationSec % 3600) / 60
-                                  );
-                                  const sec2 = durationSec % 60;
-                                  return (
-                                    <View
-                                      key={s.sessionId || idx}
-                                      style={{
-                                        marginLeft: 8,
-                                        marginBottom: 4,
-                                        backgroundColor:
-                                          themeColors.gray + "10",
-                                        borderRadius: 8,
-                                        padding: 8,
-                                        borderWidth: 1,
-                                        borderColor: themeColors.gray + "44",
-                                        shadowColor: themeColors.black,
-                                        shadowOffset: { width: 0, height: 1 },
-                                        shadowOpacity: 0.04,
-                                        shadowRadius: 2,
-                                        elevation: 1,
-                                      }}
-                                    >
+                                .map((s, idx) => (
+                                  <View
+                                    key={s.sessionId || idx}
+                                    style={{
+                                      marginLeft: 8,
+                                      marginBottom: 4,
+                                      backgroundColor: themeColors.gray + "10",
+                                      borderRadius: 8,
+                                      padding: 8,
+                                      borderWidth: 1,
+                                      borderColor: themeColors.gray + "44",
+                                      shadowColor: themeColors.black,
+                                      shadowOffset: {
+                                        width: 0,
+                                        height: 1,
+                                      },
+                                      shadowOpacity: 0.04,
+                                      shadowRadius: 2,
+                                      elevation: 1,
+                                      flexDirection: "row",
+                                      alignItems: "center",
+                                    }}
+                                  >
+                                    <View style={{ flex: 1 }}>
                                       <Text
                                         style={{
                                           color: themeColors.black,
@@ -1626,25 +1986,46 @@ export function FocusTimerView({ navigation }) {
                                           fontWeight: "bold",
                                         }}
                                       >
-                                        {date.toLocaleDateString()}{" "}
-                                        {date.toLocaleTimeString([], {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })}
+                                        {s.start
+                                          ? new Date(s.start).toLocaleString(
+                                              [],
+                                              {
+                                                month: "short",
+                                                day: "numeric",
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                              }
+                                            )
+                                          : ""}
                                         {" - "}
                                         <Text
-                                          style={{ color: themeColors.black }}
+                                          style={{
+                                            color: themeColors.black,
+                                          }}
                                         >
-                                          {h > 0 ? `${h}h ` : ""}
-                                          {m > 0 || h > 0 ? `${m}m ` : ""}
-                                          {`${sec2}s`}
+                                          {(() => {
+                                            const sec = Math.floor(
+                                              (s.duration || 0) / 1000
+                                            );
+                                            const h = Math.floor(sec / 3600);
+                                            const m = Math.floor(
+                                              (sec % 3600) / 60
+                                            );
+                                            const sec2 = sec % 60;
+                                            let out = [];
+                                            if (h > 0) out.push(`${h}h`);
+                                            if (m > 0 || h > 0)
+                                              out.push(`${m}m`);
+                                            out.push(`${sec2}s`);
+                                            return out.join(" ");
+                                          })()}
                                         </Text>
                                       </Text>
                                       {s.note ? (
                                         <Text
                                           style={{
                                             color: themeColors.purple,
-                                            fontSize: 14,
+                                            fontSize: 13,
                                             marginTop: 2,
                                             fontStyle: "italic",
                                           }}
@@ -1653,8 +2034,26 @@ export function FocusTimerView({ navigation }) {
                                         </Text>
                                       ) : null}
                                     </View>
-                                  );
-                                })
+                                    <TouchableOpacity
+                                      onPress={() =>
+                                        handleDeleteSession(s, spotId)
+                                      }
+                                      style={{
+                                        marginLeft: 8,
+                                        padding: 4,
+                                        borderRadius: 6,
+                                        backgroundColor: themeColors.red + "22",
+                                      }}
+                                      accessibilityLabel="Delete session"
+                                    >
+                                      <Trash
+                                        size={18}
+                                        color={themeColors.red}
+                                        weight="bold"
+                                      />
+                                    </TouchableOpacity>
+                                  </View>
+                                ))
                             ) : (
                               <Text
                                 style={{
@@ -1679,7 +2078,7 @@ export function FocusTimerView({ navigation }) {
                     marginLeft: 4,
                   }}
                 >
-                  No focus sessions this week.
+                  No focus sessions.
                 </Text>
               )}
             </View>
@@ -1824,40 +2223,39 @@ export function FocusTimerView({ navigation }) {
                     ? `${selectedStatSpot.hours}h ${selectedStatSpot.minutes}m ${selectedStatSpot.seconds}s`
                     : ""}
                 </Text>
-                {/* Session List with Notes and Delete Button */}
+                {/* Session List with Notes (delete button removed) */}
                 <ScrollView
                   style={{ width: "100%", maxHeight: 220, marginBottom: 12 }}
-                  showsVerticalScrollIndicator={false}
+                  showsVerticalScrollIndicator={true}
+                  contentContainerStyle={{ paddingBottom: 40 }}
                 >
                   {selectedStatSpot?.sessions?.length > 0 ? (
                     selectedStatSpot.sessions
-                      .filter((session) => !session.isBreak) // Only show non-break sessions
-                      .sort((a, b) => b.start - a.start) // newest first
+                      .filter((session) => !session.isBreak)
+                      .sort((a, b) => b.start - a.start)
                       .map((session, idx, arr) => {
-                        // Format start time
                         const date = new Date(session.start);
-                        const endDate = new Date(session.end);
                         const durationSec = Math.floor(
                           (session.duration || 0) / 1000
                         );
                         const hours = Math.floor(durationSec / 3600);
                         const minutes = Math.floor((durationSec % 3600) / 60);
                         const seconds = durationSec % 60;
-                        // Always use session.sessionId as key and for deletion
-                        const sessionKey = session.sessionId;
                         return (
                           <View
-                            key={sessionKey}
+                            key={session.sessionId}
                             style={{
-                              borderBottomWidth: idx === arr.length - 1 ? 0 : 1,
-                              borderBottomColor: themeColors.gray,
-                              paddingVertical: 8,
                               flexDirection: "row",
                               alignItems: "center",
-                              justifyContent: "space-between",
+                              justifyContent: "flex-start",
+                              borderBottomWidth: idx === arr.length - 1 ? 0 : 1,
+                              borderBottomColor: themeColors.gray,
+                              paddingVertical: 10,
+                              backgroundColor: "#fff",
+                              minHeight: 48,
                             }}
                           >
-                            <View style={{ flex: 1, marginRight: 8 }}>
+                            <View style={{ flex: 1 }}>
                               <Text
                                 style={{
                                   color: themeColors.black,
@@ -1903,73 +2301,7 @@ export function FocusTimerView({ navigation }) {
                                 </Text>
                               )}
                             </View>
-                            <TouchableOpacity
-                              onPress={() =>
-                                Alert.alert(
-                                  "Delete Session?",
-                                  "Are you sure you want to delete this session?",
-                                  [
-                                    { text: "Cancel", style: "cancel" },
-                                    {
-                                      text: "Delete",
-                                      style: "destructive",
-                                      onPress: async () => {
-                                        await handleDeleteSession(
-                                          session.sessionId,
-                                          selectedStatSpot.spotId
-                                        );
-                                        setSelectedStatSpot((prev) => {
-                                          if (!prev) return prev;
-                                          if (
-                                            prev.spotId !==
-                                            selectedStatSpot.spotId
-                                          )
-                                            return prev;
-                                          const newSessions =
-                                            prev.sessions.filter(
-                                              (s) =>
-                                                s.sessionId !==
-                                                session.sessionId
-                                            );
-                                          const ms = newSessions
-                                            .filter((b) => !b.isBreak)
-                                            .reduce(
-                                              (a, b) => a + (b.duration || 0),
-                                              0
-                                            );
-                                          const totalSeconds = Math.floor(
-                                            ms / 1000
-                                          );
-                                          const hours = Math.floor(
-                                            totalSeconds / 3600
-                                          );
-                                          const minutes = Math.floor(
-                                            (totalSeconds % 3600) / 60
-                                          );
-                                          const seconds = totalSeconds % 60;
-                                          return {
-                                            ...prev,
-                                            sessions: newSessions,
-                                            ms,
-                                            hours,
-                                            minutes,
-                                            seconds,
-                                          };
-                                        });
-                                      },
-                                    },
-                                  ]
-                                )
-                              }
-                              style={{
-                                padding: 6,
-                                backgroundColor: themeColors.red,
-                                borderRadius: 6,
-                                alignSelf: "flex-start",
-                              }}
-                            >
-                              <Trash size={18} color={themeColors.white} />
-                            </TouchableOpacity>
+                            {/* Delete button removed */}
                           </View>
                         );
                       })
@@ -1987,7 +2319,7 @@ export function FocusTimerView({ navigation }) {
                     textAlign: "center",
                   }}
                 >
-                  You can delete individual sessions from this spot.
+                  You can view your sessions for this spot.
                 </Text>
                 <View style={{ flexDirection: "row", width: "100%" }}>
                   <TouchableOpacity
@@ -2010,24 +2342,7 @@ export function FocusTimerView({ navigation }) {
                       Close
                     </Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => handleDeleteStat(selectedStatSpot?.spotId)}
-                    disabled={deletingStat}
-                    style={{
-                      flex: 1,
-                      backgroundColor: themeColors.red,
-                      borderRadius: 8,
-                      padding: 12,
-                      alignItems: "center",
-                      opacity: deletingStat ? 0.7 : 1,
-                    }}
-                  >
-                    <Text
-                      style={{ color: themeColors.white, fontWeight: "bold" }}
-                    >
-                      {deletingStat ? "Deleting..." : "Delete All"}
-                    </Text>
-                  </TouchableOpacity>
+                  {/* Delete All button removed */}
                 </View>
               </View>
             </View>
