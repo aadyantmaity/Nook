@@ -205,7 +205,14 @@ function StudySpots({
   themeColors,
   onRefresh, // <-- add onRefresh prop
   refreshing, // <-- add refreshing prop
+  privateNookStats, // <-- add this line
 }) {
+  // Filter out private nooks not owned by the current user
+  const userId = auth.currentUser?.uid;
+  const visibleSpots = filteredSpots.filter(
+    (spot) => !spot.private || spot.ownerUid === userId
+  );
+
   return (
     <FlatList
       ListHeaderComponent={
@@ -265,7 +272,7 @@ function StudySpots({
         paddingTop: 0,
         paddingBottom: 96,
       }}
-      data={filteredSpots}
+      data={visibleSpots}
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => (
         <TouchableOpacity
@@ -393,42 +400,6 @@ function StudySpots({
               )}
             </Text>
           )}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 8,
-            }}
-          >
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Star
-                key={star}
-                size={18}
-                color={
-                  star <= (item.averageOverallRating || 0)
-                    ? themeColors.purple
-                    : themeColors.darkGray
-                }
-                weight={
-                  star <= (item.averageOverallRating || 0) ? "fill" : "regular"
-                }
-                style={{ marginRight: 2 }}
-              />
-            ))}
-            <Text
-              style={{
-                marginLeft: 8,
-                color: themeColors.darkGray, // changed
-                fontSize: 13,
-              }}
-            >
-              {item.overallRatingsCount > 0
-                ? `${item.averageOverallRating.toFixed(1)} (${
-                    item.overallRatingsCount
-                  })`
-                : "No ratings"}
-            </Text>
-          </View>
           {/* Tags as pills */}
           <View
             style={{
@@ -472,54 +443,138 @@ function StudySpots({
               </Text>
             )}
           </View>
-          <View
-            style={{ flexDirection: "row", justifyContent: "space-between" }}
-          >
-            <View style={{ alignItems: "center" }}>
-              <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
-                Noise Level
-              </Text>
-              <Text
+          {/* Only show ratings UI for non-private nooks */}
+          {!item.private || item.ownerUid !== userId ? (
+            <>
+              <View
                 style={{
-                  fontSize: 14,
-                  fontWeight: "bold",
-                  color: themeColors.purple, // changed
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 8,
                 }}
               >
-                {typeof item.ratings?.noise === "number"
-                  ? item.ratings.noise.toFixed(1)
-                  : item.ratings?.noise}
-              </Text>
-            </View>
-            <View style={{ alignItems: "center" }}>
-              <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
-                Crowd Level
-              </Text>
-              <Text
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    size={18}
+                    color={
+                      star <= (item.averageOverallRating || 0)
+                        ? themeColors.purple
+                        : themeColors.darkGray
+                    }
+                    weight={
+                      star <= (item.averageOverallRating || 0)
+                        ? "fill"
+                        : "regular"
+                    }
+                    style={{ marginRight: 2 }}
+                  />
+                ))}
+                <Text
+                  style={{
+                    marginLeft: 8,
+                    color: themeColors.darkGray, // changed
+                    fontSize: 13,
+                  }}
+                >
+                  {item.overallRatingsCount > 0
+                    ? `${item.averageOverallRating.toFixed(1)} (${
+                        item.overallRatingsCount
+                      })`
+                    : "No ratings"}
+                </Text>
+              </View>
+              <View
                 style={{
-                  fontSize: 14,
-                  fontWeight: "bold",
-                  color: themeColors.purple, // changed
+                  flexDirection: "row",
+                  justifyContent: "space-between",
                 }}
               >
-                {typeof item.ratings?.crowd === "number"
-                  ? item.ratings.crowd.toFixed(1)
-                  : item.ratings?.crowd}
+                <View style={{ alignItems: "center" }}>
+                  <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
+                    Noise Level
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "bold",
+                      color: themeColors.purple, // changed
+                    }}
+                  >
+                    {typeof item.ratings?.noise === "number"
+                      ? item.ratings.noise.toFixed(1)
+                      : item.ratings?.noise}
+                  </Text>
+                </View>
+                <View style={{ alignItems: "center" }}>
+                  <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
+                    Crowd Level
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "bold",
+                      color: themeColors.purple, // changed
+                    }}
+                  >
+                    {typeof item.ratings?.crowd === "number"
+                      ? item.ratings.crowd.toFixed(1)
+                      : item.ratings?.crowd}
+                  </Text>
+                </View>
+              </View>
+              {/* Add last updated label */}
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: themeColors.darkGray,
+                  marginTop: 4,
+                  textAlign: "right",
+                }}
+              >
+                {getLastUpdatedLabel(item.ratings)}
               </Text>
-            </View>
-          </View>
-          {/* Add last updated label */}
-          <Text
-            style={{
-              fontSize: 12,
-              color: themeColors.darkGray,
-              marginTop: 4,
-              textAlign: "right",
-            }}
-          >
-            {getLastUpdatedLabel(item.ratings)}
-          </Text>
+            </>
+          ) : null}
           {/* ...existing code... */}
+          {item.private && item.ownerUid === userId && (
+            <View
+              style={{
+                backgroundColor: themeColors.purple,
+                borderRadius: 6,
+                paddingHorizontal: 8,
+                paddingVertical: 2,
+                alignSelf: "flex-start",
+                marginBottom: 4,
+              }}
+            >
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontSize: 11,
+                  fontWeight: "bold",
+                }}
+              >
+                Private
+              </Text>
+            </View>
+          )}
+          {/* --- Private nook stats --- */}
+          {item.private && item.ownerUid === userId && (
+            <View style={{ marginTop: 4, marginBottom: 2 }}>
+              <Text style={{ color: themeColors.darkGray, fontSize: 13 }}>
+                Last focused:{" "}
+                {formatLastFocused(privateNookStats[item.id]?.lastFocused)}
+              </Text>
+              <Text style={{ color: themeColors.darkGray, fontSize: 13 }}>
+                {`${
+                  privateNookStats[item.id]?.totalMs
+                    ? formatHMS(privateNookStats[item.id].totalMs)
+                    : "0h 0m 0s"
+                } total focus time`}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
       )}
       onRefresh={onRefresh}
@@ -682,6 +737,7 @@ export default function HomeScreen({
   const [isLoading, setIsLoading] = useState(true);
   const [favorites, setFavorites] = useState([]);
   const [search, setSearch] = useState(""); // <-- Add search state
+  const [privateNookStats, setPrivateNookStats] = useState({}); // {spotId: {lastFocused, totalMs}}
   const layout = Dimensions.get("window");
   const [index, setIndex] = useState(0);
   const [routes] = useState([
@@ -1028,6 +1084,7 @@ export default function HomeScreen({
         themeColors={themeColors}
         onRefresh={handleRefresh}
         refreshing={isRefreshing}
+        privateNookStats={privateNookStats} // <-- pass as prop
       />
       <TouchableOpacity
         onPress={() => {
@@ -1075,6 +1132,64 @@ export default function HomeScreen({
     home: HomeTab,
     focus: FocusTimerView,
   });
+
+  // Fetch focus stats for private nooks owned by user
+  useEffect(() => {
+    const fetchPrivateNookStats = async () => {
+      const userId = auth.currentUser?.uid;
+      if (!userId) return;
+      // Get all private nooks owned by user
+      const spotsSnapshot = await getDocs(collection(db, "studySpots"));
+      const privateNooks = spotsSnapshot.docs
+        .filter((doc) => doc.data().private && doc.data().ownerUid === userId)
+        .map((doc) => ({ id: doc.id, ...doc.data() }));
+
+      if (privateNooks.length === 0) {
+        setPrivateNookStats({});
+        return;
+      }
+
+      // Get all focusSessions for user and these spots
+      const q = query(
+        collection(db, "focusSessions"),
+        where("userId", "==", userId)
+      );
+      const sessionsSnapshot = await getDocs(q);
+      // Group by spotId
+      const stats = {};
+      privateNooks.forEach((nook) => {
+        const sessions = [];
+        sessionsSnapshot.forEach((doc) => {
+          const data = doc.data();
+          if (
+            data.spotId === nook.id &&
+            !data.isBreak && // Only count non-break sessions
+            data.start &&
+            data.end
+          ) {
+            const start = data.start.seconds
+              ? data.start.seconds * 1000
+              : data.start.toMillis?.() ?? 0;
+            const end = data.end.seconds
+              ? data.end.seconds * 1000
+              : data.end.toMillis?.() ?? 0;
+            const duration = data.duration || end - start;
+            sessions.push({ ...data, start, end, duration });
+          }
+        });
+        // Compute last focused and totalMs
+        let lastFocused = null;
+        let totalMs = 0;
+        sessions.forEach((s) => {
+          if (!lastFocused || s.end > lastFocused) lastFocused = s.end;
+          totalMs += s.duration || 0;
+        });
+        stats[nook.id] = { lastFocused, totalMs };
+      });
+      setPrivateNookStats(stats);
+    };
+    fetchPrivateNookStats();
+  }, [studySpots, auth.currentUser]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
@@ -1383,4 +1498,23 @@ function getLastUpdatedLabel(ratings) {
     return `Last updated: ${diffMin} min ago`;
   }
   return "";
+}
+
+// Helper functions to format focus time and last focused date
+function formatHMS(ms) {
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return `${h}h ${m}m ${sec}s`;
+}
+
+function formatLastFocused(ts) {
+  if (!ts) return "Never";
+  const now = Date.now();
+  const diffMs = now - ts;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "1 day ago";
+  return `${diffDays} days ago`;
 }
