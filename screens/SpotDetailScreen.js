@@ -71,6 +71,18 @@ export default function SpotDetailScreen({ route, navigation }) {
   const [savingNote, setSavingNote] = useState(false);
   const [allNotes, setAllNotes] = useState([]); // Store all notes for this nook
 
+  const unsubscribeRefs = React.useRef([]);
+
+  // Helper to unsubscribe all listeners
+  const unsubscribeAll = () => {
+    unsubscribeRefs.current.forEach((unsub) => {
+      try {
+        if (typeof unsub === "function") unsub();
+      } catch {}
+    });
+    unsubscribeRefs.current = [];
+  };
+
   // Helper for "last updated" display (copied from HomeScreen)
   function getLastUpdatedLabel(ratings) {
     if (!ratings || !ratings.lastUpdated) return "";
@@ -135,6 +147,9 @@ export default function SpotDetailScreen({ route, navigation }) {
           collection(db, "ratings"),
           where("spotId", "==", spotId)
         );
+
+        // Unsubscribe previous listener if any
+        unsubscribeAll();
 
         const unsubscribe = onSnapshot(ratingsQuery, (snapshot) => {
           const now = Timestamp.now().toMillis();
@@ -264,6 +279,7 @@ export default function SpotDetailScreen({ route, navigation }) {
             },
           }));
         });
+        unsubscribeRefs.current.push(unsubscribe);
       } else {
         alert("The requested spot could not be found. Please try again.");
       }
@@ -516,6 +532,9 @@ export default function SpotDetailScreen({ route, navigation }) {
       where("spotId", "==", spotId)
     );
 
+    // Unsubscribe previous listener if any
+    unsubscribeAll();
+
     const unsubscribe = onSnapshot(ratingsQuery, (snapshot) => {
       const now = Timestamp.now().toMillis();
       const thirtyMinutesAgo = now - 30 * 60 * 1000;
@@ -640,10 +659,12 @@ export default function SpotDetailScreen({ route, navigation }) {
         },
       }));
     });
+    unsubscribeRefs.current.push(unsubscribe);
 
     return () => {
       isMounted = false;
       unsubscribe();
+      unsubscribeAll();
     };
   }, [spotId, navigation]);
 
@@ -703,6 +724,7 @@ export default function SpotDetailScreen({ route, navigation }) {
 
   const handleDeleteSpot = async () => {
     try {
+      unsubscribeAll(); // Unsubscribe all listeners before deleting
       await deleteDoc(doc(db, "studySpots", spotId)); // Use deleteDoc to delete the spot
       console.log("Spot deleted successfully");
       navigation.navigate("Home", { refresh: true }); // Refresh Home screen
@@ -893,6 +915,7 @@ export default function SpotDetailScreen({ route, navigation }) {
       });
       setFocusStats({ sessions, total });
     });
+    unsubscribeRefs.current.push(unsubscribe);
 
     // --- Listen for notes changes in real-time ---
     const notesRef = collection(db, "studySpots", spotId, "notes");
@@ -906,6 +929,7 @@ export default function SpotDetailScreen({ route, navigation }) {
       );
       setAllNotes(notesArr);
     });
+    unsubscribeRefs.current.push(unsubscribeNotes);
 
     // Set private note input to the last note by this user (optional, or keep as is)
     // setPrivateNote(""); // Optionally clear input on mount
@@ -913,6 +937,7 @@ export default function SpotDetailScreen({ route, navigation }) {
     return () => {
       unsubscribe();
       unsubscribeNotes();
+      unsubscribeAll();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spot, auth.currentUser, spotId]);
