@@ -26,6 +26,7 @@ import {
   collection,
   getDocs,
   addDoc,
+  setDoc, // <-- add this import
   Timestamp,
   query,
   where,
@@ -349,7 +350,8 @@ export function FocusTimerView({ navigation }) {
         note: note || "",
         sessionId,
       };
-      await addDoc(collection(db, "focusSessions"), sessionObj);
+      // Use setDoc with sessionId as the document ID
+      await setDoc(doc(db, "focusSessions", sessionId), sessionObj);
       // Update stats locally for immediate feedback
       const weekAgo = Timestamp.now().toMillis() - 7 * 24 * 60 * 60 * 1000;
       if (end.toMillis() > weekAgo) {
@@ -1042,7 +1044,14 @@ export function FocusTimerView({ navigation }) {
   );
 
   // Add this function before the return statement
-  const handleDeleteSession = async (session, spotId) => {
+  const handleDeleteSession = async (session, spotId, archiveContext) => {
+    console.log(
+      "Deleting session",
+      session.sessionId,
+      session.userId,
+      auth.currentUser?.uid
+    );
+
     Alert.alert(
       "Delete Session",
       "Are you sure you want to delete this session?",
@@ -1061,25 +1070,8 @@ export function FocusTimerView({ navigation }) {
                 return;
               }
 
-              const q = query(
-                collection(db, "focusSessions"),
-                where("sessionId", "==", session.sessionId)
-              );
-              const snapshot = await getDocs(q);
+              await deleteDoc(doc(db, "focusSessions", session.sessionId));
 
-              if (snapshot.empty) {
-                Alert.alert(
-                  "Not Found",
-                  "This session could not be found in Firestore."
-                );
-                return;
-              }
-
-              for (const docSnap of snapshot.docs) {
-                await deleteDoc(doc(db, "focusSessions", docSnap.id));
-              }
-
-              // Remove from local stats
               setFocusStats((prev) => {
                 const updated = { ...prev };
                 if (updated[spotId]) {
@@ -1093,8 +1085,38 @@ export function FocusTimerView({ navigation }) {
                 return updated;
               });
 
-              // Remove from goal progress if present
               await removeSessionFromGoal(session.sessionId, session.duration);
+
+              // Archive modal UI update
+              if (archiveContext) {
+                const { year, month, spotId: archiveSpotId } = archiveContext;
+                setArchiveData((prev) => {
+                  const newData = JSON.parse(JSON.stringify(prev));
+                  try {
+                    if (
+                      newData[year] &&
+                      newData[year][month] &&
+                      newData[year][month][archiveSpotId]
+                    ) {
+                      newData[year][month][archiveSpotId] = newData[year][
+                        month
+                      ][archiveSpotId].filter(
+                        (sess) => sess.sessionId !== session.sessionId
+                      );
+                      if (newData[year][month][archiveSpotId].length === 0) {
+                        delete newData[year][month][archiveSpotId];
+                      }
+                      if (Object.keys(newData[year][month]).length === 0) {
+                        delete newData[year][month];
+                      }
+                      if (Object.keys(newData[year]).length === 0) {
+                        delete newData[year];
+                      }
+                    }
+                  } catch {}
+                  return newData;
+                });
+              }
             } catch (e) {
               Alert.alert("Error", `Failed to delete session: ${e.message}`);
             }
@@ -1377,10 +1399,13 @@ export function FocusTimerView({ navigation }) {
                                                 flex: 1,
                                               }}
                                             >
-                                              {spot?.buildingName || spotId}
-                                              {spot?.roomNumber
-                                                ? ` - Floor ${spot.roomNumber}`
-                                                : ""}
+                                              {spot
+                                                ? `${spot.buildingName}${
+                                                    spot.roomNumber
+                                                      ? ` - Floor ${spot.roomNumber}`
+                                                      : ""
+                                                  }`
+                                                : "Spot Deleted"}
                                             </Text>
                                             <CaretRight
                                               size={16}
@@ -1434,35 +1459,71 @@ export function FocusTimerView({ navigation }) {
                                                         borderColor:
                                                           themeColors.gray +
                                                           "44",
+                                                        flexDirection: "row",
+                                                        alignItems: "center",
                                                       }}
                                                     >
-                                                      <Text
+                                                      <View style={{ flex: 1 }}>
+                                                        <Text
+                                                          style={{
+                                                            color:
+                                                              themeColors.black,
+                                                            fontWeight: "bold",
+                                                            fontSize: 13,
+                                                          }}
+                                                        >
+                                                          {date.toLocaleDateString()}{" "}
+                                                          {date.toLocaleTimeString(
+                                                            [],
+                                                            {
+                                                              hour: "2-digit",
+                                                              minute: "2-digit",
+                                                            }
+                                                          )}
+                                                        </Text>
+                                                        <Text
+                                                          style={{
+                                                            color:
+                                                              themeColors.darkGray,
+                                                            fontSize: 13,
+                                                          }}
+                                                        >
+                                                          Duration: {hours}h{" "}
+                                                          {minutes}m {seconds}s
+                                                        </Text>
+                                                      </View>
+                                                      <TouchableOpacity
+                                                        onPress={() =>
+                                                          handleDeleteSession(
+                                                            s,
+                                                            spotId,
+                                                            {
+                                                              year,
+                                                              month,
+                                                              spotId,
+                                                            }
+                                                          )
+                                                        }
                                                         style={{
-                                                          color:
-                                                            themeColors.black,
-                                                          fontWeight: "bold",
-                                                          fontSize: 13,
+                                                          marginLeft: 8,
+                                                          padding: 4,
+                                                          borderRadius: 6,
+                                                          backgroundColor:
+                                                            themeColors.red,
+                                                          alignItems: "center",
+                                                          justifyContent:
+                                                            "center",
                                                         }}
+                                                        accessibilityLabel="Delete session"
                                                       >
-                                                        {date.toLocaleDateString()}{" "}
-                                                        {date.toLocaleTimeString(
-                                                          [],
-                                                          {
-                                                            hour: "2-digit",
-                                                            minute: "2-digit",
+                                                        <Trash
+                                                          size={18}
+                                                          color={
+                                                            themeColors.white
                                                           }
-                                                        )}
-                                                      </Text>
-                                                      <Text
-                                                        style={{
-                                                          color:
-                                                            themeColors.darkGray,
-                                                          fontSize: 13,
-                                                        }}
-                                                      >
-                                                        Duration: {hours}h{" "}
-                                                        {minutes}m {seconds}s
-                                                      </Text>
+                                                          weight="bold"
+                                                        />
+                                                      </TouchableOpacity>
                                                     </View>
                                                   );
                                                 })}
@@ -1773,10 +1834,13 @@ export function FocusTimerView({ navigation }) {
                                 flex: 1,
                               }}
                             >
-                              {spot?.buildingName || spotId}
-                              {spot?.roomNumber
-                                ? ` - Floor ${spot.roomNumber}`
-                                : ""}
+                              {spot
+                                ? `${spot.buildingName}${
+                                    spot.roomNumber
+                                      ? ` - Floor ${spot.roomNumber}`
+                                      : ""
+                                  }`
+                                : "Spot Deleted"}
                             </Text>
                             <Text
                               style={{
@@ -1811,7 +1875,7 @@ export function FocusTimerView({ navigation }) {
                                     .sort((a, b) => b.start - a.start)
                                     .map((s, idx) => (
                                       <View
-                                        key={idx}
+                                        key={s.sessionId || idx}
                                         style={{
                                           marginLeft: 8,
                                           marginBottom: 4,
@@ -1888,14 +1952,15 @@ export function FocusTimerView({ navigation }) {
                                             marginLeft: 8,
                                             padding: 4,
                                             borderRadius: 6,
-                                            backgroundColor:
-                                              themeColors.red + "22",
+                                            backgroundColor: themeColors.red,
+                                            alignItems: "center",
+                                            justifyContent: "center",
                                           }}
                                           accessibilityLabel="Delete session"
                                         >
                                           <Trash
                                             size={18}
-                                            color={themeColors.red}
+                                            color={themeColors.white}
                                             weight="bold"
                                           />
                                         </TouchableOpacity>
@@ -2057,10 +2122,13 @@ export function FocusTimerView({ navigation }) {
                       marginBottom: 8,
                     }}
                   >
-                    {selectedStatSpot?.spot?.buildingName || "Unknown"}
-                    {selectedStatSpot?.spot?.roomNumber
-                      ? ` - Floor ${selectedStatSpot.spot.roomNumber}`
-                      : ""}
+                    {selectedStatSpot?.spot
+                      ? `${selectedStatSpot.spot.buildingName}${
+                          selectedStatSpot.spot.roomNumber
+                            ? ` - Floor ${selectedStatSpot.spot.roomNumber}`
+                            : ""
+                        }`
+                      : "Spot Deleted"}
                   </Text>
                   <Text
                     style={{
