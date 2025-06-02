@@ -574,7 +574,6 @@ export default function AddSpotScreen({
                       paddingVertical: 10,
                       paddingHorizontal: 18,
                       alignItems: "center",
-                      marginBottom: 8,
                       marginTop: 0,
                     }}
                     accessibilityLabel="Pick an image for this location"
@@ -595,7 +594,7 @@ export default function AddSpotScreen({
                         overflow: "hidden",
                         borderWidth: 0.5,
                         borderColor: themeColors.black,
-                        marginTop: 4,
+                        marginTop: 12,
                       }}
                     >
                       <Image
@@ -670,6 +669,7 @@ export default function AddSpotScreen({
                       overflow: "hidden",
                       borderWidth: 0.5,
                       borderColor: themeColors.black,
+                      marginTop: 12, // <-- Add marginTop for gap
                     }}
                   >
                     <Image

@@ -1510,7 +1510,7 @@ function formatHMS(ms) {
 }
 
 function formatLastFocused(ts) {
-  if (!ts) return "Never";
+  if (!ts) return "N/A";
   const now = Date.now();
   const diffMs = now - ts;
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
