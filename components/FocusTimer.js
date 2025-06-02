@@ -40,7 +40,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
 
 // Timer durations are defined as constants at the top of the file:
-const DEFAULT_POMODORO_MINUTES = 0.1;
+const DEFAULT_POMODORO_MINUTES = 25;
 const DEFAULT_BREAK_MINUTES = 5;
 
 export function FocusTimerView({ navigation }) {
