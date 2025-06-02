@@ -36,6 +36,8 @@ import {
   Heart,
   House,
   Broadcast, // Add this import for the update/edit icon
+  CaretUp,
+  CaretDown,
 } from "phosphor-react-native";
 import { colors } from "../constants/colors";
 import { auth } from "../firebaseConfig"; // Import auth
@@ -2429,9 +2431,12 @@ function NotesDropdown({ notes, themeColors, isPrivateNook, spotId }) {
           >
             All Notes ({notes.length})
           </Text>
-          <Text style={{ color: themeColors.purple, fontSize: 18 }}>
-            {expanded ? "▲" : "▼"}
-          </Text>
+          {/* Replace ▼/▲ with CaretDown/CaretUp */}
+          {expanded ? (
+            <CaretUp size={18} color={themeColors.purple} />
+          ) : (
+            <CaretDown size={18} color={themeColors.purple} />
+          )}
         </TouchableOpacity>
         {expanded && (
           <View
@@ -2549,9 +2554,12 @@ function NotesDropdown({ notes, themeColors, isPrivateNook, spotId }) {
         >
           All Notes ({notes.length})
         </Text>
-        <Text style={{ color: themeColors.purple, fontSize: 18 }}>
-          {expanded ? "▲" : "▼"}
-        </Text>
+        {/* Replace ▼/▲ with CaretDown/CaretUp */}
+        {expanded ? (
+          <CaretUp size={18} color={themeColors.purple} />
+        ) : (
+          <CaretDown size={18} color={themeColors.purple} />
+        )}
       </TouchableOpacity>
       {expanded && (
         <View

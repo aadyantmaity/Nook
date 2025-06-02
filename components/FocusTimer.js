@@ -39,7 +39,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
 
 // Timer durations are defined as constants at the top of the file:
-const DEFAULT_POMODORO_MINUTES = 25;
+const DEFAULT_POMODORO_MINUTES = 0.1;
 const DEFAULT_BREAK_MINUTES = 5;
 
 export function FocusTimerView({ navigation }) {
@@ -380,7 +380,9 @@ export function FocusTimerView({ navigation }) {
     try {
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: isBreak ? "Break Over!" : "Pomodoro Complete!",
+          title: isBreak
+            ? "Break Over!"
+            : "Pomodoro Complete! Go to the Focus mode to start another Pomodoro.",
           body: isBreak ? "Ready for another Pomodoro?" : "Time for a break.",
         },
         trigger: null, // Send immediately
@@ -435,7 +437,10 @@ export function FocusTimerView({ navigation }) {
     if (!isBreak) {
       setIsBreak(true);
       setTimer(DEFAULT_BREAK_MINUTES * 60);
-      Alert.alert("Pomodoro complete!", "Time for a break.");
+      Alert.alert(
+        "Pomodoro complete!",
+        "Go to the Focus mode to start another Pomodoro."
+      );
       if (autoStartNext) {
         setTimeout(() => {
           if (!showNoteModal) {
@@ -534,6 +539,76 @@ export function FocusTimerView({ navigation }) {
   const [showStatModal, setShowStatModal] = useState(false);
   const [deletingStat, setDeletingStat] = useState(false);
 
+  // --- Archive Modal State ---
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [archiveData, setArchiveData] = useState({});
+  const [archiveLoading, setArchiveLoading] = useState(false);
+  const [openArchiveMonths, setOpenArchiveMonths] = useState({}); // {year_month: true/false}
+  const [openArchiveLocations, setOpenArchiveLocations] = useState({}); // {year_month_spotId: true/false}
+
+  // --- Fetch all-time sessions for archive ---
+  const fetchArchiveData = async () => {
+    if (!auth.currentUser) return;
+    setArchiveLoading(true);
+    try {
+      const q = query(
+        collection(db, "focusSessions"),
+        where("userId", "==", auth.currentUser.uid)
+      );
+      const snapshot = await getDocs(q);
+      // Group by year -> month -> spotId, EXCLUDE breaks
+      const data = {};
+      snapshot.forEach((docSnap) => {
+        const d = docSnap.data();
+        if (!d.spotId || !d.start || !d.end || d.isBreak) return;
+        const spotId = d.spotId;
+        const startMillis = d.start.seconds
+          ? d.start.seconds * 1000
+          : d.start.toMillis();
+        const date = new Date(startMillis);
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1; // 1-based
+        if (!data[year]) data[year] = {};
+        if (!data[year][month]) data[year][month] = {};
+        if (!data[year][month][spotId]) data[year][month][spotId] = [];
+        data[year][month][spotId].push({
+          ...d,
+          start: startMillis,
+          end: d.end.seconds ? d.end.seconds * 1000 : d.end.toMillis(),
+          duration: d.duration,
+        });
+      });
+      setArchiveData(data);
+    } catch (e) {
+      // Optionally handle error
+    }
+    setArchiveLoading(false);
+  };
+
+  // --- Open/close month dropdown in archive ---
+  const toggleArchiveMonth = (year, month) => {
+    const key = `${year}_${month}`;
+    setOpenArchiveMonths((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  // --- Open/close location dropdown in archive ---
+  const toggleArchiveLocation = (year, month, spotId) => {
+    const key = `${year}_${month}_${spotId}`;
+    setOpenArchiveLocations((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  // --- Open Archive Modal Handler ---
+  const handleOpenArchive = async () => {
+    await fetchArchiveData();
+    setShowArchiveModal(true);
+  };
+
   // Show stats for the week (grouped by spot, show each session's tags)
   const renderStats = () => {
     // Only consider non-break sessions for stats
@@ -595,7 +670,7 @@ export function FocusTimerView({ navigation }) {
         <ScrollView
           style={{ maxHeight: 220 }}
           contentContainerStyle={{ paddingBottom: 8 }}
-          showsVerticalScrollIndicator={true}
+          showsVerticalScrollIndicator={false}
         >
           {nonBreakStats.map(([spotId, sessions]) => {
             const spot = studySpots.find((s) => s.id === spotId);
@@ -794,65 +869,6 @@ export function FocusTimerView({ navigation }) {
   // Request notification permissions on mount
   useEffect(() => {
     Notifications.requestPermissionsAsync();
-  }, []);
-
-  // Archive modal state and data
-  const [showArchiveModal, setShowArchiveModal] = useState(false);
-  const [archiveData, setArchiveData] = useState({}); // { weekKey: { stats: {} } }
-
-  // Helper: get week key (e.g. "2024-W23")
-  function getWeekKey(date = new Date()) {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-    const yearStart = new Date(d.getFullYear(), 0, 1);
-    const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
-    return `${d.getFullYear()}-W${weekNo}`;
-  }
-
-  // Persist focus stats per week (store session details)
-  useEffect(() => {
-    const saveArchive = async () => {
-      const weekKey = getWeekKey();
-      try {
-        // Load previous archive
-        const raw = await AsyncStorage.getItem("focusArchive");
-        let archive = raw ? JSON.parse(raw) : {};
-        // Prepare sessions with location, time, and notes
-        const statsWithDetails = {};
-        Object.entries(focusStats).forEach(([spotId, sessions]) => {
-          statsWithDetails[spotId] = (sessions || []).map((s) => ({
-            buildingName:
-              studySpots.find((sp) => sp.id === spotId)?.buildingName || spotId,
-            roomNumber:
-              studySpots.find((sp) => sp.id === spotId)?.roomNumber || "",
-            start: s.start,
-            end: s.end,
-            duration: s.duration,
-            note: s.note || "",
-            isBreak: s.isBreak || false,
-          }));
-        });
-        archive[weekKey] = {
-          stats: statsWithDetails,
-        };
-        await AsyncStorage.setItem("focusArchive", JSON.stringify(archive));
-        setArchiveData(archive);
-      } catch {}
-    };
-    saveArchive();
-    // eslint-disable-next-line
-  }, [focusStats, studySpots]);
-
-  // Load archive on mount
-  useEffect(() => {
-    const loadArchive = async () => {
-      try {
-        const raw = await AsyncStorage.getItem("focusArchive");
-        if (raw) setArchiveData(JSON.parse(raw));
-      } catch {}
-    };
-    loadArchive();
   }, []);
 
   // Add this state and function for the week's dropdown open/close
@@ -1101,495 +1117,6 @@ export function FocusTimerView({ navigation }) {
 
   return (
     <>
-      {/* Archive Modal */}
-      <Modal visible={showArchiveModal} transparent animationType="fade">
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.3)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: themeColors.white,
-              borderRadius: 16,
-              padding: 20,
-              width: "94%",
-              maxHeight: "90%",
-              alignItems: "center",
-              shadowColor: themeColors.black,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.13,
-              shadowRadius: 8,
-              elevation: 5,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 22,
-                fontWeight: "bold",
-                marginBottom: 16,
-                color: themeColors.purple,
-                letterSpacing: 0.5,
-              }}
-            >
-              Focus Archive
-            </Text>
-            <ScrollView
-              style={{ width: "100%" }}
-              contentContainerStyle={{ paddingBottom: 16 }}
-            >
-              {/* Archive location dropdown state */}
-              {(() => {
-                // State for open weeks and open locations per week
-                const [openWeeks, setOpenWeeks] = React.useState({});
-                const [openLocations, setOpenLocations] = React.useState({});
-                // Helper to toggle a week dropdown
-                const toggleWeek = (weekKey) => {
-                  setOpenWeeks((prev) => ({
-                    ...prev,
-                    [weekKey]: !prev[weekKey],
-                  }));
-                };
-                // Helper to toggle a location dropdown
-                const toggleLocation = (weekKey, spotId) => {
-                  setOpenLocations((prev) => ({
-                    ...prev,
-                    [weekKey]: {
-                      ...(prev[weekKey] || {}),
-                      [spotId]: !(prev[weekKey] || {})[spotId],
-                    },
-                  }));
-                };
-
-                // --- LIFETIME ARCHIVE: Show all weeks in archiveData ---
-                // Helper to get user-friendly week range string
-                function weekKeyToRange(weekKey) {
-                  // weekKey: "2024-W24"
-                  const [year, w] = weekKey.split("-W");
-                  const weekNum = parseInt(w, 10);
-                  const y = parseInt(year, 10);
-                  // Get Monday of the week
-                  const firstDayOfYear = new Date(y, 0, 1);
-                  const daysOffset =
-                    (weekNum - 1) * 7 +
-                    (firstDayOfYear.getDay() <= 4
-                      ? 1
-                      : 8 - firstDayOfYear.getDay());
-                  const monday = new Date(y, 0, 1 + daysOffset);
-                  // Sunday is 6 days after Monday
-                  const sunday = new Date(monday);
-                  sunday.setDate(monday.getDate() + 6);
-                  // Format: "Jun 10–16, 2024"
-                  const options = { month: "short", day: "numeric" };
-                  const startStr = monday.toLocaleDateString(
-                    undefined,
-                    options
-                  );
-                  const endStr = sunday.toLocaleDateString(undefined, options);
-                  return `${startStr} – ${endStr}, ${y}`;
-                }
-
-                const weekKeys = Object.keys(archiveData).sort((a, b) =>
-                  a < b ? 1 : -1
-                );
-                return weekKeys.map((weekKey) => {
-                  const week = archiveData[weekKey];
-                  // Calculate total focus time for this week (exclude breaks)
-                  let totalMs = 0;
-                  if (week.stats) {
-                    Object.values(week.stats)
-                      .flat()
-                      .filter((b) => !b.isBreak) // <-- Only count non-break sessions
-                      .forEach((b) => {
-                        totalMs += b.duration || 0;
-                      });
-                  }
-                  const totalSeconds = Math.floor(totalMs / 1000);
-                  const totalHours = Math.floor(totalSeconds / 3600);
-                  const totalMinutes = Math.floor((totalSeconds % 3600) / 60);
-                  const totalSecs = totalSeconds % 60;
-
-                  const isWeekOpen = openWeeks[weekKey] || false;
-
-                  return (
-                    <View
-                      key={weekKey}
-                      style={{
-                        marginBottom: 20,
-                        backgroundColor: themeColors.gray + "18",
-                        borderRadius: 14,
-                        padding: 0,
-                        borderWidth: 1.5,
-                        borderColor: themeColors.purple + "33",
-                        shadowColor: themeColors.black,
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.07,
-                        shadowRadius: 4,
-                        elevation: 2,
-                        // Always show all corners rounded
-                        borderTopLeftRadius: 14,
-                        borderTopRightRadius: 14,
-                        borderBottomLeftRadius: 14,
-                        borderBottomRightRadius: 14,
-                        overflow: "hidden",
-                      }}
-                    >
-                      {/* Week Header as dropdown toggle */}
-                      <TouchableOpacity
-                        onPress={() => toggleWeek(weekKey)}
-                        activeOpacity={0.85}
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          padding: 16,
-                          borderTopLeftRadius: 14,
-                          borderTopRightRadius: 14,
-                          backgroundColor: themeColors.white,
-                          borderBottomWidth: isWeekOpen ? 1 : 0,
-                          borderBottomColor: themeColors.purple + "33",
-                          // If collapsed, round bottom corners too
-                          borderBottomLeftRadius: isWeekOpen ? 0 : 14,
-                          borderBottomRightRadius: isWeekOpen ? 0 : 14,
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontWeight: "bold",
-                            color: themeColors.purple,
-                            fontSize: 17,
-                            marginRight: 8,
-                            flex: 1,
-                          }}
-                        >
-                          {weekKeyToRange(weekKey)}
-                        </Text>
-                        <View
-                          style={{
-                            // Remove backgroundColor: themeColors.purple,
-                            borderRadius: 8,
-                            paddingHorizontal: 8,
-                            paddingVertical: 2,
-                            marginLeft: 4,
-                          }}
-                        >
-                          <Text
-                            style={{
-                              color: themeColors.black,
-                              fontSize: 13,
-                              fontWeight: "bold",
-                            }}
-                          >
-                            {`${totalHours}h ${totalMinutes}m ${totalSecs}s`}
-                          </Text>
-                        </View>
-                        <CaretRight
-                          size={22}
-                          color={themeColors.purple}
-                          weight="bold"
-                          style={{
-                            marginLeft: 12,
-                            transform: [
-                              { rotate: isWeekOpen ? "90deg" : "0deg" },
-                            ],
-                          }}
-                        />
-                      </TouchableOpacity>
-                      {isWeekOpen && (
-                        <View
-                          style={{
-                            padding: 16,
-                            paddingTop: 8,
-                            borderBottomLeftRadius: 14,
-                            borderBottomRightRadius: 14,
-                            backgroundColor: themeColors.gray + "18",
-                          }}
-                        >
-                          {/* Focus Sessions as dropdowns per location */}
-                          <Text
-                            style={{
-                              color: themeColors.purple,
-                              fontWeight: "bold",
-                              fontSize: 15,
-                              marginTop: 6,
-                              marginBottom: 4,
-                              letterSpacing: 0.2,
-                            }}
-                          >
-                            Focus Sessions
-                          </Text>
-                          {week.stats &&
-                          Object.entries(week.stats)
-                            .map(([spotId, sessions]) => [
-                              spotId,
-                              Array.isArray(sessions)
-                                ? sessions.filter((b) => !b.isBreak)
-                                : [],
-                            ])
-                            .filter(([, sessions]) => sessions.length > 0)
-                            .length > 0 ? (
-                            Object.entries(week.stats)
-                              .map(([spotId, sessions]) => [
-                                spotId,
-                                Array.isArray(sessions)
-                                  ? sessions.filter((b) => !b.isBreak)
-                                  : [],
-                              ])
-                              .filter(([, sessions]) => sessions.length > 0)
-                              .map(([spotId, nonBreakSessions]) => {
-                                const isOpen =
-                                  openLocations[weekKey]?.[spotId] || false;
-                                const ms = nonBreakSessions.reduce(
-                                  (a, b) => a + (b.duration || 0),
-                                  0
-                                );
-                                const totalSeconds = Math.floor(ms / 1000);
-                                const hours = Math.floor(totalSeconds / 3600);
-                                const minutes = Math.floor(
-                                  (totalSeconds % 3600) / 60
-                                );
-                                const seconds = totalSeconds % 60;
-                                return (
-                                  <View
-                                    key={spotId}
-                                    style={{ marginBottom: 8 }}
-                                  >
-                                    <TouchableOpacity
-                                      onPress={() =>
-                                        toggleLocation(weekKey, spotId)
-                                      }
-                                      style={{
-                                        flexDirection: "row",
-                                        alignItems: "center",
-                                        backgroundColor: themeColors.white,
-                                        borderRadius: 8,
-                                        padding: 10,
-                                        borderWidth: 1,
-                                        borderColor: themeColors.purple,
-                                        shadowColor: themeColors.black,
-                                        shadowOffset: { width: 0, height: 1 },
-                                        shadowOpacity: 0.04,
-                                        shadowRadius: 2,
-                                        elevation: 1,
-                                        marginBottom: isOpen ? 4 : 0,
-                                      }}
-                                      activeOpacity={0.85}
-                                    >
-                                      <Text
-                                        style={{
-                                          color: themeColors.purple,
-                                          fontWeight: "bold",
-                                          fontSize: 14,
-                                          flex: 1,
-                                        }}
-                                      >
-                                        {nonBreakSessions[0]?.buildingName ||
-                                          spotId}
-                                        {nonBreakSessions[0]?.roomNumber
-                                          ? ` - Floor ${nonBreakSessions[0].roomNumber}`
-                                          : ""}
-                                      </Text>
-                                      <Text
-                                        style={{
-                                          color: themeColors.black,
-                                          fontSize: 13,
-                                          marginRight: 8,
-                                          fontWeight: "bold",
-                                        }}
-                                      >
-                                        {hours}h {minutes}m {seconds}s
-                                      </Text>
-                                      <CaretRight
-                                        size={20}
-                                        color={themeColors.purple}
-                                        weight="bold"
-                                        style={{
-                                          transform: [
-                                            {
-                                              rotate: isOpen ? "90deg" : "0deg",
-                                            },
-                                          ],
-                                        }}
-                                      />
-                                    </TouchableOpacity>
-                                    {isOpen && (
-                                      <View style={{ marginTop: 2 }}>
-                                        {nonBreakSessions.length > 0 ? (
-                                          <ScrollView
-                                            style={{ maxHeight: 180 }}
-                                            contentContainerStyle={{
-                                              paddingBottom: 4,
-                                            }}
-                                            showsVerticalScrollIndicator={false} // changed from true to false
-                                          >
-                                            {nonBreakSessions
-                                              .sort((a, b) => b.start - a.start)
-                                              .map((s, idx) => (
-                                                <View
-                                                  key={idx}
-                                                  style={{
-                                                    marginLeft: 8,
-                                                    marginBottom: 4,
-                                                    backgroundColor:
-                                                      themeColors.gray + "10",
-                                                    borderRadius: 8,
-                                                    padding: 8,
-                                                    borderWidth: 1,
-                                                    borderColor:
-                                                      themeColors.gray + "44",
-                                                    shadowColor:
-                                                      themeColors.black,
-                                                    shadowOffset: {
-                                                      width: 0,
-                                                      height: 1,
-                                                    },
-                                                    shadowOpacity: 0.04,
-                                                    shadowRadius: 2,
-                                                    elevation: 1,
-                                                    flexDirection: "row",
-                                                    alignItems: "center",
-                                                  }}
-                                                >
-                                                  <View style={{ flex: 1 }}>
-                                                    <Text
-                                                      style={{
-                                                        color:
-                                                          themeColors.black,
-                                                        fontSize: 13,
-                                                        fontWeight: "bold",
-                                                      }}
-                                                    >
-                                                      {s.start
-                                                        ? new Date(
-                                                            s.start
-                                                          ).toLocaleString([], {
-                                                            month: "short",
-                                                            day: "numeric",
-                                                            hour: "2-digit",
-                                                            minute: "2-digit",
-                                                          })
-                                                        : ""}
-                                                      {" - "}
-                                                      <Text
-                                                        style={{
-                                                          color:
-                                                            themeColors.black,
-                                                        }}
-                                                      >
-                                                        {(() => {
-                                                          const sec =
-                                                            Math.floor(
-                                                              (s.duration ||
-                                                                0) / 1000
-                                                            );
-                                                          const h = Math.floor(
-                                                            sec / 3600
-                                                          );
-                                                          const m = Math.floor(
-                                                            (sec % 3600) / 60
-                                                          );
-                                                          const sec2 = sec % 60;
-                                                          let out = [];
-                                                          if (h > 0)
-                                                            out.push(`${h}h`);
-                                                          if (m > 0 || h > 0)
-                                                            out.push(`${m}m`);
-                                                          out.push(`${sec2}s`);
-                                                          return out.join(" ");
-                                                        })()}
-                                                      </Text>
-                                                    </Text>
-                                                  </View>
-                                                  <TouchableOpacity
-                                                    onPress={() =>
-                                                      handleDeleteSession(
-                                                        s,
-                                                        spotId
-                                                      )
-                                                    }
-                                                    style={{
-                                                      marginLeft: 8,
-                                                      padding: 4,
-                                                      borderRadius: 6,
-                                                      backgroundColor:
-                                                        themeColors.red + "22",
-                                                    }}
-                                                    accessibilityLabel="Delete session"
-                                                  >
-                                                    <Trash
-                                                      size={18}
-                                                      color={themeColors.red}
-                                                      weight="bold"
-                                                    />
-                                                  </TouchableOpacity>
-                                                </View>
-                                              ))}
-                                          </ScrollView>
-                                        ) : (
-                                          <Text
-                                            style={{
-                                              color: themeColors.darkGray,
-                                              fontSize: 13,
-                                              marginLeft: 8,
-                                            }}
-                                          >
-                                            No sessions.
-                                          </Text>
-                                        )}
-                                      </View>
-                                    )}
-                                  </View>
-                                );
-                              })
-                          ) : (
-                            <Text
-                              style={{
-                                color: themeColors.darkGray,
-                                fontSize: 13,
-                                marginLeft: 4,
-                              }}
-                            >
-                              No focus sessions.
-                            </Text>
-                          )}
-                        </View>
-                      )}
-                    </View>
-                  );
-                });
-              })()}
-            </ScrollView>
-            <TouchableOpacity
-              onPress={() => setShowArchiveModal(false)}
-              style={{
-                marginTop: 10,
-                backgroundColor: themeColors.purple,
-                borderRadius: 8,
-                paddingVertical: 12,
-                paddingHorizontal: 32,
-                alignItems: "center",
-                shadowColor: themeColors.black,
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.08,
-                shadowRadius: 2,
-                elevation: 2,
-              }}
-            >
-              <Text
-                style={{
-                  color: themeColors.white,
-                  fontWeight: "bold",
-                  fontSize: 16,
-                }}
-              >
-                Close
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
       {/* Session Note Modal */}
       <Modal visible={showNoteModal} transparent animationType="fade">
         <View
@@ -1703,497 +1230,964 @@ export function FocusTimerView({ navigation }) {
           </View>
         </View>
       </Modal>
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{
-          alignItems: "center",
-          paddingBottom: 32,
-          paddingTop: 16,
-        }}
-        showsVerticalScrollIndicator={false}
+      {/* --- Archive Modal --- */}
+      <Modal
+        visible={showArchiveModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowArchiveModal(false)}
       >
-        <View style={{ alignItems: "center", marginTop: 2, width: "100%" }}>
-          {/* Archive icon button moved here, above location picker */}
-          <TouchableOpacity
-            onPress={() => setShowArchiveModal(true)}
-            style={{
-              alignSelf: "flex-end",
-              marginRight: 18,
-              marginBottom: 48,
-              backgroundColor: themeColors.gray,
-              borderRadius: 24,
-              paddingVertical: 7,
-              paddingHorizontal: 16,
-              flexDirection: "row",
-              alignItems: "center",
-              shadowColor: themeColors.black,
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.08,
-              shadowRadius: 2,
-              elevation: 2,
-            }}
-            accessibilityLabel="View Focus Archive"
-            activeOpacity={0.85}
-          >
-            <Archive size={20} color={themeColors.purple} weight="bold" />
-            <Text
-              style={{
-                color: themeColors.purple,
-                fontSize: 15,
-                fontWeight: "bold",
-                marginLeft: 8,
-                letterSpacing: 0.2,
-              }}
-            >
-              Archive
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              if (isRunning) {
-                Alert.alert(
-                  "Cannot Switch Location",
-                  "Please finish or stop your current session before changing location."
-                );
-                return;
-              }
-              setShowSpotModal(true);
-            }}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              backgroundColor: themeColors.purple,
-              borderRadius: 20,
-              paddingHorizontal: 18,
-              paddingVertical: 10,
-              marginBottom: 18,
-            }}
-          >
-            <MapPin size={20} color={themeColors.white} />
-            <Text
-              style={{
-                color: themeColors.white,
-                fontWeight: "bold",
-                marginLeft: 8,
-              }}
-            >
-              {selectedSpot ? selectedSpot.buildingName : "Select Location"}
-            </Text>
-          </TouchableOpacity>
-          <Text
-            style={{
-              fontSize: 48,
-              fontWeight: "bold",
-              color: themeColors.purple,
-            }}
-          >
-            {formatTime(timer)}
-          </Text>
-          <Text style={{ color: themeColors.darkGray, marginBottom: 18 }}>
-            {isBreak ? "Break" : "Pomodoro"}
-          </Text>
-          {/* Timer control buttons row */}
-          <View style={{ flexDirection: "row", marginTop: 12 }}>
-            {!isRunning && (
-              <TouchableOpacity
-                onPress={handleStart}
-                style={{
-                  backgroundColor: themeColors.green,
-                  borderRadius: 30,
-                  padding: 18,
-                  marginHorizontal: 8,
-                }}
-              >
-                <Play size={28} color={themeColors.white} />
-              </TouchableOpacity>
-            )}
-            {isRunning && (
-              <TouchableOpacity
-                onPress={handlePause}
-                style={{
-                  backgroundColor: themeColors.purple,
-                  borderRadius: 30,
-                  padding: 18,
-                  marginHorizontal: 8,
-                }}
-              >
-                <Pause size={28} color={themeColors.white} />
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              onPress={handleStop}
-              style={{
-                backgroundColor: themeColors.red,
-                borderRadius: 30,
-                padding: 18,
-                marginHorizontal: 8,
-              }}
-            >
-              <Stop size={28} color={themeColors.white} />
-            </TouchableOpacity>
-          </View>
-
-          {/* --- This Week's Focus Stats Dropdown --- */}
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.3)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
           <View
             style={{
-              width: "94%",
-              alignSelf: "center",
-              marginTop: 60,
-              marginBottom: 8,
-              backgroundColor: themeColors.gray + "18",
+              backgroundColor: themeColors.white,
               borderRadius: 14,
-              borderWidth: 1.5,
-              borderColor: themeColors.purple + "33",
-              shadowColor: themeColors.black,
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.07,
-              shadowRadius: 4,
-              elevation: 2,
+              padding: 18,
+              width: "92%",
+              maxHeight: "90%",
             }}
           >
-            {/* --- Calculate total focus time for the week (excluding breaks) --- */}
-            {(() => {
-              // Only consider non-break sessions for stats
-              const nonBreakStats = Object.entries(focusStats)
-                .map(([spotId, sessions]) => [
-                  spotId,
-                  Array.isArray(sessions)
-                    ? sessions.filter((b) => !b.isBreak)
-                    : [],
-                ])
-                .filter(([, sessions]) => sessions.length > 0);
+            <Text
+              style={{
+                fontSize: 20,
+                fontWeight: "bold",
+                color: themeColors.purple,
+                marginBottom: 10,
+                textAlign: "center",
+              }}
+            >
+              Focus Archive
+            </Text>
+            {archiveLoading ? (
+              <Text
+                style={{ color: themeColors.darkGray, textAlign: "center" }}
+              >
+                Loading...
+              </Text>
+            ) : Object.keys(archiveData).length === 0 ? (
+              <Text
+                style={{ color: themeColors.darkGray, textAlign: "center" }}
+              >
+                No focus sessions found.
+              </Text>
+            ) : (
+              <ScrollView
+                style={{ maxHeight: 420 }}
+                showsVerticalScrollIndicator={false}
+              >
+                {Object.entries(archiveData)
+                  .sort((a, b) => b[0] - a[0])
+                  .map(([year, months]) => (
+                    <View key={year} style={{ marginBottom: 12 }}>
+                      <Text
+                        style={{
+                          color: themeColors.black,
+                          fontWeight: "bold",
+                          fontSize: 16,
+                          marginBottom: 2,
+                        }}
+                      >
+                        {year}
+                      </Text>
+                      {Object.entries(months)
+                        .sort((a, b) => b[0] - a[0])
+                        .map(([month, spots]) => {
+                          const monthKey = `${year}_${month}`;
+                          const isMonthOpen =
+                            openArchiveMonths[monthKey] || false;
+                          return (
+                            <View key={month} style={{ marginLeft: 8 }}>
+                              <TouchableOpacity
+                                onPress={() => toggleArchiveMonth(year, month)}
+                                style={{
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                  paddingVertical: 6,
+                                }}
+                              >
+                                <Text
+                                  style={{
+                                    color: themeColors.purple,
+                                    fontSize: 15,
+                                    fontWeight: "bold",
+                                    flex: 1,
+                                  }}
+                                >
+                                  {new Date(
+                                    2000,
+                                    parseInt(month) - 1
+                                  ).toLocaleString("default", {
+                                    month: "long",
+                                  })}
+                                </Text>
+                                <CaretRight
+                                  size={18}
+                                  color={themeColors.purple}
+                                  weight="bold"
+                                  style={{
+                                    transform: [
+                                      {
+                                        rotate: isMonthOpen ? "90deg" : "0deg",
+                                      },
+                                    ],
+                                  }}
+                                />
+                              </TouchableOpacity>
+                              {isMonthOpen && (
+                                <View>
+                                  {Object.entries(spots).map(
+                                    ([spotId, sessions]) => {
+                                      const locKey = `${year}_${month}_${spotId}`;
+                                      const isLocOpen =
+                                        openArchiveLocations[locKey] || false;
+                                      const spot = studySpots.find(
+                                        (s) => s.id === spotId
+                                      );
+                                      return (
+                                        <View
+                                          key={spotId}
+                                          style={{ marginLeft: 8 }}
+                                        >
+                                          <TouchableOpacity
+                                            onPress={() =>
+                                              toggleArchiveLocation(
+                                                year,
+                                                month,
+                                                spotId
+                                              )
+                                            }
+                                            style={{
+                                              flexDirection: "row",
+                                              alignItems: "center",
+                                              paddingVertical: 4,
+                                            }}
+                                          >
+                                            <Text
+                                              style={{
+                                                color: themeColors.purple,
+                                                fontSize: 14,
+                                                fontWeight: "bold",
+                                                flex: 1,
+                                              }}
+                                            >
+                                              {spot?.buildingName || spotId}
+                                              {spot?.roomNumber
+                                                ? ` - Floor ${spot.roomNumber}`
+                                                : ""}
+                                            </Text>
+                                            <CaretRight
+                                              size={16}
+                                              color={themeColors.purple}
+                                              weight="bold"
+                                              style={{
+                                                transform: [
+                                                  {
+                                                    rotate: isLocOpen
+                                                      ? "90deg"
+                                                      : "0deg",
+                                                  },
+                                                ],
+                                              }}
+                                            />
+                                          </TouchableOpacity>
+                                          {isLocOpen && (
+                                            <View>
+                                              {sessions
+                                                .sort(
+                                                  (a, b) => b.start - a.start
+                                                )
+                                                .map((s, idx) => {
+                                                  const date = new Date(
+                                                    s.start
+                                                  );
+                                                  const durationSec =
+                                                    Math.floor(
+                                                      (s.duration || 0) / 1000
+                                                    );
+                                                  const hours = Math.floor(
+                                                    durationSec / 3600
+                                                  );
+                                                  const minutes = Math.floor(
+                                                    (durationSec % 3600) / 60
+                                                  );
+                                                  const seconds =
+                                                    durationSec % 60;
+                                                  return (
+                                                    <View
+                                                      key={s.sessionId || idx}
+                                                      style={{
+                                                        backgroundColor:
+                                                          themeColors.gray +
+                                                          "10",
+                                                        borderRadius: 8,
+                                                        padding: 8,
+                                                        marginVertical: 2,
+                                                        marginLeft: 8,
+                                                        borderWidth: 1,
+                                                        borderColor:
+                                                          themeColors.gray +
+                                                          "44",
+                                                      }}
+                                                    >
+                                                      <Text
+                                                        style={{
+                                                          color:
+                                                            themeColors.black,
+                                                          fontWeight: "bold",
+                                                          fontSize: 13,
+                                                        }}
+                                                      >
+                                                        {date.toLocaleDateString()}{" "}
+                                                        {date.toLocaleTimeString(
+                                                          [],
+                                                          {
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                          }
+                                                        )}
+                                                      </Text>
+                                                      <Text
+                                                        style={{
+                                                          color:
+                                                            themeColors.darkGray,
+                                                          fontSize: 13,
+                                                        }}
+                                                      >
+                                                        Duration: {hours}h{" "}
+                                                        {minutes}m {seconds}s
+                                                      </Text>
+                                                    </View>
+                                                  );
+                                                })}
+                                            </View>
+                                          )}
+                                        </View>
+                                      );
+                                    }
+                                  )}
+                                </View>
+                              )}
+                            </View>
+                          );
+                        })}
+                    </View>
+                  ))}
+              </ScrollView>
+            )}
+            <TouchableOpacity
+              onPress={() => setShowArchiveModal(false)}
+              style={{
+                marginTop: 12,
+                backgroundColor: themeColors.purple,
+                borderRadius: 8,
+                paddingVertical: 10,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+                Close
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+      {/* --- Main Timer View --- */}
+      <View style={{ flex: 1 }}>
+        {/* Archive Icon Button (top right, overlay absolute) */}
 
-              const totalMs = nonBreakStats
-                .flatMap(([, sessions]) => sessions)
-                .reduce((a, b) => a + (b.duration || 0), 0);
-              const totalSeconds = Math.floor(totalMs / 1000);
-              const totalHours = Math.floor(totalSeconds / 3600);
-              const totalMinutes = Math.floor((totalSeconds % 3600) / 60);
-              const totalSecs = totalSeconds % 60;
-
-              // Render the header with total time
-              return (
-                <View
+        {/* Move all content below the archive button */}
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{
+            alignItems: "center",
+            paddingBottom: 32,
+            paddingTop: 16,
+          }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View
+            style={{
+              marginBottom: 36,
+              zIndex: 20,
+              paddingHorizontal: 16,
+              alignSelf: "flex-end",
+            }}
+            pointerEvents="box-none"
+          >
+            <TouchableOpacity
+              onPress={handleOpenArchive}
+              style={{
+                backgroundColor: themeColors.white,
+                borderRadius: 20,
+                paddingVertical: 6,
+                paddingHorizontal: 10,
+                shadowColor: themeColors.black,
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.08,
+                shadowRadius: 2,
+                elevation: 2,
+                alignItems: "center",
+                flexDirection: "row",
+                minWidth: 48,
+              }}
+              accessibilityLabel="Open Focus Archive"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Archive size={24} color={themeColors.purple} weight="bold" />
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontSize: 13,
+                  fontWeight: "bold",
+                  marginLeft: 6,
+                  letterSpacing: 0.5,
+                  textAlign: "center",
+                }}
+              >
+                Archive
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View style={{ alignItems: "center", marginTop: 2, width: "100%" }}>
+            <TouchableOpacity
+              onPress={() => {
+                if (isRunning) {
+                  Alert.alert(
+                    "Cannot Switch Location",
+                    "Please finish or stop your current session before changing location."
+                  );
+                  return;
+                }
+                setShowSpotModal(true);
+              }}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: themeColors.purple,
+                borderRadius: 20,
+                paddingHorizontal: 18,
+                paddingVertical: 10,
+                marginBottom: 18,
+              }}
+            >
+              <MapPin size={20} color={themeColors.white} />
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  marginLeft: 8,
+                }}
+              >
+                {selectedSpot ? selectedSpot.buildingName : "Select Location"}
+              </Text>
+            </TouchableOpacity>
+            <Text
+              style={{
+                fontSize: 48,
+                fontWeight: "bold",
+                color: themeColors.purple,
+              }}
+            >
+              {formatTime(timer)}
+            </Text>
+            <Text style={{ color: themeColors.darkGray, marginBottom: 18 }}>
+              {isBreak ? "Break" : "Pomodoro"}
+            </Text>
+            {/* Timer control buttons row */}
+            <View style={{ flexDirection: "row", marginTop: 12 }}>
+              {!isRunning && (
+                <TouchableOpacity
+                  onPress={handleStart}
                   style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    padding: 16,
-                    borderTopLeftRadius: 14,
-                    borderTopRightRadius: 14,
-                    backgroundColor: themeColors.white,
-                    borderBottomWidth: 1,
-                    borderBottomColor: themeColors.purple + "33",
+                    backgroundColor: themeColors.green,
+                    borderRadius: 30,
+                    padding: 18,
+                    marginHorizontal: 8,
                   }}
                 >
-                  <Text
-                    style={{
-                      fontWeight: "bold",
-                      color: themeColors.purple,
-                      fontSize: 17,
-                      flex: 1,
-                    }}
-                  >
-                    This Week's Focus Stats
-                  </Text>
-                  <View
-                    style={{
-                      borderRadius: 8,
-                      paddingHorizontal: 8,
-                      paddingVertical: 2,
-                      marginLeft: 4,
-                      borderWidth: 1,
-                      borderColor: themeColors.purple,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: themeColors.purple,
-                        fontSize: 13,
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {`${totalHours}h ${totalMinutes}m ${totalSecs}s`}
-                    </Text>
-                  </View>
-                </View>
-              );
-            })()}
-            <View style={{ padding: 16, paddingTop: 8 }}>
-              {/* Per-location dropdowns */}
-              {Object.entries(focusStats)
-                .map(([spotId, sessions]) => [
-                  spotId,
-                  Array.isArray(sessions)
-                    ? sessions.filter((b) => !b.isBreak)
-                    : [],
-                ])
-                .filter(([, sessions]) => sessions.length > 0).length > 0 ? (
-                Object.entries(focusStats)
+                  <Play size={28} color={themeColors.white} />
+                </TouchableOpacity>
+              )}
+              {isRunning && (
+                <TouchableOpacity
+                  onPress={handlePause}
+                  style={{
+                    backgroundColor: themeColors.purple,
+                    borderRadius: 30,
+                    padding: 18,
+                    marginHorizontal: 8,
+                  }}
+                >
+                  <Pause size={28} color={themeColors.white} />
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                onPress={handleStop}
+                style={{
+                  backgroundColor: themeColors.red,
+                  borderRadius: 30,
+                  padding: 18,
+                  marginHorizontal: 8,
+                }}
+              >
+                <Stop size={28} color={themeColors.white} />
+              </TouchableOpacity>
+            </View>
+
+            {/* --- This Week's Focus Stats Dropdown --- */}
+            <View
+              style={{
+                width: "91.5%",
+                alignSelf: "center",
+                marginTop: 60,
+                marginBottom: 8,
+              }}
+            >
+              {/* --- Calculate total focus time for the week (excluding breaks) --- */}
+              {(() => {
+                // Only consider non-break sessions for stats
+                const nonBreakStats = Object.entries(focusStats)
                   .map(([spotId, sessions]) => [
                     spotId,
                     Array.isArray(sessions)
                       ? sessions.filter((b) => !b.isBreak)
                       : [],
                   ])
-                  .filter(([, sessions]) => sessions.length > 0)
-                  .map(([spotId, nonBreakSessions]) => {
-                    const isOpen = openWeekLocations[spotId] || false;
-                    const ms = nonBreakSessions.reduce(
-                      (a, b) => a + (b.duration || 0),
-                      0
-                    );
-                    const totalSeconds = Math.floor(ms / 1000);
-                    const hours = Math.floor(totalSeconds / 3600);
-                    const minutes = Math.floor((totalSeconds % 3600) / 60);
-                    const seconds = totalSeconds % 60;
-                    const spot = studySpots.find((s) => s.id === spotId);
-                    return (
-                      <View key={spotId} style={{ marginBottom: 8 }}>
-                        <TouchableOpacity
-                          onPress={() => toggleWeekLocation(spotId)}
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            backgroundColor: themeColors.white,
-                            borderRadius: 8,
-                            padding: 10,
-                            borderWidth: 1,
-                            borderColor: themeColors.purple,
-                            shadowColor: themeColors.black,
-                            shadowOffset: { width: 0, height: 1 },
-                            shadowOpacity: 0.04,
-                            shadowRadius: 2,
-                            elevation: 1,
-                            marginBottom: isOpen ? 4 : 0,
-                          }}
-                          activeOpacity={0.85}
-                        >
-                          <Text
+                  .filter(([, sessions]) => sessions.length > 0);
+
+                const totalMs = nonBreakStats
+                  .flatMap(([, sessions]) => sessions)
+                  .reduce((a, b) => a + (b.duration || 0), 0);
+                const totalSeconds = Math.floor(totalMs / 1000);
+                const totalHours = Math.floor(totalSeconds / 3600);
+                const totalMinutes = Math.floor((totalSeconds % 3600) / 60);
+                const totalSecs = totalSeconds % 60;
+
+                // Render the header with total time
+                return (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      padding: 16,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontWeight: "bold",
+                        color: themeColors.purple,
+                        fontSize: 17,
+                        flex: 1,
+                      }}
+                    >
+                      This Week's Focus Stats
+                    </Text>
+                    <View
+                      style={{
+                        borderRadius: 8,
+                        paddingHorizontal: 8,
+                        paddingVertical: 2,
+                        marginLeft: 4,
+                        borderWidth: 1,
+                        borderColor: themeColors.purple,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: themeColors.purple,
+                          fontSize: 13,
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {`${totalHours}h ${totalMinutes}m ${totalSecs}s`}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })()}
+              {/* --- Divider between header and locations --- */}
+              <View
+                style={{
+                  height: 1,
+                  backgroundColor: themeColors.gray,
+                  marginHorizontal: 8,
+                  marginBottom: 8,
+                  opacity: 0.5,
+                }}
+              />
+              <View style={{ padding: 16, paddingTop: 8 }}>
+                {/* Per-location dropdowns */}
+                {Object.entries(focusStats)
+                  .map(([spotId, sessions]) => [
+                    spotId,
+                    Array.isArray(sessions)
+                      ? sessions.filter((b) => !b.isBreak)
+                      : [],
+                  ])
+                  .filter(([, sessions]) => sessions.length > 0).length > 0 ? (
+                  Object.entries(focusStats)
+                    .map(([spotId, sessions]) => [
+                      spotId,
+                      Array.isArray(sessions)
+                        ? sessions.filter((b) => !b.isBreak)
+                        : [],
+                    ])
+                    .filter(([, sessions]) => sessions.length > 0)
+                    .map(([spotId, nonBreakSessions]) => {
+                      const isOpen = openWeekLocations[spotId] || false;
+                      const ms = nonBreakSessions.reduce(
+                        (a, b) => a + (b.duration || 0),
+                        0
+                      );
+                      const totalSeconds = Math.floor(ms / 1000);
+                      const hours = Math.floor(totalSeconds / 3600);
+                      const minutes = Math.floor((totalSeconds % 3600) / 60);
+                      const seconds = totalSeconds % 60;
+                      const spot = studySpots.find((s) => s.id === spotId);
+                      return (
+                        <View key={spotId} style={{ marginBottom: 8 }}>
+                          <TouchableOpacity
+                            onPress={() => toggleWeekLocation(spotId)}
                             style={{
-                              color: themeColors.purple,
-                              fontWeight: "bold",
-                              fontSize: 14,
-                              flex: 1,
+                              flexDirection: "row",
+                              alignItems: "center",
+                              backgroundColor: themeColors.white,
+                              borderRadius: 8,
+                              paddingHorizontal: 10,
+                              marginBottom: isOpen ? 4 : 0,
                             }}
+                            activeOpacity={0.85}
                           >
-                            {spot?.buildingName || spotId}
-                            {spot?.roomNumber
-                              ? ` - Floor ${spot.roomNumber}`
-                              : ""}
-                          </Text>
-                          <Text
-                            style={{
-                              color: themeColors.black,
-                              fontSize: 13,
-                              marginRight: 8,
-                              fontWeight: "bold",
-                            }}
-                          >
-                            {hours}h {minutes}m {seconds}s
-                          </Text>
-                          <CaretRight
-                            size={20}
-                            color={themeColors.purple}
-                            weight="bold"
-                            style={{
-                              transform: [
-                                { rotate: isOpen ? "90deg" : "0deg" },
-                              ],
-                            }}
-                          />
-                        </TouchableOpacity>
-                        {isOpen && (
-                          <View style={{ marginTop: 2 }}>
-                            {nonBreakSessions.length > 0 ? (
-                              <ScrollView
-                                style={{ maxHeight: 180 }}
-                                contentContainerStyle={{ paddingBottom: 4 }}
-                                showsVerticalScrollIndicator={false} // changed from true to false
-                              >
-                                {nonBreakSessions
-                                  .sort((a, b) => b.start - a.start)
-                                  .map((s, idx) => (
-                                    <View
-                                      key={idx}
-                                      style={{
-                                        marginLeft: 8,
-                                        marginBottom: 4,
-                                        backgroundColor:
-                                          themeColors.gray + "10",
-                                        borderRadius: 8,
-                                        padding: 8,
-                                        borderWidth: 1,
-                                        borderColor: themeColors.gray + "44",
-                                        shadowColor: themeColors.black,
-                                        shadowOffset: {
-                                          width: 0,
-                                          height: 1,
-                                        },
-                                        shadowOpacity: 0.04,
-                                        shadowRadius: 2,
-                                        elevation: 1,
-                                        flexDirection: "row",
-                                        alignItems: "center",
-                                      }}
-                                    >
-                                      <View style={{ flex: 1 }}>
-                                        <Text
-                                          style={{
-                                            color: themeColors.black,
-                                            fontSize: 13,
-                                            fontWeight: "bold",
-                                          }}
-                                        >
-                                          {s.start
-                                            ? new Date(s.start).toLocaleString(
-                                                [],
-                                                {
+                            <Text
+                              style={{
+                                color: themeColors.purple,
+                                fontWeight: "bold",
+                                fontSize: 14,
+                                flex: 1,
+                              }}
+                            >
+                              {spot?.buildingName || spotId}
+                              {spot?.roomNumber
+                                ? ` - Floor ${spot.roomNumber}`
+                                : ""}
+                            </Text>
+                            <Text
+                              style={{
+                                color: themeColors.black,
+                                fontSize: 13,
+                                marginRight: 8,
+                                fontWeight: "bold",
+                              }}
+                            >
+                              {hours}h {minutes}m {seconds}s
+                            </Text>
+                            <CaretRight
+                              size={20}
+                              color={themeColors.purple}
+                              weight="bold"
+                              style={{
+                                transform: [
+                                  { rotate: isOpen ? "90deg" : "0deg" },
+                                ],
+                              }}
+                            />
+                          </TouchableOpacity>
+                          {isOpen && (
+                            <View style={{ marginTop: 2 }}>
+                              {nonBreakSessions.length > 0 ? (
+                                <ScrollView
+                                  style={{ maxHeight: 180 }}
+                                  contentContainerStyle={{ paddingBottom: 4 }}
+                                  showsVerticalScrollIndicator={false}
+                                >
+                                  {nonBreakSessions
+                                    .sort((a, b) => b.start - a.start)
+                                    .map((s, idx) => (
+                                      <View
+                                        key={idx}
+                                        style={{
+                                          marginLeft: 8,
+                                          marginBottom: 4,
+                                          backgroundColor:
+                                            themeColors.gray + "10",
+                                          borderRadius: 8,
+                                          padding: 8,
+                                          flexDirection: "row",
+                                          alignItems: "center",
+                                        }}
+                                      >
+                                        <View style={{ flex: 1 }}>
+                                          <Text
+                                            style={{
+                                              color: themeColors.black,
+                                              fontSize: 13,
+                                              fontWeight: "bold",
+                                            }}
+                                          >
+                                            {s.start
+                                              ? new Date(
+                                                  s.start
+                                                ).toLocaleString([], {
                                                   month: "short",
                                                   day: "numeric",
                                                   hour: "2-digit",
                                                   minute: "2-digit",
-                                                }
-                                              )
-                                            : ""}
-                                          {" - "}
-                                          <Text
-                                            style={{
-                                              color: themeColors.black,
-                                            }}
-                                          >
-                                            {(() => {
-                                              const sec = Math.floor(
-                                                (s.duration || 0) / 1000
-                                              );
-                                              const h = Math.floor(sec / 3600);
-                                              const m = Math.floor(
-                                                (sec % 3600) / 60
-                                              );
-                                              const sec2 = sec % 60;
-                                              let out = [];
-                                              if (h > 0) out.push(`${h}h`);
-                                              if (m > 0 || h > 0)
-                                                out.push(`${m}m`);
-                                              out.push(`${sec2}s`);
-                                              return out.join(" ");
-                                            })()}
+                                                })
+                                              : ""}
+                                            {" - "}
+                                            <Text
+                                              style={{
+                                                color: themeColors.black,
+                                              }}
+                                            >
+                                              {(() => {
+                                                const sec = Math.floor(
+                                                  (s.duration || 0) / 1000
+                                                );
+                                                const h = Math.floor(
+                                                  sec / 3600
+                                                );
+                                                const m = Math.floor(
+                                                  (sec % 3600) / 60
+                                                );
+                                                const sec2 = sec % 60;
+                                                let out = [];
+                                                if (h > 0) out.push(`${h}h`);
+                                                if (m > 0 || h > 0)
+                                                  out.push(`${m}m`);
+                                                out.push(`${sec2}s`);
+                                                return out.join(" ");
+                                              })()}
+                                            </Text>
                                           </Text>
-                                        </Text>
-                                        {s.note ? (
-                                          <Text
-                                            style={{
-                                              color: themeColors.purple,
-                                              fontSize: 13,
-                                              marginTop: 2,
-                                              fontStyle: "italic",
-                                            }}
-                                          >
-                                            “{s.note}”
-                                          </Text>
-                                        ) : null}
+                                          {s.note ? (
+                                            <Text
+                                              style={{
+                                                color: themeColors.purple,
+                                                fontSize: 13,
+                                                marginTop: 2,
+                                                fontStyle: "italic",
+                                              }}
+                                            >
+                                              “{s.note}”
+                                            </Text>
+                                          ) : null}
+                                        </View>
+                                        <TouchableOpacity
+                                          onPress={() =>
+                                            handleDeleteSession(s, spotId)
+                                          }
+                                          style={{
+                                            marginLeft: 8,
+                                            padding: 4,
+                                            borderRadius: 6,
+                                            backgroundColor:
+                                              themeColors.red + "22",
+                                          }}
+                                          accessibilityLabel="Delete session"
+                                        >
+                                          <Trash
+                                            size={18}
+                                            color={themeColors.red}
+                                            weight="bold"
+                                          />
+                                        </TouchableOpacity>
                                       </View>
-                                      <TouchableOpacity
-                                        onPress={() =>
-                                          handleDeleteSession(s, spotId)
-                                        }
-                                        style={{
-                                          marginLeft: 8,
-                                          padding: 4,
-                                          borderRadius: 6,
-                                          backgroundColor:
-                                            themeColors.red + "22",
-                                        }}
-                                        accessibilityLabel="Delete session"
-                                      >
-                                        <Trash
-                                          size={18}
-                                          color={themeColors.red}
-                                          weight="bold"
-                                        />
-                                      </TouchableOpacity>
-                                    </View>
-                                  ))}
-                              </ScrollView>
-                            ) : (
-                              <Text
-                                style={{
-                                  color: themeColors.darkGray,
-                                  fontSize: 13,
-                                  marginLeft: 8,
-                                }}
-                              >
-                                No sessions.
-                              </Text>
-                            )}
-                          </View>
-                        )}
-                      </View>
-                    );
-                  })
-              ) : (
-                <Text
+                                    ))}
+                                </ScrollView>
+                              ) : (
+                                <Text
+                                  style={{
+                                    color: themeColors.darkGray,
+                                    fontSize: 13,
+                                    marginLeft: 8,
+                                  }}
+                                >
+                                  No sessions.
+                                </Text>
+                              )}
+                            </View>
+                          )}
+                        </View>
+                      );
+                    })
+                ) : (
+                  <Text
+                    style={{
+                      color: themeColors.darkGray,
+                      fontSize: 13,
+                      marginLeft: 4,
+                    }}
+                  >
+                    No focus sessions.
+                  </Text>
+                )}
+              </View>
+            </View>
+
+            {/* Location Picker Modal */}
+            <Modal visible={showSpotModal} transparent animationType="slide">
+              <View
+                style={{
+                  flex: 1,
+                  backgroundColor: "rgba(0,0,0,0.3)",
+                  justifyContent: "center",
+
+                  alignItems: "center",
+                }}
+              >
+                <View
                   style={{
-                    color: themeColors.darkGray,
-                    fontSize: 13,
-                    marginLeft: 4,
+                    backgroundColor: themeColors.white,
+                    borderRadius: 12,
+                    padding: 16,
+                    width: "85%",
+                    maxHeight: "70%",
                   }}
                 >
-                  No focus sessions.
-                </Text>
-              )}
-            </View>
-          </View>
-
-          {/* Location Picker Modal */}
-          <Modal visible={showSpotModal} transparent animationType="slide">
-            <View
-              style={{
-                flex: 1,
-                backgroundColor: "rgba(0,0,0,0.3)",
-                justifyContent: "center",
-
-                alignItems: "center",
-              }}
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      fontWeight: "bold",
+                      color: themeColors.black,
+                      marginBottom: 12,
+                    }}
+                  >
+                    Select Location
+                  </Text>
+                  <FlatList
+                    data={studySpots}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        onPress={() => {
+                          if (isRunning) {
+                            Alert.alert(
+                              "Cannot Switch Location",
+                              "Please finish or stop your current session before changing location."
+                            );
+                            return;
+                          }
+                          setSelectedSpot(item);
+                          setShowSpotModal(false);
+                        }}
+                        style={{
+                          padding: 12,
+                          borderBottomWidth: 0.5,
+                          borderBottomColor: themeColors.gray,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: themeColors.purple,
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {item.buildingName}
+                        </Text>
+                        {item.roomNumber && (
+                          <Text
+                            style={{
+                              color: themeColors.darkGray,
+                              fontSize: 13,
+                            }}
+                          >
+                            Floor {item.roomNumber}
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    )}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowSpotModal(false)}
+                    style={{
+                      marginTop: 12,
+                      backgroundColor: themeColors.purple,
+                      borderRadius: 8,
+                      paddingVertical: 10,
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{ color: themeColors.white, fontWeight: "bold" }}
+                    >
+                      Close
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
+            {/* Stat Card Modal */}
+            <Modal
+              visible={showStatModal}
+              transparent
+              animationType="slide"
+              onRequestClose={() => setShowStatModal(false)}
             >
               <View
                 style={{
-                  backgroundColor: themeColors.white,
-                  borderRadius: 12,
-                  padding: 16,
-                  width: "85%",
-                  maxHeight: "70%",
+                  flex: 1,
+                  backgroundColor: "rgba(0,0,0,0.3)",
+                  justifyContent: "center",
+                  alignItems: "center",
                 }}
               >
-                <Text
+                <View
                   style={{
-                    fontSize: 18,
-                    fontWeight: "bold",
-                    color: themeColors.black,
-                    marginBottom: 12,
+                    backgroundColor: themeColors.white,
+                    borderRadius: 12,
+                    padding: 20,
+                    width: "85%",
+                    alignItems: "center",
+                    maxHeight: "85%",
                   }}
                 >
-                  Select Location
-                </Text>
-                <FlatList
-                  data={studySpots}
-                  keyExtractor={(item) => item.id}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      onPress={() => {
-                        if (isRunning) {
-                          Alert.alert(
-                            "Cannot Switch Location",
-                            "Please finish or stop your current session before changing location."
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      fontWeight: "bold",
+                      color: themeColors.black,
+                      marginBottom: 8,
+                    }}
+                  >
+                    {selectedStatSpot?.spot?.buildingName || "Unknown"}
+                    {selectedStatSpot?.spot?.roomNumber
+                      ? ` - Floor ${selectedStatSpot.spot.roomNumber}`
+                      : ""}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      color: themeColors.purple,
+                      marginBottom: 8,
+                    }}
+                  >
+                    Focused for:{" "}
+                    {selectedStatSpot
+                      ? `${selectedStatSpot.hours}h ${selectedStatSpot.minutes}m ${selectedStatSpot.seconds}s`
+                      : ""}
+                  </Text>
+                  {/* Session List with Notes (delete button removed) */}
+                  <ScrollView
+                    style={{ width: "100%", maxHeight: 220, marginBottom: 12 }}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingBottom: 40 }}
+                  >
+                    {selectedStatSpot?.sessions?.length > 0 ? (
+                      selectedStatSpot.sessions
+                        .filter((session) => !session.isBreak)
+                        .sort((a, b) => b.start - a.start)
+                        .map((session, idx, arr) => {
+                          const date = new Date(session.start);
+                          const durationSec = Math.floor(
+                            (session.duration || 0) / 1000
                           );
-                          return;
-                        }
-                        setSelectedSpot(item);
-                        setShowSpotModal(false);
-                      }}
+                          const hours = Math.floor(durationSec / 3600);
+                          const minutes = Math.floor((durationSec % 3600) / 60);
+                          const seconds = durationSec % 60;
+                          return (
+                            <View
+                              key={session.sessionId}
+                              style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                justifyContent: "flex-start",
+                                borderBottomWidth:
+                                  idx === arr.length - 1 ? 0 : 1,
+                                borderBottomColor: themeColors.gray,
+                                paddingVertical: 10,
+                                backgroundColor: "#fff",
+                                minHeight: 48,
+                              }}
+                            >
+                              <View style={{ flex: 1 }}>
+                                <Text
+                                  style={{
+                                    color: themeColors.black,
+                                    fontWeight: "bold",
+                                    fontSize: 15,
+                                  }}
+                                >
+                                  {date.toLocaleDateString()}{" "}
+                                  {date.toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </Text>
+                                <Text
+                                  style={{
+                                    color: themeColors.darkGray,
+                                    fontSize: 13,
+                                  }}
+                                >
+                                  Duration: {hours}h {minutes}m {seconds}s
+                                </Text>
+                                {session.note ? (
+                                  <Text
+                                    style={{
+                                      color: themeColors.purple,
+                                      fontSize: 14,
+                                      marginTop: 2,
+                                      fontStyle: "italic",
+                                    }}
+                                  >
+                                    “{session.note}”
+                                  </Text>
+                                ) : (
+                                  <Text
+                                    style={{
+                                      color: themeColors.gray,
+                                      fontSize: 13,
+                                      marginTop: 2,
+                                      fontStyle: "italic",
+                                    }}
+                                  >
+                                    No reflection
+                                  </Text>
+                                )}
+                              </View>
+                              {/* Delete button removed */}
+                            </View>
+                          );
+                        })
+                    ) : (
+                      <Text
+                        style={{ color: themeColors.darkGray, fontSize: 14 }}
+                      >
+                        No sessions for this spot this week.
+                      </Text>
+                    )}
+                  </ScrollView>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: themeColors.darkGray,
+                      marginBottom: 18,
+                      textAlign: "center",
+                    }}
+                  >
+                    You can view your sessions for this spot.
+                  </Text>
+                  <View style={{ flexDirection: "row", width: "100%" }}>
+                    <TouchableOpacity
+                      onPress={() => setShowStatModal(false)}
+                      disabled={deletingStat}
                       style={{
+                        flex: 1,
+                        backgroundColor: themeColors.white,
+                        borderRadius: 8,
                         padding: 12,
-                        borderBottomWidth: 0.5,
-                        borderBottomColor: themeColors.gray,
+                        alignItems: "center",
+                        borderColor: themeColors.black,
+                        borderWidth: 0.5,
+                        marginRight: 8,
                       }}
                     >
                       <Text
@@ -2202,213 +2196,17 @@ export function FocusTimerView({ navigation }) {
                           fontWeight: "bold",
                         }}
                       >
-                        {item.buildingName}
+                        Close
                       </Text>
-                      {item.roomNumber && (
-                        <Text
-                          style={{ color: themeColors.darkGray, fontSize: 13 }}
-                        >
-                          Floor {item.roomNumber}
-                        </Text>
-                      )}
                     </TouchableOpacity>
-                  )}
-                />
-                <TouchableOpacity
-                  onPress={() => setShowSpotModal(false)}
-                  style={{
-                    marginTop: 12,
-                    backgroundColor: themeColors.purple,
-                    borderRadius: 8,
-                    paddingVertical: 10,
-                    alignItems: "center",
-                  }}
-                >
-                  <Text
-                    style={{ color: themeColors.white, fontWeight: "bold" }}
-                  >
-                    Close
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
-          {/* Stat Card Modal */}
-          <Modal
-            visible={showStatModal}
-            transparent
-            animationType="slide"
-            onRequestClose={() => setShowStatModal(false)}
-          >
-            <View
-              style={{
-                flex: 1,
-                backgroundColor: "rgba(0,0,0,0.3)",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <View
-                style={{
-                  backgroundColor: themeColors.white,
-                  borderRadius: 12,
-                  padding: 20,
-                  width: "85%",
-                  alignItems: "center",
-                  maxHeight: "85%",
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 18,
-                    fontWeight: "bold",
-                    color: themeColors.black,
-                    marginBottom: 8,
-                  }}
-                >
-                  {selectedStatSpot?.spot?.buildingName || "Unknown"}
-                  {selectedStatSpot?.spot?.roomNumber
-                    ? ` - Floor ${selectedStatSpot.spot.roomNumber}`
-                    : ""}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    color: themeColors.purple,
-                    marginBottom: 8,
-                  }}
-                >
-                  Focused for:{" "}
-                  {selectedStatSpot
-                    ? `${selectedStatSpot.hours}h ${selectedStatSpot.minutes}m ${selectedStatSpot.seconds}s`
-                    : ""}
-                </Text>
-                {/* Session List with Notes (delete button removed) */}
-                <ScrollView
-                  style={{ width: "100%", maxHeight: 220, marginBottom: 12 }}
-                  showsVerticalScrollIndicator={true}
-                  contentContainerStyle={{ paddingBottom: 40 }}
-                >
-                  {selectedStatSpot?.sessions?.length > 0 ? (
-                    selectedStatSpot.sessions
-                      .filter((session) => !session.isBreak)
-                      .sort((a, b) => b.start - a.start)
-                      .map((session, idx, arr) => {
-                        const date = new Date(session.start);
-                        const durationSec = Math.floor(
-                          (session.duration || 0) / 1000
-                        );
-                        const hours = Math.floor(durationSec / 3600);
-                        const minutes = Math.floor((durationSec % 3600) / 60);
-                        const seconds = durationSec % 60;
-                        return (
-                          <View
-                            key={session.sessionId}
-                            style={{
-                              flexDirection: "row",
-                              alignItems: "center",
-                              justifyContent: "flex-start",
-                              borderBottomWidth: idx === arr.length - 1 ? 0 : 1,
-                              borderBottomColor: themeColors.gray,
-                              paddingVertical: 10,
-                              backgroundColor: "#fff",
-                              minHeight: 48,
-                            }}
-                          >
-                            <View style={{ flex: 1 }}>
-                              <Text
-                                style={{
-                                  color: themeColors.black,
-                                  fontWeight: "bold",
-                                  fontSize: 15,
-                                }}
-                              >
-                                {date.toLocaleDateString()}{" "}
-                                {date.toLocaleTimeString([], {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
-                              </Text>
-                              <Text
-                                style={{
-                                  color: themeColors.darkGray,
-                                  fontSize: 13,
-                                }}
-                              >
-                                Duration: {hours}h {minutes}m {seconds}s
-                              </Text>
-                              {session.note ? (
-                                <Text
-                                  style={{
-                                    color: themeColors.purple,
-                                    fontSize: 14,
-                                    marginTop: 2,
-                                    fontStyle: "italic",
-                                  }}
-                                >
-                                  “{session.note}”
-                                </Text>
-                              ) : (
-                                <Text
-                                  style={{
-                                    color: themeColors.gray,
-                                    fontSize: 13,
-                                    marginTop: 2,
-                                    fontStyle: "italic",
-                                  }}
-                                >
-                                  No reflection
-                                </Text>
-                              )}
-                            </View>
-                            {/* Delete button removed */}
-                          </View>
-                        );
-                      })
-                  ) : (
-                    <Text style={{ color: themeColors.darkGray, fontSize: 14 }}>
-                      No sessions for this spot this week.
-                    </Text>
-                  )}
-                </ScrollView>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: themeColors.darkGray,
-                    marginBottom: 18,
-                    textAlign: "center",
-                  }}
-                >
-                  You can view your sessions for this spot.
-                </Text>
-                <View style={{ flexDirection: "row", width: "100%" }}>
-                  <TouchableOpacity
-                    onPress={() => setShowStatModal(false)}
-                    disabled={deletingStat}
-                    style={{
-                      flex: 1,
-                      backgroundColor: themeColors.white,
-                      borderRadius: 8,
-                      padding: 12,
-                      alignItems: "center",
-                      borderColor: themeColors.black,
-                      borderWidth: 0.5,
-                      marginRight: 8,
-                    }}
-                  >
-                    <Text
-                      style={{ color: themeColors.purple, fontWeight: "bold" }}
-                    >
-                      Close
-                    </Text>
-                  </TouchableOpacity>
-                  {/* Delete All button removed */}
+                    {/* Delete All button removed */}
+                  </View>
                 </View>
               </View>
-            </View>
-          </Modal>
-        </View>
-      </ScrollView>
+            </Modal>
+          </View>
+        </ScrollView>
+      </View>
     </>
   );
 }
