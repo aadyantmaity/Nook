@@ -481,7 +481,13 @@ export function FocusTimerView({ navigation }) {
     await clearTimerState();
 
     if (sessionStart) {
-      const end = Timestamp.now();
+      // Subtract 1 second from end time
+      const now = Timestamp.now();
+      const endMillis = now.toMillis() - 1000;
+      const end = new Timestamp(
+        Math.floor(endMillis / 1000),
+        (endMillis % 1000) * 1000000
+      );
       if (!isBreak) {
         // If Pomodoro, show note modal and after saving, start break
         setPendingSession({
