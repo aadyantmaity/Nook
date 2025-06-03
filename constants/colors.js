@@ -11,6 +11,7 @@ export const colors = {
   subtleText: "#CCCCCC", // Subtle text for dark mode
   red: "#dd7973", // Darker red for error or important actions
   green: "#99C49E", // Green for success messages
+  orange: "#FFA500", // Orange for warnings or highlights
 };
 
 export const dark = {
@@ -26,6 +27,7 @@ export const dark = {
   subtleText: "#888888", // Medium subtle text for dark mode
   red: "#dd7973", // Brighter red for errors or important actions in dark mode
   green: "#99C49E", // Green for success messages
+  orange: "#FFA500", // Orange for warnings or highlights
 };
 
 export function getThemeColors(isDark) {
