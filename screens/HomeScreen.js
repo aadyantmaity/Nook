@@ -45,6 +45,8 @@ import { ThemeContext } from "../App"; // Import ThemeContext
 import { FocusTimerView } from "../components/FocusTimer"; // <-- Use correct import
 import { TabView, SceneMap } from "react-native-tab-view";
 import { Dimensions } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+
 let imageCache = {};
 
 const TAGS = [
@@ -122,9 +124,9 @@ function Filters({ filters, setFilters, themeColors }) {
         position: "relative",
         zIndex: 1,
         backgroundColor: themeColors.white,
-        paddingBottom: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: "#E0E0E0",
+        paddingBottom: 8,
+        // borderBottomWidth: 1, // Remove this line
+        // borderBottomColor: "#E0E0E0", // Remove this line
       }}
     >
       <ScrollView
@@ -132,7 +134,6 @@ function Filters({ filters, setFilters, themeColors }) {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{
           flexDirection: "column",
-          paddingHorizontal: 16,
         }}
       >
         {[row1, row2].map((row, rowIdx) => (
@@ -206,6 +207,8 @@ function StudySpots({
   onRefresh, // <-- add onRefresh prop
   refreshing, // <-- add refreshing prop
   privateNookStats, // <-- add this line
+  filters, // <-- add filters prop
+  setFilters, // <-- add setFilters prop
 }) {
   // Filter out private nooks not owned by the current user
   const userId = auth.currentUser?.uid;
@@ -216,61 +219,68 @@ function StudySpots({
   return (
     <FlatList
       ListHeaderComponent={
-        <View
-          style={{
-            paddingHorizontal: 0, // Remove horizontal padding here
-            paddingTop: 16,
-            paddingBottom: 16,
-            backgroundColor: themeColors.white,
-            alignItems: "center", // Center the search bar container
-          }}
-        >
+        <View style={{ paddingTop: 16 }}>
+          {/* Filters above search bar */}
+          <Filters
+            filters={filters}
+            setFilters={setFilters}
+            themeColors={themeColors}
+          />
           <View
             style={{
-              flexDirection: "row",
-              alignItems: "center",
+              paddingHorizontal: 0, // Remove horizontal padding here
+              paddingBottom: 16,
               backgroundColor: themeColors.white,
-              borderRadius: 20,
-              borderColor: themeColors.black,
-              borderWidth: 0.5,
-              paddingHorizontal: 12,
-              paddingVertical: 2,
-              width: "100%", // Match card width (cards have 16px horizontal padding, so 100%-16*2)
-              maxWidth: 600, // Optional: limit max width for large screens
+              alignItems: "center", // Center the search bar container
             }}
           >
-            <MagnifyingGlass
-              size={20}
-              color={themeColors.purple}
-              style={{ marginRight: 8 }}
-            />
-            <TextInput
-              value={search}
-              onChangeText={setSearch}
-              placeholder="Search by name, tag, or feature"
-              placeholderTextColor={themeColors.darkGray}
+            <View
               style={{
-                flex: 1,
+                flexDirection: "row",
+                alignItems: "center",
                 backgroundColor: themeColors.white,
                 borderRadius: 20,
-                paddingHorizontal: 4,
-                paddingVertical: 10,
-                fontSize: 16,
-                color: themeColors.black, // Use black for search input
+                borderColor: themeColors.black,
+                borderWidth: 0.5,
+                paddingHorizontal: 12,
+                paddingVertical: 2,
+                width: "100%", // Match card width (cards have 16px horizontal padding, so 100%-16*2)
+                maxWidth: 600, // Optional: limit max width for large screens
               }}
-              autoCorrect={false}
-              autoCapitalize="none"
-              clearButtonMode="while-editing"
-              accessibilityLabel="Search study spots"
-              accessible={true}
-            />
+            >
+              <MagnifyingGlass
+                size={20}
+                color={themeColors.purple}
+                style={{ marginRight: 8 }}
+              />
+              <TextInput
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Search by name, tag, or feature"
+                placeholderTextColor={themeColors.darkGray}
+                style={{
+                  flex: 1,
+                  backgroundColor: themeColors.white,
+                  borderRadius: 20,
+                  paddingHorizontal: 4,
+                  paddingVertical: 10,
+                  fontSize: 16,
+                  color: themeColors.black, // Use black for search input
+                }}
+                autoCorrect={false}
+                autoCapitalize="none"
+                clearButtonMode="while-editing"
+                accessibilityLabel="Search study spots"
+                accessible={true}
+              />
+            </View>
           </View>
         </View>
       }
       contentContainerStyle={{
         paddingHorizontal: 16,
         paddingTop: 0,
-        paddingBottom: 96,
+        // paddingBottom: 96, // <-- Remove this line
       }}
       data={visibleSpots}
       keyExtractor={(item) => item.id}
@@ -1067,12 +1077,7 @@ export default function HomeScreen({
   // --- TabView scenes ---
   const HomeTab = () => (
     <>
-      <View style={{ height: 16 }} />
-      <Filters
-        filters={filters}
-        setFilters={setFilters}
-        themeColors={themeColors}
-      />
+      {/* Remove Filters here, now included in StudySpots */}
       <StudySpots
         filteredSpots={filteredSpots}
         navigation={navigation}
@@ -1085,6 +1090,8 @@ export default function HomeScreen({
         onRefresh={handleRefresh}
         refreshing={isRefreshing}
         privateNookStats={privateNookStats} // <-- pass as prop
+        filters={filters} // <-- pass filters
+        setFilters={setFilters} // <-- pass setFilters
       />
       <TouchableOpacity
         onPress={() => {
@@ -1190,6 +1197,70 @@ export default function HomeScreen({
     };
     fetchPrivateNookStats();
   }, [studySpots, auth.currentUser]);
+
+  // Refresh Home tab and private nook stats when Home tab is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchStudySpots();
+      // Also refresh private nook stats after fetching spots
+      setTimeout(() => {
+        // This ensures privateNookStats is recalculated after studySpots update
+        if (typeof auth.currentUser?.uid === "string") {
+          (async () => {
+            const userId = auth.currentUser?.uid;
+            if (!userId) return;
+            const spotsSnapshot = await getDocs(collection(db, "studySpots"));
+            const privateNooks = spotsSnapshot.docs
+              .filter(
+                (doc) => doc.data().private && doc.data().ownerUid === userId
+              )
+              .map((doc) => ({ id: doc.id, ...doc.data() }));
+
+            if (privateNooks.length === 0) {
+              setPrivateNookStats({});
+              return;
+            }
+
+            const q = query(
+              collection(db, "focusSessions"),
+              where("userId", "==", userId)
+            );
+            const sessionsSnapshot = await getDocs(q);
+            const stats = {};
+            privateNooks.forEach((nook) => {
+              const sessions = [];
+              sessionsSnapshot.forEach((doc) => {
+                const data = doc.data();
+                if (
+                  data.spotId === nook.id &&
+                  !data.isBreak &&
+                  data.start &&
+                  data.end
+                ) {
+                  const start = data.start.seconds
+                    ? data.start.seconds * 1000
+                    : data.start.toMillis?.() ?? 0;
+                  const end = data.end.seconds
+                    ? data.end.seconds * 1000
+                    : data.end.toMillis?.() ?? 0;
+                  const duration = data.duration || end - start;
+                  sessions.push({ ...data, start, end, duration });
+                }
+              });
+              let lastFocused = null;
+              let totalMs = 0;
+              sessions.forEach((s) => {
+                if (!lastFocused || s.end > lastFocused) lastFocused = s.end;
+                totalMs += s.duration || 0;
+              });
+              stats[nook.id] = { lastFocused, totalMs };
+            });
+            setPrivateNookStats(stats);
+          })();
+        }
+      }, 300); // Delay to ensure studySpots is updated first
+    }, [])
+  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>

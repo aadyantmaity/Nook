@@ -26,8 +26,18 @@ import {
   MapPin,
   Heart,
   X,
+  CaretDown, // <-- already imported
+  CaretRight, // <-- add this import
 } from "phosphor-react-native";
-import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  collection,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore"; // add query, where
 import * as ImagePicker from "expo-image-picker";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import * as FileSystem from "expo-file-system";
@@ -62,6 +72,17 @@ export default function ProfileScreen({
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [cachedProfilePicUri, setCachedProfilePicUri] = useState(null);
   const [cachedFavoriteSpotImages, setCachedFavoriteSpotImages] = useState({}); // spotId -> uri
+
+  // Dropdown state for favorites
+  const [favoritesExpanded, setFavoritesExpanded] = useState(false);
+
+  // --- Study Stats Summary State ---
+  const [studyStats, setStudyStats] = useState({
+    totalSessions: 0,
+    favoriteSpotId: null,
+    favoriteSpotName: "",
+    totalTimeStudied: 0, // in milliseconds
+  });
 
   // Helper to cache profile picture locally
   const cacheProfilePic = async (url) => {
@@ -192,190 +213,276 @@ export default function ProfileScreen({
     };
   }, [favoriteSpots]);
 
-  // Helper for "last updated" display
-  function getLastUpdatedLabel(ratings) {
-    if (!ratings || !ratings.lastUpdated) return "";
-    const now = Date.now();
-    const last =
-      typeof ratings.lastUpdated === "number"
-        ? ratings.lastUpdated
-        : ratings.lastUpdated?.toMillis?.() ?? null;
-    if (!last) return "";
-
-    const diffMs = now - last;
-    const diffMin = Math.floor(diffMs / 60000);
-
-    if (ratings.lastUpdatedType === "window" && ratings.lastWindowHours) {
-      if (diffMin < 60) {
-        if (diffMin === 0) return "Last updated: just now";
-        return `Last updated: ${diffMin} min ago`;
-      }
-      if (ratings.lastWindowHours === 1) {
-        return "Last updated: 1 hour ago (1h avg)";
-      }
-      return `Last updated: ${ratings.lastWindowHours} hours ago (${ratings.lastWindowHours}h avg)`;
-    }
-    if (ratings.lastUpdatedType === "today") {
-      return "Last updated: Today (daily avg)";
-    }
-    if (diffMin < 30 && diffMin >= 0) {
-      if (diffMin === 0) return "Last updated: just now";
-      return `Last updated: ${diffMin} min ago`;
-    }
-    return "";
-  }
-
-  // Helper to compute noise/crowd averages and recency for a spot
-  async function computeSpotRatings(spotId) {
-    const { Timestamp, collection, query, where, getDocs } = await import(
-      "firebase/firestore"
-    );
-    const ratingsQuery = query(
-      collection(db, "ratings"),
-      where("spotId", "==", spotId)
-    );
-    const ratingsSnapshot = await getDocs(ratingsQuery);
-
-    const now = Date.now();
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayStartMillis = todayStart.getTime();
-
-    // Find best window (1-6 hours)
-    let bestWindow = null;
-    let bestWindowRatings = [];
-    let bestWindowStart = null;
-    let bestWindowEnd = null;
-    let lastRecentTimestamp = null;
-    let found = false;
-    for (let hours = 1; hours <= 6; hours++) {
-      const windowStart = now - hours * 60 * 60 * 1000;
-      let windowRatings = [];
-      let windowLastTimestamp = null;
-      ratingsSnapshot.forEach((ratingDoc) => {
-        const ratingData = ratingDoc.data();
-        const ts = ratingData.timestamp.toMillis();
-        if (ts >= windowStart) {
-          windowRatings.push(ratingData);
-          if (!windowLastTimestamp || ts > windowLastTimestamp)
-            windowLastTimestamp = ts;
-        }
-      });
-      if (windowRatings.length > 0) {
-        bestWindow = hours;
-        bestWindowRatings = windowRatings;
-        bestWindowStart = windowStart;
-        bestWindowEnd = now;
-        lastRecentTimestamp = windowLastTimestamp;
-        found = true;
-        break;
-      }
-    }
-    // If no ratings in last 6 hours, fallback to today's ratings
-    let todayRatings = [];
-    if (!found) {
-      ratingsSnapshot.forEach((ratingDoc) => {
-        const ratingData = ratingDoc.data();
-        const ts = ratingData.timestamp.toMillis();
-        if (ts >= todayStartMillis) {
-          todayRatings.push(ratingData);
-        }
-      });
-    }
-
-    let noiseRating, crowdRating, lastUpdated, lastUpdatedType, lastWindowHours;
-    if (found && bestWindowRatings.length > 0) {
-      let noiseSum = 0,
-        crowdSum = 0;
-      bestWindowRatings.forEach((r) => {
-        noiseSum += r.noise || 0;
-        crowdSum += r.crowd || 0;
-      });
-      noiseRating = (noiseSum / bestWindowRatings.length).toFixed(1);
-      crowdRating = (crowdSum / bestWindowRatings.length).toFixed(1);
-      lastUpdated = lastRecentTimestamp;
-      lastUpdatedType = "window";
-      lastWindowHours = bestWindow;
-    } else if (todayRatings.length > 0) {
-      let noiseSumDay = 0,
-        crowdSumDay = 0;
-      todayRatings.forEach((r) => {
-        noiseSumDay += r.noise || 0;
-        crowdSumDay += r.crowd || 0;
-      });
-      noiseRating = (noiseSumDay / todayRatings.length).toFixed(1);
-      crowdRating = (crowdSumDay / todayRatings.length).toFixed(1);
-      lastUpdated = Math.max(
-        ...todayRatings.map((r) => r.timestamp.toMillis())
-      );
-      lastUpdatedType = "today";
-      lastWindowHours = null;
-    } else {
-      noiseRating = "N/A";
-      crowdRating = "N/A";
-      lastUpdated = null;
-      lastUpdatedType = null;
-      lastWindowHours = null;
-    }
-
-    return {
-      noise: noiseRating,
-      crowd: crowdRating,
-      lastUpdated,
-      lastUpdatedType,
-      lastWindowHours,
-    };
-  }
-
-  // Fetch favorite spots details
-  const fetchFavoriteSpots = useCallback(async () => {
-    setFavoriteSpotsLoading(true); // <-- Start loading before fetch
-    if (!favorites.length) {
-      setFavoriteSpots([]);
-      setFavoriteSpotsLoading(false); // <-- Done loading
-      return;
-    }
+  // --- Fetch Study Stats ---
+  const fetchStudyStats = useCallback(async () => {
+    const user = auth.currentUser;
+    if (!user) return;
     try {
-      const spotsSnapshot = await getDocs(collection(db, "studySpots"));
-      const favSpots = await Promise.all(
-        spotsSnapshot.docs
-          .filter((doc) => favorites.includes(doc.id))
-          .map(async (doc) => {
-            const spotData = doc.data();
-            // Compute ratings for this spot
-            const ratings = await computeSpotRatings(doc.id);
-            return { id: doc.id, ...spotData, ratings };
-          })
+      // Fetch all focusSessions for this user (not breaks)
+      const q = query(
+        collection(db, "focusSessions"),
+        where("userId", "==", user.uid)
       );
-      setFavoriteSpots(favSpots);
+      const snapshot = await getDocs(q);
+      let total = 0;
+      let totalTimeStudied = 0;
+      const spotCounts = {};
+      snapshot.forEach((docSnap) => {
+        const d = docSnap.data();
+        // Use the same logic as archive: skip breaks, require spotId, start, end
+        if (!d.isBreak && d.spotId && d.start && d.end) {
+          total++;
+          spotCounts[d.spotId] = (spotCounts[d.spotId] || 0) + 1;
+          // Calculate duration (archive modal logic)
+          const start = d.start.seconds
+            ? d.start.seconds * 1000
+            : d.start.toMillis();
+          const end = d.end.seconds ? d.end.seconds * 1000 : d.end.toMillis();
+          if (
+            typeof start === "number" &&
+            typeof end === "number" &&
+            end > start
+          ) {
+            totalTimeStudied += end - start;
+          }
+        }
+      });
+      // Find favorite spotId
+      let favoriteSpotId = null;
+      let maxCount = 0;
+      Object.entries(spotCounts).forEach(([spotId, count]) => {
+        if (count > maxCount) {
+          favoriteSpotId = spotId;
+          maxCount = count;
+        }
+      });
+      // Fetch favorite spot's name
+      let favoriteSpotName = "";
+      if (favoriteSpotId) {
+        const spotDoc = await getDoc(doc(db, "studySpots", favoriteSpotId));
+        if (spotDoc.exists()) {
+          const spot = spotDoc.data();
+          favoriteSpotName = spot.buildingName || spot.name || "Unknown";
+          if (spot.roomNumber)
+            favoriteSpotName += ` - Floor ${spot.roomNumber}`;
+        }
+      }
+      setStudyStats({
+        totalSessions: total,
+        favoriteSpotId,
+        favoriteSpotName,
+        totalTimeStudied,
+      });
     } catch (e) {
-      setFavoriteSpots([]);
+      setStudyStats({
+        totalSessions: 0,
+        favoriteSpotId: null,
+        favoriteSpotName: "",
+        totalTimeStudied: 0,
+      });
     }
-    setFavoriteSpotsLoading(false); // <-- Done loading
-  }, [favorites]);
+  }, []);
 
+  // Fetch stats on mount and on refresh
   useEffect(() => {
-    fetchFavoriteSpots();
-  }, [favorites, fetchFavoriteSpots]);
+    fetchStudyStats();
+  }, [fetchStudyStats]);
 
-  // Pull-to-refresh handler
+  // Also refresh stats on pull-to-refresh
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchUserData();
     await fetchFavoriteSpots();
+    await fetchStudyStats();
     setRefreshing(false);
-  }, [fetchUserData, fetchFavoriteSpots]);
+  }, [fetchUserData, fetchFavoriteSpots, fetchStudyStats]);
 
-  const handleLogout = () => {
-    setLogoutModalVisible(true);
-  };
+  // Fetch favorite spots for the user
+  const fetchFavoriteSpots = useCallback(async () => {
+    setFavoriteSpotsLoading(true);
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        setFavoriteSpots([]);
+        setFavoriteSpotsLoading(false);
+        return;
+      }
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      let favIds = [];
+      if (userDoc.exists()) {
+        favIds = userDoc.data().favorites || [];
+      }
+      if (favIds.length === 0) {
+        setFavoriteSpots([]);
+        setFavoriteSpotsLoading(false);
+        return;
+      }
+      // Fetch all favorite spots in parallel
+      const spotDocs = await Promise.all(
+        favIds.map((id) => getDoc(doc(db, "studySpots", id)))
+      );
+      const spots = [];
+      for (let i = 0; i < spotDocs.length; i++) {
+        const docSnap = spotDocs[i];
+        if (docSnap.exists()) {
+          const spotData = docSnap.data();
+          // Fetch ratings for the spot
+          const ratingsQuery = query(
+            collection(db, "ratings"),
+            where("spotId", "==", docSnap.id)
+          );
+          const ratingsSnapshot = await getDocs(ratingsQuery);
 
-  const confirmLogout = () => {
-    setLogoutModalVisible(false);
-    signOut(auth).catch((error) => {
-      console.error("Error logging out:", error.message);
-    });
-  };
+          const now = Date.now();
+          const thirtyMinutesAgo = now - 30 * 60 * 1000;
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+          const todayStartMillis = todayStart.getTime();
+
+          let recentRatings = [];
+          let recentLastTimestamp = null;
+          ratingsSnapshot.forEach((ratingDoc) => {
+            const ratingData = ratingDoc.data();
+            const ts = ratingData.timestamp.toMillis();
+            if (ts >= thirtyMinutesAgo) {
+              recentRatings.push(ratingData);
+              if (!recentLastTimestamp || ts > recentLastTimestamp)
+                recentLastTimestamp = ts;
+            }
+          });
+
+          let noiseRating,
+            crowdRating,
+            lastUpdated,
+            lastUpdatedType,
+            lastWindowHours;
+
+          if (recentRatings.length > 0) {
+            let noiseSum = 0,
+              crowdSum = 0;
+            recentRatings.forEach((r) => {
+              noiseSum += r.noise;
+              crowdSum += r.crowd;
+            });
+            noiseRating = noiseSum / recentRatings.length;
+            crowdRating = crowdSum / recentRatings.length;
+            lastUpdated = recentLastTimestamp;
+            lastUpdatedType = "recent";
+            lastWindowHours = null;
+          } else {
+            let bestWindow = null;
+            let bestWindowRatings = [];
+            let lastRecentTimestamp = null;
+            let found = false;
+            for (let hours = 1; hours <= 6; hours++) {
+              const windowStart = now - hours * 60 * 60 * 1000;
+              let windowRatings = [];
+              let windowLastTimestamp = null;
+              ratingsSnapshot.forEach((ratingDoc) => {
+                const ratingData = ratingDoc.data();
+                const ts = ratingData.timestamp.toMillis();
+                if (ts >= windowStart) {
+                  windowRatings.push(ratingData);
+                  if (!windowLastTimestamp || ts > windowLastTimestamp)
+                    windowLastTimestamp = ts;
+                }
+              });
+              if (windowRatings.length > 0) {
+                bestWindow = hours;
+                bestWindowRatings = windowRatings;
+                lastRecentTimestamp = windowLastTimestamp;
+                found = true;
+                break;
+              }
+            }
+            let todayRatings = [];
+            if (!found) {
+              ratingsSnapshot.forEach((ratingDoc) => {
+                const ratingData = ratingDoc.data();
+                const ts = ratingData.timestamp.toMillis();
+                if (ts >= todayStartMillis) {
+                  todayRatings.push(ratingData);
+                }
+              });
+            }
+
+            if (found && bestWindowRatings.length > 0) {
+              let noiseSum = 0,
+                crowdSum = 0;
+              bestWindowRatings.forEach((r) => {
+                noiseSum += r.noise;
+                crowdSum += r.crowd;
+              });
+              noiseRating = noiseSum / bestWindowRatings.length;
+              crowdRating = crowdSum / bestWindowRatings.length;
+              lastUpdated = lastRecentTimestamp;
+              lastUpdatedType = "window";
+              lastWindowHours = bestWindow;
+            } else if (todayRatings.length > 0) {
+              let noiseSumDay = 0,
+                crowdSumDay = 0;
+              todayRatings.forEach((r) => {
+                noiseSumDay += r.noise;
+                crowdSumDay += r.crowd;
+              });
+              noiseRating = noiseSumDay / todayRatings.length;
+              crowdRating = crowdSumDay / todayRatings.length;
+              lastUpdated = Math.max(
+                ...todayRatings.map((r) => r.timestamp.toMillis())
+              );
+              lastUpdatedType = "today";
+              lastWindowHours = null;
+            } else {
+              noiseRating = "N/A";
+              crowdRating = "N/A";
+              lastUpdated = null;
+              lastUpdatedType = null;
+              lastWindowHours = null;
+            }
+          }
+
+          // Fetch overall ratings for the spot
+          const overallRatingsQuery = query(
+            collection(db, "overallRatings"),
+            where("spotId", "==", docSnap.id)
+          );
+          const overallRatingsSnapshot = await getDocs(overallRatingsQuery);
+          let overallSum = 0;
+          let overallCount = 0;
+          overallRatingsSnapshot.forEach((r) => {
+            overallSum += r.data().rating || 0;
+            overallCount++;
+          });
+          const averageOverallRating =
+            overallCount > 0 ? overallSum / overallCount : 0;
+
+          spots.push({
+            id: docSnap.id,
+            ...spotData,
+            ratings: {
+              noise: noiseRating,
+              crowd: crowdRating,
+              lastUpdated,
+              lastUpdatedType,
+              lastWindowHours,
+            },
+            averageOverallRating,
+            overallRatingsCount: overallCount,
+          });
+        }
+      }
+      setFavoriteSpots(spots);
+    } catch (e) {
+      setFavoriteSpots([]);
+    } finally {
+      setFavoriteSpotsLoading(false);
+    }
+  }, []);
+
+  // Fetch favorite spots on mount
+  useEffect(() => {
+    fetchFavoriteSpots();
+  }, [fetchFavoriteSpots]);
 
   // Helper to upload image to Firebase Storage and get download URL
   const uploadProfilePicToStorage = async (imageUri, userId) => {
@@ -394,6 +501,17 @@ export default function ProfileScreen({
     );
     await uploadBytes(storageRef, blob, { contentType: "image/jpeg" });
     return await getDownloadURL(storageRef);
+  };
+
+  const handleLogout = () => {
+    setLogoutModalVisible(true);
+  };
+
+  const confirmLogout = () => {
+    setLogoutModalVisible(false);
+    signOut(auth).catch((error) => {
+      console.error("Error logging out:", error.message);
+    });
   };
 
   const handleSaveProfile = async () => {
@@ -639,268 +757,383 @@ export default function ProfileScreen({
               {userGradYear}
             </Text>
           </View>
+          {/* --- Study Stats Summary --- */}
+          <View
+            style={{
+              width: "100%",
+              backgroundColor: themeColors.gray + "22",
+              borderRadius: 12,
+              padding: 14,
+              marginTop: 18,
+              marginBottom: 8,
+              alignItems: "center",
+            }}
+          >
+            <Text
+              style={{
+                fontWeight: "bold",
+                fontSize: 16,
+                color: themeColors.purple,
+                marginBottom: 6,
+              }}
+            >
+              Lifetime Focus Mode Summary
+            </Text>
+            <Text
+              style={{
+                color: themeColors.black,
+                fontSize: 15,
+                marginBottom: 2,
+              }}
+            >
+              Sessions logged:{" "}
+              <Text style={{ fontWeight: "bold", color: themeColors.purple }}>
+                {studyStats.totalSessions}
+              </Text>
+            </Text>
+            <Text
+              style={{
+                color: themeColors.black,
+                fontSize: 15,
+                marginBottom: 2,
+              }}
+            >
+              Time focused:{" "}
+              <Text style={{ fontWeight: "bold", color: themeColors.purple }}>
+                {(() => {
+                  // Display hours, minutes, seconds (same as archive modal)
+                  const ms = studyStats.totalTimeStudied || 0;
+                  const totalSeconds = Math.floor(ms / 1000);
+                  const hours = Math.floor(totalSeconds / 3600);
+                  const minutes = Math.floor((totalSeconds % 3600) / 60);
+                  const seconds = totalSeconds % 60;
+                  let out = [];
+                  if (hours > 0) out.push(`${hours}h`);
+                  if (minutes > 0 || hours > 0) out.push(`${minutes}m`);
+                  out.push(`${seconds}s`);
+                  return out.join(" ");
+                })()}
+              </Text>
+            </Text>
+            <Text
+              style={{
+                color: themeColors.black,
+                fontSize: 15,
+              }}
+            >
+              Favorite location:{" "}
+              <Text style={{ fontWeight: "bold", color: themeColors.purple }}>
+                {studyStats.favoriteSpotName
+                  ? studyStats.favoriteSpotName
+                  : "N/A"}
+              </Text>
+            </Text>
+          </View>
           <View
             style={[styles.divider, { backgroundColor: themeColors.gray }]}
           />
-          {/* Favorites Section */}
+          {/* Favorites Section as Dropdown */}
           <View
             style={{
               flexDirection: "row",
               alignItems: "center",
               marginBottom: 16,
+              justifyContent: "space-between",
             }}
           >
-            <Heart size={20} color={themeColors.purple} weight="fill" />
-            <Text
-              style={[
-                styles.favoritesTitle,
-                { marginLeft: 8, color: themeColors.black },
-              ]}
-            >
-              Favorites
-            </Text>
-          </View>
-          {/* Show skeleton loader or spinner while loading favorites */}
-          {favoriteSpotsLoading ? (
-            <View style={{ width: "100%", marginBottom: 12 }}>
-              {[1, 2, 3].map((i) => (
-                <View
-                  key={i}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    backgroundColor: themeColors.gray,
-                    borderRadius: 12,
-                    padding: 14,
-                    marginBottom: 10,
-                    opacity: 0.5,
-                  }}
-                >
-                  <View
-                    style={{
-                      width: 75,
-                      height: 75,
-                      borderRadius: 8,
-                      backgroundColor: themeColors.lightGray || "#EEE",
-                      marginRight: 14,
-                    }}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <View
-                      style={{
-                        height: 18,
-                        backgroundColor: themeColors.lightGray || "#EEE",
-                        borderRadius: 4,
-                        marginBottom: 8,
-                        width: "60%",
-                      }}
-                    />
-                    <View
-                      style={{
-                        height: 12,
-                        backgroundColor: themeColors.lightGray || "#EEE",
-                        borderRadius: 4,
-                        marginBottom: 6,
-                        width: "40%",
-                      }}
-                    />
-                    <View
-                      style={{
-                        height: 12,
-                        backgroundColor: themeColors.lightGray || "#EEE",
-                        borderRadius: 4,
-                        width: "30%",
-                      }}
-                    />
-                  </View>
-                </View>
-              ))}
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Heart size={20} color={themeColors.purple} weight="fill" />
+              <Text
+                style={[
+                  styles.favoritesTitle,
+                  { marginLeft: 8, color: themeColors.black },
+                ]}
+              >
+                Favorites
+              </Text>
             </View>
-          ) : favoriteSpots.length === 0 ? (
-            <Text
-              style={[styles.noFavoritesText, { color: themeColors.darkGray }]}
+            <TouchableOpacity
+              onPress={() => setFavoritesExpanded((v) => !v)}
+              style={{
+                padding: 0,
+                borderRadius: 20,
+                backgroundColor: "transparent",
+                alignItems: "center",
+                justifyContent: "center",
+                paddingHorizontal: 8,
+              }}
+              accessibilityLabel={
+                favoritesExpanded ? "Collapse favorites" : "Expand favorites"
+              }
             >
-              No favorites yet.
-            </Text>
-          ) : (
-            <View style={{ width: "100%" }}>
-              {favoriteSpots.map((spot) => (
-                <TouchableOpacity
-                  key={spot.id}
-                  style={{
-                    backgroundColor: themeColors.white,
-                    borderRadius: 12,
-                    padding: 14,
-                    marginBottom: 10,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.08,
-                    shadowRadius: 3,
-                    elevation: 2,
-                    borderColor: themeColors.black,
-                    borderWidth: 0.5,
-                  }}
-                  onPress={() =>
-                    navigation.navigate("SpotDetail", { spotId: spot.id })
-                  }
-                  activeOpacity={0.85}
-                >
-                  {/* Image preview */}
-                  {spot.photoUrl ? (
+              {favoritesExpanded ? (
+                <CaretDown size={22} color={themeColors.purple} weight="bold" />
+              ) : (
+                <CaretRight
+                  size={22}
+                  color={themeColors.purple}
+                  weight="bold"
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+          {favoritesExpanded && (
+            <View
+              style={{
+                width: "100%",
+                backgroundColor: themeColors.white,
+                marginBottom: 16,
+                elevation: 2,
+                padding: 0,
+              }}
+            >
+              {favoriteSpotsLoading ? (
+                <View style={{ width: "100%", marginBottom: 12 }}>
+                  {[1, 2, 3].map((i) => (
                     <View
+                      key={i}
                       style={{
-                        width: 75,
-                        height: 75,
-                        borderRadius: 8,
-                        overflow: "hidden",
-                        marginRight: 14,
-                        backgroundColor: "#EEE",
+                        flexDirection: "row",
                         alignItems: "center",
-                        justifyContent: "center",
+                        backgroundColor: themeColors.gray,
+                        borderRadius: 12,
+                        padding: 14,
+                        marginBottom: 10,
+                        opacity: 0.5,
                       }}
                     >
-                      <Image
-                        source={{
-                          uri:
-                            cachedFavoriteSpotImages[spot.id] || spot.photoUrl,
+                      <View
+                        style={{
+                          width: 75,
+                          height: 75,
+                          borderRadius: 8,
+                          backgroundColor: themeColors.lightGray || "#EEE",
+                          marginRight: 14,
                         }}
-                        style={{ width: "100%", height: "100%" }}
-                        resizeMode="cover"
                       />
+                      <View style={{ flex: 1 }}>
+                        <View
+                          style={{
+                            height: 18,
+                            backgroundColor: themeColors.lightGray || "#EEE",
+                            borderRadius: 4,
+                            marginBottom: 8,
+                            width: "60%",
+                          }}
+                        />
+                        <View
+                          style={{
+                            height: 12,
+                            backgroundColor: themeColors.lightGray || "#EEE",
+                            borderRadius: 4,
+                            marginBottom: 6,
+                            width: "40%",
+                          }}
+                        />
+                        <View
+                          style={{
+                            height: 12,
+                            backgroundColor: themeColors.lightGray || "#EEE",
+                            borderRadius: 4,
+                            width: "30%",
+                          }}
+                        />
+                      </View>
                     </View>
-                  ) : (
-                    <View
+                  ))}
+                </View>
+              ) : favoriteSpots.length === 0 ? (
+                <Text
+                  style={[
+                    styles.noFavoritesText,
+                    { color: themeColors.darkGray, padding: 16 },
+                  ]}
+                >
+                  No favorites yet.
+                </Text>
+              ) : (
+                <View style={{ width: "100%" }}>
+                  {favoriteSpots.map((spot) => (
+                    <TouchableOpacity
+                      key={spot.id}
                       style={{
-                        backgroundColor: themeColors.purple,
-                        borderRadius: 8,
-                        width: 75,
-                        height: 75,
+                        backgroundColor: themeColors.white,
+                        borderRadius: 12,
+                        padding: 14,
+                        marginBottom: 10,
+                        flexDirection: "row",
                         alignItems: "center",
-                        justifyContent: "center",
-                        marginRight: 14,
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.08,
+                        shadowRadius: 3,
+                        elevation: 2,
+                        borderColor: themeColors.black,
+                        borderWidth: 0.5,
                       }}
+                      onPress={() =>
+                        navigation.navigate("SpotDetail", { spotId: spot.id })
+                      }
+                      activeOpacity={0.85}
                     >
-                      <MapPin
-                        size={45}
-                        color={themeColors.white}
-                        weight="bold"
-                      />
-                    </View>
-                  )}
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={{
-                        fontSize: 18,
-                        fontWeight: "bold",
-                        color: themeColors.black, // Use black for spot name
-                        marginBottom: 6,
-                      }}
-                    >
-                      {spot.buildingName}
-                      {spot.roomNumber && (
+                      {/* Image preview */}
+                      {spot.photoUrl ? (
+                        <View
+                          style={{
+                            width: 75,
+                            height: 75,
+                            borderRadius: 8,
+                            overflow: "hidden",
+                            marginRight: 14,
+                            backgroundColor: "#EEE",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <Image
+                            source={{
+                              uri:
+                                cachedFavoriteSpotImages[spot.id] ||
+                                spot.photoUrl,
+                            }}
+                            style={{ width: "100%", height: "100%" }}
+                            resizeMode="cover"
+                          />
+                        </View>
+                      ) : (
+                        <View
+                          style={{
+                            backgroundColor: themeColors.purple,
+                            borderRadius: 8,
+                            width: 75,
+                            height: 75,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginRight: 14,
+                          }}
+                        >
+                          <MapPin
+                            size={45}
+                            color={themeColors.white}
+                            weight="bold"
+                          />
+                        </View>
+                      )}
+                      <View style={{ flex: 1 }}>
                         <Text
                           style={{
                             fontSize: 18,
-                            color: themeColors.black,
                             fontWeight: "bold",
+                            color: themeColors.black, // Use black for spot name
+                            marginBottom: 6,
                           }}
                         >
-                          {" - Floor "}
-                          {spot.roomNumber}
+                          {spot.buildingName}
+                          {spot.roomNumber && (
+                            <Text
+                              style={{
+                                fontSize: 18,
+                                color: themeColors.black,
+                                fontWeight: "bold",
+                              }}
+                            >
+                              {" - Floor "}
+                              {spot.roomNumber}
+                            </Text>
+                          )}
                         </Text>
-                      )}
-                    </Text>
-                    <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-                      {spot.tags && spot.tags.length > 0
-                        ? [...spot.tags]
-                            .sort((a, b) => String(a).localeCompare(String(b)))
-                            .slice(0, 3)
-                            .map((tag, idx) => (
-                              <View
-                                key={idx}
-                                style={{
-                                  backgroundColor: themeColors.purple,
-                                  borderRadius: 12,
-                                  paddingHorizontal: 8,
-                                  paddingVertical: 2,
-                                  marginRight: 6,
-                                  marginTop: 2,
-                                }}
-                              >
-                                <Text
-                                  style={{
-                                    color: themeColors.white,
-                                    fontSize: 11,
-                                    fontWeight: "bold",
-                                  }}
-                                >
-                                  {tag}
-                                </Text>
-                              </View>
-                            ))
-                        : null}
-                      {spot.tags && spot.tags.length > 3 && (
+                        <View
+                          style={{ flexDirection: "row", flexWrap: "wrap" }}
+                        >
+                          {spot.tags && spot.tags.length > 0
+                            ? [...spot.tags]
+                                .sort((a, b) =>
+                                  String(a).localeCompare(String(b))
+                                )
+                                .slice(0, 3)
+                                .map((tag, idx) => (
+                                  <View
+                                    key={idx}
+                                    style={{
+                                      backgroundColor: themeColors.purple,
+                                      borderRadius: 12,
+                                      paddingHorizontal: 8,
+                                      paddingVertical: 2,
+                                      marginRight: 6,
+                                      marginTop: 2,
+                                    }}
+                                  >
+                                    <Text
+                                      style={{
+                                        color: themeColors.white,
+                                        fontSize: 11,
+                                        fontWeight: "bold",
+                                      }}
+                                    >
+                                      {tag}
+                                    </Text>
+                                  </View>
+                                ))
+                            : null}
+                          {spot.tags && spot.tags.length > 3 && (
+                            <Text
+                              style={{
+                                color: themeColors.purple,
+                                fontSize: 11,
+                                fontWeight: "bold",
+                                marginTop: 2,
+                              }}
+                            >
+                              +{spot.tags.length - 3} more
+                            </Text>
+                          )}
+                        </View>
+                        {/* Noise and Crowd Level Row */}
+                        <View style={{ flexDirection: "row", marginTop: 6 }}>
+                          <Text
+                            style={{
+                              color: themeColors.purple,
+                              fontSize: 13,
+                              fontWeight: "bold",
+                              marginRight: 12,
+                            }}
+                          >
+                            Noise:{" "}
+                            {typeof spot.ratings?.noise === "number"
+                              ? spot.ratings.noise.toFixed(1)
+                              : spot.ratings?.noise || "N/A"}
+                          </Text>
+                          <Text
+                            style={{
+                              color: themeColors.purple,
+                              fontSize: 13,
+                              fontWeight: "bold",
+                            }}
+                          >
+                            Crowd:{" "}
+                            {typeof spot.ratings?.crowd === "number"
+                              ? spot.ratings.crowd.toFixed(1)
+                              : spot.ratings?.crowd || "N/A"}
+                          </Text>
+                        </View>
+                        {/* Add last updated label */}
                         <Text
                           style={{
-                            color: themeColors.purple,
                             fontSize: 11,
-                            fontWeight: "bold",
+                            color: themeColors.darkGray,
                             marginTop: 2,
+                            textAlign: "right",
                           }}
                         >
-                          +{spot.tags.length - 3} more
+                          {getLastUpdatedLabel(spot.ratings)}
                         </Text>
-                      )}
-                    </View>
-                    {/* Noise and Crowd Level Row */}
-                    <View style={{ flexDirection: "row", marginTop: 6 }}>
-                      <Text
-                        style={{
-                          color: themeColors.purple,
-                          fontSize: 13,
-                          fontWeight: "bold",
-                          marginRight: 12,
-                        }}
-                      >
-                        Noise:{" "}
-                        {typeof spot.ratings?.noise === "number"
-                          ? spot.ratings.noise.toFixed(1)
-                          : spot.ratings?.noise || "N/A"}
-                      </Text>
-                      <Text
-                        style={{
-                          color: themeColors.purple,
-                          fontSize: 13,
-                          fontWeight: "bold",
-                        }}
-                      >
-                        Crowd:{" "}
-                        {typeof spot.ratings?.crowd === "number"
-                          ? spot.ratings.crowd.toFixed(1)
-                          : spot.ratings?.crowd || "N/A"}
-                      </Text>
-                    </View>
-                    {/* Add last updated label */}
-                    <Text
-                      style={{
-                        fontSize: 11,
-                        color: themeColors.darkGray,
-                        marginTop: 2,
-                        textAlign: "right",
-                      }}
-                    >
-                      {getLastUpdatedLabel(spot.ratings)}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </View>
           )}
-          <View
-            style={[styles.divider, { backgroundColor: themeColors.gray }]}
-          />
         </View>
 
         {/* Buttons */}
