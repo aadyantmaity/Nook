@@ -55,6 +55,7 @@ export default function SpotDetailScreen({ route, navigation }) {
   const { spotId } = route.params || {};
   const [spot, setSpot] = useState(null);
   const [showLiveUpdate, setShowLiveUpdate] = useState(false);
+  const [showAddAlertModal, setShowAddAlertModal] = useState(false); // State for alert modal
   const [currentUserName, setCurrentUserName] = useState(""); // State for current user's name
   const [addedByName, setAddedByName] = useState(null); // Set initial state to null
   const [isLoading, setIsLoading] = useState(true); // Add loading stat
@@ -81,6 +82,14 @@ export default function SpotDetailScreen({ route, navigation }) {
       } catch {}
     });
     unsubscribeRefs.current = [];
+  };
+
+  // Function to handle adding alerts
+  const handleAddAlert = (alertText) => {
+    if (!alertText.trim()) return;
+    // Logic to save the alert (e.g., to Firestore)
+    console.log("Alert added:", alertText);
+    setShowAddAlertModal(false); // Close the modal after adding
   };
 
   // Helper for "last updated" display (copied from HomeScreen)
@@ -1453,19 +1462,19 @@ export default function SpotDetailScreen({ route, navigation }) {
             <View
               style={{
                 flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
                 width: "100%",
-                alignSelf: "center",
-                marginBottom: 0,
-                marginTop: 0,
-                gap: 16,
+                marginTop: 12,
               }}
             >
+              
               {/* Only show Update button for non-private nooks */}
               {!isPrivateNook && (
                 <TouchableOpacity
                   onPress={() => setShowLiveUpdate(true)}
                   style={{
-                    flex: 1,
+                    width: "48%",
                     flexDirection: "row",
                     alignItems: "center",
                     justifyContent: "center",
@@ -1494,7 +1503,39 @@ export default function SpotDetailScreen({ route, navigation }) {
                   </Text>
                 </TouchableOpacity>
               )}
-            </View>
+
+            {/* Alert Button */}
+            <TouchableOpacity
+              onPress={() => setShowAddAlertModal(true)}
+              style={{
+                width: "48%",
+                alignItems: "center",
+                justifyContent: "center",
+                paddingVertical: 12,
+                paddingHorizontal: 16,
+                backgroundColor: themeColors.orange,
+                borderRadius: 8,
+                marginLeft: 0,
+                marginTop: 12,
+                shadowColor: themeColors.black,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 4,
+                elevation: 3,
+              }}
+            >
+              <Text
+                style={{
+                  color: "#FFFFFF",
+                  fontWeight: "bold",
+                  fontSize: 16,
+                }}
+              >
+                Add Alert
+              </Text>
+            </TouchableOpacity>
+          </View>
+
             {/* Only show Report Button for non-private nooks */}
             {!isPrivateNook && (
               <TouchableOpacity
@@ -2021,11 +2062,10 @@ export default function SpotDetailScreen({ route, navigation }) {
             <View
               style={{
                 flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
                 width: "100%",
-                alignSelf: "center",
-                marginBottom: 0,
-                marginTop: 0,
-                gap: 16,
+                marginTop: 12,
               }}
             >
               {/* Only show Update button for non-private nooks */}
@@ -2033,7 +2073,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                 <TouchableOpacity
                   onPress={() => setShowLiveUpdate(true)}
                   style={{
-                    flex: 1,
+                    width: "48%",
                     flexDirection: "row",
                     alignItems: "center",
                     justifyContent: "center",
@@ -2042,6 +2082,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                     backgroundColor: themeColors.purple,
                     borderRadius: 8,
                     marginLeft: 0,
+                    marginTop: 12,
                     shadowColor: themeColors.black,
                     shadowOffset: { width: 0, height: 2 },
                     shadowOpacity: 0.2,
@@ -2062,7 +2103,40 @@ export default function SpotDetailScreen({ route, navigation }) {
                   </Text>
                 </TouchableOpacity>
               )}
-            </View>
+
+            {/* Alert Button */}
+            <TouchableOpacity
+              onPress={() => setShowAddAlertModal(true)}
+              style={{
+                width: "48%",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    paddingVertical: 12,
+                    paddingHorizontal: 16,
+                    backgroundColor: themeColors.orange,
+                    borderRadius: 8,
+                    marginLeft: 0,
+                    marginTop: 12,
+                    shadowColor: themeColors.black,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 4,
+                    elevation: 3,
+              }}
+            >
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontSize: 16,
+                }}
+              >
+                Add Alert
+              </Text>
+            </TouchableOpacity>
+          </View>
+
             {/* Only show Report Button for non-private nooks */}
             {!isPrivateNook && (
               <TouchableOpacity
@@ -2100,6 +2174,14 @@ export default function SpotDetailScreen({ route, navigation }) {
                   initialNoise={spot.ratings?.noise || 0}
                   initialCrowd={spot.ratings?.crowd || 0}
                 />
+
+                {/* Alert Modal */}
+                <AddAlertModal
+                  visible={showAddAlertModal}
+                  onClose={() => setShowAddAlertModal(false)}
+                  onAddAlert={handleAddAlert}
+                />
+
                 {/* Report Modal */}
                 <ReportModal
                   visible={showReportModal}
@@ -2113,6 +2195,100 @@ export default function SpotDetailScreen({ route, navigation }) {
         </View>
       )}
     </SafeAreaView>
+  );
+}
+
+function AddAlertModal({ visible, onClose, onAddAlert }) {
+  const themeCtx = useContext(ThemeContext);
+  const themeColors = themeCtx?.themeColors ?? colors;
+  const [alertText, setAlertText] = useState("");
+
+  return (
+    <Modal visible={visible} transparent animationType="slide">
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "rgba(0,0,0,0.3)",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <View
+          style={{
+            backgroundColor: themeColors.white,
+            margin: 32,
+            padding: 16,
+            borderRadius: 8,
+            width: "90%",
+            maxWidth: 400,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: "bold",
+              color: themeColors.black,
+              marginBottom: 8,
+            }}
+          >
+            Add Alert
+          </Text>
+          <TextInput
+            style={{
+              borderWidth: 0.5,
+              borderColor: themeColors.purple,
+              borderRadius: 8,
+              padding: 12,
+              minHeight: 80,
+              color: themeColors.black,
+              backgroundColor: themeColors.white,
+              marginBottom: 12,
+              textAlignVertical: "top",
+            }}
+            placeholder="Enter alert text..."
+            placeholderTextColor={themeColors.darkGray}
+            multiline
+            value={alertText}
+            onChangeText={setAlertText}
+          />
+          <View
+            style={{ flexDirection: "row", justifyContent: "space-between" }}
+          >
+            <TouchableOpacity
+              onPress={() => onAddAlert(alertText)}
+              style={{
+                flex: 1,
+                padding: 12,
+                backgroundColor: themeColors.green,
+                borderRadius: 8,
+                alignItems: "center",
+                marginRight: 8,
+              }}
+            >
+              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+                Add
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={onClose}
+              style={{
+                flex: 1,
+                padding: 12,
+                backgroundColor: themeColors.white,
+                borderRadius: 8,
+                alignItems: "center",
+                borderColor: themeColors.black,
+                borderWidth: 0.5,
+              }}
+            >
+              <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
