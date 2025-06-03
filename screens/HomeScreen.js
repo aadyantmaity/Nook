@@ -18,7 +18,6 @@ import {
   query,
   where,
   Timestamp,
-  deleteDoc,
   updateDoc,
   addDoc,
 } from "firebase/firestore"; // Ensure Timestamp is imported
@@ -47,6 +46,7 @@ import { FocusTimerView } from "../components/FocusTimer"; // <-- Use correct im
 import { TabView, SceneMap } from "react-native-tab-view";
 import { Dimensions } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { getLastUpdatedLabel } from "../utils/lastUpdatedLabel";
 
 let imageCache = {};
 
@@ -216,7 +216,7 @@ function StudySpots({
   // Filter out private nooks not owned by the current user
   const userId = auth.currentUser?.uid;
   const visibleSpots = filteredSpots.filter(
-    (spot) => !spot.private || spot.ownerUid === userId
+    (spot) => !spot.private || spot.addedBy === userId
   );
 
   return (
@@ -515,7 +515,7 @@ function StudySpots({
             )}
           </View>
           {/* Only show ratings UI for non-private nooks */}
-          {!item.private || item.ownerUid !== userId ? (
+          {!item.private || item.addedBy !== userId ? (
             <>
               <View
                 style={{
@@ -608,7 +608,7 @@ function StudySpots({
             </>
           ) : null}
           {/* ...existing code... */}
-          {item.private && item.ownerUid === userId && (
+          {item.private && item.addedBy === userId && (
             <View
               style={{
                 backgroundColor: themeColors.purple,
@@ -631,7 +631,7 @@ function StudySpots({
             </View>
           )}
           {/* --- Private nook stats --- */}
-          {item.private && item.ownerUid === userId && (
+          {item.private && item.addedBy === userId && (
             <View style={{ marginTop: 4, marginBottom: 2 }}>
               <Text style={{ color: themeColors.darkGray, fontSize: 13 }}>
                 Last focused:{" "}
@@ -1218,10 +1218,10 @@ export default function HomeScreen({
     const fetchPrivateNookStats = async () => {
       const userId = auth.currentUser?.uid;
       if (!userId) return;
-      // Get all private nooks owned by user
+      // Get all private nooks owned by user (by addedBy)
       const spotsSnapshot = await getDocs(collection(db, "studySpots"));
       const privateNooks = spotsSnapshot.docs
-        .filter((doc) => doc.data().private && doc.data().ownerUid === userId)
+        .filter((doc) => doc.data().private && doc.data().addedBy === userId)
         .map((doc) => ({ id: doc.id, ...doc.data() }));
 
       if (privateNooks.length === 0) {
@@ -1285,7 +1285,7 @@ export default function HomeScreen({
             const spotsSnapshot = await getDocs(collection(db, "studySpots"));
             const privateNooks = spotsSnapshot.docs
               .filter(
-                (doc) => doc.data().private && doc.data().ownerUid === userId
+                (doc) => doc.data().private && doc.data().addedBy === userId
               )
               .map((doc) => ({ id: doc.id, ...doc.data() }));
 
@@ -1680,56 +1680,4 @@ export default function HomeScreen({
       </Modal>
     </SafeAreaView>
   );
-}
-
-// Helper for "last updated" display
-function getLastUpdatedLabel(ratings) {
-  if (!ratings || !ratings.lastUpdated) return "";
-  const now = Date.now();
-  const last =
-    typeof ratings.lastUpdated === "number"
-      ? ratings.lastUpdated
-      : ratings.lastUpdated?.toMillis?.() ?? null;
-  if (!last) return "";
-
-  const diffMs = now - last;
-  const diffMin = Math.floor(diffMs / 60000);
-
-  if (ratings.lastUpdatedType === "window" && ratings.lastWindowHours) {
-    if (diffMin < 60) {
-      if (diffMin === 0) return "Last updated: just now";
-      return `Last updated: ${diffMin} min ago`;
-    }
-    if (ratings.lastWindowHours === 1) {
-      return "Last updated: 1 hour ago (1h avg)";
-    }
-    return `Last updated: ${ratings.lastWindowHours} hours ago (${ratings.lastWindowHours}h avg)`;
-  }
-  if (ratings.lastUpdatedType === "today") {
-    return "Last updated: Today (daily avg)";
-  }
-  if (diffMin < 30 && diffMin >= 0) {
-    if (diffMin === 0) return "Last updated: just now";
-    return `Last updated: ${diffMin} min ago`;
-  }
-  return "";
-}
-
-// Helper functions to format focus time and last focused date
-function formatHMS(ms) {
-  const s = Math.floor(ms / 1000);
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  return `${h}h ${m}m ${sec}s`;
-}
-
-function formatLastFocused(ts) {
-  if (!ts) return "N/A";
-  const now = Date.now();
-  const diffMs = now - ts;
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "1 day ago";
-  return `${diffDays} days ago`;
 }

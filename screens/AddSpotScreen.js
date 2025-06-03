@@ -208,7 +208,6 @@ export default function AddSpotScreen({
         photoUrl: "", // Placeholder, will update after upload
         openHours,
         private: !isUWBuilding && isPrivate, // Only allow private for custom buildings
-        ownerUid: user.uid, // <-- Always set ownerUid to current user's UID
       };
       const docRef = await addDoc(collection(db, "studySpots"), spotDetails);
 
