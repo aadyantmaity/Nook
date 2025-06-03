@@ -56,6 +56,7 @@ export default function SpotDetailScreen({ route, navigation }) {
   const [spot, setSpot] = useState(null);
   const [showLiveUpdate, setShowLiveUpdate] = useState(false);
   const [showAddAlertModal, setShowAddAlertModal] = useState(false); // State for alert modal
+  const [locationAlerts, setLocationAlerts] = useState([]); // Store location alerts in array
   const [currentUserName, setCurrentUserName] = useState(""); // State for current user's name
   const [addedByName, setAddedByName] = useState(null); // Set initial state to null
   const [isLoading, setIsLoading] = useState(true); // Add loading stat
@@ -85,11 +86,30 @@ export default function SpotDetailScreen({ route, navigation }) {
   };
 
   // Function to handle adding alerts
-  const handleAddAlert = (alertText) => {
-    if (!alertText.trim()) return;
-    // Logic to save the alert (e.g., to Firestore)
-    console.log("Alert added:", alertText);
-    setShowAddAlertModal(false); // Close the modal after adding
+  const handleAddAlert = async (alertText) => {
+    if (!alertText.trim()) {
+      Alert.alert("Error", "Alert text cannot be empty.");
+      return;
+    }
+  
+    try {
+      const spotRef = doc(db, "studySpots", spotId); // Reference to the spot document
+      const spotDoc = await getDoc(spotRef); // Fetch the current document
+  
+      if (spotDoc.exists()) {
+        const currentAlerts = spotDoc.data().locationAlerts || []; // Get existing alerts or initialize as empty array
+        const updatedAlerts = [...currentAlerts, alertText]; // Append the new alert
+  
+        await updateDoc(spotRef, { locationAlerts: updatedAlerts }); // Update the document in Firebase
+        setLocationAlerts(updatedAlerts); // Update local state
+        Alert.alert("Success", "Alert added successfully!");
+      } else {
+        Alert.alert("Error", "Spot not found.");
+      }
+    } catch (error) {
+      console.error("Error adding alert:", error);
+      Alert.alert("Error", "Failed to add alert.");
+    }
   };
 
   // Helper for "last updated" display (copied from HomeScreen)
@@ -2202,6 +2222,14 @@ function AddAlertModal({ visible, onClose, onAddAlert }) {
   const themeCtx = useContext(ThemeContext);
   const themeColors = themeCtx?.themeColors ?? colors;
   const [alertText, setAlertText] = useState("");
+
+  const handleAddAlert = () => {
+    if (alertText.trim()) {
+      onAddAlert(alertText.trim()); // Pass the alert text to the parent component
+      setAlertText(""); // Clear input after adding
+      onClose(); // Close modal
+    }
+  };
 
   return (
     <Modal visible={visible} transparent animationType="slide">

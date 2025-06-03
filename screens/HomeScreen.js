@@ -35,6 +35,7 @@ import {
   ExclamationMark, // <-- Add this import for the report button
   List, // <-- Add hamburger menu icon
   Timer, // <-- Add this import for the timer icon
+  Warning, // <-- Add this import for the warning icon
 } from "phosphor-react-native"; // Add Heart icon
 import { colors } from "../constants/colors"; // Import colors
 import { auth, db } from "../firebaseConfig"; // Import Firebase
@@ -209,6 +210,8 @@ function StudySpots({
   privateNookStats, // <-- add this line
   filters, // <-- add filters prop
   setFilters, // <-- add setFilters prop
+  setCurrentAlerts, // <-- add setCurrentAlerts prop
+  setShowAlertsModal, // <-- add setShowAlertsModal prop
 }) {
   // Filter out private nooks not owned by the current user
   const userId = auth.currentUser?.uid;
@@ -334,6 +337,29 @@ function StudySpots({
               <Text style={{ color: themeColors.black }}>No Image</Text>
             )}
           </View>
+
+            {/* Warning Icon */}
+            {item.locationAlerts && item.locationAlerts.length > 0 && (
+              <TouchableOpacity
+                style={{
+                  position: "absolute",
+                  top: 12,
+                  left: 12,
+                  zIndex: 10,
+                  backgroundColor: themeColors.red,
+                  borderRadius: 20,
+                  padding: 4,
+                  borderWidth: 0.5,
+                  borderColor: themeColors.black,
+                }}
+                onPress={() => {
+                  setCurrentAlerts(item.locationAlerts || []);
+                  setShowAlertsModal(true); // Show the modal
+                }}
+              >
+                <Warning size={28} color={themeColors.orange} weight="bold" />
+              </TouchableOpacity>
+            )}
 
           {/* Heart icon for favorite */}
           <TouchableOpacity
@@ -741,6 +767,8 @@ export default function HomeScreen({
   const themeColors = propColors ?? themeCtx?.themeColors ?? colors;
   const setIsDarkMode = themeCtx?.setIsDarkMode;
 
+  const [showAlertsModal, setShowAlertsModal] = useState(false); // Modal visibility
+  const [currentAlerts, setCurrentAlerts] = useState([]); // Alerts to display in the modal
   const [filters, setFilters] = useState([]);
   const [studySpots, setStudySpots] = useState([]);
   const [userName, setUserName] = useState("");
@@ -846,6 +874,13 @@ export default function HomeScreen({
       const spots = await Promise.all(
         querySnapshot.docs.map(async (docSnap) => {
           const spotData = docSnap.data();
+
+          // Fetch locationAlerts for the spot
+          const locationAlertsRef = doc(db, "studySpots", docSnap.id);
+          const locationAlertsDoc = await getDoc(locationAlertsRef);
+          const locationAlerts = locationAlertsDoc.exists()
+            ? locationAlertsDoc.data().locationAlerts || []
+            : [];
 
           // Fetch ratings for the spot
           const ratingsQuery = query(
@@ -993,6 +1028,7 @@ export default function HomeScreen({
           return {
             id: docSnap.id,
             ...spotData,
+            locationAlerts, // Add locationAlerts to spot object
             photoUrl: spotData.photoUrl || "",
             cachedPhotoUri: cachedUri || spotData.photoUrl || "", // <-- always provide a uri for instant display
             ratings: {
@@ -1092,6 +1128,8 @@ export default function HomeScreen({
         privateNookStats={privateNookStats} // <-- pass as prop
         filters={filters} // <-- pass filters
         setFilters={setFilters} // <-- pass setFilters
+        setCurrentAlerts = {setCurrentAlerts} // <-- pass setCurrentAlerts
+        setShowAlertsModal = {setShowAlertsModal} // <-- pass setShowAlertsModal
       />
       <TouchableOpacity
         onPress={() => {
@@ -1534,6 +1572,77 @@ export default function HomeScreen({
           />
         </View>
       )}
+
+      {/* --- Alerts Modal --- */}
+      <Modal
+        visible={showAlertsModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowAlertsModal(false)} // Close modal on back press
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <View
+            style={{
+              width: "90%",
+              maxWidth: 400,
+              backgroundColor: themeColors.white,
+              borderRadius: 8,
+              padding: 16,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "bold",
+                color: themeColors.black,
+                marginBottom: 12,
+              }}
+            >
+              Location Alerts
+            </Text>
+            {currentAlerts.length > 0 ? (
+              currentAlerts.map((alert, index) => (
+                <Text
+                  key={index}
+                  style={{
+                    fontSize: 16,
+                    color: themeColors.black,
+                    marginBottom: 8,
+                  }}
+                >
+                  - {alert}
+                </Text>
+              ))
+            ) : (
+              <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
+                No alerts available.
+              </Text>
+            )}
+            <TouchableOpacity
+              onPress={() => setShowAlertsModal(false)} // Close modal
+              style={{
+                marginTop: 16,
+                paddingVertical: 12,
+                paddingHorizontal: 16,
+                backgroundColor: themeColors.orange,
+                borderRadius: 8,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+                Close
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
