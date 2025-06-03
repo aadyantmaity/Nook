@@ -79,33 +79,27 @@ export default function SpotDetailScreen({ route, navigation }) {
   const unsubscribeAll = () => {
     unsubscribeRefs.current.forEach((unsub) => {
       try {
-        if (typeof unsub === "function") unsub();
+        if (typeof unsub === "function" && unsub) unsub();
       } catch {}
     });
     unsubscribeRefs.current = [];
   };
 
   // Function to handle adding alerts
-  const handleAddAlert = async (alertText) => {
+  const handleAddAlert = async (alertText, onClose) => {
     if (!alertText.trim()) {
       Alert.alert("Error", "Alert text cannot be empty.");
       return;
     }
-  
+
     try {
-      const spotRef = doc(db, "studySpots", spotId); // Reference to the spot document
-      const spotDoc = await getDoc(spotRef); // Fetch the current document
-  
-      if (spotDoc.exists()) {
-        const currentAlerts = spotDoc.data().locationAlerts || []; // Get existing alerts or initialize as empty array
-        const updatedAlerts = [...currentAlerts, alertText]; // Append the new alert
-  
-        await updateDoc(spotRef, { locationAlerts: updatedAlerts }); // Update the document in Firebase
-        setLocationAlerts(updatedAlerts); // Update local state
-        Alert.alert("Success", "Alert added successfully!");
-      } else {
-        Alert.alert("Error", "Spot not found.");
-      }
+      const spotRef = doc(db, "studySpots", spotId);
+      await updateDoc(spotRef, {
+        locationAlerts: arrayUnion(alertText.trim()),
+      });
+      setLocationAlerts((prev) => [...(prev || []), alertText.trim()]);
+      if (typeof onClose === "function") onClose(); // Close modal on success
+      // No success notification needed
     } catch (error) {
       console.error("Error adding alert:", error);
       Alert.alert("Error", "Failed to add alert.");
@@ -753,13 +747,26 @@ export default function SpotDetailScreen({ route, navigation }) {
 
   const handleDeleteSpot = async () => {
     try {
+      // Only allow delete if current user is the owner
+      if (spot?.ownerUid && auth.currentUser?.uid !== spot.ownerUid) {
+        Alert.alert(
+          "Insufficient permissions",
+          "You are not the owner of this nook."
+        );
+        return;
+      }
       unsubscribeAll(); // Unsubscribe all listeners before deleting
-      await deleteDoc(doc(db, "studySpots", spotId)); // Use deleteDoc to delete the spot
+      await deleteDoc(doc(db, "studySpots", spotId));
       console.log("Spot deleted successfully");
-      navigation.navigate("Home", { refresh: true }); // Refresh Home screen
+      navigation.navigate("Home", { refresh: true });
     } catch (error) {
       console.error("Error deleting spot:", error);
-      alert("Unable to delete the spot. Please check your permissions.");
+      Alert.alert(
+        "Unable to delete the spot.",
+        error?.message?.includes("PERMISSION_DENIED")
+          ? "You do not have permission to delete this nook. Only the owner can delete it."
+          : "Please check your permissions."
+      );
     }
   };
   const handleEditSpot = () => {
@@ -995,6 +1002,9 @@ export default function SpotDetailScreen({ route, navigation }) {
   // Add a helper to check if this is a private nook
   const isPrivateNook =
     spot?.private && spot?.ownerUid === auth.currentUser?.uid;
+
+  // Add a helper to check if the current user is the owner (addedBy)
+  const isOwner = spot?.addedBy === auth.currentUser?.uid;
 
   // --- Main render ---
   return (
@@ -1434,40 +1444,9 @@ export default function SpotDetailScreen({ route, navigation }) {
                 isPrivateNook={true}
                 spotId={spotId}
               />
-
-              <View style={{ marginTop: 16, flexDirection: "row" }}>
-                {spot.addedBy === auth.currentUser?.uid && (
-                  <TouchableOpacity
-                    onPress={handleDeleteSpot}
-                    style={{
-                      flex: 1,
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      paddingVertical: 12,
-                      paddingHorizontal: 16,
-                      backgroundColor: themeColors.red,
-                      borderRadius: 8,
-                      marginRight: 8,
-                      marginTop: 16,
-                    }}
-                  >
-                    <X size={20} color={themeColors.white} weight="bold" />
-                    <Text
-                      style={{
-                        marginLeft: 8,
-                        color: themeColors.white,
-                        fontWeight: "bold",
-                        fontSize: 16,
-                      }}
-                    >
-                      Delete Nook
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
             </View>
           )}
+
           {/* Bottom action area */}
           <View
             style={{
@@ -1483,18 +1462,18 @@ export default function SpotDetailScreen({ route, navigation }) {
               style={{
                 flexDirection: "row",
                 justifyContent: "space-between",
-                alignItems: "center",
+                alignItems: "flex-start", // <-- changed from center to flex-start
                 width: "100%",
                 marginTop: 12,
+                gap: 8, // add gap for spacing
               }}
             >
-              
               {/* Only show Update button for non-private nooks */}
               {!isPrivateNook && (
                 <TouchableOpacity
                   onPress={() => setShowLiveUpdate(true)}
                   style={{
-                    width: "48%",
+                    flex: 1, // changed from width: "48%"
                     flexDirection: "row",
                     alignItems: "center",
                     justifyContent: "center",
@@ -1524,38 +1503,39 @@ export default function SpotDetailScreen({ route, navigation }) {
                 </TouchableOpacity>
               )}
 
-            {/* Alert Button */}
-            <TouchableOpacity
-              onPress={() => setShowAddAlertModal(true)}
-              style={{
-                width: "48%",
-                alignItems: "center",
-                justifyContent: "center",
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                backgroundColor: themeColors.orange,
-                borderRadius: 8,
-                marginLeft: 0,
-                marginTop: 12,
-                shadowColor: themeColors.black,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 4,
-                elevation: 3,
-              }}
-            >
-              <Text
-                style={{
-                  color: "#FFFFFF",
-                  fontWeight: "bold",
-                  fontSize: 16,
-                }}
-              >
-                Add Alert
-              </Text>
-            </TouchableOpacity>
-          </View>
-
+              {/* Only show Add Alert for non-private nooks */}
+              {!isPrivateNook && (
+                <TouchableOpacity
+                  onPress={() => setShowAddAlertModal(true)}
+                  style={{
+                    flex: 1, // changed from width: "48%"
+                    alignItems: "center",
+                    justifyContent: "center",
+                    paddingVertical: 12,
+                    paddingHorizontal: 16,
+                    backgroundColor: themeColors.orange,
+                    borderRadius: 8,
+                    marginLeft: 0,
+                    marginTop: 0, // remove marginTop so it's aligned
+                    shadowColor: themeColors.black,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 4,
+                    elevation: 3,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "#FFFFFF",
+                      fontWeight: "bold",
+                      fontSize: 16,
+                    }}
+                  >
+                    Add Alert
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
             {/* Only show Report Button for non-private nooks */}
             {!isPrivateNook && (
               <TouchableOpacity
@@ -1593,6 +1573,12 @@ export default function SpotDetailScreen({ route, navigation }) {
                   initialNoise={spot.ratings?.noise || 0}
                   initialCrowd={spot.ratings?.crowd || 0}
                 />
+                {/* Add Alert Modal */}
+                <AddAlertModal
+                  visible={showAddAlertModal}
+                  onClose={() => setShowAddAlertModal(false)}
+                  onAddAlert={handleAddAlert}
+                />
                 {/* Report Modal */}
                 <ReportModal
                   visible={showReportModal}
@@ -1603,6 +1589,36 @@ export default function SpotDetailScreen({ route, navigation }) {
               </>
             )}
           </View>
+
+          {/* --- Delete Button for Owner (private or public) --- */}
+          {isOwner && (
+            <View style={{ marginTop: 8, marginBottom: 24 }}>
+              <TouchableOpacity
+                onPress={handleDeleteSpot}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingVertical: 14,
+                  paddingHorizontal: 16,
+                  backgroundColor: themeColors.red,
+                  borderRadius: 8,
+                }}
+              >
+                <X size={20} color={themeColors.white} weight="bold" />
+                <Text
+                  style={{
+                    marginLeft: 8,
+                    color: themeColors.white,
+                    fontWeight: "bold",
+                    fontSize: 16,
+                  }}
+                >
+                  Delete Nook
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </ScrollView>
       ) : (
         // Non-private nooks: NOT scrollable, just a regular View
@@ -2034,40 +2050,9 @@ export default function SpotDetailScreen({ route, navigation }) {
                 isPrivateNook={true}
                 spotId={spotId}
               />
-
-              <View style={{ marginTop: 16, flexDirection: "row" }}>
-                {spot.addedBy === auth.currentUser?.uid && (
-                  <TouchableOpacity
-                    onPress={handleDeleteSpot}
-                    style={{
-                      flex: 1,
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      paddingVertical: 12,
-                      paddingHorizontal: 16,
-                      backgroundColor: themeColors.red,
-                      borderRadius: 8,
-                      marginRight: 8,
-                      marginTop: 16,
-                    }}
-                  >
-                    <X size={20} color={themeColors.white} weight="bold" />
-                    <Text
-                      style={{
-                        marginLeft: 8,
-                        color: themeColors.white,
-                        fontWeight: "bold",
-                        fontSize: 16,
-                      }}
-                    >
-                      Delete Nook
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
             </View>
           )}
+
           {/* Bottom action area */}
           <View
             style={{
@@ -2083,9 +2068,10 @@ export default function SpotDetailScreen({ route, navigation }) {
               style={{
                 flexDirection: "row",
                 justifyContent: "space-between",
-                alignItems: "center",
+                alignItems: "flex-start", // <-- changed from center to flex-start
                 width: "100%",
                 marginTop: 12,
+                gap: 8, // add gap for spacing
               }}
             >
               {/* Only show Update button for non-private nooks */}
@@ -2093,7 +2079,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                 <TouchableOpacity
                   onPress={() => setShowLiveUpdate(true)}
                   style={{
-                    width: "48%",
+                    flex: 1, // changed from width: "48%"
                     flexDirection: "row",
                     alignItems: "center",
                     justifyContent: "center",
@@ -2102,7 +2088,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                     backgroundColor: themeColors.purple,
                     borderRadius: 8,
                     marginLeft: 0,
-                    marginTop: 12,
                     shadowColor: themeColors.black,
                     shadowOffset: { width: 0, height: 2 },
                     shadowOpacity: 0.2,
@@ -2124,12 +2109,12 @@ export default function SpotDetailScreen({ route, navigation }) {
                 </TouchableOpacity>
               )}
 
-            {/* Alert Button */}
-            <TouchableOpacity
-              onPress={() => setShowAddAlertModal(true)}
-              style={{
-                width: "48%",
-                    flexDirection: "row",
+              {/* Only show Add Alert for non-private nooks */}
+              {!isPrivateNook && (
+                <TouchableOpacity
+                  onPress={() => setShowAddAlertModal(true)}
+                  style={{
+                    flex: 1, // changed from width: "48%"
                     alignItems: "center",
                     justifyContent: "center",
                     paddingVertical: 12,
@@ -2137,26 +2122,26 @@ export default function SpotDetailScreen({ route, navigation }) {
                     backgroundColor: themeColors.orange,
                     borderRadius: 8,
                     marginLeft: 0,
-                    marginTop: 12,
+                    marginTop: 0, // remove marginTop so it's aligned
                     shadowColor: themeColors.black,
                     shadowOffset: { width: 0, height: 2 },
                     shadowOpacity: 0.2,
                     shadowRadius: 4,
                     elevation: 3,
-              }}
-            >
-              <Text
-                style={{
-                  color: themeColors.white,
-                  fontWeight: "bold",
-                  fontSize: 16,
-                }}
-              >
-                Add Alert
-              </Text>
-            </TouchableOpacity>
-          </View>
-
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "#FFFFFF",
+                      fontWeight: "bold",
+                      fontSize: 16,
+                    }}
+                  >
+                    Add Alert
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
             {/* Only show Report Button for non-private nooks */}
             {!isPrivateNook && (
               <TouchableOpacity
@@ -2194,14 +2179,12 @@ export default function SpotDetailScreen({ route, navigation }) {
                   initialNoise={spot.ratings?.noise || 0}
                   initialCrowd={spot.ratings?.crowd || 0}
                 />
-
-                {/* Alert Modal */}
+                {/* Add Alert Modal */}
                 <AddAlertModal
                   visible={showAddAlertModal}
                   onClose={() => setShowAddAlertModal(false)}
                   onAddAlert={handleAddAlert}
                 />
-
                 {/* Report Modal */}
                 <ReportModal
                   visible={showReportModal}
@@ -2212,6 +2195,36 @@ export default function SpotDetailScreen({ route, navigation }) {
               </>
             )}
           </View>
+
+          {/* --- Delete Button for Owner (private or public) --- */}
+          {isOwner && (
+            <View style={{ marginTop: 8, marginBottom: 24 }}>
+              <TouchableOpacity
+                onPress={handleDeleteSpot}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingVertical: 14,
+                  paddingHorizontal: 16,
+                  backgroundColor: themeColors.red,
+                  borderRadius: 8,
+                }}
+              >
+                <X size={20} color={themeColors.white} weight="bold" />
+                <Text
+                  style={{
+                    marginLeft: 8,
+                    color: themeColors.white,
+                    fontWeight: "bold",
+                    fontSize: 16,
+                  }}
+                >
+                  Delete Nook
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       )}
     </SafeAreaView>
@@ -2223,11 +2236,11 @@ function AddAlertModal({ visible, onClose, onAddAlert }) {
   const themeColors = themeCtx?.themeColors ?? colors;
   const [alertText, setAlertText] = useState("");
 
-  const handleAddAlert = () => {
+  const handleAddAlertPress = () => {
     if (alertText.trim()) {
-      onAddAlert(alertText.trim()); // Pass the alert text to the parent component
+      onAddAlert(alertText.trim(), onClose); // Pass onClose to parent handler
       setAlertText(""); // Clear input after adding
-      onClose(); // Close modal
+      // Modal will be closed by parent handler on success
     }
   };
 
@@ -2283,7 +2296,7 @@ function AddAlertModal({ visible, onClose, onAddAlert }) {
             style={{ flexDirection: "row", justifyContent: "space-between" }}
           >
             <TouchableOpacity
-              onPress={() => onAddAlert(alertText)}
+              onPress={handleAddAlertPress}
               style={{
                 flex: 1,
                 padding: 12,

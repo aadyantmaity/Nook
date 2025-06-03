@@ -293,7 +293,7 @@ function StudySpots({
           style={{
             padding: 16,
             marginBottom: 12,
-            backgroundColor: themeColors.white, // changed
+            backgroundColor: themeColors.white,
             borderRadius: 8,
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
@@ -301,18 +301,77 @@ function StudySpots({
             shadowRadius: 4,
             elevation: 3,
             position: "relative",
-
             borderColor: themeColors.black,
             borderWidth: 0.5,
           }}
         >
+          {/* Warning Icon - absolutely positioned at card level, above image */}
+          {item.locationAlerts && item.locationAlerts.length > 0 && (
+            <TouchableOpacity
+              style={{
+                position: "absolute",
+                top: 12,
+                left: 12,
+                zIndex: 20,
+                backgroundColor: themeColors.white,
+                borderRadius: 20,
+                padding: 4,
+                borderWidth: 0.5,
+                borderColor: themeColors.red,
+                shadowColor: themeColors.red,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.18,
+                shadowRadius: 4,
+                elevation: 6,
+                width: 38,
+                height: 38,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              onPress={() => {
+                setCurrentAlerts(item.locationAlerts || []);
+                setShowAlertsModal(true);
+              }}
+              activeOpacity={0.8}
+            >
+              <Warning size={24} color={themeColors.red} weight="fill" />
+              <View
+                style={{
+                  position: "absolute",
+                  top: -6,
+                  right: -6,
+                  backgroundColor: themeColors.orange,
+                  borderRadius: 10,
+                  paddingHorizontal: 5,
+                  paddingVertical: 1,
+                  minWidth: 18,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderWidth: 1,
+                  borderColor: themeColors.white,
+                  zIndex: 21,
+                }}
+              >
+                <Text
+                  style={{
+                    color: themeColors.white,
+                    fontSize: 11,
+                    fontWeight: "bold",
+                    textAlign: "center",
+                  }}
+                >
+                  {item.locationAlerts.length}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
           {/* Image placeholder or actual image */}
           <View
             style={{
               width: "100%",
-              height: 140, // Increased height for full corner visibility
+              height: 140,
               backgroundColor: themeColors.darkGray || "#EEE",
-              borderRadius: 8, // Use full borderRadius for all corners
+              borderRadius: 8,
               alignItems: "center",
               justifyContent: "center",
               overflow: "hidden",
@@ -329,7 +388,7 @@ function StudySpots({
                 style={{
                   width: "100%",
                   height: "100%",
-                  borderRadius: 8, // Ensure image corners match container
+                  borderRadius: 8,
                 }}
                 resizeMode="cover"
               />
@@ -337,30 +396,6 @@ function StudySpots({
               <Text style={{ color: themeColors.black }}>No Image</Text>
             )}
           </View>
-
-            {/* Warning Icon */}
-            {item.locationAlerts && item.locationAlerts.length > 0 && (
-              <TouchableOpacity
-                style={{
-                  position: "absolute",
-                  top: 12,
-                  left: 12,
-                  zIndex: 10,
-                  backgroundColor: themeColors.red,
-                  borderRadius: 20,
-                  padding: 4,
-                  borderWidth: 0.5,
-                  borderColor: themeColors.black,
-                }}
-                onPress={() => {
-                  setCurrentAlerts(item.locationAlerts || []);
-                  setShowAlertsModal(true); // Show the modal
-                }}
-              >
-                <Warning size={28} color={themeColors.orange} weight="bold" />
-              </TouchableOpacity>
-            )}
-
           {/* Heart icon for favorite */}
           <TouchableOpacity
             onPress={() => handleToggleFavorite(item.id)}
@@ -368,12 +403,12 @@ function StudySpots({
               position: "absolute",
               top: 12,
               right: 12,
-              zIndex: 10,
-              backgroundColor: themeColors.white, // changed
+              zIndex: 20,
+              backgroundColor: themeColors.white,
               borderRadius: 20,
               padding: 4,
               borderWidth: 0.5,
-              borderColor: themeColors.black, // changed
+              borderColor: themeColors.black,
             }}
             onPressOut={(e) => e.stopPropagation && e.stopPropagation()}
           >
@@ -1128,8 +1163,8 @@ export default function HomeScreen({
         privateNookStats={privateNookStats} // <-- pass as prop
         filters={filters} // <-- pass filters
         setFilters={setFilters} // <-- pass setFilters
-        setCurrentAlerts = {setCurrentAlerts} // <-- pass setCurrentAlerts
-        setShowAlertsModal = {setShowAlertsModal} // <-- pass setShowAlertsModal
+        setCurrentAlerts={setCurrentAlerts} // <-- pass setCurrentAlerts
+        setShowAlertsModal={setShowAlertsModal} // <-- pass setShowAlertsModal
       />
       <TouchableOpacity
         onPress={() => {

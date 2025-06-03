@@ -483,7 +483,7 @@ export function FocusTimerView({ navigation }) {
     if (sessionStart) {
       // Subtract 1 second from end time
       const now = Timestamp.now();
-      const endMillis = now.toMillis() - 1000;
+      const endMillis = now.toMillis();
       const end = new Timestamp(
         Math.floor(endMillis / 1000),
         (endMillis % 1000) * 1000000
