@@ -43,6 +43,9 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import * as FileSystem from "expo-file-system";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemeContext } from "../App";
+// --- Replace this import ---
+// import { getLastUpdatedLabel } from "./HomeScreen";
+import { getLastUpdatedLabel } from "../utils/lastUpdatedLabel";
 
 export default function ProfileScreen({
   navigation,

@@ -35,9 +35,10 @@ import {
   Star,
   Heart,
   House,
-  Broadcast, // Add this import for the update/edit icon
+  Broadcast,
   CaretUp,
   CaretDown,
+  DotsThreeVertical, // <-- already imported
 } from "phosphor-react-native";
 import { colors } from "../constants/colors";
 import { auth } from "../firebaseConfig"; // Import auth
@@ -72,6 +73,7 @@ export default function SpotDetailScreen({ route, navigation }) {
   const [privateNote, setPrivateNote] = useState(""); // For private notes
   const [savingNote, setSavingNote] = useState(false);
   const [allNotes, setAllNotes] = useState([]); // Store all notes for this nook
+  const [showMenu, setShowMenu] = useState(false); // <-- Add state for dropdown menu
 
   const unsubscribeRefs = React.useRef([]);
 
@@ -745,34 +747,6 @@ export default function SpotDetailScreen({ route, navigation }) {
     fetchSpotDetails(); // Refresh spot details
   };
 
-  const handleDeleteSpot = async () => {
-    try {
-      // Only allow delete if current user is the owner
-      if (spot?.ownerUid && auth.currentUser?.uid !== spot.ownerUid) {
-        Alert.alert(
-          "Insufficient permissions",
-          "You are not the owner of this nook."
-        );
-        return;
-      }
-      unsubscribeAll(); // Unsubscribe all listeners before deleting
-      await deleteDoc(doc(db, "studySpots", spotId));
-      console.log("Spot deleted successfully");
-      navigation.navigate("Home", { refresh: true });
-    } catch (error) {
-      console.error("Error deleting spot:", error);
-      Alert.alert(
-        "Unable to delete the spot.",
-        error?.message?.includes("PERMISSION_DENIED")
-          ? "You do not have permission to delete this nook. Only the owner can delete it."
-          : "Please check your permissions."
-      );
-    }
-  };
-  const handleEditSpot = () => {
-    navigation.navigate("Home");
-  };
-
   // Only update pending rating on star tap
   const handleStarTap = (rating) => {
     setPendingOverallRating(rating);
@@ -910,7 +884,7 @@ export default function SpotDetailScreen({ route, navigation }) {
 
   // Fetch notes when spot loads or after save
   useEffect(() => {
-    if (spot?.private && spot.ownerUid === auth.currentUser?.uid) {
+    if (spot?.private && spot.addedBy === auth.currentUser?.uid) {
       fetchAllNotes();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -918,7 +892,7 @@ export default function SpotDetailScreen({ route, navigation }) {
 
   // Fetch private note and focus stats for private nooks
   useEffect(() => {
-    if (!(spot?.private && spot.ownerUid === auth.currentUser?.uid)) return;
+    if (!(spot?.private && spot.addedBy === auth.currentUser?.uid)) return;
 
     // --- Listen for focus session changes in real-time ---
     const q = query(
@@ -978,35 +952,70 @@ export default function SpotDetailScreen({ route, navigation }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spot, auth.currentUser, spotId]);
 
-  if (isLoading)
+  // --- Add delete handler ---
+  const handleDeleteNook = async () => {
+    if (!spotId) return;
+    Alert.alert(
+      "Delete Nook",
+      "Are you sure you want to delete this nook? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteDoc(doc(db, "studySpots", spotId));
+              // Optionally: remove from user's favorites if present
+              const user = auth.currentUser;
+              if (user) {
+                const userRef = doc(db, "users", user.uid);
+                const userDoc = await getDoc(userRef);
+                if (userDoc.exists()) {
+                  const favs = userDoc.data().favorites || [];
+                  if (favs.includes(spotId)) {
+                    await updateDoc(userRef, {
+                      favorites: favs.filter((f) => f !== spotId),
+                    });
+                  }
+                }
+              }
+              navigation.navigate("Home", { refresh: true });
+            } catch (e) {
+              Alert.alert("Error", "Failed to delete nook.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Helper to determine if current user is the owner (addedBy)
+  const isOwner =
+    spot && auth.currentUser && spot.addedBy === auth.currentUser.uid;
+  const isPrivateNook = spot?.private && isOwner;
+
+  // --- Main render ---
+  if (!spot) {
     return (
       <SafeAreaView
         style={{
           flex: 1,
+          backgroundColor: themeColors.white,
           justifyContent: "center",
           alignItems: "center",
-          backgroundColor: themeColors.white,
         }}
       >
-        <Text style={{ fontSize: 16, color: themeColors.black }}>
+        <Text style={{ color: themeColors.darkGray, fontSize: 16 }}>
           Loading...
         </Text>
       </SafeAreaView>
     );
+  }
 
-  const tags = spot.tags || [];
-  const addedBy = spot.addedBy || "Anonymous";
-  const buildingName = spot.buildingName || "Not Available";
-  const generalRating = spot.generalRating || 0;
+  // Add this line to safely get tags from spot
+  const tags = Array.isArray(spot.tags) ? spot.tags : [];
 
-  // Add a helper to check if this is a private nook
-  const isPrivateNook =
-    spot?.private && spot?.ownerUid === auth.currentUser?.uid;
-
-  // Add a helper to check if the current user is the owner (addedBy)
-  const isOwner = spot?.addedBy === auth.currentUser?.uid;
-
-  // --- Main render ---
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
       {/* Only make the page scrollable for private nooks */}
@@ -1019,8 +1028,16 @@ export default function SpotDetailScreen({ route, navigation }) {
           }}
           showsVerticalScrollIndicator={false}
         >
-          {/* Home Button Above Image */}
-          <View style={{ width: "100%", marginBottom: 8 }}>
+          {/* Home Button and More Menu */}
+          <View
+            style={{
+              width: "100%",
+              marginBottom: 8,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
             <TouchableOpacity
               onPress={() => navigation.navigate("Home")}
               style={{
@@ -1037,6 +1054,111 @@ export default function SpotDetailScreen({ route, navigation }) {
             >
               <House size={20} color={themeColors.purple} />
             </TouchableOpacity>
+            {/* More Info Dropdown Menu */}
+            <View style={{ position: "relative" }}>
+              <TouchableOpacity
+                onPress={() => setShowMenu((v) => !v)}
+                style={{
+                  padding: 8,
+                  borderRadius: 20,
+                  backgroundColor: themeColors.white,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 2,
+                }}
+              >
+                <DotsThreeVertical
+                  size={26}
+                  color={themeColors.purple}
+                  weight="bold"
+                />
+              </TouchableOpacity>
+              {showMenu && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 36,
+                    right: 0,
+                    backgroundColor: themeColors.white,
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: themeColors.gray,
+                    minWidth: 180,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.18,
+                    shadowRadius: 8,
+                    elevation: 10,
+                    zIndex: 100,
+                  }}
+                >
+                  {/* Report Incorrect Info */}
+                  {!isPrivateNook && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowMenu(false);
+                        setTimeout(() => setShowReportModal(true), 200);
+                      }}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingVertical: 14,
+                        paddingHorizontal: 18,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: themeColors.purple,
+                          fontWeight: "bold",
+                          fontSize: 15,
+                        }}
+                      >
+                        Report Incorrect Information
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                  {/* Divider */}
+                  {!isPrivateNook && isOwner && (
+                    <View
+                      style={{
+                        height: 1,
+                        backgroundColor: themeColors.gray,
+                        marginHorizontal: 10,
+                      }}
+                    />
+                  )}
+                  {/* Delete Nook (only for owner) */}
+                  {isOwner && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowMenu(false);
+                        setTimeout(handleDeleteNook, 200);
+                      }}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingVertical: 14,
+                        paddingHorizontal: 18,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: themeColors.red,
+                          fontWeight: "bold",
+                          fontSize: 15,
+                        }}
+                      >
+                        Delete Nook
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+            </View>
           </View>
           {/* Spot Image */}
           <View style={{ position: "relative", width: "100%" }}>
@@ -1462,10 +1584,10 @@ export default function SpotDetailScreen({ route, navigation }) {
               style={{
                 flexDirection: "row",
                 justifyContent: "space-between",
-                alignItems: "flex-start", // <-- changed from center to flex-start
+                alignItems: "flex-start",
                 width: "100%",
                 marginTop: 12,
-                gap: 8, // add gap for spacing
+                gap: 8,
               }}
             >
               {/* Only show Update button for non-private nooks */}
@@ -1473,7 +1595,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                 <TouchableOpacity
                   onPress={() => setShowLiveUpdate(true)}
                   style={{
-                    flex: 1, // changed from width: "48%"
+                    flex: 1,
                     flexDirection: "row",
                     alignItems: "center",
                     justifyContent: "center",
@@ -1508,7 +1630,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                 <TouchableOpacity
                   onPress={() => setShowAddAlertModal(true)}
                   style={{
-                    flex: 1, // changed from width: "48%"
+                    flex: 1,
                     alignItems: "center",
                     justifyContent: "center",
                     paddingVertical: 12,
@@ -1516,7 +1638,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                     backgroundColor: themeColors.orange,
                     borderRadius: 8,
                     marginLeft: 0,
-                    marginTop: 0, // remove marginTop so it's aligned
+                    marginTop: 0,
                     shadowColor: themeColors.black,
                     shadowOffset: { width: 0, height: 2 },
                     shadowOpacity: 0.2,
@@ -1536,33 +1658,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                 </TouchableOpacity>
               )}
             </View>
-            {/* Only show Report Button for non-private nooks */}
-            {!isPrivateNook && (
-              <TouchableOpacity
-                onPress={() => setShowReportModal(true)}
-                style={{
-                  marginTop: 12,
-                  alignSelf: "center",
-                  width: "100%",
-                  backgroundColor: themeColors.white,
-                  borderColor: themeColors.purple,
-                  borderWidth: 1,
-                  borderRadius: 8,
-                  paddingVertical: 10,
-                  paddingHorizontal: 24,
-                }}
-              >
-                <Text
-                  style={{
-                    color: themeColors.purple,
-                    fontWeight: "bold",
-                    textAlign: "center",
-                  }}
-                >
-                  Report Incorrect Information
-                </Text>
-              </TouchableOpacity>
-            )}
             {/* Only show modals for non-private nooks */}
             {!isPrivateNook && (
               <>
@@ -1589,44 +1684,22 @@ export default function SpotDetailScreen({ route, navigation }) {
               </>
             )}
           </View>
-
-          {/* --- Delete Button for Owner (private or public) --- */}
-          {isOwner && (
-            <View style={{ marginTop: 8, marginBottom: 24 }}>
-              <TouchableOpacity
-                onPress={handleDeleteSpot}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  paddingVertical: 14,
-                  paddingHorizontal: 16,
-                  backgroundColor: themeColors.red,
-                  borderRadius: 8,
-                }}
-              >
-                <X size={20} color={themeColors.white} weight="bold" />
-                <Text
-                  style={{
-                    marginLeft: 8,
-                    color: themeColors.white,
-                    fontWeight: "bold",
-                    fontSize: 16,
-                  }}
-                >
-                  Delete Nook
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </ScrollView>
       ) : (
         // Non-private nooks: NOT scrollable, just a regular View
         <View
           style={{ flex: 1, backgroundColor: themeColors.white, padding: 16 }}
         >
-          {/* Home Button Above Image */}
-          <View style={{ width: "100%", marginBottom: 8 }}>
+          {/* Home Button and More Menu */}
+          <View
+            style={{
+              width: "100%",
+              marginBottom: 8,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
             <TouchableOpacity
               onPress={() => navigation.navigate("Home")}
               style={{
@@ -1643,6 +1716,111 @@ export default function SpotDetailScreen({ route, navigation }) {
             >
               <House size={20} color={themeColors.purple} />
             </TouchableOpacity>
+            {/* More Info Dropdown Menu */}
+            <View style={{ position: "relative" }}>
+              <TouchableOpacity
+                onPress={() => setShowMenu((v) => !v)}
+                style={{
+                  padding: 8,
+                  borderRadius: 20,
+                  backgroundColor: themeColors.white,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 2,
+                }}
+              >
+                <DotsThreeVertical
+                  size={26}
+                  color={themeColors.purple}
+                  weight="bold"
+                />
+              </TouchableOpacity>
+              {showMenu && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 36,
+                    right: 0,
+                    backgroundColor: themeColors.white,
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: themeColors.gray,
+                    minWidth: 180,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.18,
+                    shadowRadius: 8,
+                    elevation: 10,
+                    zIndex: 100,
+                  }}
+                >
+                  {/* Report Incorrect Info */}
+                  {!isPrivateNook && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowMenu(false);
+                        setTimeout(() => setShowReportModal(true), 200);
+                      }}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingVertical: 14,
+                        paddingHorizontal: 18,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: themeColors.purple,
+                          fontWeight: "bold",
+                          fontSize: 15,
+                        }}
+                      >
+                        Report Incorrect Information
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                  {/* Divider */}
+                  {!isPrivateNook && isOwner && (
+                    <View
+                      style={{
+                        height: 1,
+                        backgroundColor: themeColors.gray,
+                        marginHorizontal: 10,
+                      }}
+                    />
+                  )}
+                  {/* Delete Nook (only for owner) */}
+                  {isOwner && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowMenu(false);
+                        setTimeout(handleDeleteNook, 200);
+                      }}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingVertical: 14,
+                        paddingHorizontal: 18,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: themeColors.red,
+                          fontWeight: "bold",
+                          fontSize: 15,
+                        }}
+                      >
+                        Delete Nook
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+            </View>
           </View>
           {/* Spot Image */}
           <View style={{ position: "relative", width: "100%" }}>
@@ -2068,10 +2246,10 @@ export default function SpotDetailScreen({ route, navigation }) {
               style={{
                 flexDirection: "row",
                 justifyContent: "space-between",
-                alignItems: "flex-start", // <-- changed from center to flex-start
+                alignItems: "flex-start",
                 width: "100%",
                 marginTop: 12,
-                gap: 8, // add gap for spacing
+                gap: 8,
               }}
             >
               {/* Only show Update button for non-private nooks */}
@@ -2079,7 +2257,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                 <TouchableOpacity
                   onPress={() => setShowLiveUpdate(true)}
                   style={{
-                    flex: 1, // changed from width: "48%"
+                    flex: 1,
                     flexDirection: "row",
                     alignItems: "center",
                     justifyContent: "center",
@@ -2114,7 +2292,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                 <TouchableOpacity
                   onPress={() => setShowAddAlertModal(true)}
                   style={{
-                    flex: 1, // changed from width: "48%"
+                    flex: 1,
                     alignItems: "center",
                     justifyContent: "center",
                     paddingVertical: 12,
@@ -2122,7 +2300,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                     backgroundColor: themeColors.orange,
                     borderRadius: 8,
                     marginLeft: 0,
-                    marginTop: 0, // remove marginTop so it's aligned
+                    marginTop: 0,
                     shadowColor: themeColors.black,
                     shadowOffset: { width: 0, height: 2 },
                     shadowOpacity: 0.2,
@@ -2142,33 +2320,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                 </TouchableOpacity>
               )}
             </View>
-            {/* Only show Report Button for non-private nooks */}
-            {!isPrivateNook && (
-              <TouchableOpacity
-                onPress={() => setShowReportModal(true)}
-                style={{
-                  marginTop: 12,
-                  alignSelf: "center",
-                  width: "100%",
-                  backgroundColor: themeColors.white,
-                  borderColor: themeColors.purple,
-                  borderWidth: 1,
-                  borderRadius: 8,
-                  paddingVertical: 10,
-                  paddingHorizontal: 24,
-                }}
-              >
-                <Text
-                  style={{
-                    color: themeColors.purple,
-                    fontWeight: "bold",
-                    textAlign: "center",
-                  }}
-                >
-                  Report Incorrect Information
-                </Text>
-              </TouchableOpacity>
-            )}
             {/* Only show modals for non-private nooks */}
             {!isPrivateNook && (
               <>
@@ -2195,36 +2346,6 @@ export default function SpotDetailScreen({ route, navigation }) {
               </>
             )}
           </View>
-
-          {/* --- Delete Button for Owner (private or public) --- */}
-          {isOwner && (
-            <View style={{ marginTop: 8, marginBottom: 24 }}>
-              <TouchableOpacity
-                onPress={handleDeleteSpot}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  paddingVertical: 14,
-                  paddingHorizontal: 16,
-                  backgroundColor: themeColors.red,
-                  borderRadius: 8,
-                }}
-              >
-                <X size={20} color={themeColors.white} weight="bold" />
-                <Text
-                  style={{
-                    marginLeft: 8,
-                    color: themeColors.white,
-                    fontWeight: "bold",
-                    fontSize: 16,
-                  }}
-                >
-                  Delete Nook
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
       )}
     </SafeAreaView>
