@@ -10,7 +10,6 @@ import {
   Alert,
   Modal,
   Image,
-  Switch, // <-- Add Switch for toggling private nook
 } from "react-native";
 import { Picker } from "@react-native-picker/picker"; // Import Picker for dropdown
 import { ArrowLeft, Check, Heart } from "phosphor-react-native"; // Add Heart icon
@@ -102,7 +101,6 @@ export default function AddSpotScreen({
   const [openHours, setOpenHours] = useState(""); // Open/quiet hours field
   const [showPreview, setShowPreview] = useState(false); // Preview modal
   const [customImage, setCustomImage] = useState(null); // { uri, name }
-  const [isPrivate, setIsPrivate] = useState(false); // <-- Add state for private nooks
 
   const toggleTag = (tag) => {
     setSelectedTags((tags) =>
@@ -122,7 +120,6 @@ export default function AddSpotScreen({
     setIsFavorite(false);
     setOpenHours("");
     setCustomImage(null); // Reset image
-    setIsPrivate(false); // Reset private toggle
   };
 
   // Helper: check if user is amaity@uw.edu
@@ -172,6 +169,16 @@ export default function AddSpotScreen({
       setIsLoading(true);
       const user = auth.currentUser;
 
+      // Guard: Ensure user is authenticated
+      if (!user) {
+        alert("You must be signed in to add a spot.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Log UID for debugging
+      console.log("Current UID:", user?.uid);
+
       // Fetch existing spots to check for duplicates
       const querySnapshot = await getDocs(collection(db, "studySpots"));
       const existingSpots = querySnapshot.docs.map((doc) => doc.data());
@@ -203,12 +210,15 @@ export default function AddSpotScreen({
         department: huskyCardNeeded ? department : null,
         tags: selectedTags,
         createdAt: new Date().toISOString(),
-        addedBy: user.uid,
+        addedBy: user.uid, // Ensure this is always the correct UID
         revealIdentity: showAddedBy,
-        photoUrl: "", // Placeholder, will update after upload
+        photoUrl: "", // Placeholder
         openHours,
-        private: !isUWBuilding && isPrivate, // Only allow private for custom buildings
       };
+
+      // Log spotDetails for debugging
+      console.log("spotDetails to be sent:", spotDetails);
+
       const docRef = await addDoc(collection(db, "studySpots"), spotDetails);
 
       // If custom image, upload to storage and update Firestore with download URL
@@ -356,18 +366,6 @@ export default function AddSpotScreen({
               </Text>
             </>
           )}
-          <Text
-            style={{
-              fontWeight: "bold",
-              marginTop: 8,
-              color: themeColors.black,
-            }}
-          >
-            Private Nook:
-          </Text>
-          <Text style={{ color: themeColors.black }}>
-            {isPrivate ? "Yes" : "No"}
-          </Text>
           <TouchableOpacity
             onPress={() => setShowPreview(false)}
             style={{
@@ -864,40 +862,6 @@ export default function AddSpotScreen({
             accessibilityLabel="Open or Quiet Hours"
             accessible={true}
           />
-
-          {/* Private nook toggle (only for custom buildings) */}
-          {!isUWBuilding && (
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginTop: 12,
-              }}
-            >
-              <Text style={{ color: themeColors.black, marginRight: 8 }}>
-                Private Nook
-              </Text>
-              <Switch
-                value={isPrivate}
-                onValueChange={setIsPrivate}
-                thumbColor={isPrivate ? themeColors.purple : themeColors.gray}
-                trackColor={{
-                  false: themeColors.gray,
-                  true: themeColors.purple + "88",
-                }}
-                accessibilityLabel="Private Nook"
-              />
-              <Text
-                style={{
-                  color: themeColors.darkGray,
-                  marginLeft: 8,
-                  fontSize: 12,
-                }}
-              >
-                (Only you can see this nook)
-              </Text>
-            </View>
-          )}
 
           <View
             style={{
