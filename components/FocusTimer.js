@@ -9,6 +9,8 @@ import {
   AppState,
   ScrollView,
   TextInput,
+  KeyboardAvoidingView, // <-- add this import
+  Platform, // <-- add this import
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -1155,107 +1157,120 @@ export function FocusTimerView({ navigation }) {
             alignItems: "center",
           }}
         >
-          <View
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
             style={{
-              backgroundColor: themeColors.white,
-              borderRadius: 18,
-              padding: 26,
-              width: "92%",
+              width: "100%",
               alignItems: "center",
-              shadowColor: themeColors.black,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.13,
-              shadowRadius: 8,
-              elevation: 5,
+              justifyContent: "center",
+              flex: 1,
             }}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
           >
-            <Text
-              style={{
-                fontSize: 22,
-                fontWeight: "bold",
-                color: themeColors.purple,
-                marginBottom: 4,
-                textAlign: "center",
-                letterSpacing: 0.2,
-              }}
-            >
-              Session Reflection
-            </Text>
-            <Text
-              style={{
-                fontSize: 15,
-                color: themeColors.darkGray,
-                marginBottom: 18,
-                textAlign: "center",
-                lineHeight: 20,
-              }}
-            >
-              How did your Pomodoro session go? Write a quick note or reflection
-              (optional).
-            </Text>
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: themeColors.purple,
-                borderRadius: 10,
-                width: "100%",
-                minHeight: 80,
-                maxHeight: 120,
-                marginBottom: 10,
-                padding: 12,
-                fontSize: 16,
-                color: themeColors.black,
-                textAlignVertical: "top",
-                backgroundColor: themeColors.gray + "18",
-              }}
-              placeholder="E.g. Stayed focused, got distracted, what did you work on, etc."
-              placeholderTextColor={themeColors.darkGray}
-              value={sessionNote}
-              onChangeText={setSessionNote}
-              multiline
-              maxLength={200}
-              returnKeyType="done"
-            />
             <View
               style={{
-                width: "100%",
-                alignItems: "flex-end",
-                marginBottom: 10,
+                backgroundColor: themeColors.white,
+                borderRadius: 18,
+                padding: 26,
+                width: "92%",
+                alignItems: "center",
+                shadowColor: themeColors.black,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.13,
+                shadowRadius: 8,
+                elevation: 5,
               }}
             >
-              <Text style={{ color: themeColors.darkGray, fontSize: 13 }}>
-                {sessionNote.length}/200
-              </Text>
-            </View>
-            <View style={{ flexDirection: "row", width: "100%" }}>
-              <TouchableOpacity
-                onPress={handleSaveSessionNote}
+              <Text
                 style={{
-                  flex: 1,
-                  backgroundColor: themeColors.purple,
-                  borderRadius: 8,
-                  paddingVertical: 12,
-                  alignItems: "center",
-                  marginRight: 8,
-                  shadowColor: themeColors.black,
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.08,
-                  shadowRadius: 2,
-                  elevation: 2,
+                  fontSize: 22,
+                  fontWeight: "bold",
+                  color: themeColors.purple,
+                  marginBottom: 4,
+                  textAlign: "center",
+                  letterSpacing: 0.2,
                 }}
               >
-                <Text
+                Session Reflection
+              </Text>
+              <Text
+                style={{
+                  fontSize: 15,
+                  color: themeColors.darkGray,
+                  marginBottom: 18,
+                  textAlign: "center",
+                  lineHeight: 20,
+                }}
+              >
+                How did your Pomodoro session go? Write a quick note or
+                reflection (optional).
+              </Text>
+              <TextInput
+                style={{
+                  borderWidth: 1,
+                  borderColor: themeColors.purple,
+                  borderRadius: 10,
+                  width: "100%",
+                  minHeight: 80,
+                  maxHeight: 120,
+                  marginBottom: 10,
+                  padding: 12,
+                  fontSize: 16,
+                  color: themeColors.black,
+                  textAlignVertical: "top",
+                  backgroundColor: themeColors.gray + "18",
+                }}
+                placeholder="E.g. Stayed focused, got distracted, what did you work on, etc."
+                placeholderTextColor={themeColors.darkGray}
+                value={sessionNote}
+                onChangeText={setSessionNote}
+                multiline
+                maxLength={200}
+                returnKeyType="done"
+                onSubmitEditing={handleSaveSessionNote}
+                blurOnSubmit={true}
+              />
+              <View
+                style={{
+                  width: "100%",
+                  alignItems: "flex-end",
+                  marginBottom: 10,
+                }}
+              >
+                <Text style={{ color: themeColors.darkGray, fontSize: 13 }}>
+                  {sessionNote.length}/200
+                </Text>
+              </View>
+              <View style={{ flexDirection: "row", width: "100%" }}>
+                <TouchableOpacity
+                  onPress={handleSaveSessionNote}
                   style={{
-                    color: themeColors.white,
-                    fontWeight: "bold",
-                    fontSize: 16,
+                    flex: 1,
+                    backgroundColor: themeColors.purple,
+                    borderRadius: 8,
+                    paddingVertical: 12,
+                    alignItems: "center",
+                    marginRight: 8,
+                    shadowColor: themeColors.black,
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 2,
+                    elevation: 2,
                   }}
                 >
-                  Save
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={{
+                      color: themeColors.white,
+                      fontWeight: "bold",
+                      fontSize: 16,
+                    }}
+                  >
+                    Save
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
       {/* --- Archive Modal --- */}
