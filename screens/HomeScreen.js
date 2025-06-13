@@ -42,1140 +42,123 @@ import { doc, getDoc } from "firebase/firestore"; // Import Firestore functions
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system"; // <-- Add this import
 import { ThemeContext } from "../App"; // Import ThemeContext
-import { FocusTimerView } from "../components/FocusTimer"; // <-- Use correct import
 import { TabView, SceneMap } from "react-native-tab-view";
 import { Dimensions } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { getLastUpdatedLabel } from "../utils/lastUpdatedLabel";
 
+// components imports
+import Filters from "../components/Home/Filters"; // Import Filters component
+import StudySpotsList from "../components/Home/StudySpotsList";
+import { FocusTimerView } from "../components/Home/FocusTimer"; // <-- Use correct import
+import HamburgerMenu from "../components/Home/HamburgerMenu"; // Import HamburgerMenu component
+import AlertsModal from "../components/Home/AlertsModal"; // Import AlertsModal component
+import TabBar from "../components/Home/TabBar"; // Import TabBar component
+import GeneralReportModal from "../components/Home/GeneralReportModal"; // Import GeneralReportModal component
+
+//hook imports
+import useStudySpots from "../hooks/useStudySpots";
+import useFavorites from "../hooks/useFavorites";
+import useImageCache from "../hooks/useImageCache";
+import useSearchAndFilters from "../hooks/useSearchAndFilters";
+
 let imageCache = {};
 
-const TAGS = [
-  "All",
-  "Favorites",
-  "Quiet",
-  "Group Friendly",
-  "WiFi",
-  "Outlets",
-  "Natural Light",
-  "Food Nearby",
-  "Open Space",
-  "No Husky Card", // Add this tag for filtering spots where Husky Card is NOT required
-];
-
-function Filters({ filters, setFilters, themeColors }) {
-  // Distribute tags into two rows with roughly equal total character length,
-  // but always put "Favorites" in the first row if present
-  function splitTagsEvenly(tags) {
-    let row1 = [],
-      row2 = [];
-    let len1 = 0,
-      len2 = 0;
-    tags.forEach((tag) => {
-      if (tag === "Favorites") {
-        row1.push(tag);
-        len1 += tag.length;
-      } else if (len1 <= len2) {
-        row1.push(tag);
-        len1 += tag.length;
-      } else {
-        row2.push(tag);
-        len2 += tag.length;
-      }
-    });
-    return [row1, row2];
-  }
-
-  const [row1, row2] = splitTagsEvenly(TAGS);
-
-  const handlePress = (label) => {
-    if (label === "All") {
-      setFilters([]);
-      return;
-    }
-
-    const normalized =
-      label === "Favorites"
-        ? "favorites"
-        : label === "No Husky Card"
-        ? "no-husky-card"
-        : label.toLowerCase();
-
-    if (filters.includes(normalized)) {
-      setFilters(filters.filter((f) => f !== normalized));
-    } else {
-      setFilters([...filters, normalized]);
-    }
-  };
-
-  const isSelected = (label) => {
-    if (label === "All") return filters.length === 0;
-    const normalized =
-      label === "Favorites"
-        ? "favorites"
-        : label === "No Husky Card"
-        ? "no-husky-card"
-        : label.toLowerCase();
-    return filters.includes(normalized);
-  };
-
-  return (
-    <View
-      style={{
-        position: "relative",
-        zIndex: 1,
-        backgroundColor: themeColors.white,
-        paddingBottom: 8,
-        // borderBottomWidth: 1, // Remove this line
-        // borderBottomColor: "#E0E0E0", // Remove this line
-      }}
-    >
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{
-          flexDirection: "column",
-        }}
-      >
-        {[row1, row2].map((row, rowIdx) => (
-          <View
-            key={rowIdx}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: rowIdx === 0 ? 8 : 0,
-            }}
-          >
-            {row.map((label) => {
-              const selected = isSelected(label);
-              return (
-                <TouchableOpacity
-                  key={label}
-                  onPress={() => handlePress(label)}
-                  style={{
-                    paddingVertical: 10,
-                    paddingHorizontal: 10,
-                    backgroundColor: selected
-                      ? themeColors.purple
-                      : themeColors.white,
-                    borderRadius: 25,
-                    marginRight: 8,
-                    marginBottom: 4,
-                    shadowColor: themeColors.purple,
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 4,
-                    borderWidth:
-                      themeColors.white !== "#fff" &&
-                      themeColors.white !== "#ffffff"
-                        ? 1
-                        : 0,
-                    borderColor:
-                      themeColors.white !== "#fff" &&
-                      themeColors.white !== "#ffffff"
-                        ? themeColors.purple
-                        : "transparent",
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: selected ? themeColors.white : themeColors.purple,
-                      fontWeight: "bold",
-                      fontSize: 11,
-                    }}
-                  >
-                    {label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        ))}
-      </ScrollView>
-    </View>
-  );
-}
-
-function StudySpots({
-  filteredSpots,
-  navigation,
-  favorites,
-  handleToggleFavorite,
-  search,
-  setSearch,
-  isDarkMode,
-  themeColors,
-  onRefresh,
-  refreshing,
-  filters,
-  setFilters,
-  setCurrentAlerts,
-  setShowAlertsModal,
-}) {
-  // Instead, just use filteredSpots directly:
-  const visibleSpots = filteredSpots;
-  const userId = auth.currentUser?.uid; // <-- Add this line
-
-  return (
-    <FlatList
-      ListHeaderComponent={
-        <View style={{ paddingTop: 16 }}>
-          {/* Filters above search bar */}
-          <Filters
-            filters={filters}
-            setFilters={setFilters}
-            themeColors={themeColors}
-          />
-          <View
-            style={{
-              paddingHorizontal: 0, // Remove horizontal padding here
-              paddingBottom: 16,
-              backgroundColor: themeColors.white,
-              alignItems: "center", // Center the search bar container
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor: themeColors.white,
-                borderRadius: 20,
-                borderColor: themeColors.black,
-                borderWidth: 0.5,
-                paddingHorizontal: 12,
-                paddingVertical: 2,
-                width: "100%", // Match card width (cards have 16px horizontal padding, so 100%-16*2)
-                maxWidth: 600, // Optional: limit max width for large screens
-              }}
-            >
-              <MagnifyingGlass
-                size={20}
-                color={themeColors.purple}
-                style={{ marginRight: 8 }}
-              />
-              <TextInput
-                value={search}
-                onChangeText={setSearch}
-                placeholder="Search by name, tag, or feature"
-                placeholderTextColor={themeColors.darkGray}
-                style={{
-                  flex: 1,
-                  backgroundColor: themeColors.white,
-                  borderRadius: 20,
-                  paddingHorizontal: 4,
-                  paddingVertical: 10,
-                  fontSize: 16,
-                  color: themeColors.black, // Use black for search input
-                }}
-                autoCorrect={false}
-                autoCapitalize="none"
-                clearButtonMode="while-editing"
-                accessibilityLabel="Search study spots"
-                accessible={true}
-              />
-            </View>
-          </View>
-        </View>
-      }
-      contentContainerStyle={{
-        paddingHorizontal: 16,
-        paddingTop: 0,
-        // paddingBottom: 96, // <-- Remove this line
-      }}
-      data={visibleSpots}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <TouchableOpacity
-          onPress={() => navigation.navigate("SpotDetail", { spotId: item.id })}
-          style={{
-            padding: 16,
-            marginBottom: 12,
-            backgroundColor: themeColors.white,
-            borderRadius: 8,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-            elevation: 3,
-            position: "relative",
-            borderColor: themeColors.black,
-            borderWidth: 0.5,
-          }}
-        >
-          {/* Warning Icon - absolutely positioned at card level, above image */}
-          {item.locationAlerts && item.locationAlerts.length > 0 && (
-            <TouchableOpacity
-              style={{
-                position: "absolute",
-                top: 12,
-                left: 12,
-                zIndex: 20,
-                backgroundColor: themeColors.white,
-                borderRadius: 20,
-                padding: 4,
-                borderWidth: 0.5,
-                borderColor: themeColors.red,
-                shadowColor: themeColors.red,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.18,
-                shadowRadius: 4,
-                elevation: 6,
-                width: 38,
-                height: 38,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              onPress={() => {
-                setCurrentAlerts(item.locationAlerts || []);
-                setShowAlertsModal(true);
-              }}
-              activeOpacity={0.8}
-            >
-              <Warning size={24} color={themeColors.red} weight="fill" />
-              <View
-                style={{
-                  position: "absolute",
-                  top: -6,
-                  right: -6,
-                  backgroundColor: themeColors.orange,
-                  borderRadius: 10,
-                  paddingHorizontal: 5,
-                  paddingVertical: 1,
-                  minWidth: 18,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderWidth: 1,
-                  borderColor: themeColors.white,
-                  zIndex: 21,
-                }}
-              >
-                <Text
-                  style={{
-                    color: themeColors.white,
-                    fontSize: 11,
-                    fontWeight: "bold",
-                    textAlign: "center",
-                  }}
-                >
-                  {item.locationAlerts.length}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          )}
-          {/* Image placeholder or actual image */}
-          <View
-            style={{
-              width: "100%",
-              height: 140,
-              backgroundColor: themeColors.darkGray || "#EEE",
-              borderRadius: 8,
-              alignItems: "center",
-              justifyContent: "center",
-              overflow: "hidden",
-              marginBottom: 12,
-            }}
-          >
-            {item.cachedPhotoUri || item.photoUrl ? (
-              <Image
-                source={{
-                  uri: item.cachedPhotoUri
-                    ? item.cachedPhotoUri
-                    : item.photoUrl,
-                }}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  borderRadius: 8,
-                }}
-                resizeMode="cover"
-              />
-            ) : (
-              <Text style={{ color: themeColors.black }}>No Image</Text>
-            )}
-          </View>
-          {/* Heart icon for favorite */}
-          <TouchableOpacity
-            onPress={() => handleToggleFavorite(item.id)}
-            style={{
-              position: "absolute",
-              top: 12,
-              right: 12,
-              zIndex: 20,
-              backgroundColor: themeColors.white,
-              borderRadius: 20,
-              padding: 4,
-              borderWidth: 0.5,
-              borderColor: themeColors.black,
-            }}
-            onPressOut={(e) => e.stopPropagation && e.stopPropagation()}
-          >
-            <Heart
-              size={28}
-              color={themeColors.purple}
-              weight={favorites.includes(item.id) ? "fill" : "regular"}
-            />
-          </TouchableOpacity>
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "bold",
-              color: themeColors.black, // Use black for spot name
-              marginBottom: 6,
-            }}
-          >
-            {item.name}
-            {item.roomNumber && (
-              <Text
-                style={{
-                  fontSize: 18,
-                  color: themeColors.black,
-                  fontWeight: "bold",
-                }}
-              >
-                {" - Floor "}
-                {item.roomNumber}
-              </Text>
-            )}
-          </Text>
-          {/* Husky Card/Department info below */}
-          {(item.huskyCardNeeded || item.department) && (
-            <Text
-              style={{
-                fontSize: 13,
-                color: item.huskyCardNeeded
-                  ? themeColors.red
-                  : themeColors.darkGray,
-                marginBottom: 8,
-                marginTop: 2,
-                fontWeight: item.huskyCardNeeded ? "bold" : "normal",
-              }}
-            >
-              {item.huskyCardNeeded && "Husky Card Required"}
-              {item.huskyCardNeeded && item.department && (
-                <Text
-                  style={{ color: themeColors.darkGray, fontWeight: "normal" }}
-                >
-                  {" "}
-                  •{" "}
-                </Text>
-              )}
-              {item.department && (
-                <Text
-                  style={{ color: themeColors.darkGray, fontWeight: "normal" }}
-                >
-                  Department: {item.department}
-                </Text>
-              )}
-            </Text>
-          )}
-          {/* Tags as pills */}
-          <View
-            style={{
-              flexDirection: "row",
-              flexWrap: "wrap",
-              marginBottom: 8,
-              gap: 6,
-            }}
-          >
-            {item.tags && item.tags.length > 0 ? (
-              [...item.tags]
-                .sort((a, b) => String(a).localeCompare(String(b)))
-                .map((tag, idx) => (
-                  <View
-                    key={idx}
-                    style={{
-                      backgroundColor: themeColors.purple, // changed
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 16,
-                      marginRight: 0,
-                      marginBottom: 3,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: themeColors.white || "#fff", // changed
-                        fontSize: 12,
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {tag}
-                    </Text>
-                  </View>
-                ))
-            ) : (
-              <Text
-                style={{ color: themeColors.darkGray || "#AAA", fontSize: 12 }}
-              >
-                No tags
-              </Text>
-            )}
-          </View>
-          {/* Only show ratings UI for non-private nooks */}
-          <>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 8,
-              }}
-            >
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star
-                  key={star}
-                  size={18}
-                  color={
-                    star <= (item.averageOverallRating || 0)
-                      ? themeColors.purple
-                      : themeColors.darkGray
-                  }
-                  weight={
-                    star <= (item.averageOverallRating || 0)
-                      ? "fill"
-                      : "regular"
-                  }
-                  style={{ marginRight: 2 }}
-                />
-              ))}
-              <Text
-                style={{
-                  marginLeft: 8,
-                  color: themeColors.darkGray, // changed
-                  fontSize: 13,
-                }}
-              >
-                {item.overallRatingsCount > 0
-                  ? `${item.averageOverallRating.toFixed(1)} (${
-                      item.overallRatingsCount
-                    })`
-                  : "No ratings"}
-              </Text>
-            </View>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-              }}
-            >
-              <View style={{ alignItems: "center" }}>
-                <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
-                  Noise Level
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "bold",
-                    color: themeColors.purple, // changed
-                  }}
-                >
-                  {typeof item.ratings?.noise === "number"
-                    ? item.ratings.noise.toFixed(1)
-                    : item.ratings?.noise}
-                </Text>
-              </View>
-              <View style={{ alignItems: "center" }}>
-                <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
-                  Crowd Level
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "bold",
-                    color: themeColors.purple, // changed
-                  }}
-                >
-                  {typeof item.ratings?.crowd === "number"
-                    ? item.ratings.crowd.toFixed(1)
-                    : item.ratings?.crowd}
-                </Text>
-              </View>
-            </View>
-            {/* Add last updated label */}
-            <Text
-              style={{
-                fontSize: 12,
-                color: themeColors.darkGray,
-                marginTop: 4,
-                textAlign: "right",
-              }}
-            >
-              {getLastUpdatedLabel(item.ratings)}
-            </Text>
-          </>
-        </TouchableOpacity>
-      )}
-      onRefresh={onRefresh}
-      refreshing={refreshing}
-      showsVerticalScrollIndicator={false} // <-- Hide vertical scrollbar
-    />
-  );
-}
-
-// Simple fuzzy search function
-function fuzzyMatch(str, query) {
-  if (!str || !query) return false;
-  str = str.toLowerCase();
-  query = query.toLowerCase();
-  let qi = 0;
-  for (let si = 0; si < str.length && qi < query.length; si++) {
-    if (str[si] === query[qi]) qi++;
-  }
-  return qi === query.length;
-}
-
-// Move this component above HomeScreen:
-function GeneralReportModal({ visible, onClose }) {
-  const [reportText, setReportText] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+export default function HomeScreen({ navigation, route }) {
+  // Theme
   const themeCtx = useContext(ThemeContext);
+  const isDarkMode = themeCtx?.isDarkMode ?? false;
   const themeColors = themeCtx?.themeColors ?? colors;
-
-  const handleSubmit = async () => {
-    if (!reportText.trim()) {
-      Alert.alert("Please enter your suggestion or issue.");
-      return;
-    }
-    setSubmitting(true);
-    try {
-      // Add report to Firestore 'reports' collection
-      await addDoc(collection(db, "reports"), {
-        spotId: null,
-        spotName: null,
-        report: reportText,
-        user: auth.currentUser?.uid || "Anonymous",
-        createdAt: Timestamp.now(),
-      });
-      Alert.alert("Thank you!", "Your feedback has been submitted.");
-      setReportText("");
-      onClose();
-    } catch (e) {
-      Alert.alert("Error", "Failed to submit feedback.");
-    }
-    setSubmitting(false);
-  };
-
-  return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0,0,0,0.3)",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <View
-          style={{
-            backgroundColor: themeColors.white,
-            margin: 32,
-            padding: 16,
-            borderRadius: 8,
-            width: "90%",
-            maxWidth: 400,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "bold",
-              color: themeColors.black,
-              marginBottom: 8,
-            }}
-          >
-            Suggestion / Report an Issue
-          </Text>
-          <TextInput
-            style={{
-              borderWidth: 0.5,
-              borderColor: themeColors.purple,
-              borderRadius: 8,
-              padding: 12,
-              minHeight: 80,
-              color: themeColors.black,
-              backgroundColor: themeColors.white,
-              marginBottom: 12,
-              textAlignVertical: "top",
-            }}
-            placeholder="Describe your suggestion or issue..."
-            placeholderTextColor={themeColors.darkGray}
-            multiline
-            value={reportText}
-            onChangeText={setReportText}
-            editable={!submitting}
-          />
-          <View
-            style={{ flexDirection: "row", justifyContent: "space-between" }}
-          >
-            <TouchableOpacity
-              onPress={handleSubmit}
-              disabled={submitting}
-              style={{
-                flex: 1,
-                padding: 12,
-                backgroundColor: themeColors.purple,
-                borderRadius: 8,
-                alignItems: "center",
-                marginRight: 8,
-                opacity: submitting ? 0.7 : 1,
-              }}
-            >
-              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
-                {submitting ? "Submitting..." : "Submit"}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={onClose}
-              disabled={submitting}
-              style={{
-                flex: 1,
-                padding: 12,
-                backgroundColor: themeColors.white,
-                borderRadius: 8,
-                alignItems: "center",
-                borderColor: themeColors.black,
-                borderWidth: 0.5,
-              }}
-            >
-              <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
-                Cancel
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
-export default function HomeScreen({
-  navigation,
-  route,
-  isDarkMode: propDark,
-  themeColors: propColors,
-}) {
-  const themeCtx = useContext(ThemeContext);
-  const isDarkMode = propDark ?? themeCtx?.isDarkMode ?? false;
-  const themeColors = propColors ?? themeCtx?.themeColors ?? colors;
   const setIsDarkMode = themeCtx?.setIsDarkMode;
 
-  const [showAlertsModal, setShowAlertsModal] = useState(false); // Modal visibility
-  const [currentAlerts, setCurrentAlerts] = useState([]); // Alerts to display in the modal
-  const [filters, setFilters] = useState([]);
-  const [studySpots, setStudySpots] = useState([]);
-  const [userName, setUserName] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [favorites, setFavorites] = useState([]);
-  const [search, setSearch] = useState(""); // <-- Add search state
+  // Hamburger menu and modals
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showGeneralReport, setShowGeneralReport] = useState(false);
+  const [showAlertsModal, setShowAlertsModal] = useState(false);
+  const [currentAlerts, setCurrentAlerts] = useState([]);
+
+  // Hooks
+  const { studySpots, isLoading, fetchStudySpots } = useStudySpots();
+  const { favorites, toggleFavorite } = useFavorites();
+  useImageCache(); // Just to initialize cache, if needed
+  const { search, setSearch, filters, setFilters, filteredSpots } =
+    useSearchAndFilters(studySpots, favorites);
+
+  // TabView
   const layout = Dimensions.get("window");
   const [index, setIndex] = useState(0);
   const [routes] = useState([
     { key: "home", title: "Home" },
     { key: "focus", title: "Focus Mode" },
   ]);
-  const [showGeneralReport, setShowGeneralReport] = useState(false); // Add state for modal
-  const [menuOpen, setMenuOpen] = useState(false); // <-- Hamburger menu state
-  const [imageCache, setImageCache] = useState({}); // spotId -> local file URI
-  const [isRefreshing, setIsRefreshing] = useState(false); // <-- Add refreshing state
 
-  // Load image cache from AsyncStorage on mount
-  useEffect(() => {
-    const loadImageCache = async () => {
-      try {
-        const cacheRaw = await AsyncStorage.getItem("spotImageCache");
-        if (cacheRaw) {
-          setImageCache(JSON.parse(cacheRaw));
-        }
-      } catch {}
-    };
-    loadImageCache();
-  }, []);
-
-  // Fetch user's favorites
-  useEffect(() => {
-    const fetchFavorites = async () => {
-      const user = auth.currentUser;
-      if (user) {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          setFavorites(userDoc.data().favorites || []);
-        }
-      }
-    };
-    fetchFavorites();
-  }, []);
-
-  // Toggle favorite for a spot
-  const handleToggleFavorite = async (spotId) => {
-    const user = auth.currentUser;
-    if (!user) return;
-    const userRef = doc(db, "users", user.uid);
-    try {
-      if (favorites.includes(spotId)) {
-        await updateDoc(userRef, {
-          favorites: favorites.filter((f) => f !== spotId),
-        });
-        setFavorites(favorites.filter((f) => f !== spotId));
-      } else {
-        await updateDoc(userRef, { favorites: [...favorites, spotId] });
-        setFavorites([...favorites, spotId]);
-      }
-    } catch (e) {
-      alert("Failed to update favorites.");
-    }
-  };
-
-  // Helper to cache spot images and persist cache
-  const cacheSpotImage = async (spotId, photoUrl) => {
-    if (!photoUrl) return null;
-    try {
-      const cacheKey = `spotImageUri_${spotId}`;
-      const cachedUri = await AsyncStorage.getItem(cacheKey);
-      const cachedUrl = await AsyncStorage.getItem(`${cacheKey}_url`);
-      if (cachedUri && cachedUrl === photoUrl) {
-        // Update in-memory cache if not present
-        setImageCache((prev) => {
-          if (prev[spotId] === cachedUri) return prev;
-          const updated = { ...prev, [spotId]: cachedUri };
-          AsyncStorage.setItem("spotImageCache", JSON.stringify(updated));
-          return updated;
-        });
-        return cachedUri;
-      }
-      const fileUri = FileSystem.cacheDirectory + `spot_${spotId}.jpg`;
-      const downloadRes = await FileSystem.downloadAsync(photoUrl, fileUri);
-      if (downloadRes.status === 200) {
-        await AsyncStorage.setItem(cacheKey, downloadRes.uri);
-        await AsyncStorage.setItem(`${cacheKey}_url`, photoUrl);
-        setImageCache((prev) => {
-          const updated = { ...prev, [spotId]: downloadRes.uri };
-          AsyncStorage.setItem("spotImageCache", JSON.stringify(updated));
-          return updated;
-        });
-        return downloadRes.uri;
-      }
-    } catch (e) {}
-    return null;
-  };
-
-  // Fetch study spots and cache images
-  const fetchStudySpots = async () => {
-    try {
-      const user = auth.currentUser;
-      if (!user) throw new Error("Not authenticated");
-
-      // Query all study spots (remove private/public distinction)
-      const allQuery = collection(db, "studySpots");
-      const allSnap = await getDocs(allQuery);
-      const allDocs = allSnap.docs;
-
-      const spots = await Promise.all(
-        allDocs.map(async (docSnap) => {
-          const spotData = docSnap.data();
-
-          // Fetch locationAlerts for the spot
-          const locationAlertsRef = doc(db, "studySpots", docSnap.id);
-          const locationAlertsDoc = await getDoc(locationAlertsRef);
-          const locationAlerts = locationAlertsDoc.exists()
-            ? locationAlertsDoc.data().locationAlerts || []
-            : [];
-
-          // Fetch ratings for the spot
-          const ratingsQuery = query(
-            collection(db, "ratings"),
-            where("spotId", "==", docSnap.id)
-          );
-          const ratingsSnapshot = await getDocs(ratingsQuery);
-
-          const now = Timestamp.now().toMillis();
-          const thirtyMinutesAgo = now - 30 * 60 * 1000;
-          const todayStart = new Date();
-          todayStart.setHours(0, 0, 0, 0);
-          const todayStartMillis = todayStart.getTime();
-
-          let recentRatings = [];
-          let recentLastTimestamp = null;
-          ratingsSnapshot.forEach((ratingDoc) => {
-            const ratingData = ratingDoc.data();
-            const ts = ratingData.timestamp.toMillis();
-            if (ts >= thirtyMinutesAgo) {
-              recentRatings.push(ratingData);
-              if (!recentLastTimestamp || ts > recentLastTimestamp)
-                recentLastTimestamp = ts;
-            }
-          });
-
-          let averageNoise,
-            averageCrowd,
-            lastUpdated,
-            lastUpdatedType,
-            lastWindowHours;
-
-          if (recentRatings.length > 0) {
-            // Use only recent ratings (last 30 min)
-            let noiseSum = 0,
-              crowdSum = 0;
-            recentRatings.forEach((r) => {
-              noiseSum += r.noise;
-              crowdSum += r.crowd;
-            });
-            averageNoise = noiseSum / recentRatings.length;
-            averageCrowd = crowdSum / recentRatings.length;
-            lastUpdated = recentLastTimestamp;
-            lastUpdatedType = "recent";
-            lastWindowHours = null;
-          } else {
-            // --- Otherwise, use 1-6 hour window as before ---
-            let bestWindow = null;
-            let bestWindowRatings = [];
-            let bestWindowStart = null;
-            let bestWindowEnd = null;
-            let lastRecentTimestamp = null;
-            let found = false;
-            for (let hours = 1; hours <= 6; hours++) {
-              const windowStart = now - hours * 60 * 60 * 1000;
-              let windowRatings = [];
-              let windowLastTimestamp = null;
-              ratingsSnapshot.forEach((ratingDoc) => {
-                const ratingData = ratingDoc.data();
-                const ts = ratingData.timestamp.toMillis();
-                if (ts >= windowStart) {
-                  windowRatings.push(ratingData);
-                  if (!windowLastTimestamp || ts > windowLastTimestamp)
-                    windowLastTimestamp = ts;
-                }
-              });
-              if (windowRatings.length > 0) {
-                bestWindow = hours;
-                bestWindowRatings = windowRatings;
-                bestWindowStart = windowStart;
-                bestWindowEnd = now;
-                lastRecentTimestamp = windowLastTimestamp;
-                found = true;
-                break;
-              }
-            }
-            // If no ratings in last 6 hours, fallback to today's ratings
-            let todayRatings = [];
-            if (!found) {
-              ratingsSnapshot.forEach((ratingDoc) => {
-                const ratingData = ratingDoc.data();
-                const ts = ratingData.timestamp.toMillis();
-                if (ts >= todayStartMillis) {
-                  todayRatings.push(ratingData);
-                }
-              });
-            }
-
-            if (found && bestWindowRatings.length > 0) {
-              let noiseSum = 0,
-                crowdSum = 0;
-              bestWindowRatings.forEach((r) => {
-                noiseSum += r.noise;
-                crowdSum += r.crowd;
-              });
-              averageNoise = noiseSum / bestWindowRatings.length;
-              averageCrowd = crowdSum / bestWindowRatings.length;
-              lastUpdated = lastRecentTimestamp;
-              lastUpdatedType = "window";
-              lastWindowHours = bestWindow;
-            } else if (todayRatings.length > 0) {
-              let noiseSumDay = 0,
-                crowdSumDay = 0;
-              todayRatings.forEach((r) => {
-                noiseSumDay += r.noise;
-                crowdSumDay += r.crowd;
-              });
-              averageNoise = noiseSumDay / todayRatings.length;
-              averageCrowd = crowdSumDay / todayRatings.length;
-              lastUpdated = Math.max(
-                ...todayRatings.map((r) => r.timestamp.toMillis())
-              );
-              lastUpdatedType = "today";
-              lastWindowHours = null;
-            } else {
-              averageNoise = "No rating yet";
-              averageCrowd = "No rating yet";
-              lastUpdated = null;
-              lastUpdatedType = null;
-              lastWindowHours = null;
-            }
-          }
-
-          // Fetch overall ratings for the spot
-          const overallRatingsQuery = query(
-            collection(db, "overallRatings"),
-            where("spotId", "==", docSnap.id)
-          );
-          const overallRatingsSnapshot = await getDocs(overallRatingsQuery);
-          let overallSum = 0;
-          let overallCount = 0;
-          overallRatingsSnapshot.forEach((r) => {
-            overallSum += r.data().rating || 0;
-            overallCount++;
-          });
-          const averageOverallRating =
-            overallCount > 0 ? overallSum / overallCount : 0;
-
-          // Cache image if photoUrl exists
-          let cachedUri = "";
-          if (spotData.photoUrl) {
-            cachedUri = await cacheSpotImage(docSnap.id, spotData.photoUrl);
-          }
-          return {
-            id: docSnap.id,
-            ...spotData,
-            locationAlerts, // Add locationAlerts to spot object
-            photoUrl: spotData.photoUrl || "",
-            cachedPhotoUri: cachedUri || spotData.photoUrl || "",
-            ratings: {
-              noise: averageNoise,
-              crowd: averageCrowd,
-              lastUpdated,
-              lastUpdatedType,
-              lastWindowHours,
-            },
-            averageOverallRating,
-            overallRatingsCount: overallCount,
-          };
-        })
-      );
-      // Build imageCache map
-      const cacheMap = {};
-      spots.forEach((spot) => {
-        if (spot.cachedPhotoUri) cacheMap[spot.id] = spot.cachedPhotoUri;
-      });
-      setImageCache((prev) => {
-        const merged = { ...prev, ...cacheMap };
-        AsyncStorage.setItem("spotImageCache", JSON.stringify(merged));
-        return merged;
-      });
-      setStudySpots(spots);
-    } catch (error) {
-      console.error("Error fetching study spots:", error);
-      alert("Unable to fetch study spots. Please check your permissions.");
-    } finally {
-      setIsLoading(false); // Set loading to false after fetching data
-    }
-  };
-
-  useEffect(() => {
-    fetchStudySpots(); // Fetch spots on initial load
-  }, []);
-
-  useEffect(() => {
-    if (route.params?.refresh) {
-      fetchStudySpots(); // Refresh spots when navigating back with "refresh"
-    }
-  }, [route.params?.refresh]);
-
-  // Pull-to-refresh handler
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await fetchStudySpots();
-    setIsRefreshing(false);
-  };
-
-  // Fuzzy search filter
-  const searchFilter = (spot) => {
-    if (!search.trim()) return true;
-    const q = search.trim().toLowerCase();
-    // Search in name, buildingName, tags, features (if present)
-    const fields = [
-      spot.name,
-      spot.buildingName,
-      spot.roomNumber,
-      ...(spot.tags || []),
-      ...(spot.features || []),
-    ];
-    return fields.some((field) =>
-      typeof field === "string" ? fuzzyMatch(field, q) : false
-    );
-  };
-
-  // Filters for Home tab
-  const matchFilters = (spot) => {
-    if (!filters.length) return true;
-    return filters.every((f) => {
-      if (f === "favorites") return favorites.includes(spot.id);
-      if (f === "no-husky-card") return !spot.huskyCardNeeded;
-      return (spot.tags || []).map((t) => String(t).toLowerCase()).includes(f);
-    });
-  };
-
-  const filteredSpots = studySpots.filter(
-    (spot) => matchFilters(spot) && searchFilter(spot)
-  );
-
-  // --- TabView scenes ---
+  // Home tab content
   const HomeTab = () => (
     <>
-      {/* Remove Filters here, now included in StudySpots */}
-      <StudySpots
+      <StudySpotsList
         filteredSpots={filteredSpots}
         navigation={navigation}
         favorites={favorites}
-        handleToggleFavorite={handleToggleFavorite}
+        toggleFavorite={toggleFavorite}
         search={search}
         setSearch={setSearch}
-        isDarkMode={isDarkMode}
         themeColors={themeColors}
-        onRefresh={handleRefresh}
-        refreshing={isRefreshing}
-        filters={filters} // <-- pass filters
-        setFilters={setFilters} // <-- pass setFilters
-        setCurrentAlerts={setCurrentAlerts} // <-- pass setCurrentAlerts
-        setShowAlertsModal={setShowAlertsModal} // <-- pass setShowAlertsModal
+        onRefresh={fetchStudySpots}
+        refreshing={isLoading}
+        filters={filters}
+        setFilters={setFilters}
+        setCurrentAlerts={setCurrentAlerts}
+        setShowAlertsModal={setShowAlertsModal}
       />
-      <TouchableOpacity
-        onPress={() => {
-          try {
-            navigation.navigate("AddSpot");
-          } catch (error) {
-            console.error("Error adding spot:", error);
-            alert("Unable to add a new spot. Please check your permissions.");
-          }
-        }}
+      <View
         style={{
           position: "absolute",
           bottom: 16,
           right: 16,
-          flexDirection: "row",
-          alignItems: "center",
-          paddingVertical: 12,
-          paddingHorizontal: 16,
-          backgroundColor: themeColors.purple,
-          borderRadius: 50,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.2,
-          shadowRadius: 4,
-          elevation: 3,
+          zIndex: 20,
         }}
       >
-        <Plus size={24} color={themeColors.white} />
-        <Text
+        <View
           style={{
-            color: themeColors.white,
-            fontWeight: "bold",
-            fontSize: 14,
-            marginLeft: 8,
+            flexDirection: "row",
+            alignItems: "center",
+            paddingVertical: 12,
+            paddingHorizontal: 16,
+            backgroundColor: themeColors.purple,
+            borderRadius: 50,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.2,
+            shadowRadius: 4,
+            elevation: 3,
           }}
         >
-          Add a Nook
-        </Text>
-      </TouchableOpacity>
+          <Plus size={24} color={themeColors.white} />
+          <Text
+            style={{
+              color: themeColors.white,
+              fontWeight: "bold",
+              fontSize: 14,
+              marginLeft: 8,
+            }}
+            onPress={() => navigation.navigate("AddSpot")}
+          >
+            Add a Nook
+          </Text>
+        </View>
+      </View>
     </>
   );
 
-  // Use FocusTimerView directly in SceneMap
+  // Tab scenes
   const renderScene = SceneMap({
     home: HomeTab,
     focus: FocusTimerView,
   });
 
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
-      {isLoading ? (
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
@@ -1183,339 +166,103 @@ export default function HomeScreen({
             Loading...
           </Text>
         </View>
-      ) : (
-        <View style={{ flex: 1 }}>
-          {/* --- TOP BAR: Title and Hamburger --- */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              paddingHorizontal: 16,
-              paddingTop: 16,
-              marginBottom: 8,
-              zIndex: 10,
-            }}
-          >
-            {/* Left: Title */}
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text
-                style={{
-                  fontSize: 40,
-                  fontWeight: "bold",
-                  color: themeColors.purple,
-                  fontFamily:
-                    Platform.OS === "ios" ? "Helvetica" : "sans-serif",
-                  marginRight: 12,
-                }}
-              >
-                Nook
-              </Text>
-            </View>
-            {/* Hamburger menu button */}
-            <TouchableOpacity
-              onPress={() => setMenuOpen(true)}
-              style={{
-                alignItems: "center",
-                justifyContent: "center",
-                width: 36,
-                height: 36,
-                marginLeft: 8,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 4,
-                elevation: 5,
-                zIndex: 100,
-              }}
-            >
-              <List size={26} color={themeColors.purple} weight="bold" />
-            </TouchableOpacity>
-          </View>
-          {/* --- END TOP BAR --- */}
+      </SafeAreaView>
+    );
+  }
 
-          {/* Hamburger Menu Modal */}
-          {menuOpen && (
-            <Modal
-              visible={menuOpen}
-              transparent
-              animationType="fade"
-              onRequestClose={() => setMenuOpen(false)}
-            >
-              <TouchableOpacity
-                style={{
-                  flex: 1,
-                  backgroundColor: "rgba(0,0,0,0.35)",
-                  zIndex: 999,
-                }}
-                activeOpacity={1}
-                onPressOut={() => setMenuOpen(false)}
-              >
-                <View
-                  style={{
-                    position: "absolute",
-                    top: 60,
-                    right: 16,
-                    backgroundColor: themeColors.white,
-                    borderRadius: 12,
-                    paddingVertical: 8,
-                    paddingHorizontal: 0,
-                    minWidth: 180,
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.2,
-                    shadowRadius: 8,
-                    elevation: 20,
-                    zIndex: 1000,
-                  }}
-                >
-                  {/* Report */}
-                  <TouchableOpacity
-                    onPress={() => {
-                      setMenuOpen(false);
-                      // Delay showing the modal until after the menu closes to avoid flicker
-                      setTimeout(() => setShowGeneralReport(true), 250);
-                    }}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      paddingVertical: 12,
-                      paddingHorizontal: 20,
-                    }}
-                  >
-                    <ExclamationMark
-                      size={22}
-                      color={themeColors.purple}
-                      weight="bold"
-                    />
-                    <Text
-                      style={{
-                        marginLeft: 12,
-                        color: themeColors.purple,
-                        fontWeight: "bold",
-                        fontSize: 16,
-                      }}
-                    >
-                      Suggestion / Report
-                    </Text>
-                  </TouchableOpacity>
-                  {/* Divider */}
-                  <View
-                    style={{
-                      height: 1,
-                      backgroundColor: themeColors.lightGrayBorder || "#eee",
-                      marginHorizontal: 10,
-                    }}
-                  />
-                  {/* Dark Mode */}
-                  <TouchableOpacity
-                    onPress={() => {
-                      setMenuOpen(false);
-                      setIsDarkMode && setIsDarkMode(!isDarkMode);
-                    }}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      paddingVertical: 12,
-                      paddingHorizontal: 20,
-                    }}
-                  >
-                    {isDarkMode ? (
-                      <Sun size={22} color={themeColors.purple} weight="bold" />
-                    ) : (
-                      <Moon
-                        size={22}
-                        color={themeColors.purple}
-                        weight="bold"
-                      />
-                    )}
-                    <Text
-                      style={{
-                        marginLeft: 12,
-                        color: themeColors.purple,
-                        fontWeight: "bold",
-                        fontSize: 16,
-                      }}
-                    >
-                      {isDarkMode ? "Light Mode" : "Dark Mode"}
-                    </Text>
-                  </TouchableOpacity>
-                  {/* Divider */}
-                  <View
-                    style={{
-                      height: 1,
-                      backgroundColor: themeColors.lightGrayBorder || "#eee",
-                      marginHorizontal: 10,
-                    }}
-                  />
-                  {/* Profile */}
-                  <TouchableOpacity
-                    onPress={() => {
-                      // Always close the report modal before navigating to Profile
-                      setShowGeneralReport(false);
-                      setMenuOpen(false);
-                      setTimeout(() => {
-                        navigation.navigate("Profile");
-                      }, 250);
-                    }}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      paddingVertical: 12,
-                      paddingHorizontal: 20,
-                    }}
-                  >
-                    <User size={20} color={themeColors.purple} weight="bold" />
-                    <Text
-                      style={{
-                        marginLeft: 12,
-                        color: themeColors.purple,
-                        fontWeight: "bold",
-                        fontSize: 16,
-                      }}
-                    >
-                      Profile
-                    </Text>
-                  </TouchableOpacity>
-                  {/* Divider */}
-                  <View
-                    style={{
-                      height: 1,
-                      backgroundColor: themeColors.lightGrayBorder || "#eee",
-                      marginHorizontal: 10,
-                    }}
-                  />
-                </View>
-              </TouchableOpacity>
-            </Modal>
-          )}
-
-          {/* --- TabView replaces TabBar and tab content --- */}
-          <TabView
-            navigationState={{ index, routes }}
-            renderScene={renderScene}
-            onIndexChange={setIndex}
-            initialLayout={{ width: layout.width }}
-            lazy
-            renderLazyPlaceholder={() => (
-              <View style={{ flex: 1, backgroundColor: themeColors.white }} />
-            )}
-            style={{ flex: 1 }}
-            renderTabBar={({ navigationState }) => (
-              <View
-                style={{
-                  flexDirection: "row",
-                  backgroundColor: themeColors.white,
-                }}
-              >
-                {navigationState.routes.map((route, i) => (
-                  <TouchableOpacity
-                    key={route.key}
-                    onPress={() => setIndex(i)}
-                    style={{
-                      flex: 1,
-                      paddingVertical: 12,
-                      borderBottomWidth: 3,
-                      borderBottomColor:
-                        i === index ? themeColors.purple : "transparent",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color:
-                          i === index
-                            ? themeColors.black
-                            : themeColors.darkGray,
-                        fontWeight: i === index ? "bold" : "normal",
-                        fontSize: 16,
-                      }}
-                    >
-                      {route.title}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          />
-
-          <GeneralReportModal
-            visible={showGeneralReport}
-            onClose={() => setShowGeneralReport(false)}
-          />
-        </View>
-      )}
-
-      {/* --- Alerts Modal --- */}
-      <Modal
-        visible={showAlertsModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowAlertsModal(false)} // Close modal on back press
-      >
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
+      <View style={{ flex: 1 }}>
+        {/* Header */}
         <View
           style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            justifyContent: "center",
+            flexDirection: "row",
             alignItems: "center",
+            justifyContent: "space-between",
+            paddingHorizontal: 16,
+            paddingTop: 16,
+            marginBottom: 8,
+            zIndex: 10,
           }}
         >
-          <View
+          <Text
             style={{
-              width: "90%",
-              maxWidth: 400,
-              backgroundColor: themeColors.white,
-              borderRadius: 8,
-              padding: 16,
+              fontSize: 40,
+              fontWeight: "bold",
+              color: themeColors.purple,
+              marginRight: 12,
             }}
           >
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "bold",
-                color: themeColors.black,
-                marginBottom: 12,
-              }}
-            >
-              Location Alerts
-            </Text>
-            {currentAlerts.length > 0 ? (
-              currentAlerts.map((alert, index) => (
-                <Text
-                  key={index}
-                  style={{
-                    fontSize: 16,
-                    color: themeColors.black,
-                    marginBottom: 8,
-                  }}
-                >
-                  - {alert}
-                </Text>
-              ))
-            ) : (
-              <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
-                No alerts available.
-              </Text>
-            )}
-            <TouchableOpacity
-              onPress={() => setShowAlertsModal(false)} // Close modal
-              style={{
-                marginTop: 16,
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                backgroundColor: themeColors.orange,
-                borderRadius: 8,
-                alignItems: "center",
-              }}
-            >
-              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
-                Close
-              </Text>
-            </TouchableOpacity>
-          </View>
+            Nook
+          </Text>
+          {/* Hamburger icon button */}
+          <TouchableOpacity
+            onPress={() => setMenuOpen(true)}
+            style={{
+              padding: 8,
+              borderRadius: 20,
+              backgroundColor: themeColors.white,
+              alignItems: "center",
+              justifyContent: "center",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+              elevation: 2,
+            }}
+            accessibilityLabel="Open menu"
+            accessible={true}
+          >
+            <List size={24} color={themeColors.purple} weight="bold" />
+          </TouchableOpacity>
+          {/* HamburgerMenu modal */}
+          <HamburgerMenu
+            isOpen={menuOpen}
+            onClose={() => setMenuOpen(false)}
+            onReportPress={() => {
+              setMenuOpen(false);
+              setTimeout(() => setShowGeneralReport(true), 250);
+            }}
+            onThemeToggle={() => setIsDarkMode && setIsDarkMode(!isDarkMode)}
+            onProfilePress={() => {
+              setShowGeneralReport(false);
+              setMenuOpen(false);
+              setTimeout(() => navigation.navigate("Profile"), 250);
+            }}
+            isDarkMode={isDarkMode}
+            themeColors={themeColors}
+          />
         </View>
-      </Modal>
+
+        {/* Main Content */}
+        <TabView
+          navigationState={{ index, routes }}
+          renderScene={renderScene}
+          onIndexChange={setIndex}
+          initialLayout={{ width: layout.width }}
+          lazy
+          renderLazyPlaceholder={() => (
+            <View style={{ flex: 1, backgroundColor: themeColors.white }} />
+          )}
+          style={{ flex: 1 }}
+          renderTabBar={(props) => (
+            <TabBar {...props} themeColors={themeColors} currentIndex={index} />
+          )}
+        />
+
+        {/* Modals */}
+        <GeneralReportModal
+          visible={showGeneralReport}
+          onClose={() => setShowGeneralReport(false)}
+          themeColors={themeColors}
+        />
+        <AlertsModal
+          visible={showAlertsModal}
+          onClose={() => setShowAlertsModal(false)}
+          alerts={currentAlerts}
+          themeColors={themeColors}
+        />
+      </View>
     </SafeAreaView>
   );
 }

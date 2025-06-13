@@ -23,7 +23,7 @@ import {
   CaretRight,
   Archive,
 } from "phosphor-react-native";
-import { db, auth } from "../firebaseConfig";
+import { db, auth } from "../../firebaseConfig";
 import {
   collection,
   getDocs,
@@ -35,8 +35,8 @@ import {
   deleteDoc,
   doc,
 } from "firebase/firestore";
-import { ThemeContext } from "../App";
-import { colors } from "../constants/colors";
+import { ThemeContext } from "../../App";
+import { colors } from "../../constants/colors";
 import * as Notifications from "expo-notifications";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
