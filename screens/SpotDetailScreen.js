@@ -1,13 +1,10 @@
-import React, { useState, useEffect, useContext, useMemo } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   View,
   Text,
-  Modal,
-  TextInput,
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
-  Image,
   Alert,
 } from "react-native";
 import {
@@ -28,48 +25,49 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import {
-  ArrowLeft,
+  House,
+  DotsThreeVertical,
   SpeakerHigh,
-  X,
   UsersThree,
   Star,
-  Heart,
-  House,
-  Broadcast,
-  CaretUp,
-  CaretDown,
-  DotsThreeVertical, // <-- already imported
 } from "phosphor-react-native";
 import { colors } from "../constants/colors";
-import { auth } from "../firebaseConfig"; // Import auth
-import Slider from "@react-native-community/slider"; // Add this import for Slider
-import { ThemeContext } from "../App"; // Import ThemeContext
+import { auth } from "../firebaseConfig";
+import { ThemeContext } from "../App";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system";
-import { LineChart } from "react-native-gifted-charts"; // Add at top if not present
+
+// Extracted components
+import TagList from "../components/SpotDetail/TagList";
+import SpotImage from "../components/SpotDetail/SpotImage";
+import RatingsDisplay from "../components/SpotDetail/RatingsDisplay";
+import OverallRating from "../components/SpotDetail/OverallRating";
+import ActionButtons from "../components/SpotDetail/ActionButtons";
+import AddAlertModal from "../components/SpotDetail/AddAlertModal";
+import LiveUpdateModal from "../components/SpotDetail/LiveUpdateModal";
+import ReportModal from "../components/SpotDetail/ReportModal";
 
 export default function SpotDetailScreen({ route, navigation }) {
   const themeCtx = useContext(ThemeContext);
-  const isDarkMode = themeCtx?.isDarkMode ?? false;
   const themeColors = themeCtx?.themeColors ?? colors;
 
   const { spotId } = route.params || {};
   const [spot, setSpot] = useState(null);
   const [showLiveUpdate, setShowLiveUpdate] = useState(false);
-  const [showAddAlertModal, setShowAddAlertModal] = useState(false); // State for alert modal
-  const [locationAlerts, setLocationAlerts] = useState([]); // Store location alerts in array
-  const [currentUserName, setCurrentUserName] = useState(""); // State for current user's name
-  const [addedByName, setAddedByName] = useState(null); // Set initial state to null
-  const [isLoading, setIsLoading] = useState(true); // Add loading stat
+  const [showAddAlertModal, setShowAddAlertModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [locationAlerts, setLocationAlerts] = useState([]);
+  const [currentUserName, setCurrentUserName] = useState("");
+  const [addedByName, setAddedByName] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [userOverallRating, setUserOverallRating] = useState(0);
   const [averageOverallRating, setAverageOverallRating] = useState(0);
   const [overallRatingsCount, setOverallRatingsCount] = useState(0);
   const [pendingOverallRating, setPendingOverallRating] = useState(0);
   const [isSubmittingOverall, setIsSubmittingOverall] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [showReportModal, setShowReportModal] = useState(false); // Add state for report modal
+  const [showMenu, setShowMenu] = useState(false);
   const [cachedPhotoUri, setCachedPhotoUri] = useState(null);
-  const [showMenu, setShowMenu] = useState(false); // <-- Add this line
 
   const unsubscribeRefs = React.useRef([]);
 
@@ -89,22 +87,20 @@ export default function SpotDetailScreen({ route, navigation }) {
       Alert.alert("Error", "Alert text cannot be empty.");
       return;
     }
-
     try {
       const spotRef = doc(db, "studySpots", spotId);
       await updateDoc(spotRef, {
         locationAlerts: arrayUnion(alertText.trim()),
       });
       setLocationAlerts((prev) => [...(prev || []), alertText.trim()]);
-      if (typeof onClose === "function") onClose(); // Close modal on success
-      // No success notification needed
+      if (typeof onClose === "function") onClose();
     } catch (error) {
       console.error("Error adding alert:", error);
       Alert.alert("Error", "Failed to add alert.");
     }
   };
 
-  // Helper for "last updated" display (copied from HomeScreen)
+  // Helper for "last updated" display
   function getLastUpdatedLabel(ratings) {
     if (!ratings || !ratings.lastUpdated) return "";
     const now = Date.now();
@@ -137,7 +133,7 @@ export default function SpotDetailScreen({ route, navigation }) {
     return "";
   }
 
-  // Move fetchSpotDetails to top-level scope so it can be called from anywhere
+  // Fetch spot details and ratings
   const fetchSpotDetails = async () => {
     try {
       const docRef = doc(db, "studySpots", spotId);
@@ -150,17 +146,17 @@ export default function SpotDetailScreen({ route, navigation }) {
         if (spotData.addedBy) {
           const userDoc = await getDoc(doc(db, "users", spotData.addedBy));
           if (userDoc.exists()) {
-            const revealIdentity = spotData.revealIdentity; // Check revealIdentity flag
+            const revealIdentity = spotData.revealIdentity;
             setAddedByName(
               revealIdentity
                 ? `${userDoc.data().firstName} ${userDoc.data().lastName}`
                 : "Anonymous"
             );
           } else {
-            setAddedByName("Anonymous"); // Fallback if userDoc doesn't exist
+            setAddedByName("Anonymous");
           }
         } else {
-          setAddedByName("Anonymous"); // Fallback if addedBy is null
+          setAddedByName("Anonymous");
         }
 
         // Fetch ratings for the spot
@@ -168,10 +164,7 @@ export default function SpotDetailScreen({ route, navigation }) {
           collection(db, "ratings"),
           where("spotId", "==", spotId)
         );
-
-        // Unsubscribe previous listener if any
         unsubscribeAll();
-
         const unsubscribe = onSnapshot(ratingsQuery, (snapshot) => {
           const now = Timestamp.now().toMillis();
           const thirtyMinutesAgo = now - 30 * 60 * 1000;
@@ -179,7 +172,6 @@ export default function SpotDetailScreen({ route, navigation }) {
           todayStart.setHours(0, 0, 0, 0);
           const todayStartMillis = todayStart.getTime();
 
-          // --- NEW LOGIC: Check for recent (last 30 min) ratings first ---
           let recentRatings = [];
           let recentLastTimestamp = null;
           snapshot.forEach((doc) => {
@@ -199,7 +191,6 @@ export default function SpotDetailScreen({ route, navigation }) {
             lastWindowHours;
 
           if (recentRatings.length > 0) {
-            // Use only recent ratings (last 30 min)
             let noiseSum = 0,
               crowdSum = 0;
             recentRatings.forEach((r) => {
@@ -212,11 +203,8 @@ export default function SpotDetailScreen({ route, navigation }) {
             lastUpdatedType = "recent";
             lastWindowHours = null;
           } else {
-            // --- Otherwise, use 1-6 hour window as before ---
             let bestWindow = null;
             let bestWindowRatings = [];
-            let bestWindowStart = null;
-            let bestWindowEnd = null;
             let lastRecentTimestamp = null;
             let found = false;
             for (let hours = 1; hours <= 6; hours++) {
@@ -235,14 +223,11 @@ export default function SpotDetailScreen({ route, navigation }) {
               if (windowRatings.length > 0) {
                 bestWindow = hours;
                 bestWindowRatings = windowRatings;
-                bestWindowStart = windowStart;
-                bestWindowEnd = now;
                 lastRecentTimestamp = windowLastTimestamp;
                 found = true;
                 break;
               }
             }
-            // If no ratings in last 6 hours, fallback to today's ratings
             let todayRatings = [];
             if (!found) {
               snapshot.forEach((doc) => {
@@ -308,7 +293,7 @@ export default function SpotDetailScreen({ route, navigation }) {
       console.error("Error fetching spot details:", error);
       alert("Unable to fetch spot details. Please check your permissions.");
     } finally {
-      setIsLoading(false); // Set loading to false after fetching data
+      setIsLoading(false);
     }
   };
 
@@ -340,7 +325,6 @@ export default function SpotDetailScreen({ route, navigation }) {
     }
   };
 
-  // When spot is loaded or photoUrl changes, cache the image
   useEffect(() => {
     if (spot && spot.photoUrl) {
       cacheSpotImage(spotId, spot.photoUrl);
@@ -350,344 +334,13 @@ export default function SpotDetailScreen({ route, navigation }) {
   }, [spotId, spot?.photoUrl]);
 
   useEffect(() => {
-    const fetchCurrentUserName = async () => {
-      const user = auth.currentUser;
-      if (user) {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          setCurrentUserName(
-            `${userDoc.data().firstName} ${userDoc.data().lastName}`
-          );
-        }
-      }
-    };
-
-    fetchCurrentUserName(); // Fetch the current user's name
-  }, []);
-
-  useEffect(() => {
     if (!spotId) {
-      console.error("No spotId provided");
       navigation.goBack();
       return;
     }
-
-    let isMounted = true; // Prevent state update if unmounted
-
-    const fetchAndSetSpot = async () => {
-      setIsLoading(true);
-      try {
-        const docRef = doc(db, "studySpots", spotId);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && isMounted) {
-          const spotData = docSnap.data();
-          setSpot(spotData);
-
-          // Fetch username using addedBy user ID
-          if (spotData.addedBy) {
-            const userDoc = await getDoc(doc(db, "users", spotData.addedBy));
-            if (userDoc.exists()) {
-              const revealIdentity = spotData.revealIdentity; // Check revealIdentity flag
-              setAddedByName(
-                revealIdentity
-                  ? `${userDoc.data().firstName} ${userDoc.data().lastName}`
-                  : "Anonymous"
-              );
-            } else {
-              setAddedByName("Anonymous"); // Fallback if userDoc doesn't exist
-            }
-          } else {
-            setAddedByName("Anonymous"); // Fallback if addedBy is null
-          }
-
-          // Fetch ratings for the spot
-          const ratingsQuery = query(
-            collection(db, "ratings"),
-            where("spotId", "==", spotId)
-          );
-          const ratingsSnapshot = await getDocs(ratingsQuery);
-
-          const now = Timestamp.now().toMillis();
-          const thirtyMinutesAgo = now - 30 * 60 * 1000;
-          const todayStart = new Date();
-          todayStart.setHours(0, 0, 0, 0);
-          const todayStartMillis = todayStart.getTime();
-
-          // --- NEW LOGIC: Check for recent (last 30 min) ratings first ---
-          let recentRatings = [];
-          let recentLastTimestamp = null;
-          ratingsSnapshot.forEach((ratingDoc) => {
-            const ratingData = ratingDoc.data();
-            const ts = ratingData.timestamp.toMillis();
-            if (ts >= thirtyMinutesAgo) {
-              recentRatings.push(ratingData);
-              if (!recentLastTimestamp || ts > recentLastTimestamp)
-                recentLastTimestamp = ts;
-            }
-          });
-
-          let noiseRating,
-            crowdRating,
-            lastUpdated,
-            lastUpdatedType,
-            lastWindowHours;
-
-          if (recentRatings.length > 0) {
-            // Use only recent ratings (last 30 min)
-            let noiseSum = 0,
-              crowdSum = 0;
-            recentRatings.forEach((r) => {
-              noiseSum += r.noise;
-              crowdSum += r.crowd;
-            });
-            noiseRating = (noiseSum / recentRatings.length).toFixed(1);
-            crowdRating = (crowdSum / recentRatings.length).toFixed(1);
-            lastUpdated = recentLastTimestamp;
-            lastUpdatedType = "recent";
-            lastWindowHours = null;
-          } else {
-            // --- Otherwise, use 1-6 hour window as before ---
-            let bestWindow = null;
-            let bestWindowRatings = [];
-            let bestWindowStart = null;
-            let bestWindowEnd = null;
-            let lastRecentTimestamp = null;
-            let found = false;
-            for (let hours = 1; hours <= 6; hours++) {
-              const windowStart = now - hours * 60 * 60 * 1000;
-              let windowRatings = [];
-              let windowLastTimestamp = null;
-              ratingsSnapshot.forEach((ratingDoc) => {
-                const ratingData = ratingDoc.data();
-                const ts = ratingData.timestamp.toMillis();
-                if (ts >= windowStart) {
-                  windowRatings.push(ratingData);
-                  if (!windowLastTimestamp || ts > windowLastTimestamp)
-                    windowLastTimestamp = ts;
-                }
-              });
-              if (windowRatings.length > 0) {
-                bestWindow = hours;
-                bestWindowRatings = windowRatings;
-                bestWindowStart = windowStart;
-                bestWindowEnd = now;
-                lastRecentTimestamp = windowLastTimestamp;
-                found = true;
-                break;
-              }
-            }
-            // If no ratings in last 6 hours, fallback to today's ratings
-            let todayRatings = [];
-            if (!found) {
-              ratingsSnapshot.forEach((ratingDoc) => {
-                const ratingData = ratingDoc.data();
-                const ts = ratingData.timestamp.toMillis();
-                if (ts >= todayStartMillis) {
-                  todayRatings.push(ratingData);
-                }
-              });
-            }
-
-            if (found && bestWindowRatings.length > 0) {
-              let noiseSum = 0,
-                crowdSum = 0;
-              bestWindowRatings.forEach((r) => {
-                noiseSum += r.noise;
-                crowdSum += r.crowd;
-              });
-              noiseRating = (noiseSum / bestWindowRatings.length).toFixed(1);
-              crowdRating = (crowdSum / bestWindowRatings.length).toFixed(1);
-              lastUpdated = lastRecentTimestamp;
-              lastUpdatedType = "window";
-              lastWindowHours = bestWindow;
-            } else if (todayRatings.length > 0) {
-              let noiseSumDay = 0,
-                crowdSumDay = 0;
-              todayRatings.forEach((r) => {
-                noiseSumDay += r.noise;
-                crowdSumDay += r.crowd;
-              });
-              noiseRating = (noiseSumDay / todayRatings.length).toFixed(1);
-              crowdRating = (crowdSumDay / todayRatings.length).toFixed(1);
-              lastUpdated = Math.max(
-                ...todayRatings.map((r) => r.timestamp.toMillis())
-              );
-              lastUpdatedType = "today";
-              lastWindowHours = null;
-            } else {
-              noiseRating = "N/A";
-              crowdRating = "N/A";
-              lastUpdated = null;
-              lastUpdatedType = null;
-              lastWindowHours = null;
-            }
-          }
-
-          setSpot((prevSpot) => ({
-            ...spotData,
-            ratings: {
-              noise: noiseRating,
-              crowd: crowdRating,
-              lastUpdated,
-              lastUpdatedType,
-              lastWindowHours,
-            },
-          }));
-        } else if (isMounted) {
-        }
-      } catch (error) {
-        if (isMounted) {
-          console.error("Error fetching spot details:", error);
-          alert("Unable to fetch spot details. Please check your permissions.");
-        }
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-
-    fetchAndSetSpot();
-
-    // Real-time updates for ratings
-    const ratingsQuery = query(
-      collection(db, "ratings"),
-      where("spotId", "==", spotId)
-    );
-
-    // Unsubscribe previous listener if any
-    unsubscribeAll();
-
-    const unsubscribe = onSnapshot(ratingsQuery, (snapshot) => {
-      const now = Timestamp.now().toMillis();
-      const thirtyMinutesAgo = now - 30 * 60 * 1000;
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      const todayStartMillis = todayStart.getTime();
-
-      let recentRatings = [];
-      let recentLastTimestamp = null;
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        const ts = data.timestamp.toMillis();
-        if (ts >= thirtyMinutesAgo) {
-          recentRatings.push(data);
-          if (!recentLastTimestamp || ts > recentLastTimestamp)
-            recentLastTimestamp = ts;
-        }
-      });
-
-      let noiseRating,
-        crowdRating,
-        lastUpdated,
-        lastUpdatedType,
-        lastWindowHours;
-
-      if (recentRatings.length > 0) {
-        let noiseSum = 0,
-          crowdSum = 0;
-        recentRatings.forEach((r) => {
-          noiseSum += r.noise;
-          crowdSum += r.crowd;
-        });
-        noiseRating = (noiseSum / recentRatings.length).toFixed(1);
-        crowdRating = (crowdSum / recentRatings.length).toFixed(1);
-        lastUpdated = recentLastTimestamp;
-        lastUpdatedType = "recent";
-        lastWindowHours = null;
-      } else {
-        let bestWindow = null;
-        let bestWindowRatings = [];
-        let bestWindowStart = null;
-        let bestWindowEnd = null;
-        let lastRecentTimestamp = null;
-        let found = false;
-        for (let hours = 1; hours <= 6; hours++) {
-          const windowStart = now - hours * 60 * 60 * 1000;
-          let windowRatings = [];
-          let windowLastTimestamp = null;
-          snapshot.forEach((doc) => {
-            const data = doc.data();
-            const ts = data.timestamp.toMillis();
-            if (ts >= windowStart) {
-              windowRatings.push(data);
-              if (!windowLastTimestamp || ts > windowLastTimestamp)
-                windowLastTimestamp = ts;
-            }
-          });
-          if (windowRatings.length > 0) {
-            bestWindow = hours;
-            bestWindowRatings = windowRatings;
-            bestWindowStart = windowStart;
-            bestWindowEnd = now;
-            lastRecentTimestamp = windowLastTimestamp;
-            found = true;
-            break;
-          }
-        }
-        let todayRatings = [];
-        if (!found) {
-          snapshot.forEach((doc) => {
-            const data = doc.data();
-            const ts = data.timestamp.toMillis();
-            if (ts >= todayStartMillis) {
-              todayRatings.push(data);
-            }
-          });
-        }
-
-        if (found && bestWindowRatings.length > 0) {
-          let noiseSum = 0,
-            crowdSum = 0;
-          bestWindowRatings.forEach((r) => {
-            noiseSum += r.noise;
-            crowdSum += r.crowd;
-          });
-          noiseRating = (noiseSum / bestWindowRatings.length).toFixed(1);
-          crowdRating = (crowdSum / bestWindowRatings.length).toFixed(1);
-          lastUpdated = lastRecentTimestamp;
-          lastUpdatedType = "window";
-          lastWindowHours = bestWindow;
-        } else if (todayRatings.length > 0) {
-          let noiseSumDay = 0,
-            crowdSumDay = 0;
-          todayRatings.forEach((r) => {
-            noiseSumDay += r.noise;
-            crowdSumDay += r.crowd;
-          });
-          noiseRating = (noiseSumDay / todayRatings.length).toFixed(1);
-          crowdRating = (crowdSumDay / todayRatings.length).toFixed(1);
-          lastUpdated = Math.max(
-            ...todayRatings.map((r) => r.timestamp.toMillis())
-          );
-          lastUpdatedType = "today";
-          lastWindowHours = null;
-        } else {
-          noiseRating = "N/A";
-          crowdRating = "N/A";
-          lastUpdated = null;
-          lastUpdatedType = null;
-          lastWindowHours = null;
-        }
-      }
-
-      setSpot((prevSpot) => ({
-        ...prevSpot,
-        ratings: {
-          noise: noiseRating,
-          crowd: crowdRating,
-          lastUpdated,
-          lastUpdatedType,
-          lastWindowHours,
-        },
-      }));
-    });
-    unsubscribeRefs.current.push(unsubscribe);
-
-    return () => {
-      isMounted = false;
-      unsubscribe();
-      unsubscribeAll();
-    };
-  }, [spotId, navigation]);
+    fetchSpotDetails();
+    // eslint-disable-next-line
+  }, [spotId]);
 
   // Fetch overall ratings and user's rating
   useEffect(() => {
@@ -712,10 +365,9 @@ export default function SpotDetailScreen({ route, navigation }) {
       setAverageOverallRating(count > 0 ? sum / count : 0);
       setOverallRatingsCount(count);
       setUserOverallRating(userRating);
-      setPendingOverallRating(userRating); // Set pending to user's rating
+      setPendingOverallRating(userRating);
     };
     fetchOverallRatings();
-    // Listen for real-time updates
     const unsubscribe = onSnapshot(
       query(collection(db, "overallRatings"), where("spotId", "==", spotId)),
       (snapshot) => {
@@ -739,16 +391,10 @@ export default function SpotDetailScreen({ route, navigation }) {
     return () => unsubscribe();
   }, [spotId]);
 
-  const handleRefresh = () => {
-    fetchSpotDetails(); // Refresh spot details
-  };
-
-  // Only update pending rating on star tap
   const handleStarTap = (rating) => {
     setPendingOverallRating(rating);
   };
 
-  // Submit button handler
   const handleSubmitOverallRating = async () => {
     if (
       pendingOverallRating === 0 ||
@@ -757,7 +403,6 @@ export default function SpotDetailScreen({ route, navigation }) {
       return;
     setIsSubmittingOverall(true);
     try {
-      // Upsert user's rating for this spot
       const ratingsQuery = query(
         collection(db, "overallRatings"),
         where("spotId", "==", spotId),
@@ -765,7 +410,6 @@ export default function SpotDetailScreen({ route, navigation }) {
       );
       const snapshot = await getDocs(ratingsQuery);
       if (!snapshot.empty) {
-        // Update existing
         const docId = snapshot.docs[0].id;
         await setDoc(
           doc(db, "overallRatings", docId),
@@ -778,7 +422,6 @@ export default function SpotDetailScreen({ route, navigation }) {
           { merge: true }
         );
       } else {
-        // Add new
         await addDoc(collection(db, "overallRatings"), {
           spotId,
           userId: auth.currentUser.uid,
@@ -786,7 +429,6 @@ export default function SpotDetailScreen({ route, navigation }) {
           timestamp: Timestamp.now(),
         });
       }
-      // Refresh the page after successful submit
       await fetchSpotDetails();
     } catch (e) {
       alert("Failed to submit rating.");
@@ -809,33 +451,6 @@ export default function SpotDetailScreen({ route, navigation }) {
     if (spotId && auth.currentUser) checkFavorite();
   }, [spotId, auth.currentUser]);
 
-  const handleToggleFavorite = async () => {
-    const user = auth.currentUser;
-    if (!user) return;
-    const userRef = doc(db, "users", user.uid);
-    try {
-      if (isFavorite) {
-        await updateDoc(userRef, { favorites: arrayRemove(spotId) });
-        setIsFavorite(false);
-      } else {
-        await updateDoc(userRef, { favorites: arrayUnion(spotId) });
-        setIsFavorite(true);
-      }
-    } catch (e) {
-      alert("Failed to update favorites.");
-    }
-  };
-
-  // Helper to format time in h m s
-  function formatHMS(ms) {
-    const totalSec = Math.floor(ms / 1000);
-    const h = Math.floor(totalSec / 3600);
-    const m = Math.floor((totalSec % 3600) / 60);
-    const s = totalSec % 60;
-    return `${h}h ${m}m ${s}s`;
-  }
-
-  // --- Add delete handler ---
   const handleDeleteNook = async () => {
     if (!spotId) return;
     Alert.alert(
@@ -849,7 +464,6 @@ export default function SpotDetailScreen({ route, navigation }) {
           onPress: async () => {
             try {
               await deleteDoc(doc(db, "studySpots", spotId));
-              // Optionally: remove from user's favorites if present
               const user = auth.currentUser;
               if (user) {
                 const userRef = doc(db, "users", user.uid);
@@ -873,7 +487,6 @@ export default function SpotDetailScreen({ route, navigation }) {
     );
   };
 
-  // --- Main render ---
   if (!spot) {
     return (
       <SafeAreaView
@@ -891,7 +504,6 @@ export default function SpotDetailScreen({ route, navigation }) {
     );
   }
 
-  // Add this line to safely get tags from spot
   const tags = Array.isArray(spot.tags) ? spot.tags : [];
 
   return (
@@ -904,7 +516,7 @@ export default function SpotDetailScreen({ route, navigation }) {
         }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Home Button and More Menu */}
+        {/* Top Bar */}
         <View
           style={{
             width: "100%",
@@ -1030,54 +642,20 @@ export default function SpotDetailScreen({ route, navigation }) {
             )}
           </View>
         </View>
-        {/* Spot Image */}
-        <View style={{ position: "relative", width: "100%" }}>
-          {spot.photoUrl ? (
-            <View
-              style={{
-                width: "100%",
-                height: 150,
-                backgroundColor: "#EEE",
-                borderRadius: 8,
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                marginBottom: 16,
-              }}
-            >
-              <Image
-                source={{
-                  uri:
-                    cachedPhotoUri && cachedPhotoUri.length > 0
-                      ? cachedPhotoUri
-                      : spot.photoUrl,
-                }}
-                style={{ width: "100%", height: "100%" }}
-                resizeMode="cover"
-              />
-            </View>
-          ) : (
-            <View
-              style={{
-                width: "100%",
-                height: 150,
-                backgroundColor: themeColors.darkGray,
-                borderRadius: 8,
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 16,
-              }}
-            >
-              <Text style={{ color: themeColors.black }}>No Image</Text>
-            </View>
-          )}
-        </View>
 
+        {/* Spot Image */}
+        <SpotImage
+          photoUrl={spot.photoUrl}
+          cachedPhotoUri={cachedPhotoUri}
+          themeColors={themeColors}
+        />
+
+        {/* Spot Name and Floor */}
         <Text
           style={{
             fontSize: 24,
             fontWeight: "bold",
-            color: themeColors.black, // Use black for spot name
+            color: themeColors.black,
             marginBottom: 6,
           }}
         >
@@ -1096,118 +674,17 @@ export default function SpotDetailScreen({ route, navigation }) {
           )}
         </Text>
 
-        {/* --- TAGS FIRST --- */}
-        <View
-          style={{
-            marginTop: 0,
-            marginBottom: 16,
-            alignItems: "flex-start",
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              flexWrap: "wrap",
-            }}
-          >
-            {tags.length > 0 ? (
-              tags.map((tag, index) => (
-                <View
-                  key={index}
-                  style={{
-                    backgroundColor: themeColors.purple,
-                    paddingHorizontal: 16,
-                    paddingVertical: 8,
-                    borderRadius: 20,
-                    marginRight: 8,
-                    marginBottom: 8,
-                  }}
-                >
-                  <Text style={{ color: themeColors.white, fontSize: 14 }}>
-                    {String(tag)}
-                  </Text>
-                </View>
-              ))
-            ) : (
-              <Text style={{ fontSize: 16, color: themeColors.black }}>
-                No tags available
-              </Text>
-            )}
-          </View>
-        </View>
+        {/* Tags */}
+        <TagList tags={tags} themeColors={themeColors} />
 
-        {/* --- NOISE & CROWD LEVELS LAST --- */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            marginBottom: 16,
-            marginTop: 4,
-          }}
-        >
-          <View
-            style={{
-              alignItems: "center",
-              padding: 16,
-              backgroundColor: themeColors.white,
-              borderRadius: 8,
-              flex: 1,
-              marginRight: 8,
-              borderColor: themeColors.black,
-              borderWidth: 0.5,
-            }}
-          >
-            <SpeakerHigh size={24} color={themeColors.purple} />
-            <Text
-              style={{
-                color: themeColors.purple,
-                fontSize: 16,
-                fontWeight: "bold",
-                marginTop: 8,
-              }}
-            >
-              Noise: {spot.ratings?.noise || "N/A"}
-            </Text>
-          </View>
-          <View
-            style={{
-              alignItems: "center",
-              padding: 16,
-              backgroundColor: themeColors.white,
-              borderRadius: 8,
-              flex: 1,
-              borderColor: themeColors.black,
-              borderWidth: 0.5,
-            }}
-          >
-            <UsersThree size={24} color={themeColors.purple} />
-            <Text
-              style={{
-                color: themeColors.purple,
-                fontSize: 16,
-                fontWeight: "bold",
-                marginTop: 8,
-              }}
-            >
-              Crowd: {spot.ratings?.crowd || "N/A"}
-            </Text>
-          </View>
-        </View>
+        {/* Ratings */}
+        <RatingsDisplay
+          ratings={spot.ratings}
+          themeColors={themeColors}
+          getLastUpdatedLabel={getLastUpdatedLabel}
+        />
 
-        {/* --- LAST UPDATED LABEL --- */}
-        <Text
-          style={{
-            fontSize: 12,
-            color: themeColors.darkGray,
-            marginBottom: 24,
-            textAlign: "right",
-            alignSelf: "flex-end",
-          }}
-        >
-          {getLastUpdatedLabel(spot.ratings)}
-        </Text>
-
-        {/* --- OPEN/QUIET HOURS --- */}
+        {/* Open/Quiet Hours */}
         {spot.openHours ? (
           <View style={{ alignItems: "center", marginBottom: 10 }}>
             <Text
@@ -1226,600 +703,48 @@ export default function SpotDetailScreen({ route, navigation }) {
           </View>
         ) : null}
 
-        {/* --- OVERALL RATING NEXT --- */}
-        <View style={{ alignItems: "center", marginBottom: 16 }}>
-          <Text
-            style={{
-              fontSize: 16,
-              color: themeColors.black,
-              fontWeight: "bold",
-              marginBottom: 4,
-            }}
-          >
-            Overall Rating
-          </Text>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <TouchableOpacity
-                key={star}
-                onPress={() => handleStarTap(star)}
-                activeOpacity={0.7}
-              >
-                <Star
-                  size={28}
-                  color={
-                    star <= pendingOverallRating
-                      ? themeColors.purple
-                      : themeColors.darkGray
-                  }
-                  weight={star <= pendingOverallRating ? "fill" : "regular"}
-                  style={{ marginRight: 2 }}
-                />
-              </TouchableOpacity>
-            ))}
-            <Text
-              style={{
-                marginLeft: 8,
-                color: themeColors.black,
-                fontSize: 15,
-              }}
-            >
-              {overallRatingsCount > 0
-                ? `${averageOverallRating.toFixed(1)} (${overallRatingsCount})`
-                : "No rating"}
-            </Text>
-          </View>
-          <Text
-            style={{
-              fontSize: 12,
-              color: themeColors.darkGray,
-              marginTop: 2,
-            }}
-          >
-            {userOverallRating
-              ? `Your rating: ${userOverallRating}`
-              : "Tap a star to rate"}
-          </Text>
-          <TouchableOpacity
-            onPress={handleSubmitOverallRating}
-            disabled={
-              isSubmittingOverall ||
-              pendingOverallRating === 0 ||
-              pendingOverallRating === userOverallRating
-            }
-            style={{
-              marginTop: 8,
-              backgroundColor:
-                pendingOverallRating !== 0 &&
-                pendingOverallRating !== userOverallRating
-                  ? themeColors.purple
-                  : themeColors.darkGray,
-              paddingVertical: 8,
-              paddingHorizontal: 24,
-              borderRadius: 8,
-              alignItems: "center",
-              opacity:
-                pendingOverallRating !== 0 &&
-                pendingOverallRating !== userOverallRating
-                  ? 1
-                  : 0.6,
-            }}
-          >
-            <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
-              {isSubmittingOverall ? "Submitting..." : "Submit"}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* Overall Rating */}
+        <OverallRating
+          userOverallRating={userOverallRating}
+          averageOverallRating={averageOverallRating}
+          overallRatingsCount={overallRatingsCount}
+          pendingOverallRating={pendingOverallRating}
+          setPendingOverallRating={setPendingOverallRating}
+          isSubmittingOverall={isSubmittingOverall}
+          onSubmit={handleSubmitOverallRating}
+          themeColors={themeColors}
+        />
 
-        {/* Bottom action area */}
-        <View
-          style={{
-            padding: 0,
-            backgroundColor: themeColors.white,
-            borderTopWidth: 1,
-            borderTopColor: themeColors.gray,
-            marginTop: 16,
-            marginBottom: 0,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              width: "100%",
-              marginTop: 12,
-              gap: 8,
-            }}
-          >
-            {/* Only show Update button for non-private nooks */}
-            <TouchableOpacity
-              onPress={() => setShowLiveUpdate(true)}
-              style={{
-                flex: 1,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                backgroundColor: themeColors.purple,
-                borderRadius: 8,
-                marginLeft: 0,
-                shadowColor: themeColors.black,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 4,
-                elevation: 3,
-              }}
-            >
-              <Broadcast size={20} color={themeColors.white} />
-              <Text
-                style={{
-                  marginLeft: 8,
-                  color: themeColors.white,
-                  fontWeight: "bold",
-                  fontSize: 16,
-                }}
-              >
-                Update
-              </Text>
-            </TouchableOpacity>
+        {/* Action Buttons */}
+        <ActionButtons
+          onLiveUpdate={() => setShowLiveUpdate(true)}
+          onAddAlert={() => setShowAddAlertModal(true)}
+          themeColors={themeColors}
+        />
 
-            {/* Only show Add Alert for non-private nooks */}
-            <TouchableOpacity
-              onPress={() => setShowAddAlertModal(true)}
-              style={{
-                flex: 1,
-                alignItems: "center",
-                justifyContent: "center",
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                backgroundColor: themeColors.orange,
-                borderRadius: 8,
-                marginLeft: 0,
-                marginTop: 0,
-                shadowColor: themeColors.black,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 4,
-                elevation: 3,
-              }}
-            >
-              <Text
-                style={{
-                  color: "#FFFFFF",
-                  fontWeight: "bold",
-                  fontSize: 16,
-                }}
-              >
-                Add Alert
-              </Text>
-            </TouchableOpacity>
-          </View>
-          {/* Only show modals for non-private nooks */}
-          <>
-            <LiveUpdateModal
-              visible={showLiveUpdate}
-              onClose={() => setShowLiveUpdate(false)}
-              spotId={spotId}
-              initialNoise={spot.ratings?.noise || 0}
-              initialCrowd={spot.ratings?.crowd || 0}
-            />
-            {/* Add Alert Modal */}
-            <AddAlertModal
-              visible={showAddAlertModal}
-              onClose={() => setShowAddAlertModal(false)}
-              onAddAlert={handleAddAlert}
-            />
-            {/* Report Modal */}
-            <ReportModal
-              visible={showReportModal}
-              onClose={() => setShowReportModal(false)}
-              spotId={spotId}
-              spotName={spot?.buildingName || ""}
-            />
-          </>
-        </View>
+        {/* Modals */}
+        <LiveUpdateModal
+          visible={showLiveUpdate}
+          onClose={() => setShowLiveUpdate(false)}
+          spotId={spotId}
+          initialNoise={spot.ratings?.noise || 0}
+          initialCrowd={spot.ratings?.crowd || 0}
+          themeColors={themeColors}
+        />
+        <AddAlertModal
+          visible={showAddAlertModal}
+          onClose={() => setShowAddAlertModal(false)}
+          onAddAlert={handleAddAlert}
+          themeColors={themeColors}
+        />
+        <ReportModal
+          visible={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          spotId={spotId}
+          spotName={spot?.buildingName || ""}
+          themeColors={themeColors}
+        />
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-function AddAlertModal({ visible, onClose, onAddAlert }) {
-  const themeCtx = useContext(ThemeContext);
-  const themeColors = themeCtx?.themeColors ?? colors;
-  const [alertText, setAlertText] = useState("");
-
-  const handleAddAlertPress = () => {
-    if (alertText.trim()) {
-      onAddAlert(alertText.trim(), onClose); // Pass onClose to parent handler
-      setAlertText(""); // Clear input after adding
-      // Modal will be closed by parent handler on success
-    }
-  };
-
-  return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0,0,0,0.3)",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <View
-          style={{
-            backgroundColor: themeColors.white,
-            margin: 32,
-            padding: 16,
-            borderRadius: 8,
-            width: "90%",
-            maxWidth: 400,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "bold",
-              color: themeColors.black,
-              marginBottom: 8,
-            }}
-          >
-            Add Alert
-          </Text>
-          <TextInput
-            style={{
-              borderWidth: 0.5,
-              borderColor: themeColors.purple,
-              borderRadius: 8,
-              padding: 12,
-              minHeight: 80,
-              color: themeColors.black,
-              backgroundColor: themeColors.white,
-              marginBottom: 12,
-              textAlignVertical: "top",
-            }}
-            placeholder="Enter alert text..."
-            placeholderTextColor={themeColors.darkGray}
-            multiline
-            value={alertText}
-            onChangeText={setAlertText}
-          />
-          <View
-            style={{ flexDirection: "row", justifyContent: "space-between" }}
-          >
-            <TouchableOpacity
-              onPress={handleAddAlertPress}
-              style={{
-                flex: 1,
-                padding: 12,
-                backgroundColor: themeColors.green,
-                borderRadius: 8,
-                alignItems: "center",
-                marginRight: 8,
-              }}
-            >
-              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
-                Add
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={onClose}
-              style={{
-                flex: 1,
-                padding: 12,
-                backgroundColor: themeColors.white,
-                borderRadius: 8,
-                alignItems: "center",
-                borderColor: themeColors.black,
-                borderWidth: 0.5,
-              }}
-            >
-              <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
-                Cancel
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
-function LiveUpdateModal({
-  visible,
-  onClose,
-  spotId,
-  initialNoise,
-  initialCrowd,
-}) {
-  const themeCtx = useContext(ThemeContext);
-  const themeColors = themeCtx?.themeColors ?? colors;
-  // Always use a number between 1 and 5 for slider values
-  const safeNoise =
-    Number(initialNoise) >= 1 && Number(initialNoise) <= 5
-      ? Number(initialNoise)
-      : 3;
-  const safeCrowd =
-    Number(initialCrowd) >= 1 && Number(initialCrowd) <= 5
-      ? Number(initialCrowd)
-      : 3;
-
-  const [noiseLevel, setNoiseLevel] = useState(safeNoise);
-  const [crowdLevel, setCrowdLevel] = useState(safeCrowd);
-
-  useEffect(() => {
-    if (visible) {
-      setNoiseLevel(3);
-      setCrowdLevel(3);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, initialNoise, initialCrowd]);
-
-  const handleSubmitUpdate = async () => {
-    try {
-      const ratingsRef = collection(db, "ratings");
-      await addDoc(ratingsRef, {
-        spotId,
-        noise: noiseLevel,
-        crowd: crowdLevel,
-        timestamp: Timestamp.now(),
-      });
-      onClose();
-    } catch (error) {
-      alert("Unable to submit live update. Please check your permissions.");
-    }
-  };
-
-  // Number line labels for slider
-  const renderSliderLabels = () => (
-    <View
-      style={{
-        flexDirection: "row",
-        justifyContent: "space-between",
-        marginHorizontal: 2,
-      }}
-    >
-      {[1, 2, 3, 4, 5].map((value) => (
-        <Text
-          key={value}
-          style={{
-            fontSize: 12,
-            color: themeColors.black,
-            width: 20,
-            textAlign: "center",
-          }}
-        >
-          {value}
-        </Text>
-      ))}
-    </View>
-  );
-
-  return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0,0,0,0.3)",
-          justifyContent: "center",
-        }}
-      >
-        <View
-          style={{
-            backgroundColor: themeColors.white,
-            margin: 32,
-            padding: 16,
-            borderRadius: 8,
-          }}
-        >
-          <Text
-            style={{
-              marginBottom: 8,
-              fontSize: 16,
-              fontWeight: "bold",
-              color: themeColors.black,
-            }}
-          >
-            Noise (1 = Quiet, 5 = Noisy)
-          </Text>
-          <View style={{ marginBottom: 16 }}>
-            <Slider
-              minimumValue={1}
-              maximumValue={5}
-              step={1}
-              value={noiseLevel}
-              onValueChange={setNoiseLevel}
-              minimumTrackTintColor={themeColors.purple}
-              maximumTrackTintColor={themeColors.gray}
-              thumbTintColor={themeColors.purple}
-            />
-            {renderSliderLabels()}
-          </View>
-          <Text
-            style={{
-              marginBottom: 8,
-              fontSize: 16,
-              fontWeight: "bold",
-              color: themeColors.black,
-            }}
-          >
-            Crowd (1 = Sparse, 5 = Packed)
-          </Text>
-          <View style={{ marginBottom: 16 }}>
-            <Slider
-              minimumValue={1}
-              maximumValue={5}
-              step={1}
-              value={crowdLevel}
-              onValueChange={setCrowdLevel}
-              minimumTrackTintColor={themeColors.purple}
-              maximumTrackTintColor={themeColors.gray}
-              thumbTintColor={themeColors.purple}
-            />
-            {renderSliderLabels()}
-          </View>
-          <View
-            style={{ flexDirection: "row", justifyContent: "space-between" }}
-          >
-            <TouchableOpacity
-              onPress={handleSubmitUpdate}
-              style={{
-                flex: 1,
-                padding: 12,
-                backgroundColor: themeColors.purple,
-                borderRadius: 8,
-                alignItems: "center",
-                marginRight: 8,
-              }}
-            >
-              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
-                Submit
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={onClose}
-              style={{
-                flex: 1,
-                padding: 12,
-                backgroundColor: themeColors.white,
-                borderRadius: 8,
-                alignItems: "center",
-                borderColor: themeColors.black,
-                borderWidth: 0.5,
-              }}
-            >
-              <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
-                Cancel
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
-function ReportModal({ visible, onClose, spotId, spotName }) {
-  const [reportText, setReportText] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const themeCtx = useContext(ThemeContext);
-  const themeColors = themeCtx?.themeColors ?? colors;
-
-  const handleSubmit = async () => {
-    if (!reportText.trim()) {
-      Alert.alert("Please enter your report or suggestion.");
-      return;
-    }
-    setSubmitting(true);
-    try {
-      // Add report to Firestore 'reports' collection
-      await addDoc(collection(db, "reports"), {
-        spotId: spotId || null,
-        spotName: spotName || null,
-        report: reportText,
-        user: auth.currentUser?.uid || "Anonymous",
-        createdAt: Timestamp.now(),
-      });
-      Alert.alert("Thank you!", "Your report has been submitted.");
-      setReportText("");
-      onClose();
-    } catch (e) {
-      Alert.alert("Error", "Failed to submit report.");
-    }
-    setSubmitting(false);
-  };
-
-  return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0,0,0,0.3)",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <View
-          style={{
-            backgroundColor: themeColors.white,
-            margin: 32,
-            padding: 16,
-            borderRadius: 8,
-            width: "90%",
-            maxWidth: 400,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "bold",
-              color: themeColors.black,
-              marginBottom: 8,
-            }}
-          >
-            Report Incorrect Info / Suggestion
-          </Text>
-          <TextInput
-            style={{
-              borderWidth: 0.5,
-              borderColor: themeColors.purple,
-              borderRadius: 8,
-              padding: 12,
-              minHeight: 80,
-              color: themeColors.black,
-              backgroundColor: themeColors.white,
-              marginBottom: 12,
-              textAlignVertical: "top",
-            }}
-            placeholder="Describe the issue or suggestion..."
-            placeholderTextColor={themeColors.darkGray}
-            multiline
-            value={reportText}
-            onChangeText={setReportText}
-            editable={!submitting}
-          />
-          <View
-            style={{ flexDirection: "row", justifyContent: "space-between" }}
-          >
-            <TouchableOpacity
-              onPress={handleSubmit}
-              disabled={submitting}
-              style={{
-                flex: 1,
-                padding: 12,
-                backgroundColor: themeColors.purple,
-                borderRadius: 8,
-                alignItems: "center",
-                marginRight: 8,
-                opacity: submitting ? 0.7 : 1,
-              }}
-            >
-              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
-                {submitting ? "Submitting..." : "Submit"}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={onClose}
-              disabled={submitting}
-              style={{
-                flex: 1,
-                padding: 12,
-                backgroundColor: themeColors.white,
-                borderRadius: 8,
-                alignItems: "center",
-                borderColor: themeColors.black,
-                borderWidth: 0.5,
-              }}
-            >
-              <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
-                Cancel
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
   );
 }
