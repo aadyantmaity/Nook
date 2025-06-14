@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useContext } from "react";
+import React, { useState, useContext } from "react";
 import {
   View,
   Text,
@@ -7,13 +7,12 @@ import {
   StyleSheet,
   Modal,
   TextInput,
-  Image,
   Pressable,
   RefreshControl,
   ScrollView,
+  Image,
 } from "react-native";
-import { signOut, updateProfile } from "firebase/auth";
-import { auth, db } from "../firebaseConfig";
+import { signOut } from "firebase/auth";
 import { colors } from "../constants/colors";
 import {
   ArrowLeft,
@@ -21,542 +20,93 @@ import {
   PencilSimple,
   Envelope,
   GraduationCap,
-  Briefcase,
-  User,
-  MapPin,
   Heart,
   X,
-  CaretDown, // <-- already imported
-  CaretRight, // <-- add this import
+  CaretDown,
+  CaretRight,
+  User,
 } from "phosphor-react-native";
-import {
-  doc,
-  getDoc,
-  setDoc,
-  collection,
-  getDocs,
-  query,
-  where,
-} from "firebase/firestore"; // add query, where
-import * as ImagePicker from "expo-image-picker";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import * as FileSystem from "expo-file-system";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemeContext } from "../App";
-// --- Replace this import ---
-// import { getLastUpdatedLabel } from "./HomeScreen";
+import * as ImagePicker from "expo-image-picker";
 import { getLastUpdatedLabel } from "../utils/lastUpdatedLabel";
 
-export default function ProfileScreen({
-  navigation,
-  // Remove isDarkMode: propDark,
-  // Remove themeColors: propColors,
-}) {
-  const themeCtx = useContext(ThemeContext);
-  const isDarkMode = themeCtx?.isDarkMode ?? false;
-  const themeColors = themeCtx?.themeColors ?? colors;
-  const setIsDarkMode = themeCtx?.setIsDarkMode;
+// Hooks and components
+import useProfileData from "../hooks/useProfileData";
+import useFavoriteSpots from "../hooks/useFavoriteSpots";
+import useStudyStats from "../hooks/useStudyStats";
+import ProfilePicture from "../components/Profile/ProfilePicture";
+import FavoriteSpotCard from "../components/Profile/FavoriteSpotCard";
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [userEmail, setUserEmail] = useState("");
-  const [userGradYear, setUserGradYear] = useState("");
+export default function ProfileScreen({ navigation }) {
+  const themeCtx = useContext(ThemeContext);
+  const themeColors = themeCtx?.themeColors ?? colors;
+
+  // Profile data
+  const {
+    firstName,
+    lastName,
+    userEmail,
+    userGradYear,
+    profilePic,
+    cachedProfilePicUri,
+    isLoading,
+    setFirstName,
+    setLastName,
+    setUserGradYear,
+    setProfilePic,
+    fetchUserData,
+    saveProfile,
+  } = useProfileData();
+
+  // Favorites
+  const {
+    favoriteSpots,
+    favoriteSpotsLoading,
+    cachedFavoriteSpotImages,
+    fetchFavoriteSpots,
+  } = useFavoriteSpots();
+
+  // Study stats
+  const { studyStats, fetchStudyStats } = useStudyStats();
+
+  // UI state
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editedFirstName, setEditedFirstName] = useState("");
   const [editedLastName, setEditedLastName] = useState("");
   const [editedGradYear, setEditedGradYear] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [favorites, setFavorites] = useState([]);
-  const [favoriteSpots, setFavoriteSpots] = useState([]);
-  const [favoriteSpotsLoading, setFavoriteSpotsLoading] = useState(true); // <-- Add loading state for favorites
-  const [profilePic, setProfilePic] = useState(null);
   const [editedProfilePic, setEditedProfilePic] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
-  const [cachedProfilePicUri, setCachedProfilePicUri] = useState(null);
-  const [cachedFavoriteSpotImages, setCachedFavoriteSpotImages] = useState({}); // spotId -> uri
-
-  // Dropdown state for favorites
   const [favoritesExpanded, setFavoritesExpanded] = useState(false);
 
-  // --- Study Stats Summary State ---
-  const [studyStats, setStudyStats] = useState({
-    totalSessions: 0,
-    favoriteSpotId: null,
-    favoriteSpotName: "",
-    totalTimeStudied: 0, // in milliseconds
-  });
-
-  // Helper to cache profile picture locally
-  const cacheProfilePic = async (url) => {
-    if (!url) {
-      setCachedProfilePicUri(null);
-      await AsyncStorage.removeItem("profilePicUri");
-      await AsyncStorage.removeItem("profilePicUrl");
-      return;
-    }
-    try {
-      const cachedUrl = await AsyncStorage.getItem("profilePicUrl");
-      const cachedUri = await AsyncStorage.getItem("profilePicUri");
-      if (cachedUrl === url && cachedUri) {
-        setCachedProfilePicUri(cachedUri);
-        return;
-      }
-      // Download and cache the image
-      const fileUri = FileSystem.cacheDirectory + "profile_pic.jpg";
-      const downloadRes = await FileSystem.downloadAsync(url, fileUri);
-      if (downloadRes.status === 200) {
-        await AsyncStorage.setItem("profilePicUri", downloadRes.uri);
-        await AsyncStorage.setItem("profilePicUrl", url);
-        setCachedProfilePicUri(downloadRes.uri);
-      } else {
-        setCachedProfilePicUri(null);
-      }
-    } catch (e) {
-      setCachedProfilePicUri(null);
-    }
-  };
-
-  // Helper to cache favorite spot images locally
-  const cacheFavoriteSpotImage = async (spotId, photoUrl) => {
-    if (!photoUrl) return null;
-    try {
-      const cacheKey = `favSpotImageUri_${spotId}`;
-      const cachedUri = await AsyncStorage.getItem(cacheKey);
-      const cachedUrl = await AsyncStorage.getItem(`${cacheKey}_url`);
-      if (cachedUri && cachedUrl === photoUrl) {
-        return cachedUri;
-      }
-      const fileUri = FileSystem.cacheDirectory + `fav_spot_${spotId}.jpg`;
-      const downloadRes = await FileSystem.downloadAsync(photoUrl, fileUri);
-      if (downloadRes.status === 200) {
-        await AsyncStorage.setItem(cacheKey, downloadRes.uri);
-        await AsyncStorage.setItem(`${cacheKey}_url`, photoUrl);
-        return downloadRes.uri;
-      }
-    } catch (e) {}
-    return null;
-  };
-
-  // Fetch user data and cache profile picture
-  const fetchUserData = useCallback(async () => {
-    const user = auth.currentUser;
-    if (user) {
-      try {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          setFirstName(data.firstName || "No First Name");
-          setLastName(data.lastName || "No Last Name");
-          setUserEmail(data.email || "No Email");
-          setUserGradYear(data.gradYear || "No Grad Year");
-          setFavorites(data.favorites || []);
-          setProfilePic(data.profilePic);
-          // Cache the profile picture if present
-          if (data.profilePic) {
-            cacheProfilePic(data.profilePic);
-          } else {
-            setCachedProfilePicUri(null);
-            await AsyncStorage.removeItem("profilePicUri");
-            await AsyncStorage.removeItem("profilePicUrl");
-          }
-        } else {
-          console.error("User document does not exist");
-        }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-      } finally {
-        setIsLoading(false);
-        setRefreshing(false);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchUserData();
-  }, [fetchUserData]);
-
-  useEffect(() => {
-    if (isModalVisible) {
-      setEditedProfilePic(profilePic);
-    } else {
-      setEditedProfilePic(null); // Reset preview to icon when modal closes
-    }
-  }, [isModalVisible, profilePic]);
-
-  // When profilePic changes, update cache
-  useEffect(() => {
-    if (profilePic) {
-      cacheProfilePic(profilePic);
-    } else {
-      setCachedProfilePicUri(null);
-    }
-  }, [profilePic]);
-
-  // Cache all favorite spot images after fetching favoriteSpots
-  useEffect(() => {
-    let isMounted = true;
-    const cacheAllImages = async () => {
-      const cacheMap = {};
-      await Promise.all(
-        favoriteSpots.map(async (spot) => {
-          if (spot.photoUrl) {
-            const uri = await cacheFavoriteSpotImage(spot.id, spot.photoUrl);
-            if (uri && isMounted) cacheMap[spot.id] = uri;
-          }
-        })
-      );
-      if (isMounted) setCachedFavoriteSpotImages(cacheMap);
-    };
-    if (favoriteSpots.length > 0) {
-      cacheAllImages();
-    }
-    return () => {
-      isMounted = false;
-    };
-  }, [favoriteSpots]);
-
-  // --- Fetch Study Stats ---
-  const fetchStudyStats = useCallback(async () => {
-    const user = auth.currentUser;
-    if (!user) return;
-    try {
-      // Fetch all focusSessions for this user (not breaks)
-      const q = query(
-        collection(db, "focusSessions"),
-        where("userId", "==", user.uid)
-      );
-      const snapshot = await getDocs(q);
-      let total = 0;
-      let totalTimeStudied = 0;
-      const spotCounts = {};
-      snapshot.forEach((docSnap) => {
-        const d = docSnap.data();
-        // Use the same logic as archive: skip breaks, require spotId, start, end
-        if (!d.isBreak && d.spotId && d.start && d.end) {
-          total++;
-          spotCounts[d.spotId] = (spotCounts[d.spotId] || 0) + 1;
-          // Calculate duration (archive modal logic)
-          const start = d.start.seconds
-            ? d.start.seconds * 1000
-            : d.start.toMillis();
-          const end = d.end.seconds ? d.end.seconds * 1000 : d.end.toMillis();
-          if (
-            typeof start === "number" &&
-            typeof end === "number" &&
-            end > start
-          ) {
-            totalTimeStudied += end - start;
-          }
-        }
-      });
-      // Find favorite spotId
-      let favoriteSpotId = null;
-      let maxCount = 0;
-      Object.entries(spotCounts).forEach(([spotId, count]) => {
-        if (count > maxCount) {
-          favoriteSpotId = spotId;
-          maxCount = count;
-        }
-      });
-      // Fetch favorite spot's name
-      let favoriteSpotName = "";
-      if (favoriteSpotId) {
-        const spotDoc = await getDoc(doc(db, "studySpots", favoriteSpotId));
-        if (spotDoc.exists()) {
-          const spot = spotDoc.data();
-          favoriteSpotName = spot.buildingName || spot.name || "Unknown";
-          if (spot.roomNumber)
-            favoriteSpotName += ` - Floor ${spot.roomNumber}`;
-        }
-      }
-      setStudyStats({
-        totalSessions: total,
-        favoriteSpotId,
-        favoriteSpotName,
-        totalTimeStudied,
-      });
-    } catch (e) {
-      setStudyStats({
-        totalSessions: 0,
-        favoriteSpotId: null,
-        favoriteSpotName: "",
-        totalTimeStudied: 0,
-      });
-    }
-  }, []);
-
-  // Fetch stats on mount and on refresh
-  useEffect(() => {
-    fetchStudyStats();
-  }, [fetchStudyStats]);
-
-  // Also refresh stats on pull-to-refresh
-  const onRefresh = useCallback(async () => {
+  // Refresh handler
+  const onRefresh = async () => {
     setRefreshing(true);
     await fetchUserData();
     await fetchFavoriteSpots();
     await fetchStudyStats();
     setRefreshing(false);
-  }, [fetchUserData, fetchFavoriteSpots, fetchStudyStats]);
-
-  // Fetch favorite spots for the user
-  const fetchFavoriteSpots = useCallback(async () => {
-    setFavoriteSpotsLoading(true);
-    try {
-      const user = auth.currentUser;
-      if (!user) {
-        setFavoriteSpots([]);
-        setFavoriteSpotsLoading(false);
-        return;
-      }
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      let favIds = [];
-      if (userDoc.exists()) {
-        favIds = userDoc.data().favorites || [];
-      }
-      if (favIds.length === 0) {
-        setFavoriteSpots([]);
-        setFavoriteSpotsLoading(false);
-        return;
-      }
-      // Fetch all favorite spots in parallel
-      const spotDocs = await Promise.all(
-        favIds.map((id) => getDoc(doc(db, "studySpots", id)))
-      );
-      const spots = [];
-      for (let i = 0; i < spotDocs.length; i++) {
-        const docSnap = spotDocs[i];
-        if (docSnap.exists()) {
-          const spotData = docSnap.data();
-          // Fetch ratings for the spot
-          const ratingsQuery = query(
-            collection(db, "ratings"),
-            where("spotId", "==", docSnap.id)
-          );
-          const ratingsSnapshot = await getDocs(ratingsQuery);
-
-          const now = Date.now();
-          const thirtyMinutesAgo = now - 30 * 60 * 1000;
-          const todayStart = new Date();
-          todayStart.setHours(0, 0, 0, 0);
-          const todayStartMillis = todayStart.getTime();
-
-          let recentRatings = [];
-          let recentLastTimestamp = null;
-          ratingsSnapshot.forEach((ratingDoc) => {
-            const ratingData = ratingDoc.data();
-            const ts = ratingData.timestamp.toMillis();
-            if (ts >= thirtyMinutesAgo) {
-              recentRatings.push(ratingData);
-              if (!recentLastTimestamp || ts > recentLastTimestamp)
-                recentLastTimestamp = ts;
-            }
-          });
-
-          let noiseRating,
-            crowdRating,
-            lastUpdated,
-            lastUpdatedType,
-            lastWindowHours;
-
-          if (recentRatings.length > 0) {
-            let noiseSum = 0,
-              crowdSum = 0;
-            recentRatings.forEach((r) => {
-              noiseSum += r.noise;
-              crowdSum += r.crowd;
-            });
-            noiseRating = noiseSum / recentRatings.length;
-            crowdRating = crowdSum / recentRatings.length;
-            lastUpdated = recentLastTimestamp;
-            lastUpdatedType = "recent";
-            lastWindowHours = null;
-          } else {
-            let bestWindow = null;
-            let bestWindowRatings = [];
-            let lastRecentTimestamp = null;
-            let found = false;
-            for (let hours = 1; hours <= 6; hours++) {
-              const windowStart = now - hours * 60 * 60 * 1000;
-              let windowRatings = [];
-              let windowLastTimestamp = null;
-              ratingsSnapshot.forEach((ratingDoc) => {
-                const ratingData = ratingDoc.data();
-                const ts = ratingData.timestamp.toMillis();
-                if (ts >= windowStart) {
-                  windowRatings.push(ratingData);
-                  if (!windowLastTimestamp || ts > windowLastTimestamp)
-                    windowLastTimestamp = ts;
-                }
-              });
-              if (windowRatings.length > 0) {
-                bestWindow = hours;
-                bestWindowRatings = windowRatings;
-                lastRecentTimestamp = windowLastTimestamp;
-                found = true;
-                break;
-              }
-            }
-            let todayRatings = [];
-            if (!found) {
-              ratingsSnapshot.forEach((ratingDoc) => {
-                const ratingData = ratingDoc.data();
-                const ts = ratingData.timestamp.toMillis();
-                if (ts >= todayStartMillis) {
-                  todayRatings.push(ratingData);
-                }
-              });
-            }
-
-            if (found && bestWindowRatings.length > 0) {
-              let noiseSum = 0,
-                crowdSum = 0;
-              bestWindowRatings.forEach((r) => {
-                noiseSum += r.noise;
-                crowdSum += r.crowd;
-              });
-              noiseRating = noiseSum / bestWindowRatings.length;
-              crowdRating = crowdSum / bestWindowRatings.length;
-              lastUpdated = lastRecentTimestamp;
-              lastUpdatedType = "window";
-              lastWindowHours = bestWindow;
-            } else if (todayRatings.length > 0) {
-              let noiseSumDay = 0,
-                crowdSumDay = 0;
-              todayRatings.forEach((r) => {
-                noiseSumDay += r.noise;
-                crowdSumDay += r.crowd;
-              });
-              noiseRating = noiseSumDay / todayRatings.length;
-              crowdRating = crowdSumDay / todayRatings.length;
-              lastUpdated = Math.max(
-                ...todayRatings.map((r) => r.timestamp.toMillis())
-              );
-              lastUpdatedType = "today";
-              lastWindowHours = null;
-            } else {
-              noiseRating = "N/A";
-              crowdRating = "N/A";
-              lastUpdated = null;
-              lastUpdatedType = null;
-              lastWindowHours = null;
-            }
-          }
-
-          // Fetch overall ratings for the spot
-          const overallRatingsQuery = query(
-            collection(db, "overallRatings"),
-            where("spotId", "==", docSnap.id)
-          );
-          const overallRatingsSnapshot = await getDocs(overallRatingsQuery);
-          let overallSum = 0;
-          let overallCount = 0;
-          overallRatingsSnapshot.forEach((r) => {
-            overallSum += r.data().rating || 0;
-            overallCount++;
-          });
-          const averageOverallRating =
-            overallCount > 0 ? overallSum / overallCount : 0;
-
-          spots.push({
-            id: docSnap.id,
-            ...spotData,
-            ratings: {
-              noise: noiseRating,
-              crowd: crowdRating,
-              lastUpdated,
-              lastUpdatedType,
-              lastWindowHours,
-            },
-            averageOverallRating,
-            overallRatingsCount: overallCount,
-          });
-        }
-      }
-      setFavoriteSpots(spots);
-    } catch (e) {
-      setFavoriteSpots([]);
-    } finally {
-      setFavoriteSpotsLoading(false);
-    }
-  }, []);
-
-  // Fetch favorite spots on mount
-  useEffect(() => {
-    fetchFavoriteSpots();
-  }, [fetchFavoriteSpots]);
-
-  // Helper to upload image to Firebase Storage and get download URL
-  const uploadProfilePicToStorage = async (imageUri, userId) => {
-    if (!imageUri || !userId) return null;
-    const storage = getStorage();
-    // Read the file as base64
-    const base64 = await FileSystem.readAsStringAsync(imageUri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-    // Convert base64 to Blob using fetch and a data URL
-    const response = await fetch(`data:image/jpeg;base64,${base64}`);
-    const blob = await response.blob();
-    const storageRef = ref(
-      storage,
-      `profile_pictures/${userId}_${Date.now()}.jpg`
-    );
-    await uploadBytes(storageRef, blob, { contentType: "image/jpeg" });
-    return await getDownloadURL(storageRef);
   };
 
-  const handleLogout = () => {
-    setLogoutModalVisible(true);
-  };
-
+  // Logout
+  const handleLogout = () => setLogoutModalVisible(true);
   const confirmLogout = () => {
     setLogoutModalVisible(false);
-    signOut(auth).catch((error) => {
-      console.error("Error logging out:", error.message);
-    });
+    signOut().catch((error) => {});
   };
 
+  // Save profile
   const handleSaveProfile = async () => {
-    try {
-      const user = auth.currentUser;
-      if (user) {
-        const updateData = {
-          firstName: editedFirstName || firstName,
-          lastName: editedLastName || lastName,
-          gradYear: editedGradYear || userGradYear,
-          email: userEmail,
-        };
-        // If a new profile picture is selected, upload and save URL
-        if (editedProfilePic && editedProfilePic !== profilePic) {
-          const downloadUrl = await uploadProfilePicToStorage(
-            editedProfilePic,
-            user.uid
-          );
-          if (downloadUrl) {
-            updateData.profilePic = downloadUrl;
-            setProfilePic(downloadUrl);
-            await cacheProfilePic(downloadUrl); // Cache new profile pic
-          }
-        }
-        await setDoc(doc(db, "users", user.uid), updateData, { merge: true });
-
-        await updateProfile(user, {
-          displayName: `${editedFirstName || firstName} ${
-            editedLastName || lastName
-          }`,
-        });
-
-        setFirstName(editedFirstName || firstName);
-        setLastName(editedLastName || lastName);
-        setUserGradYear(editedGradYear || userGradYear);
-        setIsModalVisible(false);
-      }
-    } catch (error) {
-      console.error("Error saving profile:", error);
-    }
+    await saveProfile({
+      editedFirstName,
+      editedLastName,
+      editedGradYear,
+      editedProfilePic,
+    });
+    setIsModalVisible(false);
   };
 
+  // Pick profile pic
   const handlePickProfilePic = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -565,25 +115,8 @@ export default function ProfileScreen({
       quality: 0.5,
     });
     if (!result.cancelled) {
-      try {
-        const asset = result.assets ? result.assets[0] : result;
-        const user = auth.currentUser;
-        if (!user) return;
-        const downloadUrl = await uploadProfilePicToStorage(
-          asset.uri,
-          user.uid
-        );
-        if (downloadUrl) {
-          setProfilePic(downloadUrl);
-          await setDoc(
-            doc(db, "users", user.uid),
-            { profilePic: downloadUrl },
-            { merge: true }
-          );
-        }
-      } catch (e) {
-        console.log("Failed to save profile picture.");
-      }
+      const asset = result.assets ? result.assets[0] : result;
+      setEditedProfilePic(asset.uri);
     }
   };
 
@@ -603,12 +136,11 @@ export default function ProfileScreen({
       </SafeAreaView>
     );
 
-  // Only render the main profile UI after loading is complete
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: themeColors.white }]}
     >
-      {/* Logout Confirmation Modal */}
+      {/* Logout Modal */}
       <Modal
         visible={logoutModalVisible}
         transparent
@@ -638,7 +170,7 @@ export default function ProfileScreen({
                 fontSize: 18,
                 fontWeight: "bold",
                 marginBottom: 12,
-                color: themeColors.black, // keep as black for contrast
+                color: themeColors.black,
               }}
             >
               Confirm Logout
@@ -717,50 +249,31 @@ export default function ProfileScreen({
             { backgroundColor: themeColors.purple },
           ]}
         >
-          <TouchableOpacity
-            onPress={handlePickProfilePic}
-            style={{ alignItems: "center" }}
-          >
-            {cachedProfilePicUri ? (
-              <Image
-                source={{ uri: cachedProfilePicUri }}
-                style={{ width: 125, height: 125, borderRadius: 75 }}
-              />
-            ) : profilePic ? (
-              <Image
-                source={{ uri: profilePic }}
-                style={{ width: 125, height: 125, borderRadius: 75 }}
-              />
-            ) : (
-              <View>
-                <User size={100} color={themeColors.white} weight="bold" />
-              </View>
-            )}
-          </TouchableOpacity>
+          <ProfilePicture
+            cachedProfilePicUri={cachedProfilePicUri}
+            profilePic={profilePic}
+            onPick={handlePickProfilePic}
+            themeColors={themeColors}
+          />
         </View>
-
         {/* Profile Details */}
         <View style={styles.profileContainer}>
           <Text style={[styles.userName, { color: themeColors.black }]}>
-            {/* Use black for name */}
             {firstName} {lastName}
           </Text>
           <View style={styles.detailRow}>
             <Envelope size={20} color={themeColors.purple} />
             <Text style={[styles.userEmail, { color: themeColors.black }]}>
-              {/* Use black for email */}
               {userEmail}
             </Text>
           </View>
-
           <View style={styles.detailRow}>
             <GraduationCap size={20} color={themeColors.purple} />
             <Text style={[styles.userGradYear, { color: themeColors.black }]}>
-              {/* Use black for grad year */}
               {userGradYear}
             </Text>
           </View>
-          {/* --- Study Stats Summary --- */}
+          {/* Study Stats */}
           <View
             style={{
               width: "100%",
@@ -804,7 +317,6 @@ export default function ProfileScreen({
               Time focused:{" "}
               <Text style={{ fontWeight: "bold", color: themeColors.purple }}>
                 {(() => {
-                  // Display hours, minutes, seconds (same as archive modal)
                   const ms = studyStats.totalTimeStudied || 0;
                   const totalSeconds = Math.floor(ms / 1000);
                   const hours = Math.floor(totalSeconds / 3600);
@@ -818,12 +330,7 @@ export default function ProfileScreen({
                 })()}
               </Text>
             </Text>
-            <Text
-              style={{
-                color: themeColors.black,
-                fontSize: 15,
-              }}
-            >
+            <Text style={{ color: themeColors.black, fontSize: 15 }}>
               Favorite location:{" "}
               <Text style={{ fontWeight: "bold", color: themeColors.purple }}>
                 {studyStats.favoriteSpotName
@@ -957,188 +464,22 @@ export default function ProfileScreen({
               ) : (
                 <View style={{ width: "100%" }}>
                   {favoriteSpots.map((spot) => (
-                    <TouchableOpacity
+                    <FavoriteSpotCard
                       key={spot.id}
-                      style={{
-                        backgroundColor: themeColors.white,
-                        borderRadius: 12,
-                        padding: 14,
-                        marginBottom: 10,
-                        flexDirection: "row",
-                        alignItems: "center",
-                        shadowColor: "#000",
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.08,
-                        shadowRadius: 3,
-                        elevation: 2,
-                        borderColor: themeColors.black,
-                        borderWidth: 0.5,
-                      }}
+                      spot={spot}
+                      cachedImage={cachedFavoriteSpotImages[spot.id]}
+                      themeColors={themeColors}
+                      getLastUpdatedLabel={getLastUpdatedLabel}
                       onPress={() =>
                         navigation.navigate("SpotDetail", { spotId: spot.id })
                       }
-                      activeOpacity={0.85}
-                    >
-                      {/* Image preview */}
-                      {spot.photoUrl ? (
-                        <View
-                          style={{
-                            width: 75,
-                            height: 75,
-                            borderRadius: 8,
-                            overflow: "hidden",
-                            marginRight: 14,
-                            backgroundColor: "#EEE",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <Image
-                            source={{
-                              uri:
-                                cachedFavoriteSpotImages[spot.id] ||
-                                spot.photoUrl,
-                            }}
-                            style={{ width: "100%", height: "100%" }}
-                            resizeMode="cover"
-                          />
-                        </View>
-                      ) : (
-                        <View
-                          style={{
-                            backgroundColor: themeColors.purple,
-                            borderRadius: 8,
-                            width: 75,
-                            height: 75,
-                            alignItems: "center",
-                            justifyContent: "center",
-                            marginRight: 14,
-                          }}
-                        >
-                          <MapPin
-                            size={45}
-                            color={themeColors.white}
-                            weight="bold"
-                          />
-                        </View>
-                      )}
-                      <View style={{ flex: 1 }}>
-                        <Text
-                          style={{
-                            fontSize: 18,
-                            fontWeight: "bold",
-                            color: themeColors.black, // Use black for spot name
-                            marginBottom: 6,
-                          }}
-                        >
-                          {spot.buildingName}
-                          {spot.roomNumber && (
-                            <Text
-                              style={{
-                                fontSize: 18,
-                                color: themeColors.black,
-                                fontWeight: "bold",
-                              }}
-                            >
-                              {" - Floor "}
-                              {spot.roomNumber}
-                            </Text>
-                          )}
-                        </Text>
-                        <View
-                          style={{ flexDirection: "row", flexWrap: "wrap" }}
-                        >
-                          {spot.tags && spot.tags.length > 0
-                            ? [...spot.tags]
-                                .sort((a, b) =>
-                                  String(a).localeCompare(String(b))
-                                )
-                                .slice(0, 3)
-                                .map((tag, idx) => (
-                                  <View
-                                    key={idx}
-                                    style={{
-                                      backgroundColor: themeColors.purple,
-                                      borderRadius: 12,
-                                      paddingHorizontal: 8,
-                                      paddingVertical: 2,
-                                      marginRight: 6,
-                                      marginTop: 2,
-                                    }}
-                                  >
-                                    <Text
-                                      style={{
-                                        color: themeColors.white,
-                                        fontSize: 11,
-                                        fontWeight: "bold",
-                                      }}
-                                    >
-                                      {tag}
-                                    </Text>
-                                  </View>
-                                ))
-                            : null}
-                          {spot.tags && spot.tags.length > 3 && (
-                            <Text
-                              style={{
-                                color: themeColors.purple,
-                                fontSize: 11,
-                                fontWeight: "bold",
-                                marginTop: 2,
-                              }}
-                            >
-                              +{spot.tags.length - 3} more
-                            </Text>
-                          )}
-                        </View>
-                        {/* Noise and Crowd Level Row */}
-                        <View style={{ flexDirection: "row", marginTop: 6 }}>
-                          <Text
-                            style={{
-                              color: themeColors.purple,
-                              fontSize: 13,
-                              fontWeight: "bold",
-                              marginRight: 12,
-                            }}
-                          >
-                            Noise:{" "}
-                            {typeof spot.ratings?.noise === "number"
-                              ? spot.ratings.noise.toFixed(1)
-                              : spot.ratings?.noise || "N/A"}
-                          </Text>
-                          <Text
-                            style={{
-                              color: themeColors.purple,
-                              fontSize: 13,
-                              fontWeight: "bold",
-                            }}
-                          >
-                            Crowd:{" "}
-                            {typeof spot.ratings?.crowd === "number"
-                              ? spot.ratings.crowd.toFixed(1)
-                              : spot.ratings?.crowd || "N/A"}
-                          </Text>
-                        </View>
-                        {/* Add last updated label */}
-                        <Text
-                          style={{
-                            fontSize: 11,
-                            color: themeColors.darkGray,
-                            marginTop: 2,
-                            textAlign: "right",
-                          }}
-                        >
-                          {getLastUpdatedLabel(spot.ratings)}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
+                    />
                   ))}
                 </View>
               )}
             </View>
           )}
         </View>
-
         {/* Buttons */}
         {!isLoading && (
           <View style={styles.optionsContainer}>
@@ -1168,7 +509,7 @@ export default function ProfileScreen({
                     userGradYear !== "No Grad Year" ? userGradYear : ""
                   );
                   setIsModalVisible(true);
-                  setTimeout(() => setEditedProfilePic(null), 0); // Ensure state updates after modal opens
+                  setTimeout(() => setEditedProfilePic(null), 0);
                 }}
               >
                 <PencilSimple size={20} color={themeColors.white} />
@@ -1177,7 +518,6 @@ export default function ProfileScreen({
           </View>
         )}
       </ScrollView>
-
       {/* Modal for editing profile */}
       <Modal
         visible={isModalVisible}
@@ -1216,7 +556,6 @@ export default function ProfileScreen({
               <X size={22} color={themeColors.purple} weight="bold" />
             </TouchableOpacity>
             <Text style={[styles.modalTitle, { color: themeColors.black }]}>
-              {/* Use black for modal title */}
               Edit Profile
             </Text>
             {/* Profile picture preview and picker */}
@@ -1315,18 +654,7 @@ export default function ProfileScreen({
                   justifyContent: "center",
                   marginTop: 18,
                 }}
-                onPress={async () => {
-                  let result = await ImagePicker.launchImageLibraryAsync({
-                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                    allowsEditing: true,
-                    aspect: [1, 1],
-                    quality: 0.5,
-                  });
-                  if (!result.cancelled) {
-                    const asset = result.assets ? result.assets[0] : result;
-                    setEditedProfilePic(asset.uri);
-                  }
-                }}
+                onPress={handlePickProfilePic}
               >
                 <Text
                   style={{
@@ -1371,7 +699,6 @@ export default function ProfileScreen({
               borderWidth={0.5}
             />
             <View style={styles.modalButtons}>
-              {/* Cancel (negative) on left, Save (positive) on right */}
               <TouchableOpacity
                 style={[
                   styles.cancelButton,
@@ -1387,9 +714,7 @@ export default function ProfileScreen({
                 <Text
                   style={[
                     styles.cancelButtonText,
-                    {
-                      color: themeColors.purple,
-                    },
+                    { color: themeColors.purple },
                   ]}
                 >
                   Cancel
