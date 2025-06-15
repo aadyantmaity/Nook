@@ -48,7 +48,6 @@ export default function ProfileScreen({ navigation }) {
     userEmail,
     userGradYear,
     profilePic,
-    cachedProfilePicUri,
     isLoading,
     setFirstName,
     setLastName,
@@ -250,7 +249,6 @@ export default function ProfileScreen({ navigation }) {
           ]}
         >
           <ProfilePicture
-            cachedProfilePicUri={cachedProfilePicUri}
             profilePic={profilePic}
             onPick={handlePickProfilePic}
             themeColors={themeColors}
