@@ -137,8 +137,8 @@ export default function ProfileScreen({ navigation }) {
     );
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: themeColors.white }]}
+    <View
+      style={{ flex: 1, backgroundColor: themeColors.white, paddingTop: 48 }}
     >
       {/* Logout Modal */}
       <Modal
@@ -234,9 +234,9 @@ export default function ProfileScreen({ navigation }) {
         keyboardShouldPersistTaps="handled"
       >
         {/* Back Button */}
-        <View style={{ flex: 0.2 }}>
+        <View style={{ flex: 0.2, marginTop: -8 }}>
           <TouchableOpacity
-            style={[styles.backButton]}
+            style={[styles.backButton, { top: 8 }]} // reduce top gap
             onPress={() => navigation.navigate("Home")}
           >
             <ArrowLeft size={24} color={themeColors.purple} />
@@ -328,14 +328,6 @@ export default function ProfileScreen({ navigation }) {
                   out.push(`${seconds}s`);
                   return out.join(" ");
                 })()}
-              </Text>
-            </Text>
-            <Text style={{ color: themeColors.black, fontSize: 15 }}>
-              Favorite location:{" "}
-              <Text style={{ fontWeight: "bold", color: themeColors.purple }}>
-                {studyStats.favoriteSpotName
-                  ? studyStats.favoriteSpotName
-                  : "N/A"}
               </Text>
             </Text>
           </View>
@@ -737,7 +729,7 @@ export default function ProfileScreen({ navigation }) {
           </Pressable>
         </Pressable>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -911,11 +903,6 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 8,
     alignSelf: "stretch",
-  },
-  favoriteSpotName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    // color: colors.purple, // Remove, handled inline
   },
   favoriteSpotTags: {
     fontSize: 13,

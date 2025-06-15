@@ -224,7 +224,9 @@ export default function AddSpotScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
+    <View
+      style={{ flex: 1, backgroundColor: themeColors.white, paddingTop: 48 }}
+    >
       <ScrollView
         contentContainerStyle={{
           flexGrow: 1,
@@ -475,6 +477,7 @@ export default function AddSpotScreen({ navigation }) {
             style={{
               flexDirection: "row",
               marginTop: 16,
+              marginBottom: 16,
               alignItems: "center",
               justifyContent: "center",
             }}
@@ -555,6 +558,6 @@ export default function AddSpotScreen({ navigation }) {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

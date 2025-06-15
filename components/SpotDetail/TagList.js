@@ -15,6 +15,7 @@ export default function TagList({ tags, themeColors }) {
                 paddingVertical: 8,
                 borderRadius: 20,
                 marginRight: 8,
+                marginBottom: 8,
               }}
             >
               <Text style={{ color: themeColors.white, fontSize: 14 }}>

@@ -5,7 +5,14 @@ import { SpeakerHigh, UsersThree } from "phosphor-react-native";
 // Helper functions to map average to label
 function getNoiseLabel(avg) {
   if (avg === "N/A" || avg === "No rating yet" || avg == null) return "N/A";
-  if (typeof avg === "string") avg = parseFloat(avg);
+  if (typeof avg === "string") {
+    const normalized = avg.trim().toLowerCase();
+    if (["silent", "buzz", "loud"].includes(normalized)) {
+      // Capitalize first letter
+      return avg.charAt(0).toUpperCase() + avg.slice(1).toLowerCase();
+    }
+    avg = parseFloat(avg);
+  }
   if (isNaN(avg)) return "N/A";
   if (avg < 0.5) return "Silent";
   if (avg < 1.5) return "Buzz";
@@ -13,7 +20,13 @@ function getNoiseLabel(avg) {
 }
 function getCrowdLabel(avg) {
   if (avg === "N/A" || avg === "No rating yet" || avg == null) return "N/A";
-  if (typeof avg === "string") avg = parseFloat(avg);
+  if (typeof avg === "string") {
+    const normalized = avg.trim().toLowerCase();
+    if (["empty", "busy", "full"].includes(normalized)) {
+      return avg.charAt(0).toUpperCase() + avg.slice(1).toLowerCase();
+    }
+    avg = parseFloat(avg);
+  }
   if (isNaN(avg)) return "N/A";
   if (avg < 0.5) return "Empty";
   if (avg < 1.5) return "Busy";

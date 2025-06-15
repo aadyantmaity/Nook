@@ -26,6 +26,7 @@ export default function StudySpotsList({
   setCurrentAlerts,
   setShowAlertsModal,
   getLastUpdatedLabel,
+  contentContainerStyle, // <-- add this prop
 }) {
   // Add helper functions:
   function getNoiseLabel(avg) {
@@ -108,6 +109,7 @@ export default function StudySpotsList({
       contentContainerStyle={{
         paddingHorizontal: 16,
         paddingTop: 0,
+        ...(contentContainerStyle || {}), // <-- merge extra padding if provided
       }}
       data={filteredSpots}
       keyExtractor={(item) => item.id}

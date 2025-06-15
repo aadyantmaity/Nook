@@ -9,6 +9,36 @@ export default function FavoriteSpotCard({
   onPress,
   getLastUpdatedLabel,
 }) {
+  // Use the same label logic as RatingsDisplay
+  function getNoiseLabel(avg) {
+    if (avg === "N/A" || avg === "No rating yet" || avg == null) return "N/A";
+    if (typeof avg === "string") {
+      const normalized = avg.trim().toLowerCase();
+      if (["silent", "buzz", "loud"].includes(normalized)) {
+        return avg.charAt(0).toUpperCase() + avg.slice(1).toLowerCase();
+      }
+      avg = parseFloat(avg);
+    }
+    if (isNaN(avg)) return "N/A";
+    if (avg < 0.5) return "Silent";
+    if (avg < 1.5) return "Buzz";
+    return "Loud";
+  }
+  function getCrowdLabel(avg) {
+    if (avg === "N/A" || avg === "No rating yet" || avg == null) return "N/A";
+    if (typeof avg === "string") {
+      const normalized = avg.trim().toLowerCase();
+      if (["empty", "busy", "full"].includes(normalized)) {
+        return avg.charAt(0).toUpperCase() + avg.slice(1).toLowerCase();
+      }
+      avg = parseFloat(avg);
+    }
+    if (isNaN(avg)) return "N/A";
+    if (avg < 0.5) return "Empty";
+    if (avg < 1.5) return "Busy";
+    return "Full";
+  }
+
   return (
     <TouchableOpacity
       style={{
@@ -159,27 +189,9 @@ export default function FavoriteSpotCard({
             textAlign: "right",
           }}
         >
-          {getLastUpdatedLabel(spot.ratings)}
+          {getLastUpdatedLabel(spot.ratings || {})}
         </Text>
       </View>
     </TouchableOpacity>
   );
-}
-
-// Add helper functions:
-function getNoiseLabel(avg) {
-  if (avg === "N/A" || avg === "No rating yet" || avg == null) return "N/A";
-  if (typeof avg === "string") avg = parseFloat(avg);
-  if (isNaN(avg)) return "N/A";
-  if (avg < 0.5) return "Silent";
-  if (avg < 1.5) return "Buzz";
-  return "Loud";
-}
-function getCrowdLabel(avg) {
-  if (avg === "N/A" || avg === "No rating yet" || avg == null) return "N/A";
-  if (typeof avg === "string") avg = parseFloat(avg);
-  if (isNaN(avg)) return "N/A";
-  if (avg < 0.5) return "Empty";
-  if (avg < 1.5) return "Busy";
-  return "Full";
 }
