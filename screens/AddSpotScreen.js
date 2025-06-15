@@ -8,7 +8,7 @@ import {
   SafeAreaView,
   Image,
 } from "react-native";
-import { ArrowLeft, Check } from "phosphor-react-native";
+import { ArrowLeft, Check, MapPin } from "phosphor-react-native";
 import { ThemeContext } from "../App";
 import { colors } from "../constants/colors";
 import {
@@ -29,6 +29,7 @@ import TagSelector from "../components/AddSpot/TagSelector";
 import BuildingPicker from "../components/AddSpot/BuildingPicker";
 import ImagePickerButton from "../components/AddSpot/ImagePickerButton";
 import FavoriteToggle from "../components/AddSpot/FavoriteToggle";
+import MapLocationPicker from "../components/AddSpot/MapLocationPicker";
 
 const TAGS = [
   "Quiet",
@@ -94,6 +95,8 @@ export default function AddSpotScreen({ navigation }) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [openHours, setOpenHours] = useState("");
   const [customImage, setCustomImage] = useState(null);
+  const [showMapPicker, setShowMapPicker] = useState(false);
+  const [customCoords, setCustomCoords] = useState(null);
 
   const toggleTag = (tag) => {
     setSelectedTags((tags) =>
@@ -113,6 +116,7 @@ export default function AddSpotScreen({ navigation }) {
     setIsFavorite(false);
     setOpenHours("");
     setCustomImage(null);
+    setCustomCoords(null);
   };
 
   const isAmaity =
@@ -187,6 +191,11 @@ export default function AddSpotScreen({ navigation }) {
         revealIdentity: showAddedBy,
         photoUrl: "",
         openHours,
+        ...(isUWBuilding
+          ? {}
+          : customCoords
+          ? { coordinates: customCoords }
+          : {}),
       };
       const docRef = await addDoc(collection(db, "studySpots"), spotDetails);
       if (
@@ -328,17 +337,86 @@ export default function AddSpotScreen({ navigation }) {
             {isUWBuilding ? "Select Building:" : "Enter Location Name:"}
           </Text>
 
-          <BuildingPicker
-            isUWBuilding={isUWBuilding}
-            selectedBuilding={selectedBuilding}
-            setSelectedBuilding={setSelectedBuilding}
-            customBuilding={customBuilding}
-            setCustomBuilding={setCustomBuilding}
-            roomNumber={roomNumber}
-            setRoomNumber={setRoomNumber}
-            BUILDINGS={BUILDINGS}
-            themeColors={themeColors}
-          />
+          {/* Building/Floor/Map Row */}
+          {isUWBuilding ? (
+            <BuildingPicker
+              isUWBuilding={isUWBuilding}
+              selectedBuilding={selectedBuilding}
+              setSelectedBuilding={setSelectedBuilding}
+              customBuilding={customBuilding}
+              setCustomBuilding={setCustomBuilding}
+              roomNumber={roomNumber}
+              setRoomNumber={setRoomNumber}
+              BUILDINGS={BUILDINGS}
+              themeColors={themeColors}
+            />
+          ) : (
+            <>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 8,
+                }}
+              >
+                <TextInput
+                  placeholder="Location Name"
+                  placeholderTextColor={themeColors.darkGray}
+                  value={customBuilding}
+                  onChangeText={setCustomBuilding}
+                  style={{
+                    flex: 1,
+                    borderWidth: 0.5,
+                    borderColor: themeColors.black,
+                    borderRadius: 8,
+                    padding: 12,
+                    marginRight: 8,
+                    backgroundColor: themeColors.white,
+                    color: themeColors.purple,
+                  }}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowMapPicker(true)}
+                  style={{
+                    backgroundColor: themeColors.purple,
+                    borderRadius: 8,
+                    paddingVertical: 10,
+                    paddingHorizontal: 12,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    minWidth: 44,
+                    minHeight: 44,
+                  }}
+                  accessibilityLabel={
+                    customCoords
+                      ? "Change Location on Map"
+                      : "Pick Location on Map"
+                  }
+                  accessible={true}
+                >
+                  <MapPin size={20} color={themeColors.white} weight="bold" />
+                </TouchableOpacity>
+              </View>
+              <TextInput
+                placeholder="Floor/Room number (if applicable)"
+                placeholderTextColor={themeColors.darkGray}
+                value={roomNumber}
+                onChangeText={setRoomNumber}
+                style={{
+                  // Make width match the name input above
+                  borderWidth: 0.5,
+                  borderColor: themeColors.black,
+                  borderRadius: 8,
+                  padding: 12,
+                  marginBottom: 8,
+                  backgroundColor: themeColors.white,
+                  color: themeColors.purple,
+                  // Match width to name input
+                  width: "100%",
+                }}
+              />
+            </>
+          )}
 
           {/* Image Picker */}
           {(isAmaity && isUWBuilding) || !isUWBuilding ? (
@@ -348,6 +426,24 @@ export default function AddSpotScreen({ navigation }) {
               themeColors={themeColors}
             />
           ) : null}
+
+          {/* Map Picker Modal */}
+          <MapLocationPicker
+            visible={showMapPicker}
+            onClose={() => setShowMapPicker(false)}
+            onPick={(coords) => {
+              setCustomCoords(coords);
+              // Autofill custom building name if available
+              if (coords.name) {
+                setCustomBuilding(coords.name);
+              } else if (coords.display_name) {
+                setCustomBuilding(coords.display_name.split(",")[0]);
+              }
+              setShowMapPicker(false);
+            }}
+            themeColors={themeColors}
+            initialCoords={customCoords}
+          />
 
           {/* Husky Card Needed */}
           <View style={{ marginBottom: 16 }}>
