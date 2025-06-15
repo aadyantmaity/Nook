@@ -79,8 +79,10 @@ export default function HomeScreen({ navigation, route }) {
   // Hooks
   const { studySpots, isLoading, fetchStudySpots } = useStudySpots();
   const { favorites, toggleFavorite } = useFavorites();
-  const { search, setSearch, filters, setFilters, filteredSpots } =
-    useSearchAndFilters(studySpots, favorites);
+  const { filters, setFilters, filteredSpots } = useSearchAndFilters(
+    studySpots,
+    favorites
+  );
 
   // TabView
   const layout = Dimensions.get("window");
@@ -98,8 +100,6 @@ export default function HomeScreen({ navigation, route }) {
         navigation={navigation}
         favorites={favorites}
         handleToggleFavorite={toggleFavorite}
-        search={search}
-        setSearch={setSearch}
         themeColors={themeColors}
         onRefresh={fetchStudySpots}
         refreshing={isLoading}

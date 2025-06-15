@@ -1,13 +1,6 @@
 import React from "react";
-import {
-  View,
-  FlatList,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Image,
-} from "react-native";
-import { MagnifyingGlass, Heart, Star, Warning } from "phosphor-react-native";
+import { View, FlatList, Text, TouchableOpacity, Image } from "react-native";
+import { Heart, Star, Warning } from "phosphor-react-native";
 import Filters from "./Filters";
 
 export default function StudySpotsList({
@@ -15,8 +8,6 @@ export default function StudySpotsList({
   navigation,
   favorites,
   handleToggleFavorite,
-  search,
-  setSearch,
   isDarkMode,
   themeColors,
   onRefresh,
@@ -26,7 +17,7 @@ export default function StudySpotsList({
   setCurrentAlerts,
   setShowAlertsModal,
   getLastUpdatedLabel,
-  contentContainerStyle, // <-- add this prop
+  contentContainerStyle,
 }) {
   // Add helper functions:
   function getNoiseLabel(avg) {
@@ -55,61 +46,12 @@ export default function StudySpotsList({
             setFilters={setFilters}
             themeColors={themeColors}
           />
-          <View
-            style={{
-              paddingHorizontal: 0,
-              paddingBottom: 16,
-              backgroundColor: themeColors.white,
-              alignItems: "center",
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor: themeColors.white,
-                borderRadius: 20,
-                borderColor: themeColors.black,
-                borderWidth: 0.5,
-                paddingHorizontal: 12,
-                paddingVertical: 2,
-                width: "100%",
-                maxWidth: 600,
-              }}
-            >
-              <MagnifyingGlass
-                size={20}
-                color={themeColors.purple}
-                style={{ marginRight: 8 }}
-              />
-              <TextInput
-                value={search}
-                onChangeText={setSearch}
-                placeholder="Search by name, tag, or feature"
-                placeholderTextColor={themeColors.darkGray}
-                style={{
-                  flex: 1,
-                  backgroundColor: themeColors.white,
-                  borderRadius: 20,
-                  paddingHorizontal: 4,
-                  paddingVertical: 10,
-                  fontSize: 16,
-                  color: themeColors.black,
-                }}
-                autoCorrect={false}
-                autoCapitalize="none"
-                clearButtonMode="while-editing"
-                accessibilityLabel="Search study spots"
-                accessible={true}
-              />
-            </View>
-          </View>
         </View>
       }
       contentContainerStyle={{
         paddingHorizontal: 16,
         paddingTop: 0,
-        ...(contentContainerStyle || {}), // <-- merge extra padding if provided
+        ...(contentContainerStyle || {}),
       }}
       data={filteredSpots}
       keyExtractor={(item) => item.id}
@@ -281,7 +223,10 @@ export default function StudySpotsList({
               {item.huskyCardNeeded && "Husky Card Required"}
               {item.huskyCardNeeded && item.department && (
                 <Text
-                  style={{ color: themeColors.darkGray, fontWeight: "normal" }}
+                  style={{
+                    color: themeColors.darkGray,
+                    fontWeight: "normal",
+                  }}
                 >
                   {" "}
                   •{" "}
@@ -289,7 +234,10 @@ export default function StudySpotsList({
               )}
               {item.department && (
                 <Text
-                  style={{ color: themeColors.darkGray, fontWeight: "normal" }}
+                  style={{
+                    color: themeColors.darkGray,
+                    fontWeight: "normal",
+                  }}
                 >
                   Department: {item.department}
                 </Text>
@@ -333,7 +281,10 @@ export default function StudySpotsList({
                 ))
             ) : (
               <Text
-                style={{ color: themeColors.darkGray || "#AAA", fontSize: 12 }}
+                style={{
+                  color: themeColors.darkGray || "#AAA",
+                  fontSize: 12,
+                }}
               >
                 No tags
               </Text>
@@ -380,7 +331,10 @@ export default function StudySpotsList({
               </Text>
             </View>
             <View
-              style={{ flexDirection: "row", justifyContent: "space-between" }}
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}
             >
               <View style={{ alignItems: "center" }}>
                 <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
@@ -429,6 +383,7 @@ export default function StudySpotsList({
       onRefresh={onRefresh}
       refreshing={refreshing}
       showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="always"
     />
   );
 }
