@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Image, Text } from "react-native";
 
-export default function SpotImage({ photoUrl, cachedPhotoUri, themeColors }) {
+export default function SpotImage({ photoUrl, themeColors }) {
   return (
     <View style={{ position: "relative", width: "100%" }}>
       {photoUrl ? (
@@ -19,10 +19,7 @@ export default function SpotImage({ photoUrl, cachedPhotoUri, themeColors }) {
         >
           <Image
             source={{
-              uri:
-                cachedPhotoUri && cachedPhotoUri.length > 0
-                  ? cachedPhotoUri
-                  : photoUrl,
+              uri: photoUrl,
             }}
             style={{ width: "100%", height: "100%" }}
             resizeMode="cover"

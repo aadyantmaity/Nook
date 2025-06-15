@@ -26,13 +26,15 @@ export default function AddAlertModal({
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View
+      <TouchableOpacity
+        activeOpacity={1}
         style={{
           flex: 1,
           backgroundColor: "rgba(0,0,0,0.3)",
           justifyContent: "center",
           alignItems: "center",
         }}
+        onPressOut={onClose}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -52,6 +54,7 @@ export default function AddAlertModal({
               width: "85%",
               alignItems: "center",
             }}
+            onStartShouldSetResponder={() => true}
           >
             <Text
               style={{
@@ -122,7 +125,7 @@ export default function AddAlertModal({
             </View>
           </View>
         </KeyboardAvoidingView>
-      </View>
+      </TouchableOpacity>
     </Modal>
   );
 }

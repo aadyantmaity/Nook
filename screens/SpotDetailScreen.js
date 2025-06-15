@@ -436,40 +436,53 @@ export default function SpotDetailScreen({ route, navigation }) {
         </ScrollView>
       </View>
       {/* Floating Action Button for Add Alert */}
-      <TouchableOpacity
-        onPress={() => setShowAddAlertModal(true)}
+      <View
         style={{
           position: "absolute",
-          bottom: 32,
-          right: 24,
-          backgroundColor: themeColors.orange,
-          borderRadius: 28,
-          paddingVertical: 12,
-          paddingHorizontal: 10,
-          flexDirection: "row",
-          alignItems: "center",
-          elevation: 6,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.25,
-          shadowRadius: 4,
+          bottom: 25,
+          right: 16,
+          zIndex: 20,
         }}
-        accessibilityLabel="Add Alert"
-        accessible={true}
-        activeOpacity={0.85}
       >
-        <Warning size={19} color={themeColors.white} weight="fill" />
-        <Text
+        <View
           style={{
-            color: themeColors.white,
-            fontWeight: "bold",
-            marginLeft: 8,
-            fontSize: 13,
+            flexDirection: "row",
+            alignItems: "center",
+            paddingVertical: 12,
+            paddingHorizontal: 16,
+            backgroundColor: themeColors.orange, // keep color as orange
+            borderRadius: 50,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.2,
+            shadowRadius: 4,
+            elevation: 3,
           }}
         >
-          Add Alert
-        </Text>
-      </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setShowAddAlertModal(true)}
+            accessibilityLabel="Add Alert"
+            accessible={true}
+            activeOpacity={0.85}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+          >
+            <Warning size={19} color={themeColors.white} weight="fill" />
+            <Text
+              style={{
+                color: themeColors.white,
+                fontWeight: "bold",
+                fontSize: 14,
+                marginLeft: 8,
+              }}
+            >
+              Add Alert
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 }

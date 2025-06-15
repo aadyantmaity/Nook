@@ -59,7 +59,6 @@ import GeneralReportModal from "../components/Home/GeneralReportModal"; // Impor
 //hook imports
 import useStudySpots from "../hooks/useStudySpots";
 import useFavorites from "../hooks/useFavorites";
-import useImageCache from "../hooks/useImageCache";
 import useSearchAndFilters from "../hooks/useSearchAndFilters";
 
 let imageCache = {};
@@ -80,7 +79,6 @@ export default function HomeScreen({ navigation, route }) {
   // Hooks
   const { studySpots, isLoading, fetchStudySpots } = useStudySpots();
   const { favorites, toggleFavorite } = useFavorites();
-  useImageCache(); // Just to initialize cache, if needed
   const { search, setSearch, filters, setFilters, filteredSpots } =
     useSearchAndFilters(studySpots, favorites);
 
@@ -99,7 +97,7 @@ export default function HomeScreen({ navigation, route }) {
         filteredSpots={filteredSpots}
         navigation={navigation}
         favorites={favorites}
-        toggleFavorite={toggleFavorite}
+        handleToggleFavorite={toggleFavorite}
         search={search}
         setSearch={setSearch}
         themeColors={themeColors}
@@ -109,11 +107,13 @@ export default function HomeScreen({ navigation, route }) {
         setFilters={setFilters}
         setCurrentAlerts={setCurrentAlerts}
         setShowAlertsModal={setShowAlertsModal}
+        // Add extra bottom padding so last item is not covered by FAB
+        contentContainerStyle={{ paddingBottom: 72 }}
       />
       <View
         style={{
           position: "absolute",
-          bottom: 16,
+          bottom: 25,
           right: 16,
           zIndex: 20,
         }}
@@ -143,7 +143,7 @@ export default function HomeScreen({ navigation, route }) {
             }}
             onPress={() => navigation.navigate("AddSpot")}
           >
-            Add a Nook
+            Add Nook
           </Text>
         </View>
       </View>
@@ -171,7 +171,9 @@ export default function HomeScreen({ navigation, route }) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
+    <View
+      style={{ flex: 1, backgroundColor: themeColors.white, paddingTop: 48 }}
+    >
       <View style={{ flex: 1 }}>
         {/* Header */}
         <View
@@ -263,6 +265,6 @@ export default function HomeScreen({ navigation, route }) {
           themeColors={themeColors}
         />
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
