@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { Modal, View, Text, TextInput, TouchableOpacity } from "react-native";
+import {
+  Modal,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 
 export default function AddAlertModal({
   visible,
@@ -26,83 +34,94 @@ export default function AddAlertModal({
           alignItems: "center",
         }}
       >
-        <View
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={{
-            backgroundColor: themeColors.white,
-            borderRadius: 16,
-            padding: 24,
-            width: "85%",
+            width: "100%",
             alignItems: "center",
+            justifyContent: "center",
+            flex: 1,
           }}
+          keyboardVerticalOffset={Platform.OS === "ios" ? -100 : 0}
         >
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "bold",
-              marginBottom: 12,
-              color: themeColors.black,
-            }}
-          >
-            Add Alert
-          </Text>
-          <TextInput
-            placeholder="Enter alert text"
-            placeholderTextColor={themeColors.darkGray}
-            value={alertText}
-            onChangeText={setAlertText}
-            style={{
-              borderWidth: 1,
-              borderColor: themeColors.gray,
-              borderRadius: 8,
-              padding: 12,
-              width: "100%",
-              marginBottom: 16,
-              color: themeColors.black,
-              backgroundColor: themeColors.white,
-            }}
-            multiline
-          />
           <View
             style={{
-              flexDirection: "row",
-              width: "100%",
-              justifyContent: "space-between",
+              backgroundColor: themeColors.white,
+              borderRadius: 16,
+              padding: 24,
+              width: "85%",
+              alignItems: "center",
             }}
           >
-            <TouchableOpacity
-              onPress={onClose}
+            <Text
               style={{
-                backgroundColor: themeColors.gray,
-                borderRadius: 8,
-                paddingVertical: 10,
-                paddingHorizontal: 18,
-                alignItems: "center",
-                flex: 1,
-                marginRight: 8,
+                fontSize: 18,
+                fontWeight: "bold",
+                marginBottom: 12,
+                color: themeColors.black,
               }}
             >
-              <Text style={{ color: themeColors.black, fontWeight: "bold" }}>
-                Cancel
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleAdd}
+              Add Alert
+            </Text>
+            <TextInput
+              placeholder="Enter alert text"
+              placeholderTextColor={themeColors.darkGray}
+              value={alertText}
+              onChangeText={setAlertText}
               style={{
-                backgroundColor: themeColors.purple,
+                borderWidth: 1,
+                borderColor: themeColors.gray,
                 borderRadius: 8,
-                paddingVertical: 10,
-                paddingHorizontal: 18,
-                alignItems: "center",
-                flex: 1,
-                marginLeft: 8,
+                padding: 12,
+                width: "100%",
+                marginBottom: 16,
+                color: themeColors.black,
+                backgroundColor: themeColors.white,
+              }}
+              multiline
+            />
+            <View
+              style={{
+                flexDirection: "row",
+                width: "100%",
+                justifyContent: "space-between",
               }}
             >
-              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
-                Add
-              </Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                onPress={onClose}
+                style={{
+                  backgroundColor: themeColors.gray,
+                  borderRadius: 8,
+                  paddingVertical: 10,
+                  paddingHorizontal: 18,
+                  alignItems: "center",
+                  flex: 1,
+                  marginRight: 8,
+                }}
+              >
+                <Text style={{ color: themeColors.black, fontWeight: "bold" }}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleAdd}
+                style={{
+                  backgroundColor: themeColors.purple,
+                  borderRadius: 8,
+                  paddingVertical: 10,
+                  paddingHorizontal: 18,
+                  alignItems: "center",
+                  flex: 1,
+                  marginLeft: 8,
+                }}
+              >
+                <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+                  Add
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );

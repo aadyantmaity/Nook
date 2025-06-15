@@ -27,6 +27,24 @@ export default function StudySpotsList({
   setShowAlertsModal,
   getLastUpdatedLabel,
 }) {
+  // Add helper functions:
+  function getNoiseLabel(avg) {
+    if (avg === "N/A" || avg === "No rating yet" || avg == null) return "N/A";
+    if (typeof avg === "string") avg = parseFloat(avg);
+    if (isNaN(avg)) return "N/A";
+    if (avg < 0.5) return "Silent";
+    if (avg < 1.5) return "Buzz";
+    return "Loud";
+  }
+  function getCrowdLabel(avg) {
+    if (avg === "N/A" || avg === "No rating yet" || avg == null) return "N/A";
+    if (typeof avg === "string") avg = parseFloat(avg);
+    if (isNaN(avg)) return "N/A";
+    if (avg < 0.5) return "Empty";
+    if (avg < 1.5) return "Busy";
+    return "Full";
+  }
+
   return (
     <FlatList
       ListHeaderComponent={
@@ -373,9 +391,7 @@ export default function StudySpotsList({
                     color: themeColors.purple,
                   }}
                 >
-                  {typeof item.ratings?.noise === "number"
-                    ? item.ratings.noise.toFixed(1)
-                    : item.ratings?.noise}
+                  {getNoiseLabel(item.ratings?.noise)}
                 </Text>
               </View>
               <View style={{ alignItems: "center" }}>
@@ -389,9 +405,7 @@ export default function StudySpotsList({
                     color: themeColors.purple,
                   }}
                 >
-                  {typeof item.ratings?.crowd === "number"
-                    ? item.ratings.crowd.toFixed(1)
-                    : item.ratings?.crowd}
+                  {getCrowdLabel(item.ratings?.crowd)}
                 </Text>
               </View>
             </View>

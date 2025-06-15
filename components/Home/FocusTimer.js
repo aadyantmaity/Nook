@@ -129,13 +129,17 @@ export function FocusTimerView({ navigation }) {
     snapshot.forEach((doc) => {
       const data = doc.data();
       if (data.spotId && data.start && data.end) {
-        const start = data.start.seconds
-          ? data.start.seconds * 1000
-          : data.start.toMillis();
-        const end = data.end.seconds
-          ? data.end.seconds * 1000
-          : data.end.toMillis();
-        if (end > weekAgo) {
+        const start = data.start
+          ? data.start.seconds
+            ? data.start.seconds * 1000
+            : data.start.toMillis()
+          : null;
+        const end = data.end
+          ? data.end.seconds
+            ? data.end.seconds * 1000
+            : data.end.toMillis()
+          : null;
+        if (end !== null && start !== null && end > weekAgo) {
           if (!stats[data.spotId]) stats[data.spotId] = [];
           stats[data.spotId].push({
             ...data,

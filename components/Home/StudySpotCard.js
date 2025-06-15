@@ -283,9 +283,7 @@ export default function StudySpotCard({
               color: themeColors.purple,
             }}
           >
-            {typeof spot.ratings?.noise === "number"
-              ? spot.ratings.noise.toFixed(1)
-              : spot.ratings?.noise}
+            {getNoiseLabel(spot.ratings?.noise)}
           </Text>
         </View>
         <View style={{ alignItems: "center" }}>
@@ -299,9 +297,7 @@ export default function StudySpotCard({
               color: themeColors.purple,
             }}
           >
-            {typeof spot.ratings?.crowd === "number"
-              ? spot.ratings.crowd.toFixed(1)
-              : spot.ratings?.crowd}
+            {getCrowdLabel(spot.ratings?.crowd)}
           </Text>
         </View>
       </View>
@@ -318,4 +314,22 @@ export default function StudySpotCard({
       </Text>
     </TouchableOpacity>
   );
+}
+
+// Add helper functions:
+function getNoiseLabel(avg) {
+  if (avg === "N/A" || avg === "No rating yet" || avg == null) return "N/A";
+  if (typeof avg === "string") avg = parseFloat(avg);
+  if (isNaN(avg)) return "N/A";
+  if (avg < 0.5) return "Silent";
+  if (avg < 1.5) return "Buzz";
+  return "Loud";
+}
+function getCrowdLabel(avg) {
+  if (avg === "N/A" || avg === "No rating yet" || avg == null) return "N/A";
+  if (typeof avg === "string") avg = parseFloat(avg);
+  if (isNaN(avg)) return "N/A";
+  if (avg < 0.5) return "Empty";
+  if (avg < 1.5) return "Busy";
+  return "Full";
 }

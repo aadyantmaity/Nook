@@ -139,10 +139,7 @@ export default function FavoriteSpotCard({
               marginRight: 12,
             }}
           >
-            Noise:{" "}
-            {typeof spot.ratings?.noise === "number"
-              ? spot.ratings.noise.toFixed(1)
-              : spot.ratings?.noise || "N/A"}
+            Noise: {getNoiseLabel(spot.ratings?.noise)}
           </Text>
           <Text
             style={{
@@ -151,10 +148,7 @@ export default function FavoriteSpotCard({
               fontWeight: "bold",
             }}
           >
-            Crowd:{" "}
-            {typeof spot.ratings?.crowd === "number"
-              ? spot.ratings.crowd.toFixed(1)
-              : spot.ratings?.crowd || "N/A"}
+            Crowd: {getCrowdLabel(spot.ratings?.crowd)}
           </Text>
         </View>
         <Text
@@ -170,4 +164,22 @@ export default function FavoriteSpotCard({
       </View>
     </TouchableOpacity>
   );
+}
+
+// Add helper functions:
+function getNoiseLabel(avg) {
+  if (avg === "N/A" || avg === "No rating yet" || avg == null) return "N/A";
+  if (typeof avg === "string") avg = parseFloat(avg);
+  if (isNaN(avg)) return "N/A";
+  if (avg < 0.5) return "Silent";
+  if (avg < 1.5) return "Buzz";
+  return "Loud";
+}
+function getCrowdLabel(avg) {
+  if (avg === "N/A" || avg === "No rating yet" || avg == null) return "N/A";
+  if (typeof avg === "string") avg = parseFloat(avg);
+  if (isNaN(avg)) return "N/A";
+  if (avg < 0.5) return "Empty";
+  if (avg < 1.5) return "Busy";
+  return "Full";
 }
