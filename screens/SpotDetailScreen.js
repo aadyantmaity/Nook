@@ -126,12 +126,16 @@ export default function SpotDetailScreen({ route, navigation }) {
     }
     try {
       const spotRef = doc(db, "studySpots", spotId);
+      const alertObj = {
+        text: alertText.trim(),
+        createdAt: Date.now(),
+      };
       await updateDoc(spotRef, {
-        locationAlerts: arrayUnion(alertText.trim()),
+        locationAlerts: arrayUnion(alertObj),
       });
       setSpot((prev) => ({
         ...prev,
-        locationAlerts: [...(prev.locationAlerts || []), alertText.trim()],
+        locationAlerts: [...(prev.locationAlerts || []), alertObj],
       }));
       if (typeof onClose === "function") onClose();
     } catch (error) {
@@ -373,6 +377,38 @@ export default function SpotDetailScreen({ route, navigation }) {
               </Text>
             )}
           </Text>
+
+          {/* Husky Card/Department info */}
+          {(spot.huskyCardNeeded || spot.department) && (
+            <Text
+              style={{
+                fontSize: 15,
+                color: spot.huskyCardNeeded
+                  ? themeColors.red
+                  : themeColors.darkGray,
+                marginBottom: 8,
+                marginTop: 2,
+                fontWeight: spot.huskyCardNeeded ? "bold" : "normal",
+              }}
+            >
+              {spot.huskyCardNeeded && "Husky Card Required"}
+              {spot.huskyCardNeeded && spot.department && (
+                <Text
+                  style={{ color: themeColors.darkGray, fontWeight: "normal" }}
+                >
+                  {" "}
+                  •{" "}
+                </Text>
+              )}
+              {spot.department && (
+                <Text
+                  style={{ color: themeColors.darkGray, fontWeight: "normal" }}
+                >
+                  Department: {spot.department}
+                </Text>
+              )}
+            </Text>
+          )}
 
           <OverallRating
             userOverallRating={userOverallRating}
