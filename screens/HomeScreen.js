@@ -109,6 +109,7 @@ export default function HomeScreen({ navigation, route }) {
         setShowAlertsModal={setShowAlertsModal}
         // Add extra bottom padding so last item is not covered by FAB
         contentContainerStyle={{ paddingBottom: 72 }}
+        getLastUpdatedLabel={getLastUpdatedLabel}
       />
       <View
         style={{

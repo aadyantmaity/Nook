@@ -9,6 +9,7 @@ export default function StudySpotCard({
   onPress,
   onWarningPress,
   themeColors,
+  getLastUpdatedLabel, // <-- add this prop
 }) {
   return (
     <TouchableOpacity
@@ -239,7 +240,7 @@ export default function StudySpotCard({
         style={{
           flexDirection: "row",
           alignItems: "center",
-          marginBottom: 8,
+          marginBottom: 8, // further reduced gap
         }}
       >
         {[1, 2, 3, 4, 5].map((star) => (
@@ -271,7 +272,13 @@ export default function StudySpotCard({
             : "No ratings"}
         </Text>
       </View>
-      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          marginBottom: 2,
+        }}
+      >
         <View style={{ alignItems: "center" }}>
           <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
             Noise Level
@@ -306,11 +313,13 @@ export default function StudySpotCard({
         style={{
           fontSize: 12,
           color: themeColors.darkGray,
-          marginTop: 4,
+          marginTop: 6,
           textAlign: "right",
         }}
       >
-        {/* You can pass getLastUpdatedLabel(spot.ratings) as a prop if needed */}
+        {getLastUpdatedLabel && spot.ratings
+          ? getLastUpdatedLabel(spot.ratings)
+          : ""}
       </Text>
     </TouchableOpacity>
   );
