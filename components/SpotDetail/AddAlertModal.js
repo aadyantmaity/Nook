@@ -67,13 +67,13 @@ export default function AddAlertModal({
               Add Alert
             </Text>
             <TextInput
-              placeholder="Enter alert text"
+              placeholder="Ex. Building access blocked for UW Investment Group"
               placeholderTextColor={themeColors.darkGray}
               value={alertText}
               onChangeText={setAlertText}
               style={{
                 borderWidth: 1,
-                borderColor: themeColors.gray,
+                borderColor: themeColors.darkGray,
                 borderRadius: 8,
                 padding: 12,
                 width: "100%",

@@ -40,6 +40,21 @@ export default function AlertsModal({ visible, onClose, alerts, themeColors }) {
       )
     : [];
 
+  // Filter alerts to only those from today
+  const today = new Date();
+  const isSameDay = (dateObj) => {
+    if (!dateObj) return false;
+    const d = new Date(dateObj);
+    return (
+      d.getFullYear() === today.getFullYear() &&
+      d.getMonth() === today.getMonth() &&
+      d.getDate() === today.getDate()
+    );
+  };
+  const filteredAlerts = parsedAlerts.filter(
+    (a) => a.createdAt && isSameDay(typeof a.createdAt === "object" && a.createdAt.toDate ? a.createdAt.toDate() : a.createdAt)
+  );
+
   // State for expand/collapse per alert
   const [expanded, setExpanded] = useState({});
 
@@ -90,17 +105,17 @@ export default function AlertsModal({ visible, onClose, alerts, themeColors }) {
               textAlign: "center",
             }}
           >
-            {parsedAlerts.length === 1
+            {filteredAlerts.length === 1
               ? "1 alert"
-              : `${parsedAlerts.length} alerts`}
+              : `${filteredAlerts.length} alerts`}
           </Text>
           <ScrollView
             style={{ maxHeight: 260, width: "100%" }}
             contentContainerStyle={{ paddingBottom: 8 }}
             showsVerticalScrollIndicator={false}
           >
-            {parsedAlerts && parsedAlerts.length > 0 ? (
-              parsedAlerts.map((alert, index) => {
+            {filteredAlerts && filteredAlerts.length > 0 ? (
+              filteredAlerts.map((alert, index) => {
                 const isLong = alert.text.length > 90;
                 const isExpanded = expanded[index];
                 const displayText =
