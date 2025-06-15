@@ -11,14 +11,14 @@ import {
 } from "phosphor-react-native";
 
 const NOISE_OPTIONS = [
-  { label: "Silent", value: 0, icon: <SpeakerSimpleNone size={20} /> },
-  { label: "Buzz", value: 1, icon: <SpeakerSimpleLow size={20} /> },
-  { label: "Loud", value: 2, icon: <SpeakerSimpleHigh size={20} /> },
+  { label: "Silent", value: 0, icon: <SpeakerSimpleNone size={23} /> },
+  { label: "Buzz", value: 1, icon: <SpeakerSimpleLow size={23} /> },
+  { label: "Loud", value: 2, icon: <SpeakerSimpleHigh size={23} /> },
 ];
 const CROWD_OPTIONS = [
-  { label: "Empty", value: 0, icon: <User size={20} /> },
-  { label: "Busy", value: 1, icon: <Users size={20} /> },
-  { label: "Full", value: 2, icon: <UsersThree size={20} /> },
+  { label: "Empty", value: 0, icon: <User size={23} /> },
+  { label: "Busy", value: 1, icon: <Users size={23} /> },
+  { label: "Full", value: 2, icon: <UsersThree size={23} /> },
 ];
 
 export default function LiveUpdateSliders({
@@ -34,7 +34,7 @@ export default function LiveUpdateSliders({
     <View
       style={{
         marginBottom: 14,
-        padding: 14,
+        padding: 15,
         backgroundColor: themeColors.white,
         borderRadius: 12,
         borderWidth: 1,
@@ -48,24 +48,24 @@ export default function LiveUpdateSliders({
     >
       <Text
         style={{
-          fontSize: 16,
+          fontSize: 17,
           fontWeight: "bold",
           color: themeColors.black,
-          marginBottom: 10,
+          marginBottom: 11,
           textAlign: "center",
         }}
       >
         Live Update
       </Text>
-      <View style={{ flexDirection: "row", gap: 16 }}>
+      <View style={{ flexDirection: "row", gap: 18 }}>
         {/* Noise */}
         <View style={{ flex: 1, alignItems: "center" }}>
           <Text
             style={{
               color: themeColors.black,
-              marginBottom: 6,
-              fontWeight: "600",
-              fontSize: 14,
+              marginBottom: 8,
+              fontWeight: "700",
+              fontSize: 15,
               letterSpacing: 0.2,
             }}
           >
@@ -77,7 +77,7 @@ export default function LiveUpdateSliders({
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                marginBottom: 7,
+                marginBottom: 9,
               }}
             >
               <View style={{ marginRight: 10 }}>
@@ -86,6 +86,7 @@ export default function LiveUpdateSliders({
                     liveNoise === opt.value
                       ? themeColors.purple
                       : themeColors.darkGray,
+                  size: 23,
                 })}
               </View>
               <TouchableOpacity
@@ -98,8 +99,8 @@ export default function LiveUpdateSliders({
                       ? themeColors.purple
                       : themeColors.gray,
                   borderRadius: 8,
-                  paddingVertical: 7,
-                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  paddingHorizontal: 14,
                   minWidth: 90,
                   justifyContent: "center",
                 }}
@@ -125,9 +126,9 @@ export default function LiveUpdateSliders({
           <Text
             style={{
               color: themeColors.black,
-              marginBottom: 6,
-              fontWeight: "600",
-              fontSize: 14,
+              marginBottom: 8,
+              fontWeight: "700",
+              fontSize: 15,
               letterSpacing: 0.2,
             }}
           >
@@ -139,7 +140,7 @@ export default function LiveUpdateSliders({
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                marginBottom: 7,
+                marginBottom: 9,
               }}
             >
               <View style={{ marginRight: 10 }}>
@@ -148,6 +149,7 @@ export default function LiveUpdateSliders({
                     liveCrowd === opt.value
                       ? themeColors.purple
                       : themeColors.darkGray,
+                  size: 23,
                 })}
               </View>
               <TouchableOpacity
@@ -160,8 +162,8 @@ export default function LiveUpdateSliders({
                       ? themeColors.purple
                       : themeColors.gray,
                   borderRadius: 8,
-                  paddingVertical: 7,
-                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  paddingHorizontal: 14,
                   minWidth: 90,
                   justifyContent: "center",
                 }}
@@ -189,7 +191,7 @@ export default function LiveUpdateSliders({
           flexDirection: "row",
           justifyContent: "center",
           alignItems: "center",
-          marginTop: 8,
+          marginTop: 10,
           gap: 10,
         }}
       >
@@ -198,7 +200,7 @@ export default function LiveUpdateSliders({
           style={{
             backgroundColor: themeColors.purple,
             borderRadius: 8,
-            paddingVertical: 7,
+            paddingVertical: 8,
             paddingHorizontal: 18,
             alignItems: "center",
             flexDirection: "row",

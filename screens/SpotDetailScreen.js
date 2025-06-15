@@ -21,6 +21,7 @@ import ActionButtons from "../components/SpotDetail/ActionButtons";
 import AddAlertModal from "../components/SpotDetail/AddAlertModal";
 import ReportModal from "../components/SpotDetail/ReportModal";
 import LiveUpdateSliders from "../components/SpotDetail/LiveUpdateSliders";
+import SpotFeedback from "../components/SpotDetail/SpotFeedback";
 
 // Hooks
 import useSpotDetails from "../hooks/useSpotDetails";
@@ -270,79 +271,96 @@ export default function SpotDetailScreen({ route, navigation }) {
               {/* Add Alert Button with Text */}
 
               {showMenu && (
-                <View
-                  style={{
-                    position: "absolute",
-                    top: 36,
-                    right: 0,
-                    backgroundColor: themeColors.white,
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: themeColors.gray,
-                    minWidth: 180,
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.18,
-                    shadowRadius: 8,
-                    elevation: 10,
-                    zIndex: 100,
-                  }}
-                >
-                  {/* Report Incorrect Info */}
+                <>
+                  {/* Overlay to close menu when clicking outside */}
                   <TouchableOpacity
-                    onPress={() => {
-                      setShowMenu(false);
-                      setTimeout(() => setShowReportModal(true), 200);
-                    }}
                     style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      paddingVertical: 14,
-                      paddingHorizontal: 18,
+                      position: "absolute",
+                      top: 0,
+                      left: -1000,
+                      right: -1000,
+                      bottom: -1000,
+                      width: 3000,
+                      height: 3000,
+                      zIndex: 99,
                     }}
-                  >
-                    <Text
-                      style={{
-                        color: themeColors.purple,
-                        fontWeight: "bold",
-                        fontSize: 15,
-                      }}
-                    >
-                      Report Incorrect Information
-                    </Text>
-                  </TouchableOpacity>
-                  {/* Divider */}
+                    activeOpacity={1}
+                    onPress={() => setShowMenu(false)}
+                  />
                   <View
                     style={{
-                      height: 1,
-                      backgroundColor: themeColors.gray,
-                      marginHorizontal: 10,
-                    }}
-                  />
-                  {/* Delete Nook (only for owner) */}
-                  <TouchableOpacity
-                    onPress={() => {
-                      setShowMenu(false);
-                      setTimeout(handleDeleteNook, 200);
-                    }}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      paddingVertical: 14,
-                      paddingHorizontal: 18,
+                      position: "absolute",
+                      top: 36,
+                      right: 0,
+                      backgroundColor: themeColors.white,
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: themeColors.gray,
+                      minWidth: 180,
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.18,
+                      shadowRadius: 8,
+                      elevation: 10,
+                      zIndex: 100,
                     }}
                   >
-                    <Text
+                    {/* Report Incorrect Info */}
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowMenu(false);
+                        setTimeout(() => setShowReportModal(true), 200);
+                      }}
                       style={{
-                        color: themeColors.red,
-                        fontWeight: "bold",
-                        fontSize: 15,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingVertical: 14,
+                        paddingHorizontal: 18,
                       }}
                     >
-                      Delete Nook
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                      <Text
+                        style={{
+                          color: themeColors.purple,
+                          fontWeight: "bold",
+                          fontSize: 15,
+                        }}
+                      >
+                        Report Incorrect Information
+                      </Text>
+                    </TouchableOpacity>
+                    {/* Divider */}
+                    <View
+                      style={{
+                        height: 1,
+                        backgroundColor: themeColors.gray,
+                        marginHorizontal: 10,
+                      }}
+                    />
+                    {/* Delete Nook (only for owner) */}
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowMenu(false);
+                        setTimeout(handleDeleteNook, 200);
+                      }}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingVertical: 14,
+                        paddingHorizontal: 18,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: themeColors.red,
+                          fontWeight: "bold",
+                          fontSize: 15,
+                        }}
+                      >
+                        Delete Nook
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
               )}
             </View>
           </View>
@@ -437,8 +455,10 @@ export default function SpotDetailScreen({ route, navigation }) {
               </Text>
             </View>
           </View>
+          {/* Spot Feedback (Thumbs up/down) */}
+
           {/* Live Update Sliders (compact, extracted component) */}
-          <View style={{ marginTop: 20 }}>
+          <View style={{ marginTop: 14 }}>
             <LiveUpdateSliders
               liveNoise={liveNoise}
               setLiveNoise={setLiveNoise}
@@ -449,7 +469,7 @@ export default function SpotDetailScreen({ route, navigation }) {
               themeColors={themeColors}
             />
           </View>
-
+          <SpotFeedback spotId={spotId} themeColors={themeColors} />
           {/* Modals - moved inside ScrollView */}
           <AddAlertModal
             visible={showAddAlertModal}
