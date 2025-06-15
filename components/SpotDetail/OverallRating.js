@@ -22,7 +22,6 @@ export default function OverallRating({
         shadowOpacity: 0.04,
         shadowRadius: 4,
         paddingVertical: 10,
-        paddingHorizontal: 12,
       }}
     >
       <View
