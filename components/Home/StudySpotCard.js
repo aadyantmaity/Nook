@@ -31,62 +31,92 @@ export default function StudySpotCard({
       activeOpacity={0.9}
     >
       {/* Warning Icon */}
-      {spot.locationAlerts && spot.locationAlerts.length > 0 && (
-        <TouchableOpacity
-          style={{
-            position: "absolute",
-            top: 12,
-            left: 12,
-            zIndex: 20,
-            backgroundColor: themeColors.white,
-            borderRadius: 20,
-            padding: 4,
-            borderWidth: 0.5,
-            borderColor: themeColors.red,
-            shadowColor: themeColors.red,
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.18,
-            shadowRadius: 4,
-            elevation: 6,
-            width: 38,
-            height: 38,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          onPress={onWarningPress}
-          activeOpacity={0.8}
-        >
-          <Warning size={24} color={themeColors.red} weight="fill" />
-          <View
+      {(() => {
+        // --- Filter today's alerts only ---
+        const today = new Date();
+        const isSameDay = (dateObj) => {
+          if (!dateObj) return false;
+          const d = new Date(dateObj);
+          return (
+            d.getFullYear() === today.getFullYear() &&
+            d.getMonth() === today.getMonth() &&
+            d.getDate() === today.getDate()
+          );
+        };
+        const parsedAlerts = Array.isArray(spot.locationAlerts)
+          ? spot.locationAlerts.map((a) =>
+              typeof a === "string"
+                ? { text: a, createdAt: null }
+                : { text: a.text, createdAt: a.createdAt ?? null }
+            )
+          : [];
+        const todaysAlerts = parsedAlerts.filter(
+          (a) =>
+            a.createdAt &&
+            isSameDay(
+              typeof a.createdAt === "object" && a.createdAt.toDate
+                ? a.createdAt.toDate()
+                : a.createdAt
+            )
+        );
+        if (todaysAlerts.length === 0) return null;
+        return (
+          <TouchableOpacity
             style={{
               position: "absolute",
-              top: -6,
-              right: -6,
-              backgroundColor: themeColors.orange,
-              borderRadius: 10,
-              paddingHorizontal: 5,
-              paddingVertical: 1,
-              minWidth: 18,
+              top: 12,
+              left: 12,
+              zIndex: 20,
+              backgroundColor: themeColors.white,
+              borderRadius: 20,
+              padding: 4,
+              borderWidth: 0.5,
+              borderColor: themeColors.red,
+              shadowColor: themeColors.red,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.18,
+              shadowRadius: 4,
+              elevation: 6,
+              width: 38,
+              height: 38,
               alignItems: "center",
               justifyContent: "center",
-              borderWidth: 1,
-              borderColor: themeColors.white,
-              zIndex: 21,
             }}
+            onPress={onWarningPress}
+            activeOpacity={0.8}
           >
-            <Text
+            <Warning size={24} color={themeColors.red} weight="fill" />
+            <View
               style={{
-                color: themeColors.white,
-                fontSize: 11,
-                fontWeight: "bold",
-                textAlign: "center",
+                position: "absolute",
+                top: -6,
+                right: -6,
+                backgroundColor: themeColors.orange,
+                borderRadius: 10,
+                paddingHorizontal: 5,
+                paddingVertical: 1,
+                minWidth: 18,
+                alignItems: "center",
+                justifyContent: "center",
+                borderWidth: 1,
+                borderColor: themeColors.white,
+                zIndex: 21,
               }}
             >
-              {spot.locationAlerts.length}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      )}
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontSize: 11,
+                  fontWeight: "bold",
+                  textAlign: "center",
+                }}
+              >
+                {todaysAlerts.length}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        );
+      })()}
 
       {/* Image */}
       <View
