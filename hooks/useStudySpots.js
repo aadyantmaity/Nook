@@ -31,8 +31,16 @@ export default function useStudySpots() {
           // Fetch locationAlerts for the spot
           const locationAlertsRef = doc(db, "studySpots", docSnap.id);
           const locationAlertsDoc = await getDoc(locationAlertsRef);
-          const locationAlerts = locationAlertsDoc.exists()
+          let locationAlerts = locationAlertsDoc.exists()
             ? locationAlertsDoc.data().locationAlerts || []
+            : [];
+          // Normalize alerts: ensure each is { text, createdAt }
+          locationAlerts = Array.isArray(locationAlerts)
+            ? locationAlerts.map((a) =>
+                typeof a === "string"
+                  ? { text: a, createdAt: null }
+                  : { text: a.text, createdAt: a.createdAt ?? null }
+              )
             : [];
 
           // Fetch ratings for the spot
