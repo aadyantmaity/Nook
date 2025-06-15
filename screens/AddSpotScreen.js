@@ -8,7 +8,7 @@ import {
   SafeAreaView,
   Image,
 } from "react-native";
-import { ArrowLeft, Check } from "phosphor-react-native";
+import { ArrowLeft, Check, MapPin } from "phosphor-react-native";
 import { ThemeContext } from "../App";
 import { colors } from "../constants/colors";
 import {
@@ -394,15 +394,7 @@ export default function AddSpotScreen({ navigation }) {
                   }
                   accessible={true}
                 >
-                  <Text
-                    style={{
-                      color: themeColors.white,
-                      fontWeight: "bold",
-                      fontSize: 16,
-                    }}
-                  >
-                    📍
-                  </Text>
+                  <MapPin size={20} color={themeColors.white} weight="bold" />
                 </TouchableOpacity>
               </View>
               <TextInput
