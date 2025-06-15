@@ -2,6 +2,24 @@ import React from "react";
 import { View, Text } from "react-native";
 import { SpeakerHigh, UsersThree } from "phosphor-react-native";
 
+// Helper functions to map average to label
+function getNoiseLabel(avg) {
+  if (avg === "N/A" || avg === "No rating yet" || avg == null) return "N/A";
+  if (typeof avg === "string") avg = parseFloat(avg);
+  if (isNaN(avg)) return "N/A";
+  if (avg < 0.5) return "Silent";
+  if (avg < 1.5) return "Buzz";
+  return "Loud";
+}
+function getCrowdLabel(avg) {
+  if (avg === "N/A" || avg === "No rating yet" || avg == null) return "N/A";
+  if (typeof avg === "string") avg = parseFloat(avg);
+  if (isNaN(avg)) return "N/A";
+  if (avg < 0.5) return "Empty";
+  if (avg < 1.5) return "Busy";
+  return "Full";
+}
+
 export default function RatingsDisplay({
   ratings,
   themeColors,
@@ -13,7 +31,6 @@ export default function RatingsDisplay({
         style={{
           flexDirection: "row",
           justifyContent: "space-between",
-          marginBottom: 16,
           marginTop: 4,
         }}
       >
@@ -38,8 +55,13 @@ export default function RatingsDisplay({
               marginTop: 8,
             }}
           >
-            Noise: {ratings?.noise || "N/A"}
+            Noise: {getNoiseLabel(ratings?.noise)}
           </Text>
+          {typeof ratings?.noise === "number" && (
+            <Text style={{ color: themeColors.darkGray, fontSize: 12 }}>
+              ({ratings.noise.toFixed(1)} avg)
+            </Text>
+          )}
         </View>
         <View
           style={{
@@ -61,21 +83,15 @@ export default function RatingsDisplay({
               marginTop: 8,
             }}
           >
-            Crowd: {ratings?.crowd || "N/A"}
+            Crowd: {getCrowdLabel(ratings?.crowd)}
           </Text>
+          {typeof ratings?.crowd === "number" && (
+            <Text style={{ color: themeColors.darkGray, fontSize: 12 }}>
+              ({ratings.crowd.toFixed(1)} avg)
+            </Text>
+          )}
         </View>
       </View>
-      <Text
-        style={{
-          fontSize: 12,
-          color: themeColors.darkGray,
-          marginBottom: 24,
-          textAlign: "right",
-          alignSelf: "flex-end",
-        }}
-      >
-        {getLastUpdatedLabel(ratings)}
-      </Text>
     </>
   );
 }

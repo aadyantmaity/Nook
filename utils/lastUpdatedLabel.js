@@ -2,10 +2,15 @@
 export function getLastUpdatedLabel(ratings) {
   if (!ratings || !ratings.lastUpdated) return "";
   const now = Date.now();
-  const last =
-    typeof ratings.lastUpdated === "number"
-      ? ratings.lastUpdated
-      : ratings.lastUpdated?.toMillis?.() ?? null;
+  let last = null;
+  if (typeof ratings.lastUpdated === "number") {
+    last = ratings.lastUpdated;
+  } else if (
+    ratings.lastUpdated &&
+    typeof ratings.lastUpdated.toMillis === "function"
+  ) {
+    last = ratings.lastUpdated.toMillis();
+  }
   if (!last) return "";
 
   const diffMs = now - last;

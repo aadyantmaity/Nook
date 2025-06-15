@@ -68,6 +68,7 @@ export default function useSpotDetails(spotId) {
             let recentLastTimestamp = null;
             snapshot.forEach((doc) => {
               const data = doc.data();
+              if (!data.timestamp) return;
               const ts = data.timestamp.toMillis();
               if (ts >= thirtyMinutesAgo) {
                 recentRatings.push(data);
@@ -105,8 +106,8 @@ export default function useSpotDetails(spotId) {
                 let windowLastTimestamp = null;
                 snapshot.forEach((doc) => {
                   const data = doc.data();
-                  const ts = data.timestamp.toMillis();
-                  if (ts >= windowStart) {
+                  const ts = data.timestamp ? data.timestamp.toMillis() : null;
+                  if (ts !== null && ts >= windowStart) {
                     windowRatings.push(data);
                     if (!windowLastTimestamp || ts > windowLastTimestamp)
                       windowLastTimestamp = ts;
@@ -124,8 +125,8 @@ export default function useSpotDetails(spotId) {
               if (!found) {
                 snapshot.forEach((doc) => {
                   const data = doc.data();
-                  const ts = data.timestamp.toMillis();
-                  if (ts >= todayStartMillis) {
+                  const ts = data.timestamp ? data.timestamp.toMillis() : null;
+                  if (ts !== null && ts >= todayStartMillis) {
                     todayRatings.push(data);
                   }
                 });
@@ -153,7 +154,9 @@ export default function useSpotDetails(spotId) {
                 noiseRating = (noiseSumDay / todayRatings.length).toFixed(1);
                 crowdRating = (crowdSumDay / todayRatings.length).toFixed(1);
                 lastUpdated = Math.max(
-                  ...todayRatings.map((r) => r.timestamp.toMillis())
+                  ...todayRatings
+                    .map((r) => (r.timestamp ? r.timestamp.toMillis() : null))
+                    .filter((v) => v !== null)
                 );
                 lastUpdatedType = "today";
                 lastWindowHours = null;

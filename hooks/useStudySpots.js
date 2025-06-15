@@ -87,6 +87,7 @@ export default function useStudySpots() {
           let recentLastTimestamp = null;
           ratingsSnapshot.forEach((ratingDoc) => {
             const ratingData = ratingDoc.data();
+            if (!ratingData.timestamp) return;
             const ts = ratingData.timestamp.toMillis();
             if (ts >= thirtyMinutesAgo) {
               recentRatings.push(ratingData);
@@ -126,8 +127,10 @@ export default function useStudySpots() {
               let windowLastTimestamp = null;
               ratingsSnapshot.forEach((ratingDoc) => {
                 const ratingData = ratingDoc.data();
-                const ts = ratingData.timestamp.toMillis();
-                if (ts >= windowStart) {
+                const ts = ratingData.timestamp
+                  ? ratingData.timestamp.toMillis()
+                  : null;
+                if (ts !== null && ts >= windowStart) {
                   windowRatings.push(ratingData);
                   if (!windowLastTimestamp || ts > windowLastTimestamp)
                     windowLastTimestamp = ts;
@@ -147,8 +150,10 @@ export default function useStudySpots() {
             if (!found) {
               ratingsSnapshot.forEach((ratingDoc) => {
                 const ratingData = ratingDoc.data();
-                const ts = ratingData.timestamp.toMillis();
-                if (ts >= todayStartMillis) {
+                const ts = ratingData.timestamp
+                  ? ratingData.timestamp.toMillis()
+                  : null;
+                if (ts !== null && ts >= todayStartMillis) {
                   todayRatings.push(ratingData);
                 }
               });
@@ -176,7 +181,9 @@ export default function useStudySpots() {
               averageNoise = noiseSumDay / todayRatings.length;
               averageCrowd = crowdSumDay / todayRatings.length;
               lastUpdated = Math.max(
-                ...todayRatings.map((r) => r.timestamp.toMillis())
+                ...todayRatings
+                  .map((r) => (r.timestamp ? r.timestamp.toMillis() : null))
+                  .filter((v) => v !== null)
               );
               lastUpdatedType = "today";
               lastWindowHours = null;
