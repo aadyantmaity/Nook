@@ -1,6 +1,15 @@
-import React, { useState, useContext } from "react";
-import { View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
-import { House, DotsThreeVertical, Warning } from "phosphor-react-native";
+import React, { useContext, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  TextInput,
+  Modal,
+  FlatList,
+} from "react-native";
+import { House, DotsThreeVertical, Warning, X } from "phosphor-react-native";
 import { colors } from "../constants/colors";
 import { ThemeContext } from "../App";
 import {
@@ -9,6 +18,9 @@ import {
   getDoc,
   updateDoc,
   arrayUnion,
+  addDoc,
+  collection,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 
@@ -22,12 +34,13 @@ import AddAlertModal from "../components/SpotDetail/AddAlertModal";
 import ReportModal from "../components/SpotDetail/ReportModal";
 import LiveUpdateSliders from "../components/SpotDetail/LiveUpdateSliders";
 import SpotFeedback from "../components/SpotDetail/SpotFeedback";
+import PrivateNookNotesModal from "../components/SpotDetail/PrivateNookNotesModal";
+import PrivateNookStats from "../components/SpotDetail/PrivateNookStats";
 
 // Hooks
 import useSpotDetails from "../hooks/useSpotDetails";
 import useSpotImageCache from "../hooks/useSpotImageCache";
 import useOverallRatings from "../hooks/useOverallRatings";
-import useFavoriteStatus from "../hooks/useFavoriteStatus";
 
 export default function SpotDetailScreen({ route, navigation }) {
   const themeCtx = useContext(ThemeContext);
@@ -37,6 +50,7 @@ export default function SpotDetailScreen({ route, navigation }) {
   const [showAddAlertModal, setShowAddAlertModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showPrivateNotesModal, setShowPrivateNotesModal] = useState(false);
 
   // Hooks
   const { spot, addedByName, isLoading, setSpot } = useSpotDetails(spotId);
@@ -50,7 +64,6 @@ export default function SpotDetailScreen({ route, navigation }) {
     isSubmittingOverall,
     submitOverallRating,
   } = useOverallRatings(spotId);
-  const isFavorite = useFavoriteStatus(spotId);
 
   // Add state for live update sliders
   const [liveNoise, setLiveNoise] = useState(
@@ -65,15 +78,30 @@ export default function SpotDetailScreen({ route, navigation }) {
   );
   const [isSubmittingLive, setIsSubmittingLive] = useState(false);
 
+  // --- Private Nook Notes State ---
+  const [noteInput, setNoteInput] = useState("");
+  const [isSavingNote, setIsSavingNote] = useState(false);
+  const [showNotesArchive, setShowNotesArchive] = useState(false);
+  const [notes, setNotes] = useState([]);
+
+  // Fetch notes for private nook
+  React.useEffect(() => {
+    if (spot?.privateNook && spotId) {
+      const fetchNotes = async () => {
+        const spotRef = doc(db, "studySpots", spotId);
+        const spotSnap = await getDoc(spotRef);
+        if (spotSnap.exists()) {
+          setNotes(spotSnap.data().privateNotes || []);
+        }
+      };
+      fetchNotes();
+    }
+  }, [spot?.privateNook, spotId, showNotesArchive]);
+
   // Submit handler for live update
   const handleLiveUpdate = async () => {
     setIsSubmittingLive(true);
     try {
-      // You may want to call a backend function or Firestore update here
-      // For example, add a new rating document:
-      const { addDoc, collection, serverTimestamp } = await import(
-        "firebase/firestore"
-      );
       await addDoc(collection(db, "ratings"), {
         spotId,
         noise: liveNoise,
@@ -200,6 +228,35 @@ export default function SpotDetailScreen({ route, navigation }) {
   }
 
   const tags = Array.isArray(spot.tags) ? spot.tags : [];
+  const isPrivateNook = !!spot.privateNook;
+
+  // Save note for private nook
+  const handleSaveNote = async () => {
+    if (!noteInput.trim()) return;
+    setIsSavingNote(true);
+    try {
+      const spotRef = doc(db, "studySpots", spotId);
+      const noteObj = {
+        text: noteInput.trim(),
+        createdAt: Date.now(),
+      };
+      const prevNotes = Array.isArray(spot.privateNotes)
+        ? spot.privateNotes
+        : [];
+      await updateDoc(spotRef, {
+        privateNotes: [...prevNotes, noteObj],
+      });
+      setNotes([...prevNotes, noteObj]);
+      setSpot((prev) => ({
+        ...prev,
+        privateNotes: [...prevNotes, noteObj],
+      }));
+      setNoteInput("");
+    } catch (e) {
+      Alert.alert("Error", "Failed to save note.");
+    }
+    setIsSavingNote(false);
+  };
 
   return (
     <View
@@ -379,6 +436,8 @@ export default function SpotDetailScreen({ route, navigation }) {
               fontWeight: "bold",
               color: themeColors.black,
               marginBottom: 6,
+              flexDirection: "row",
+              alignItems: "center",
             }}
           >
             {spot.buildingName}
@@ -428,117 +487,326 @@ export default function SpotDetailScreen({ route, navigation }) {
             </Text>
           )}
 
-          <OverallRating
-            userOverallRating={userOverallRating}
-            averageOverallRating={averageOverallRating}
-            overallRatingsCount={overallRatingsCount}
-            pendingOverallRating={pendingOverallRating}
-            setPendingOverallRating={setPendingOverallRating}
-            isSubmittingOverall={isSubmittingOverall}
-            onSubmit={submitOverallRating}
-            themeColors={themeColors}
-          />
+          {/* Hide ratings/alerts UI for private nooks */}
+          {!isPrivateNook && (
+            <>
+              <OverallRating
+                userOverallRating={userOverallRating}
+                averageOverallRating={averageOverallRating}
+                overallRatingsCount={overallRatingsCount}
+                pendingOverallRating={pendingOverallRating}
+                setPendingOverallRating={setPendingOverallRating}
+                isSubmittingOverall={isSubmittingOverall}
+                onSubmit={submitOverallRating}
+                themeColors={themeColors}
+              />
+            </>
+          )}
 
           {/* Tags */}
           <TagList tags={tags} themeColors={themeColors} />
 
           {/* Ratings */}
-          <View style={{ marginTop: 16 }}>
-            <RatingsDisplay
-              ratings={spot.ratings}
-              themeColors={themeColors}
-              getLastUpdatedLabel={getLastUpdatedLabel}
-            />
-            <View style={{ marginTop: 8, alignItems: "flex-end" }}>
-              <Text style={{ color: themeColors.darkGray, fontSize: 13 }}>
-                {getLastUpdatedLabel(spot.ratings)}
-              </Text>
+          {!isPrivateNook && (
+            <View style={{ marginTop: 16 }}>
+              <RatingsDisplay
+                ratings={spot.ratings}
+                themeColors={themeColors}
+                getLastUpdatedLabel={getLastUpdatedLabel}
+              />
+              <View style={{ marginTop: 8, alignItems: "flex-end" }}>
+                <Text style={{ color: themeColors.darkGray, fontSize: 13 }}>
+                  {getLastUpdatedLabel(spot.ratings)}
+                </Text>
+              </View>
             </View>
-          </View>
-          {/* Spot Feedback (Thumbs up/down) */}
+          )}
 
           {/* Live Update Sliders (compact, extracted component) */}
-          <View style={{ marginTop: 14 }}>
-            <LiveUpdateSliders
-              liveNoise={liveNoise}
-              setLiveNoise={setLiveNoise}
-              liveCrowd={liveCrowd}
-              setLiveCrowd={setLiveCrowd}
-              isSubmittingLive={isSubmittingLive}
-              onSubmit={handleLiveUpdate}
-              themeColors={themeColors}
-            />
-          </View>
-          <SpotFeedback spotId={spotId} themeColors={themeColors} />
-          {/* Modals - moved inside ScrollView */}
-          <AddAlertModal
-            visible={showAddAlertModal}
-            onClose={() => setShowAddAlertModal(false)}
-            onAddAlert={handleAddAlert}
-            themeColors={themeColors}
-          />
-          <ReportModal
-            visible={showReportModal}
-            onClose={() => setShowReportModal(false)}
-            spotId={spotId}
-            spotName={spot?.buildingName || ""}
-            themeColors={themeColors}
-          />
-          {/* Remove ActionButtons from here */}
-          {/* <ActionButtons
-            onAddAlert={() => setShowAddAlertModal(true)}
-            themeColors={themeColors}
-          /> */}
+          {!isPrivateNook && (
+            <View style={{ marginTop: 14 }}>
+              <LiveUpdateSliders
+                liveNoise={liveNoise}
+                setLiveNoise={setLiveNoise}
+                liveCrowd={liveCrowd}
+                setLiveCrowd={setLiveCrowd}
+                isSubmittingLive={isSubmittingLive}
+                onSubmit={handleLiveUpdate}
+                themeColors={themeColors}
+              />
+            </View>
+          )}
+
+          {/* Spot Feedback (Thumbs up/down) */}
+          {!isPrivateNook && (
+            <SpotFeedback spotId={spotId} themeColors={themeColors} />
+          )}
+
+          {/* Modals */}
+          {!isPrivateNook && (
+            <>
+              <AddAlertModal
+                visible={showAddAlertModal}
+                onClose={() => setShowAddAlertModal(false)}
+                onAddAlert={handleAddAlert}
+                themeColors={themeColors}
+              />
+              <ReportModal
+                visible={showReportModal}
+                onClose={() => setShowReportModal(false)}
+                spotId={spotId}
+                spotName={spot?.buildingName || ""}
+                themeColors={themeColors}
+              />
+            </>
+          )}
+          {/* Private Nook: Personal Notes and Stats */}
+          {spot?.privateNook && (
+            <>
+              <PrivateNookStats spotId={spotId} themeColors={themeColors} />
+              {/* --- Inline Notes Input --- */}
+              <View
+                style={{
+                  marginTop: 18,
+                  marginBottom: 8,
+                  backgroundColor: themeColors.gray + "22",
+                  borderRadius: 10,
+                  padding: 14,
+                }}
+              >
+                <Text
+                  style={{
+                    fontWeight: "bold",
+                    fontSize: 16,
+                    color: themeColors.purple,
+                    marginBottom: 6,
+                  }}
+                >
+                  Personal Notes
+                </Text>
+                <TextInput
+                  placeholder="Write a note about this nook..."
+                  placeholderTextColor={themeColors.darkGray}
+                  value={noteInput}
+                  onChangeText={setNoteInput}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: themeColors.purple,
+                    borderRadius: 8,
+                    padding: 10,
+                    backgroundColor: themeColors.white,
+                    color: themeColors.black,
+                    marginBottom: 8,
+                  }}
+                  multiline
+                  editable={!isSavingNote}
+                />
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <TouchableOpacity
+                    onPress={handleSaveNote}
+                    disabled={isSavingNote || !noteInput.trim()}
+                    style={{
+                      backgroundColor: themeColors.purple,
+                      borderRadius: 8,
+                      paddingVertical: 8,
+                      paddingHorizontal: 18,
+                      alignItems: "center",
+                      opacity: isSavingNote || !noteInput.trim() ? 0.6 : 1,
+                    }}
+                  >
+                    <Text
+                      style={{ color: themeColors.white, fontWeight: "bold" }}
+                    >
+                      {isSavingNote ? "Saving..." : "Save Note"}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setShowNotesArchive(true)}
+                    style={{
+                      backgroundColor: themeColors.gray,
+                      borderRadius: 8,
+                      paddingVertical: 8,
+                      paddingHorizontal: 18,
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{ color: themeColors.purple, fontWeight: "bold" }}
+                    >
+                      View All Notes
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              {/* --- Notes Archive Modal --- */}
+              <Modal
+                visible={showNotesArchive}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setShowNotesArchive(false)}
+              >
+                <TouchableOpacity
+                  activeOpacity={1}
+                  style={{
+                    flex: 1,
+                    backgroundColor: "rgba(0,0,0,0.3)",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                  onPressOut={() => setShowNotesArchive(false)}
+                >
+                  <View
+                    style={{
+                      backgroundColor: themeColors.white,
+                      borderRadius: 16,
+                      padding: 24,
+                      width: "85%",
+                      maxHeight: "70%",
+                      alignItems: "center",
+                    }}
+                    onStartShouldSetResponder={() => true}
+                  >
+                    <View style={{ width: "100%", alignItems: "flex-end" }}>
+                      <TouchableOpacity
+                        onPress={() => setShowNotesArchive(false)}
+                        style={{ padding: 4 }}
+                      >
+                        <X size={22} color={themeColors.purple} weight="bold" />
+                      </TouchableOpacity>
+                    </View>
+                    <Text
+                      style={{
+                        fontSize: 18,
+                        fontWeight: "bold",
+                        color: themeColors.purple,
+                        marginBottom: 10,
+                        textAlign: "center",
+                      }}
+                    >
+                      Notes Archive
+                    </Text>
+                    {notes && notes.length > 0 ? (
+                      <FlatList
+                        data={[...notes].sort(
+                          (a, b) => b.createdAt - a.createdAt
+                        )}
+                        keyExtractor={(_, idx) => idx.toString()}
+                        style={{ width: "100%" }}
+                        contentContainerStyle={{ paddingBottom: 8 }}
+                        renderItem={({ item }) => (
+                          <View
+                            style={{
+                              marginBottom: 14,
+                              backgroundColor: themeColors.gray + "18",
+                              borderRadius: 10,
+                              padding: 12,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: themeColors.black,
+                                fontSize: 15,
+                                marginBottom: 4,
+                              }}
+                            >
+                              {item.text}
+                            </Text>
+                            <Text
+                              style={{
+                                color: themeColors.darkGray,
+                                fontSize: 12,
+                                textAlign: "right",
+                              }}
+                            >
+                              {item.createdAt
+                                ? new Date(item.createdAt).toLocaleString([], {
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : ""}
+                            </Text>
+                          </View>
+                        )}
+                      />
+                    ) : (
+                      <Text
+                        style={{ color: themeColors.darkGray, fontSize: 15 }}
+                      >
+                        No notes yet.
+                      </Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              </Modal>
+              {/* --- End Notes Archive Modal --- */}
+
+              <PrivateNookNotesModal
+                visible={showPrivateNotesModal}
+                onClose={() => setShowPrivateNotesModal(false)}
+                spotId={spotId}
+                themeColors={themeColors}
+              />
+            </>
+          )}
         </ScrollView>
       </View>
       {/* Floating Action Button for Add Alert */}
-      <View
-        style={{
-          position: "absolute",
-          bottom: 25,
-          right: 16,
-          zIndex: 20,
-        }}
-      >
+      {!isPrivateNook && (
         <View
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            paddingVertical: 12,
-            paddingHorizontal: 16,
-            backgroundColor: themeColors.orange, // keep color as orange
-            borderRadius: 50,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.2,
-            shadowRadius: 4,
-            elevation: 3,
+            position: "absolute",
+            bottom: 25,
+            right: 16,
+            zIndex: 20,
           }}
         >
-          <TouchableOpacity
-            onPress={() => setShowAddAlertModal(true)}
-            accessibilityLabel="Add Alert"
-            accessible={true}
-            activeOpacity={0.85}
+          <View
             style={{
               flexDirection: "row",
               alignItems: "center",
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              backgroundColor: themeColors.orange, // keep color as orange
+              borderRadius: 50,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.2,
+              shadowRadius: 4,
+              elevation: 3,
             }}
           >
-            <Warning size={19} color={themeColors.white} weight="fill" />
-            <Text
+            <TouchableOpacity
+              onPress={() => setShowAddAlertModal(true)}
+              accessibilityLabel="Add Alert"
+              accessible={true}
+              activeOpacity={0.85}
               style={{
-                color: themeColors.white,
-                fontWeight: "bold",
-                fontSize: 14,
-                marginLeft: 8,
+                flexDirection: "row",
+                alignItems: "center",
               }}
             >
-              Add Alert
-            </Text>
-          </TouchableOpacity>
+              <Warning size={19} color={themeColors.white} weight="fill" />
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontSize: 14,
+                  marginLeft: 8,
+                }}
+              >
+                Add Alert
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      )}
     </View>
   );
 }

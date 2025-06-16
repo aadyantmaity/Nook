@@ -1,6 +1,6 @@
 import React from "react";
 import { View, FlatList, Text, TouchableOpacity, Image } from "react-native";
-import { Heart, Star, Warning } from "phosphor-react-native";
+import { Heart, Star, Warning, Lock } from "phosphor-react-native"; // add Lock icon
 import Filters from "./Filters";
 
 export default function StudySpotsList({
@@ -84,6 +84,8 @@ export default function StudySpotsList({
             )
         );
 
+        const isPrivateNook = !!item.privateNook;
+
         return (
           <TouchableOpacity
             onPress={() =>
@@ -104,9 +106,9 @@ export default function StudySpotsList({
               borderWidth: 0.5,
             }}
           >
-            {/* Warning Icon */}
-            {todaysAlerts.length > 0 && (
-              <TouchableOpacity
+            {/* Badge Icon: Lock for private, Warning for alerts */}
+            {isPrivateNook ? (
+              <View
                 style={{
                   position: "absolute",
                   top: 12,
@@ -116,8 +118,8 @@ export default function StudySpotsList({
                   borderRadius: 20,
                   padding: 4,
                   borderWidth: 0.5,
-                  borderColor: themeColors.red,
-                  shadowColor: themeColors.red,
+                  borderColor: themeColors.purple,
+                  shadowColor: themeColors.purple,
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: 0.18,
                   shadowRadius: 4,
@@ -127,42 +129,70 @@ export default function StudySpotsList({
                   alignItems: "center",
                   justifyContent: "center",
                 }}
-                onPress={() => {
-                  setCurrentAlerts(todaysAlerts);
-                  setShowAlertsModal(true);
-                }}
-                activeOpacity={0.8}
+                pointerEvents="none"
               >
-                <Warning size={24} color={themeColors.red} weight="fill" />
-                <View
+                <Lock size={24} color={themeColors.purple} weight="fill" />
+              </View>
+            ) : (
+              todaysAlerts.length > 0 && (
+                <TouchableOpacity
                   style={{
                     position: "absolute",
-                    top: -6,
-                    right: -6,
-                    backgroundColor: themeColors.orange,
-                    borderRadius: 10,
-                    paddingHorizontal: 5,
-                    paddingVertical: 1,
-                    minWidth: 18,
+                    top: 12,
+                    left: 12,
+                    zIndex: 20,
+                    backgroundColor: themeColors.white,
+                    borderRadius: 20,
+                    padding: 4,
+                    borderWidth: 0.5,
+                    borderColor: themeColors.red,
+                    shadowColor: themeColors.red,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.18,
+                    shadowRadius: 4,
+                    elevation: 6,
+                    width: 38,
+                    height: 38,
                     alignItems: "center",
                     justifyContent: "center",
-                    borderWidth: 1,
-                    borderColor: themeColors.white,
-                    zIndex: 21,
                   }}
+                  onPress={() => {
+                    setCurrentAlerts(todaysAlerts);
+                    setShowAlertsModal(true);
+                  }}
+                  activeOpacity={0.8}
                 >
-                  <Text
+                  <Warning size={24} color={themeColors.red} weight="fill" />
+                  <View
                     style={{
-                      color: themeColors.white,
-                      fontSize: 11,
-                      fontWeight: "bold",
-                      textAlign: "center",
+                      position: "absolute",
+                      top: -6,
+                      right: -6,
+                      backgroundColor: themeColors.orange,
+                      borderRadius: 10,
+                      paddingHorizontal: 5,
+                      paddingVertical: 1,
+                      minWidth: 18,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderWidth: 1,
+                      borderColor: themeColors.white,
+                      zIndex: 21,
                     }}
                   >
-                    {todaysAlerts.length}
-                  </Text>
-                </View>
-              </TouchableOpacity>
+                    <Text
+                      style={{
+                        color: themeColors.white,
+                        fontSize: 11,
+                        fontWeight: "bold",
+                        textAlign: "center",
+                      }}
+                    >
+                      {todaysAlerts.length}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )
             )}
             {/* Image */}
             <View
@@ -223,6 +253,8 @@ export default function StudySpotsList({
                 fontWeight: "bold",
                 color: themeColors.black,
                 marginBottom: 6,
+                flexDirection: "row",
+                alignItems: "center",
               }}
             >
               {item.name}
@@ -322,93 +354,95 @@ export default function StudySpotsList({
               )}
             </View>
             {/* Ratings */}
-            <>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: 8,
-                }}
-              >
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star
-                    key={star}
-                    size={18}
-                    color={
-                      star <= (item.averageOverallRating || 0)
-                        ? themeColors.purple
-                        : themeColors.darkGray
-                    }
-                    weight={
-                      star <= (item.averageOverallRating || 0)
-                        ? "fill"
-                        : "regular"
-                    }
-                    style={{ marginRight: 2 }}
-                  />
-                ))}
-                <Text
+            {!isPrivateNook && (
+              <>
+                <View
                   style={{
-                    marginLeft: 8,
-                    color: themeColors.darkGray,
-                    fontSize: 13,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: 8,
                   }}
                 >
-                  {item.overallRatingsCount > 0
-                    ? `${item.averageOverallRating.toFixed(1)} (${
-                        item.overallRatingsCount
-                      })`
-                    : "No ratings"}
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      size={18}
+                      color={
+                        star <= (item.averageOverallRating || 0)
+                          ? themeColors.purple
+                          : themeColors.darkGray
+                      }
+                      weight={
+                        star <= (item.averageOverallRating || 0)
+                          ? "fill"
+                          : "regular"
+                      }
+                      style={{ marginRight: 2 }}
+                    />
+                  ))}
+                  <Text
+                    style={{
+                      marginLeft: 8,
+                      color: themeColors.darkGray,
+                      fontSize: 13,
+                    }}
+                  >
+                    {item.overallRatingsCount > 0
+                      ? `${item.averageOverallRating.toFixed(1)} (${
+                          item.overallRatingsCount
+                        })`
+                      : "No ratings"}
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <View style={{ alignItems: "center" }}>
+                    <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
+                      Noise Level
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: "bold",
+                        color: themeColors.purple,
+                      }}
+                    >
+                      {getNoiseLabel(item.ratings?.noise)}
+                    </Text>
+                  </View>
+                  <View style={{ alignItems: "center" }}>
+                    <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
+                      Crowd Level
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: "bold",
+                        color: themeColors.purple,
+                      }}
+                    >
+                      {getCrowdLabel(item.ratings?.crowd)}
+                    </Text>
+                  </View>
+                </View>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: themeColors.darkGray,
+                    marginTop: 4,
+                    textAlign: "right",
+                  }}
+                >
+                  {getLastUpdatedLabel && item.ratings
+                    ? getLastUpdatedLabel(item.ratings)
+                    : ""}
                 </Text>
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <View style={{ alignItems: "center" }}>
-                  <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
-                    Noise Level
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "bold",
-                      color: themeColors.purple,
-                    }}
-                  >
-                    {getNoiseLabel(item.ratings?.noise)}
-                  </Text>
-                </View>
-                <View style={{ alignItems: "center" }}>
-                  <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
-                    Crowd Level
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "bold",
-                      color: themeColors.purple,
-                    }}
-                  >
-                    {getCrowdLabel(item.ratings?.crowd)}
-                  </Text>
-                </View>
-              </View>
-              <Text
-                style={{
-                  fontSize: 12,
-                  color: themeColors.darkGray,
-                  marginTop: 4,
-                  textAlign: "right",
-                }}
-              >
-                {getLastUpdatedLabel && item.ratings
-                  ? getLastUpdatedLabel(item.ratings)
-                  : ""}
-              </Text>
-            </>
+              </>
+            )}
           </TouchableOpacity>
         );
       }}

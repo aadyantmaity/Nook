@@ -27,6 +27,10 @@ export default function useStudySpots() {
       const spots = await Promise.all(
         allDocs.map(async (docSnap) => {
           const spotData = docSnap.data();
+          // --- Filter out private nooks not owned by user ---
+          if (spotData.privateNook && spotData.addedBy !== user.uid) {
+            return null;
+          }
 
           // Fetch locationAlerts for the spot
           const locationAlertsRef = doc(db, "studySpots", docSnap.id);
@@ -184,6 +188,26 @@ export default function useStudySpots() {
           const averageOverallRating =
             overallCount > 0 ? overallSum / overallCount : 0;
 
+          // Hide ratings/alerts for private nooks
+          if (spotData.privateNook) {
+            return {
+              id: docSnap.id,
+              ...spotData,
+              locationAlerts: [],
+              photoUrl: spotData.photoUrl || "",
+              cachedPhotoUri: spotData.photoUrl || "",
+              ratings: {
+                noise: "N/A",
+                crowd: "N/A",
+                lastUpdated: null,
+                lastUpdatedType: null,
+                lastWindowHours: null,
+              },
+              averageOverallRating: 0,
+              overallRatingsCount: 0,
+            };
+          }
+
           // No image caching, just use photoUrl
           return {
             id: docSnap.id,
@@ -203,7 +227,7 @@ export default function useStudySpots() {
           };
         })
       );
-      setStudySpots(spots);
+      setStudySpots(spots.filter(Boolean)); // filter out nulls
     } catch (error) {
       console.error("Error fetching study spots:", error);
     } finally {

@@ -51,6 +51,21 @@ export default function useSpotDetails(spotId) {
             setAddedByName("Anonymous");
           }
 
+          // If private nook, skip ratings fetch and set to N/A
+          if (spotData.privateNook) {
+            setSpot((prev) => ({
+              ...prev,
+              ratings: {
+                noise: "N/A",
+                crowd: "N/A",
+                lastUpdated: null,
+                lastUpdatedType: null,
+                lastWindowHours: null,
+              },
+            }));
+            return;
+          }
+
           // Fetch ratings for the spot
           const ratingsQuery = query(
             collection(db, "ratings"),

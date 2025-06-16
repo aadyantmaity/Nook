@@ -50,7 +50,7 @@ export default function SpotFeedback({ spotId, themeColors }) {
           marginBottom: 8,
         }}
       >
-        Did the noise & crowd ratings match your experience?
+        Did the noise & crowd ratings match your expectations?
       </Text>
       <View style={{ flexDirection: "row", gap: 18 }}>
         <TouchableOpacity
