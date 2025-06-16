@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Image } from "react-native";
-import { Heart, Warning, Star } from "phosphor-react-native";
+import { Heart, Warning, Star, Lock } from "phosphor-react-native";
 
 export default function StudySpotCard({
   spot,
@@ -30,7 +30,7 @@ export default function StudySpotCard({
       }}
       activeOpacity={0.9}
     >
-      {/* Warning Icon */}
+      {/* Badge Icon: Lock for private, Warning for alerts */}
       {(() => {
         // --- Filter today's alerts only ---
         const today = new Date();
@@ -59,6 +59,35 @@ export default function StudySpotCard({
                 : a.createdAt
             )
         );
+        if (spot.privateNook) {
+          return (
+            <View
+              style={{
+                position: "absolute",
+                top: 12,
+                left: 12,
+                zIndex: 20,
+                backgroundColor: themeColors.white,
+                borderRadius: 20,
+                padding: 4,
+                borderWidth: 0.5,
+                borderColor: themeColors.purple,
+                shadowColor: themeColors.purple,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.18,
+                shadowRadius: 4,
+                elevation: 6,
+                width: 38,
+                height: 38,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              pointerEvents="none"
+            >
+              <Lock size={24} color={themeColors.purple} weight="fill" />
+            </View>
+          );
+        }
         if (todaysAlerts.length === 0) return null;
         return (
           <TouchableOpacity
@@ -178,6 +207,8 @@ export default function StudySpotCard({
           fontWeight: "bold",
           color: themeColors.black,
           marginBottom: 6,
+          flexDirection: "row",
+          alignItems: "center",
         }}
       >
         {spot.name}
@@ -266,91 +297,95 @@ export default function StudySpotCard({
       </View>
 
       {/* Ratings */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          marginBottom: 8, // further reduced gap
-        }}
-      >
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star
-            key={star}
-            size={18}
-            color={
-              star <= (spot.averageOverallRating || 0)
-                ? themeColors.purple
-                : themeColors.darkGray
-            }
-            weight={
-              star <= (spot.averageOverallRating || 0) ? "fill" : "regular"
-            }
-            style={{ marginRight: 2 }}
-          />
-        ))}
-        <Text
-          style={{
-            marginLeft: 8,
-            color: themeColors.darkGray,
-            fontSize: 13,
-          }}
-        >
-          {spot.overallRatingsCount > 0
-            ? `${spot.averageOverallRating.toFixed(1)} (${
-                spot.overallRatingsCount
-              })`
-            : "No ratings"}
-        </Text>
-      </View>
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          marginBottom: 2,
-        }}
-      >
-        <View style={{ alignItems: "center" }}>
-          <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
-            Noise Level
-          </Text>
-          <Text
+      {!spot.privateNook && (
+        <>
+          <View
             style={{
-              fontSize: 14,
-              fontWeight: "bold",
-              color: themeColors.purple,
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 8, // further reduced gap
             }}
           >
-            {getNoiseLabel(spot.ratings?.noise)}
-          </Text>
-        </View>
-        <View style={{ alignItems: "center" }}>
-          <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
-            Crowd Level
-          </Text>
-          <Text
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star
+                key={star}
+                size={18}
+                color={
+                  star <= (spot.averageOverallRating || 0)
+                    ? themeColors.purple
+                    : themeColors.darkGray
+                }
+                weight={
+                  star <= (spot.averageOverallRating || 0) ? "fill" : "regular"
+                }
+                style={{ marginRight: 2 }}
+              />
+            ))}
+            <Text
+              style={{
+                marginLeft: 8,
+                color: themeColors.darkGray,
+                fontSize: 13,
+              }}
+            >
+              {spot.overallRatingsCount > 0
+                ? `${spot.averageOverallRating.toFixed(1)} (${
+                    spot.overallRatingsCount
+                  })`
+                : "No ratings"}
+            </Text>
+          </View>
+          <View
             style={{
-              fontSize: 14,
-              fontWeight: "bold",
-              color: themeColors.purple,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              marginBottom: 2,
             }}
           >
-            {getCrowdLabel(spot.ratings?.crowd)}
+            <View style={{ alignItems: "center" }}>
+              <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
+                Noise Level
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "bold",
+                  color: themeColors.purple,
+                }}
+              >
+                {getNoiseLabel(spot.ratings?.noise)}
+              </Text>
+            </View>
+            <View style={{ alignItems: "center" }}>
+              <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
+                Crowd Level
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "bold",
+                  color: themeColors.purple,
+                }}
+              >
+                {getCrowdLabel(spot.ratings?.crowd)}
+              </Text>
+            </View>
+          </View>
+          {/* Last updated label */}
+          <Text
+            style={{
+              fontSize: 12,
+              color: themeColors.darkGray,
+              marginTop: 6,
+              textAlign: "right",
+            }}
+          >
+            {getLastUpdatedLabel && spot.ratings
+              ? getLastUpdatedLabel(spot.ratings)
+              : ""}
           </Text>
-        </View>
-      </View>
-      {/* Last updated label */}
-      <Text
-        style={{
-          fontSize: 12,
-          color: themeColors.darkGray,
-          marginTop: 6,
-          textAlign: "right",
-        }}
-      >
-        {getLastUpdatedLabel && spot.ratings
-          ? getLastUpdatedLabel(spot.ratings)
-          : ""}
-      </Text>
+        </>
+      )}
     </TouchableOpacity>
   );
 }

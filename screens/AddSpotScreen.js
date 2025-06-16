@@ -97,6 +97,7 @@ export default function AddSpotScreen({ navigation }) {
   const [customImage, setCustomImage] = useState(null);
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [customCoords, setCustomCoords] = useState(null);
+  const [privateNook, setPrivateNook] = useState(false); // <-- add state
 
   const toggleTag = (tag) => {
     setSelectedTags((tags) =>
@@ -117,6 +118,7 @@ export default function AddSpotScreen({ navigation }) {
     setOpenHours("");
     setCustomImage(null);
     setCustomCoords(null);
+    setPrivateNook(false); // <-- reset
   };
 
   const isAmaity =
@@ -196,6 +198,7 @@ export default function AddSpotScreen({ navigation }) {
           : customCoords
           ? { coordinates: customCoords }
           : {}),
+        privateNook: !isUWBuilding ? privateNook : false, // <-- set privateNook only for custom
       };
       const docRef = await addDoc(collection(db, "studySpots"), spotDetails);
       if (
@@ -567,6 +570,60 @@ export default function AddSpotScreen({ navigation }) {
             accessibilityLabel="Open or Quiet Hours"
             accessible={true}
           />
+
+          {/* Only show private toggle for custom locations */}
+          {!isUWBuilding && (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 12,
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => setPrivateNook((v) => !v)}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  padding: 10,
+                  backgroundColor: privateNook
+                    ? themeColors.purple
+                    : themeColors.white,
+                  borderRadius: 8,
+                  borderWidth: 0.5,
+                  borderColor: themeColors.black,
+                  marginRight: 8,
+                }}
+                accessibilityLabel="Toggle Private Nook"
+                accessible={true}
+              >
+                <Text
+                  style={{
+                    color: privateNook ? themeColors.white : themeColors.purple,
+                    fontWeight: "bold",
+                    marginRight: 6,
+                  }}
+                >
+                  Private Nook
+                </Text>
+                <View
+                  style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: 9,
+                    backgroundColor: privateNook
+                      ? themeColors.green
+                      : themeColors.gray,
+                    borderWidth: 1,
+                    borderColor: themeColors.black,
+                  }}
+                />
+              </TouchableOpacity>
+              <Text style={{ color: themeColors.darkGray, fontSize: 13 }}>
+                Only you will see this nook
+              </Text>
+            </View>
+          )}
 
           {/* Buttons */}
           <View

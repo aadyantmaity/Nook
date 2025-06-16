@@ -1,6 +1,6 @@
 import React from "react";
 import { TouchableOpacity, View, Text, Image } from "react-native";
-import { MapPin } from "phosphor-react-native";
+import { MapPin, Lock } from "phosphor-react-native";
 
 export default function FavoriteSpotCard({
   spot,
@@ -55,10 +55,39 @@ export default function FavoriteSpotCard({
         elevation: 2,
         borderColor: themeColors.black,
         borderWidth: 0.5,
+        position: "relative",
       }}
       onPress={onPress}
       activeOpacity={0.85}
     >
+      {/* Badge Icon: Lock for private, Warning for alerts */}
+      {spot.privateNook ? (
+        <View
+          style={{
+            position: "absolute",
+            top: 10,
+            left: 10,
+            zIndex: 20,
+            backgroundColor: themeColors.white,
+            borderRadius: 20,
+            padding: 4,
+            borderWidth: 0.5,
+            borderColor: themeColors.purple,
+            shadowColor: themeColors.purple,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.18,
+            shadowRadius: 4,
+            elevation: 6,
+            width: 38,
+            height: 38,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          pointerEvents="none"
+        >
+          <Lock size={24} color={themeColors.purple} weight="fill" />
+        </View>
+      ) : null}
       {spot.photoUrl ? (
         <View
           style={{
