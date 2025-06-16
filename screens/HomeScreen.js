@@ -94,61 +94,76 @@ export default function HomeScreen({ navigation, route }) {
     { key: "focus", title: "Focus Mode" },
   ]);
 
-  // Add this helper component above HomeTab
-  function ListMapToggleButtons({ showMapView, setShowMapView, themeColors }) {
+  // --- Reusable ListHeaderComponent (filters + toggle) ---
+  function StudySpotsHeader({
+    filters,
+    setFilters,
+    themeColors,
+    showMapView,
+    setShowMapView,
+  }) {
     return (
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "center",
-          marginBottom: 10,
-          marginTop: 16,
-          zIndex: 20,
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => setShowMapView(false)}
+      <View style={{ paddingTop: 16 }}>
+        {/* List/Map View Toggle Buttons */}
+        <View
           style={{
-            backgroundColor: !showMapView
-              ? themeColors.purple
-              : themeColors.gray,
-            padding: 10,
-            borderRadius: 8,
-            marginRight: 8,
-            minWidth: 90,
-            alignItems: "center",
+            flexDirection: "row",
+            justifyContent: "center",
+            marginBottom: 16,
+            zIndex: 20,
           }}
         >
-          <Text
+          <TouchableOpacity
+            onPress={() => setShowMapView(false)}
             style={{
-              color: !showMapView ? themeColors.white : themeColors.purple,
-              fontWeight: "bold",
+              backgroundColor: !showMapView
+                ? themeColors.purple
+                : themeColors.gray,
+              padding: 10,
+              borderRadius: 8,
+              marginRight: 8,
+              minWidth: 90,
+              alignItems: "center",
             }}
           >
-            List View
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setShowMapView(true)}
-          style={{
-            backgroundColor: showMapView
-              ? themeColors.purple
-              : themeColors.gray,
-            padding: 10,
-            borderRadius: 8,
-            minWidth: 90,
-            alignItems: "center",
-          }}
-        >
-          <Text
+            <Text
+              style={{
+                color: !showMapView ? themeColors.white : themeColors.purple,
+                fontWeight: "bold",
+              }}
+            >
+              List View
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setShowMapView(true)}
             style={{
-              color: showMapView ? themeColors.white : themeColors.purple,
-              fontWeight: "bold",
+              backgroundColor: showMapView
+                ? themeColors.purple
+                : themeColors.gray,
+              padding: 10,
+              borderRadius: 8,
+              minWidth: 90,
+              alignItems: "center",
             }}
           >
-            Map View
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={{
+                color: showMapView ? themeColors.white : themeColors.purple,
+                fontWeight: "bold",
+              }}
+            >
+              Map View
+            </Text>
+          </TouchableOpacity>
+        </View>
+        <View style={{ paddingHorizontal: 16 }}>
+          <Filters
+            filters={filters}
+            setFilters={setFilters}
+            themeColors={themeColors}
+          />
+        </View>
       </View>
     );
   }
@@ -156,17 +171,22 @@ export default function HomeScreen({ navigation, route }) {
   // Home tab content
   const HomeTab = () => (
     <>
-      {/* Filters are now handled in StudySpotsList header */}
       {showMapView ? (
-        <>
-          {/* Show toggle buttons above the map in map view */}
-          <ListMapToggleButtons
+        // --- Map View: Scrollable with header above map ---
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: 72 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <StudySpotsHeader
+            filters={filters}
+            setFilters={setFilters}
+            themeColors={themeColors}
             showMapView={showMapView}
             setShowMapView={setShowMapView}
-            themeColors={themeColors}
           />
           <StudySpotsMapView
-            spots={studySpots}
+            spots={filteredSpots} // <-- use filteredSpots here
             navigation={navigation}
             themeColors={themeColors}
             containerStyle={{
@@ -175,8 +195,9 @@ export default function HomeScreen({ navigation, route }) {
               marginBottom: 8,
             }}
           />
-        </>
+        </ScrollView>
       ) : (
+        // --- List View: FlatList already uses header ---
         <StudySpotsList
           filteredSpots={filteredSpots}
           navigation={navigation}
