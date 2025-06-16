@@ -82,6 +82,11 @@ export default function StudySpotsMapView({
   // --- Cluster spots ---
   const clusters = clusterSpots(spotsWithCoords);
 
+  // --- Favorite spot IDs ---
+  const favoriteIds = Array.isArray(spots)
+    ? spots.filter((s) => s.isFavorite).map((s) => s.id)
+    : [];
+
   // Helper to zoom to cluster
   const zoomToCluster = (cluster) => {
     if (!mapRef.current || cluster.length === 0) return;
@@ -123,7 +128,7 @@ export default function StudySpotsMapView({
         onRegionChangeComplete={setRegion}
         showsUserLocation={true}
         provider={PROVIDER_GOOGLE}
-        mapType="satellite" // <-- Add this line for satellite view
+        mapType="satellite"
       >
         {clusters.map((cluster, idx) =>
           cluster.length === 1 ? (
@@ -133,9 +138,7 @@ export default function StudySpotsMapView({
                 latitude: cluster[0].coordinates.latitude,
                 longitude: cluster[0].coordinates.longitude,
               }}
-              pinColor={
-                cluster[0].privateNook ? themeColors.purple : themeColors.orange
-              }
+              pinColor={themeColors.orange}
             >
               <Callout
                 onPress={() =>
@@ -176,7 +179,7 @@ export default function StudySpotsMapView({
                   cluster.length,
               }}
               tracksViewChanges={false}
-              pinColor={themeColors.purple}
+              pinColor={themeColors.orange}
               onPress={() => zoomToCluster(cluster)}
             >
               <View
@@ -221,6 +224,7 @@ export default function StudySpotsMapView({
           </Text>
         </View>
       )}
+      {/* Legend removed */}
     </View>
   );
 }
