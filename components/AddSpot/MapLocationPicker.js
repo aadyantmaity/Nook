@@ -9,6 +9,8 @@ import {
   FlatList,
   Keyboard,
   TouchableWithoutFeedback,
+  KeyboardAvoidingView, // <-- add this import
+  Platform, // <-- add this import
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 
@@ -70,6 +72,7 @@ export default function MapLocationPicker({
   };
 
   const handleSuggestionPick = (item) => {
+    Keyboard.dismiss(); // Hide the keyboard when a suggestion is picked
     setSearch(item.display_name);
     setSuggestions([]);
     const location = {
@@ -90,127 +93,170 @@ export default function MapLocationPicker({
       transparent
       onRequestClose={onClose}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.overlay}>
-          <View style={styles.modal}>
-            <Text style={[styles.title, { color: themeColors.purple }]}>
-              Search Location
-            </Text>
-            <View style={styles.searchContainer}>
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search for a place..."
-                value={search}
-                onChangeText={fetchSuggestions}
-                placeholderTextColor="#888"
-                autoCorrect={false}
-                autoCapitalize="none"
-                clearButtonMode="while-editing"
-              />
-              {loading && <Text style={styles.loadingText}>...</Text>}
-            </View>
-            {suggestions.length > 0 && (
-              <View style={styles.suggestionsBox}>
-                <FlatList
-                  keyboardShouldPersistTaps="handled"
-                  data={suggestions}
-                  keyExtractor={(item) =>
-                    item.place_id?.toString() ||
-                    item.osm_id?.toString() ||
-                    Math.random().toString()
-                  }
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      style={styles.suggestionItem}
-                      onPress={() => handleSuggestionPick(item)}
-                    >
-                      <Text style={styles.suggestionText} numberOfLines={2}>
-                        {item.display_name}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.overlay}>
+            <View style={styles.modal}>
+              <Text style={[styles.title, { color: themeColors.purple }]}>
+                Search Location
+              </Text>
+              <View style={styles.searchContainer}>
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search for a place..."
+                  value={search}
+                  onChangeText={fetchSuggestions}
+                  placeholderTextColor="#888"
+                  autoCorrect={false}
+                  autoCapitalize="none"
+                  clearButtonMode="while-editing"
                 />
+                {loading && <Text style={styles.loadingText}>...</Text>}
               </View>
-            )}
-            {/* Show map with pin if a location is selected and modal is visible */}
-            {visible && selectedLocation && (
-              <>
-                <MapView
-                  style={styles.map}
-                  initialRegion={{
-                    latitude: selectedLocation.latitude,
-                    longitude: selectedLocation.longitude,
-                    latitudeDelta: 0.01,
-                    longitudeDelta: 0.01,
-                  }}
-                  region={{
-                    latitude: selectedLocation.latitude,
-                    longitude: selectedLocation.longitude,
-                    latitudeDelta: 0.01,
-                    longitudeDelta: 0.01,
-                  }}
-                  pointerEvents="none"
-                >
-                  <Marker
-                    coordinate={{
+              {/* Suggestions box always shown if search has 3+ chars */}
+              {search.trim().length >= 3 && !selectedLocation && (
+                <View style={styles.suggestionsBox}>
+                  {loading ? (
+                    <View style={styles.suggestionsLoadingBox}>
+                      <Text
+                        style={{
+                          color: "#888",
+                          textAlign: "center",
+                          marginTop: 8,
+                        }}
+                      >
+                        Loading...
+                      </Text>
+                    </View>
+                  ) : suggestions.length > 0 ? (
+                    <FlatList
+                      keyboardShouldPersistTaps="handled"
+                      data={suggestions}
+                      keyExtractor={(item) =>
+                        item.place_id?.toString() ||
+                        item.osm_id?.toString() ||
+                        Math.random().toString()
+                      }
+                      renderItem={({ item }) => (
+                        <TouchableOpacity
+                          style={styles.suggestionItem}
+                          onPress={() => handleSuggestionPick(item)}
+                        >
+                          <Text style={styles.suggestionText} numberOfLines={2}>
+                            {item.display_name}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                      style={{ flex: 1 }}
+                    />
+                  ) : (
+                    // Only show "No results found" if no location is selected
+                    <View style={styles.suggestionsLoadingBox}>
+                      <Text
+                        style={{
+                          color: "#888",
+                          textAlign: "center",
+                          marginTop: 8,
+                        }}
+                      >
+                        No results found
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
+              {/* Show map with pin if a location is selected and modal is visible */}
+              {visible && selectedLocation && (
+                <>
+                  <MapView
+                    style={styles.map}
+                    initialRegion={{
                       latitude: selectedLocation.latitude,
                       longitude: selectedLocation.longitude,
+                      latitudeDelta: 0.01,
+                      longitudeDelta: 0.01,
                     }}
-                    title={selectedLocation.name}
-                    description={selectedLocation.display_name}
-                  />
-                </MapView>
-                <Text style={{ marginBottom: 8, color: "#444", fontWeight: "bold", textAlign: "center" }}>
-                  {selectedLocation.display_name
-                    ? selectedLocation.display_name.split(",").slice(0, 3).join(", ")
-                    : "No address"}
-                </Text>
-              </>
-            )}
-            {/* Pick Location button */}
-            <View style={styles.buttonRow}>
-              <TouchableOpacity
-                onPress={onClose}
-                style={[
-                  styles.button,
-                  {
-                    backgroundColor: themeColors.white,
-                    borderColor: themeColors.purple,
-                    borderWidth: 1,
-                  },
-                ]}
-              >
-                <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  if (selectedLocation && onPick) onPick(selectedLocation);
-                }}
-                style={[
-                  styles.button,
-                  {
-                    backgroundColor: selectedLocation
-                      ? themeColors.purple
-                      : "#ccc",
-                  },
-                ]}
-                disabled={!selectedLocation}
-              >
-                <Text
-                  style={{
-                    color: selectedLocation ? themeColors.white : "#888",
-                    fontWeight: "bold",
-                  }}
+                    region={{
+                      latitude: selectedLocation.latitude,
+                      longitude: selectedLocation.longitude,
+                      latitudeDelta: 0.01,
+                      longitudeDelta: 0.01,
+                    }}
+                    pointerEvents="none"
+                  >
+                    <Marker
+                      coordinate={{
+                        latitude: selectedLocation.latitude,
+                        longitude: selectedLocation.longitude,
+                      }}
+                      title={selectedLocation.name}
+                      description={selectedLocation.display_name}
+                    />
+                  </MapView>
+                  <Text
+                    style={{
+                      marginBottom: 8,
+                      color: "#444",
+                      fontWeight: "bold",
+                      textAlign: "center",
+                    }}
+                  >
+                    {selectedLocation.display_name
+                      ? selectedLocation.display_name.split(",").slice(0, 3).join(", ")
+                      : "No address"}
+                  </Text>
+                </>
+              )}
+              {/* Pick Location button */}
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  onPress={onClose}
+                  style={[
+                    styles.button,
+                    {
+                      backgroundColor: themeColors.white,
+                      borderColor: themeColors.purple,
+                      borderWidth: 1,
+                    },
+                  ]}
                 >
-                  Pick Location
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={{ color: themeColors.purple, fontWeight: "bold" }}
+                  >
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (selectedLocation && onPick) onPick(selectedLocation);
+                  }}
+                  style={[
+                    styles.button,
+                    {
+                      backgroundColor: selectedLocation
+                        ? themeColors.purple
+                        : "#ccc",
+                    },
+                  ]}
+                  disabled={!selectedLocation}
+                >
+                  <Text
+                    style={{
+                      color: selectedLocation ? themeColors.white : "#888",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Pick Location
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-      </TouchableWithoutFeedback>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -265,7 +311,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     elevation: 8,
     zIndex: 999,
-    maxHeight: 200,
+    height: 200, // Fixed height to prevent resizing
     borderWidth: 1,
     borderColor: "#ccc",
     shadowColor: "#000",
@@ -273,6 +319,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 4,
     marginBottom: 8,
+    overflow: "hidden",
+  },
+  suggestionsLoadingBox: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    minHeight: 40,
   },
   suggestionItem: {
     padding: 10,
