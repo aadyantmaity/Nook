@@ -18,6 +18,8 @@ export default function StudySpotsList({
   setShowAlertsModal,
   getLastUpdatedLabel,
   contentContainerStyle,
+  showMapView,
+  setShowMapView,
 }) {
   // Add helper functions:
   function getNoiseLabel(avg) {
@@ -41,6 +43,61 @@ export default function StudySpotsList({
     <FlatList
       ListHeaderComponent={
         <View style={{ paddingTop: 16 }}>
+          {/* Filters */}
+
+          {/* List/Map View Toggle Buttons */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "center",
+              marginBottom: 16,
+              zIndex: 20,
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => setShowMapView(false)}
+              style={{
+                backgroundColor: !showMapView
+                  ? themeColors.purple
+                  : themeColors.gray,
+                padding: 10,
+                borderRadius: 8,
+                marginRight: 8,
+                minWidth: 90,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: !showMapView ? themeColors.white : themeColors.purple,
+                  fontWeight: "bold",
+                }}
+              >
+                List View
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowMapView(true)}
+              style={{
+                backgroundColor: showMapView
+                  ? themeColors.purple
+                  : themeColors.gray,
+                padding: 10,
+                borderRadius: 8,
+                minWidth: 90,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: showMapView ? themeColors.white : themeColors.purple,
+                  fontWeight: "bold",
+                }}
+              >
+                Map View
+              </Text>
+            </TouchableOpacity>
+          </View>
           <Filters
             filters={filters}
             setFilters={setFilters}
