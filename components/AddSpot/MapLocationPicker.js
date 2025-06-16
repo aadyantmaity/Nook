@@ -172,6 +172,7 @@ export default function MapLocationPicker({
               {visible && selectedLocation && (
                 <>
                   <MapView
+                    provider="google"
                     style={styles.map}
                     initialRegion={{
                       latitude: selectedLocation.latitude,
@@ -186,6 +187,7 @@ export default function MapLocationPicker({
                       longitudeDelta: 0.01,
                     }}
                     pointerEvents="none"
+                    mapType="satellite" // <-- Add this line for satellite view
                   >
                     <Marker
                       coordinate={{
@@ -205,7 +207,10 @@ export default function MapLocationPicker({
                     }}
                   >
                     {selectedLocation.display_name
-                      ? selectedLocation.display_name.split(",").slice(0, 3).join(", ")
+                      ? selectedLocation.display_name
+                          .split(",")
+                          .slice(0, 3)
+                          .join(", ")
                       : "No address"}
                   </Text>
                 </>

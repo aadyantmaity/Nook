@@ -50,6 +50,7 @@ import { getLastUpdatedLabel } from "../utils/lastUpdatedLabel";
 // components imports
 import Filters from "../components/Home/Filters"; // Import Filters component
 import StudySpotsList from "../components/Home/StudySpotsList";
+import StudySpotsMapView from "../components/Home/StudySpotsMapView"; // <-- new component
 import { FocusTimerView } from "../components/Home/FocusTimer"; // <-- Use correct import
 import HamburgerMenu from "../components/Home/HamburgerMenu"; // Import HamburgerMenu component
 import AlertsModal from "../components/Home/AlertsModal"; // Import AlertsModal component
@@ -75,6 +76,7 @@ export default function HomeScreen({ navigation, route }) {
   const [showGeneralReport, setShowGeneralReport] = useState(false);
   const [showAlertsModal, setShowAlertsModal] = useState(false);
   const [currentAlerts, setCurrentAlerts] = useState([]);
+  const [showMapView, setShowMapView] = useState(false);
 
   // Hooks
   const { studySpots, isLoading, fetchStudySpots } = useStudySpots();
@@ -92,25 +94,108 @@ export default function HomeScreen({ navigation, route }) {
     { key: "focus", title: "Focus Mode" },
   ]);
 
+  // Add this helper component above HomeTab
+  function ListMapToggleButtons({ showMapView, setShowMapView, themeColors }) {
+    return (
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "center",
+          marginBottom: 10,
+          marginTop: 16,
+          zIndex: 20,
+        }}
+      >
+        <TouchableOpacity
+          onPress={() => setShowMapView(false)}
+          style={{
+            backgroundColor: !showMapView
+              ? themeColors.purple
+              : themeColors.gray,
+            padding: 10,
+            borderRadius: 8,
+            marginRight: 8,
+            minWidth: 90,
+            alignItems: "center",
+          }}
+        >
+          <Text
+            style={{
+              color: !showMapView ? themeColors.white : themeColors.purple,
+              fontWeight: "bold",
+            }}
+          >
+            List View
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setShowMapView(true)}
+          style={{
+            backgroundColor: showMapView
+              ? themeColors.purple
+              : themeColors.gray,
+            padding: 10,
+            borderRadius: 8,
+            minWidth: 90,
+            alignItems: "center",
+          }}
+        >
+          <Text
+            style={{
+              color: showMapView ? themeColors.white : themeColors.purple,
+              fontWeight: "bold",
+            }}
+          >
+            Map View
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   // Home tab content
   const HomeTab = () => (
     <>
-      <StudySpotsList
-        filteredSpots={filteredSpots}
-        navigation={navigation}
-        favorites={favorites}
-        handleToggleFavorite={toggleFavorite}
-        themeColors={themeColors}
-        onRefresh={fetchStudySpots}
-        refreshing={isLoading}
-        filters={filters}
-        setFilters={setFilters}
-        setCurrentAlerts={setCurrentAlerts}
-        setShowAlertsModal={setShowAlertsModal}
-        // Add extra bottom padding so last item is not covered by FAB
-        contentContainerStyle={{ paddingBottom: 72 }}
-        getLastUpdatedLabel={getLastUpdatedLabel}
-      />
+      {/* Filters are now handled in StudySpotsList header */}
+      {showMapView ? (
+        <>
+          {/* Show toggle buttons above the map in map view */}
+          <ListMapToggleButtons
+            showMapView={showMapView}
+            setShowMapView={setShowMapView}
+            themeColors={themeColors}
+          />
+          <StudySpotsMapView
+            spots={studySpots}
+            navigation={navigation}
+            themeColors={themeColors}
+            containerStyle={{
+              alignSelf: "center",
+              marginTop: 16,
+              marginBottom: 8,
+            }}
+          />
+        </>
+      ) : (
+        <StudySpotsList
+          filteredSpots={filteredSpots}
+          navigation={navigation}
+          favorites={favorites}
+          handleToggleFavorite={toggleFavorite}
+          themeColors={themeColors}
+          onRefresh={fetchStudySpots}
+          refreshing={isLoading}
+          filters={filters}
+          setFilters={setFilters}
+          setCurrentAlerts={setCurrentAlerts}
+          setShowAlertsModal={setShowAlertsModal}
+          contentContainerStyle={{ paddingBottom: 72 }}
+          getLastUpdatedLabel={getLastUpdatedLabel}
+          showMapView={showMapView}
+          setShowMapView={setShowMapView}
+        />
+      )}
+      {/* Add Nook button remains outside the scrollable area */}
       <View
         style={{
           position: "absolute",
