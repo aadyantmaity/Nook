@@ -9,14 +9,15 @@ import {
   FlatList,
   Keyboard,
   TouchableWithoutFeedback,
-  KeyboardAvoidingView, // <-- add this import
-  Platform, // <-- add this import
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 
 // Utility to safely parse latitude/longitude
 function parseCoordinate(value) {
-  const num = Number(value);
+  // Use parseFloat for robust parsing of string numbers
+  const num = parseFloat(value);
   return isNaN(num) ? null : num;
 }
 
@@ -31,16 +32,14 @@ export default function MapLocationPicker({
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(null);
-  const [mapRegion, setMapRegion] = useState(null);
   const [coordError, setCoordError] = useState(false);
 
-  // Reset selectedLocation and mapRegion when modal is closed, or set from initialCoords
+  // Reset selectedLocation when modal is closed, or set from initialCoords
   useEffect(() => {
     if (!visible) {
       setSearch("");
       setSuggestions([]);
       setSelectedLocation(null);
-      setMapRegion(null);
       setCoordError(false);
     } else {
       if (initialCoords && initialCoords.latitude && initialCoords.longitude) {
@@ -49,7 +48,6 @@ export default function MapLocationPicker({
         if (latitude === null || longitude === null) {
           setCoordError(true);
           setSelectedLocation(null);
-          setMapRegion(null);
         } else {
           setCoordError(false);
           setSelectedLocation({
@@ -59,17 +57,10 @@ export default function MapLocationPicker({
             display_name: initialCoords.display_name || "",
             placeType: initialCoords.placeType || "",
           });
-          setMapRegion({
-            latitude,
-            longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          });
           setSearch(initialCoords.display_name || "");
         }
       } else {
         setSelectedLocation(null);
-        setMapRegion(null);
         setSearch("");
         setCoordError(false);
       }
@@ -78,11 +69,10 @@ export default function MapLocationPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
-  // --- NEW: Clear selected location and map preview if input is cleared ---
+  // --- NEW: Clear selected location if input is cleared ---
   useEffect(() => {
     if (search.trim() === "") {
       setSelectedLocation(null);
-      setMapRegion(null);
     }
   }, [search]);
 
@@ -120,7 +110,6 @@ export default function MapLocationPicker({
     if (latitude === null || longitude === null) {
       setCoordError(true);
       setSelectedLocation(null);
-      setMapRegion(null);
       return;
     }
     setCoordError(false);
@@ -132,12 +121,6 @@ export default function MapLocationPicker({
       placeType: item.type || "",
     };
     setSelectedLocation(location);
-    setMapRegion({
-      latitude: latitude,
-      longitude: longitude,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01,
-    });
     // Do not call onPick here
   };
 
@@ -223,6 +206,32 @@ export default function MapLocationPicker({
                   )}
                 </View>
               )}
+              {/* Map preview for selected location */}
+              {selectedLocation && (
+                <View style={styles.mapPreviewContainer}>
+                  <MapView
+                    style={styles.mapPreview}
+                    region={{
+                      latitude: selectedLocation.latitude,
+                      longitude: selectedLocation.longitude,
+                      latitudeDelta: 0.01,
+                      longitudeDelta: 0.01,
+                    }}
+                    pointerEvents="none"
+                    mapType="satellite"
+                  >
+                    <Marker
+                      coordinate={{
+                        latitude: selectedLocation.latitude,
+                        longitude: selectedLocation.longitude,
+                      }}
+                    />
+                  </MapView>
+                  <Text style={styles.mapPreviewLabel} numberOfLines={2}>
+                    {selectedLocation.name}
+                  </Text>
+                </View>
+              )}
               {/* Show error if coordinates are invalid */}
               {coordError && (
                 <Text
@@ -234,42 +243,6 @@ export default function MapLocationPicker({
                 >
                   Could not find a valid location for this address.
                 </Text>
-              )}
-              {/* Show map with pin if a location is selected and modal is visible */}
-              {visible && selectedLocation && mapRegion && (
-                <>
-                  <MapView
-                    provider="google"
-                    style={styles.map}
-                    region={mapRegion}
-                    pointerEvents="none"
-                    mapType="satellite"
-                  >
-                    <Marker
-                      coordinate={{
-                        latitude: selectedLocation.latitude,
-                        longitude: selectedLocation.longitude,
-                      }}
-                      title={selectedLocation.name}
-                      description={selectedLocation.display_name}
-                    />
-                  </MapView>
-                  <Text
-                    style={{
-                      marginBottom: 8,
-                      color: "#444",
-                      fontWeight: "bold",
-                      textAlign: "center",
-                    }}
-                  >
-                    {selectedLocation.display_name
-                      ? selectedLocation.display_name
-                          .split(",")
-                          .slice(0, 3)
-                          .join(", ")
-                      : "No address"}
-                  </Text>
-                </>
               )}
               {/* Pick Location button */}
               <View style={styles.buttonRow}>
@@ -397,13 +370,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#222",
   },
-  map: {
-    width: "100%",
-    height: 200,
-    borderRadius: 10,
-    marginBottom: 12,
-    marginTop: 8,
-  },
   buttonRow: {
     flexDirection: "row",
     width: "100%",
@@ -416,5 +382,24 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     marginHorizontal: 6,
+  },
+  mapPreviewContainer: {
+    width: "100%",
+    alignItems: "center",
+    marginBottom: 10,
+    marginTop: 8,
+  },
+  mapPreview: {
+    width: "100%",
+    height: 180,
+    borderRadius: 10,
+    overflow: "hidden",
+  },
+  mapPreviewLabel: {
+    marginTop: 6,
+    fontSize: 13,
+    color: "#444",
+    textAlign: "center",
+    width: "100%",
   },
 });
