@@ -14,6 +14,12 @@ import {
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 
+// Utility to safely parse latitude/longitude
+function parseCoordinate(value) {
+  const num = Number(value);
+  return isNaN(num) ? null : num;
+}
+
 export default function MapLocationPicker({
   visible,
   onClose,
@@ -25,28 +31,60 @@ export default function MapLocationPicker({
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(null);
+  const [mapRegion, setMapRegion] = useState(null);
+  const [coordError, setCoordError] = useState(false);
 
-  // Reset selectedLocation when modal is closed, and clear when opened
+  // Reset selectedLocation and mapRegion when modal is closed, or set from initialCoords
   useEffect(() => {
     if (!visible) {
       setSearch("");
       setSuggestions([]);
-      // Do not reset selectedLocation here
+      setSelectedLocation(null);
+      setMapRegion(null);
+      setCoordError(false);
     } else {
-      setSelectedLocation(null); // Always clear selection when modal opens
-      if (initialCoords) {
-        // Optionally, you can prefill with initialCoords if you want
-        // setSelectedLocation({
-        //   latitude: initialCoords.latitude,
-        //   longitude: initialCoords.longitude,
-        //   name: "",
-        //   display_name: "",
-        //   placeType: "",
-        // });
+      if (initialCoords && initialCoords.latitude && initialCoords.longitude) {
+        const latitude = parseCoordinate(initialCoords.latitude);
+        const longitude = parseCoordinate(initialCoords.longitude);
+        if (latitude === null || longitude === null) {
+          setCoordError(true);
+          setSelectedLocation(null);
+          setMapRegion(null);
+        } else {
+          setCoordError(false);
+          setSelectedLocation({
+            latitude,
+            longitude,
+            name: initialCoords.name || "",
+            display_name: initialCoords.display_name || "",
+            placeType: initialCoords.placeType || "",
+          });
+          setMapRegion({
+            latitude,
+            longitude,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          });
+          setSearch(initialCoords.display_name || "");
+        }
+      } else {
+        setSelectedLocation(null);
+        setMapRegion(null);
+        setSearch("");
+        setCoordError(false);
       }
+      setSuggestions([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
+
+  // --- NEW: Clear selected location and map preview if input is cleared ---
+  useEffect(() => {
+    if (search.trim() === "") {
+      setSelectedLocation(null);
+      setMapRegion(null);
+    }
+  }, [search]);
 
   const LOCATIONIQ_API_KEY = "pk.f73f676cc77d848a6d4d0c0003335e59";
 
@@ -61,7 +99,7 @@ export default function MapLocationPicker({
     try {
       const url = `https://us1.locationiq.com/v1/search.php?key=${LOCATIONIQ_API_KEY}&q=${encodeURIComponent(
         trimmedText
-      )}&format=json&limit=8&addressdetails=1&dedupe=1&normalizeaddress=1`;
+      )}&format=json&limit=8&addressdetails=1&dedupe=1&normalizeaddress=1&countrycodes=us`;
       const res = await fetch(url);
       const data = await res.json();
       setSuggestions(Array.isArray(data) ? data : []);
@@ -72,17 +110,34 @@ export default function MapLocationPicker({
   };
 
   const handleSuggestionPick = (item) => {
-    Keyboard.dismiss(); // Hide the keyboard when a suggestion is picked
+    Keyboard.dismiss();
     setSearch(item.display_name);
     setSuggestions([]);
+    const latitude = parseCoordinate(item.lat);
+    const longitude = parseCoordinate(item.lon);
+    // Debug: log the coordinates
+    // console.log("Picked coords:", latitude, longitude, item.display_name);
+    if (latitude === null || longitude === null) {
+      setCoordError(true);
+      setSelectedLocation(null);
+      setMapRegion(null);
+      return;
+    }
+    setCoordError(false);
     const location = {
-      latitude: parseFloat(item.lat),
-      longitude: parseFloat(item.lon),
+      latitude,
+      longitude,
       name: item.display_name.split(",")[0].trim(),
       display_name: item.display_name,
       placeType: item.type || "",
     };
     setSelectedLocation(location);
+    setMapRegion({
+      latitude: latitude,
+      longitude: longitude,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    });
     // Do not call onPick here
   };
 
@@ -168,26 +223,27 @@ export default function MapLocationPicker({
                   )}
                 </View>
               )}
+              {/* Show error if coordinates are invalid */}
+              {coordError && (
+                <Text
+                  style={{
+                    color: "red",
+                    marginVertical: 8,
+                    textAlign: "center",
+                  }}
+                >
+                  Could not find a valid location for this address.
+                </Text>
+              )}
               {/* Show map with pin if a location is selected and modal is visible */}
-              {visible && selectedLocation && (
+              {visible && selectedLocation && mapRegion && (
                 <>
                   <MapView
                     provider="google"
                     style={styles.map}
-                    initialRegion={{
-                      latitude: selectedLocation.latitude,
-                      longitude: selectedLocation.longitude,
-                      latitudeDelta: 0.01,
-                      longitudeDelta: 0.01,
-                    }}
-                    region={{
-                      latitude: selectedLocation.latitude,
-                      longitude: selectedLocation.longitude,
-                      latitudeDelta: 0.01,
-                      longitudeDelta: 0.01,
-                    }}
+                    region={mapRegion}
                     pointerEvents="none"
-                    mapType="satellite" // <-- Add this line for satellite view
+                    mapType="satellite"
                   >
                     <Marker
                       coordinate={{
