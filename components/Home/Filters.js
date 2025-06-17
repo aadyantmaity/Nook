@@ -8,6 +8,7 @@ import {
   Platform,
   UIManager,
 } from "react-native";
+import { FadersHorizontal } from "phosphor-react-native";
 
 const TAGS = [
   "All",
@@ -90,31 +91,42 @@ export default function Filters({
   }
 
   return (
-    <View>
-      <TouchableOpacity
-        onPress={() => setModalVisible(true)}
+    <TouchableOpacity
+      onPress={() => setModalVisible(true)}
+      style={[
+        {
+          backgroundColor: themeColors.purple,
+          borderRadius: 25,
+          paddingVertical: 10,
+          paddingHorizontal: 22,
+          alignItems: "center",
+          alignSelf: "flex-start",
+          flexDirection: "row",
+        },
+        buttonStyle,
+      ]}
+      accessibilityLabel="Open Filters"
+    >
+      {/* Replace text with icon */}
+      <Text
         style={[
           {
-            backgroundColor: themeColors.purple,
-            borderRadius: 25,
-            paddingVertical: 10,
-            paddingHorizontal: 22,
-            alignItems: "center",
-            alignSelf: "flex-start",
+            color: themeColors.purple,
+            fontWeight: "bold",
+            fontSize: 14,
+            marginRight: 8,
           },
-          buttonStyle,
         ]}
-        accessibilityLabel="Open Filters"
       >
-        <Text
-          style={[
-            { color: themeColors.white, fontWeight: "bold", fontSize: 13 },
-            textStyle,
-          ]}
-        >
-          Filters
-        </Text>
-      </TouchableOpacity>
+        Filters
+      </Text>
+      <FadersHorizontal
+        size={22}
+        color={themeColors.purple}
+        weight="bold"
+        style={{}}
+      />
+
       <Modal
         visible={modalVisible}
         transparent
@@ -269,6 +281,6 @@ export default function Filters({
           </View>
         </View>
       </Modal>
-    </View>
+    </TouchableOpacity>
   );
 }
