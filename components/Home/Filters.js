@@ -21,6 +21,7 @@ const TAGS = [
   "Food Nearby",
   "Open Space",
   "No Husky Card",
+  "Private",
 ];
 
 // Enable LayoutAnimation on Android
@@ -59,6 +60,8 @@ export default function Filters({
         ? "favorites"
         : label === "No Husky Card"
         ? "no-husky-card"
+        : label === "Private"
+        ? "private"
         : label.toLowerCase();
 
     if (localFilters.includes(normalized)) {
@@ -75,6 +78,8 @@ export default function Filters({
         ? "favorites"
         : label === "No Husky Card"
         ? "no-husky-card"
+        : label === "Private"
+        ? "private"
         : label.toLowerCase();
     return localFilters.includes(normalized);
   };
