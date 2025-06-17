@@ -166,6 +166,7 @@ export default function HomeScreen({ navigation, route }) {
     filters,
     setFilters,
   }) {
+    const [isFiltersPressed, setIsFiltersPressed] = React.useState(false);
     return (
       <View style={{ paddingTop: 16 }}>
         <View
@@ -184,7 +185,9 @@ export default function HomeScreen({ navigation, route }) {
               style={{
                 backgroundColor: !showMapView
                   ? themeColors.purple
-                  : themeColors.gray,
+                  : themeColors.white,
+                borderWidth: 1,
+                borderColor: themeColors.purple,
                 padding: 10,
                 borderRadius: 8,
                 marginRight: 8,
@@ -205,7 +208,9 @@ export default function HomeScreen({ navigation, route }) {
               style={{
                 backgroundColor: showMapView
                   ? themeColors.purple
-                  : themeColors.gray,
+                  : themeColors.white,
+                borderWidth: 1.5,
+                borderColor: themeColors.purple,
                 padding: 10,
                 borderRadius: 8,
                 minWidth: 48,
@@ -223,13 +228,23 @@ export default function HomeScreen({ navigation, route }) {
             </TouchableOpacity>
           </View>
           {/* Right: Filters Button */}
-          <Filters
-            filters={filters}
-            setFilters={setFilters}
-            themeColors={themeColors}
-            buttonStyle={{
-              backgroundColor: themeColors.gray,
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPressIn={() => setIsFiltersPressed(true)}
+            onPressOut={() => setIsFiltersPressed(false)}
+            onPress={() => {
+              setIsFiltersPressed(false);
+              // Open filters modal or whatever Filters does on press
+              // If Filters is a button, you may need to trigger its onPress here
+              // Otherwise, just render Filters as before
+            }}
+            style={{
+              backgroundColor: isFiltersPressed
+                ? themeColors.purple
+                : themeColors.white,
               borderRadius: 8,
+              borderWidth: 1,
+              borderColor: themeColors.purple,
               paddingVertical: 10,
               alignItems: "center",
               justifyContent: "center",
@@ -238,13 +253,33 @@ export default function HomeScreen({ navigation, route }) {
               height: 42,
               marginBottom: 0,
             }}
-            textStyle={{
-              color: themeColors.purple,
-              fontWeight: "bold",
-              fontSize: 13,
-              textAlignVertical: "center",
-            }}
-          />
+          >
+            <Filters
+              filters={filters}
+              setFilters={setFilters}
+              themeColors={themeColors}
+              buttonStyle={{
+                backgroundColor: "transparent",
+                borderRadius: 8,
+                borderWidth: 0,
+                paddingVertical: 0,
+                alignItems: "center",
+                justifyContent: "center",
+                minWidth: 0,
+                marginRight: 0,
+                height: 22,
+                marginBottom: 0,
+              }}
+              textStyle={{
+                color: isFiltersPressed
+                  ? themeColors.white
+                  : themeColors.purple,
+                fontWeight: "bold",
+                fontSize: 14,
+                textAlignVertical: "center",
+              }}
+            />
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -420,10 +455,6 @@ export default function HomeScreen({ navigation, route }) {
               backgroundColor: themeColors.white,
               alignItems: "center",
               justifyContent: "center",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 4,
               elevation: 2,
             }}
             accessibilityLabel="Open menu"
