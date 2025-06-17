@@ -1,5 +1,13 @@
-import React from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  Modal,
+  Platform,
+  UIManager,
+} from "react-native";
 
 const TAGS = [
   "All",
@@ -11,40 +19,40 @@ const TAGS = [
   "Natural Light",
   "Food Nearby",
   "Open Space",
-  "No Husky Card", // Add this tag for filtering spots where Husky Card is NOT required
+  "No Husky Card",
 ];
 
-export default function Filters({ filters, setFilters, themeColors }) {
-  // Distribute tags into two rows with roughly equal total character length,
-  // but always put "Favorites" in the first row if present
-  function splitTagsEvenly(tags) {
-    let row1 = [],
-      row2 = [];
-    let len1 = 0,
-      len2 = 0;
-    tags.forEach((tag) => {
-      if (tag === "Favorites") {
-        row1.push(tag);
-        len1 += tag.length;
-      } else if (len1 <= len2) {
-        row1.push(tag);
-        len1 += tag.length;
-      } else {
-        row2.push(tag);
-        len2 += tag.length;
-      }
-    });
-    return [row1, row2];
-  }
+// Enable LayoutAnimation on Android
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
-  const [row1, row2] = splitTagsEvenly(TAGS);
+export default function Filters({
+  filters,
+  setFilters,
+  themeColors,
+  buttonStyle,
+  textStyle,
+}) {
+  // Modal open state
+  const [modalVisible, setModalVisible] = useState(false);
+  // Local filter state for modal (so parent state doesn't interfere)
+  const [localFilters, setLocalFilters] = useState(filters);
+
+  // Keep localFilters in sync with parent filters only when modal is closed
+  useEffect(() => {
+    if (!modalVisible) setLocalFilters(filters);
+    // eslint-disable-next-line
+  }, [filters, modalVisible]);
 
   const handlePress = (label) => {
     if (label === "All") {
-      setFilters([]);
+      setLocalFilters([]);
       return;
     }
-
     const normalized =
       label === "Favorites"
         ? "favorites"
@@ -52,97 +60,185 @@ export default function Filters({ filters, setFilters, themeColors }) {
         ? "no-husky-card"
         : label.toLowerCase();
 
-    if (filters.includes(normalized)) {
-      setFilters(filters.filter((f) => f !== normalized));
+    if (localFilters.includes(normalized)) {
+      setLocalFilters(localFilters.filter((f) => f !== normalized));
     } else {
-      setFilters([...filters, normalized]);
+      setLocalFilters([...localFilters, normalized]);
     }
   };
 
   const isSelected = (label) => {
-    if (label === "All") return filters.length === 0;
+    if (label === "All") return localFilters.length === 0;
     const normalized =
       label === "Favorites"
         ? "favorites"
         : label === "No Husky Card"
         ? "no-husky-card"
         : label.toLowerCase();
-    return filters.includes(normalized);
+    return localFilters.includes(normalized);
   };
 
   return (
-    <View
-      style={{
-        position: "relative",
-        zIndex: 1,
-        backgroundColor: themeColors.white,
-        paddingBottom: 8,
-        // borderBottomWidth: 1, // Remove this line
-        // borderBottomColor: "#E0E0E0", // Remove this line
-      }}
-    >
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{
-          flexDirection: "column",
-        }}
+    <View>
+      <TouchableOpacity
+        onPress={() => setModalVisible(true)}
+        style={[
+          {
+            backgroundColor: themeColors.purple,
+            borderRadius: 25,
+            paddingVertical: 10,
+            paddingHorizontal: 22,
+            alignItems: "center",
+            alignSelf: "flex-start",
+          },
+          buttonStyle,
+        ]}
+        accessibilityLabel="Open Filters"
       >
-        {[row1, row2].map((row, rowIdx) => (
+        <Text
+          style={[
+            { color: themeColors.white, fontWeight: "bold", fontSize: 13 },
+            textStyle,
+          ]}
+        >
+          Filters
+        </Text>
+      </TouchableOpacity>
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.3)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
           <View
-            key={rowIdx}
             style={{
-              flexDirection: "row",
+              backgroundColor: themeColors.white,
+              borderRadius: 16,
+              padding: 24,
+              width: "90%",
+              maxWidth: 400,
               alignItems: "center",
-              marginBottom: rowIdx === 0 ? 8 : 0,
             }}
           >
-            {row.map((label) => {
-              const selected = isSelected(label);
-              return (
-                <TouchableOpacity
-                  key={label}
-                  onPress={() => handlePress(label)}
-                  style={{
-                    paddingVertical: 10,
-                    paddingHorizontal: 10,
-                    backgroundColor: selected
-                      ? themeColors.purple
-                      : themeColors.white,
-                    borderRadius: 25,
-                    marginRight: 8,
-                    marginBottom: 4,
-                    shadowColor: themeColors.purple,
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 4,
-                    borderWidth:
-                      themeColors.white !== "#fff" &&
-                      themeColors.white !== "#ffffff"
-                        ? 1
-                        : 0,
-                    borderColor:
-                      themeColors.white !== "#fff" &&
-                      themeColors.white !== "#ffffff"
-                        ? themeColors.purple
-                        : "transparent",
-                  }}
-                >
-                  <Text
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "bold",
+                color: themeColors.purple,
+                marginBottom: 12,
+              }}
+            >
+              Filter Study Spots
+            </Text>
+            {/* Show all filters in a grid layout */}
+            <View
+              style={{
+                flexDirection: "row",
+                flexWrap: "wrap",
+                justifyContent: "flex-start",
+                width: "100%",
+                marginBottom: 16,
+              }}
+            >
+              {TAGS.map((label) => {
+                const selected = isSelected(label);
+                return (
+                  <TouchableOpacity
+                    key={label}
+                    onPress={() => handlePress(label)}
                     style={{
-                      color: selected ? themeColors.white : themeColors.purple,
-                      fontWeight: "bold",
-                      fontSize: 11,
+                      paddingVertical: 10,
+                      paddingHorizontal: 14,
+                      backgroundColor: selected
+                        ? themeColors.purple
+                        : themeColors.white,
+                      borderRadius: 25,
+                      marginRight: 8,
+                      marginBottom: 8,
+                      shadowColor: themeColors.purple,
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 4,
+                      borderWidth:
+                        themeColors.white !== "#fff" &&
+                        themeColors.white !== "#ffffff"
+                          ? 1
+                          : 0,
+                      borderColor:
+                        themeColors.white !== "#fff" &&
+                        themeColors.white !== "#ffffff"
+                          ? themeColors.purple
+                          : "transparent",
                     }}
                   >
-                    {label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+                    <Text
+                      style={{
+                        color: selected
+                          ? themeColors.white
+                          : themeColors.purple,
+                        fontWeight: "bold",
+                        fontSize: 11,
+                      }}
+                    >
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <View
+              style={{ flexDirection: "row", marginTop: 18, width: "100%" }}
+            >
+              <TouchableOpacity
+                onPress={() => {
+                  setModalVisible(false);
+                  setLocalFilters(filters); // Reset to parent filters
+                }}
+                style={{
+                  flex: 1,
+                  backgroundColor: themeColors.white,
+                  borderColor: themeColors.purple,
+                  borderWidth: 1,
+                  borderRadius: 8,
+                  alignItems: "center",
+                  padding: 12,
+                  marginRight: 8,
+                }}
+              >
+                <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  setFilters(localFilters);
+                  setModalVisible(false);
+                }}
+                style={{
+                  flex: 1,
+                  backgroundColor: themeColors.purple,
+                  borderRadius: 8,
+                  alignItems: "center",
+                  padding: 12,
+                  marginLeft: 8,
+                }}
+              >
+                <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+                  Apply
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        ))}
-      </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 }

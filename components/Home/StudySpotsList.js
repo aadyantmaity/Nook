@@ -1,6 +1,16 @@
 import React from "react";
 import { View, FlatList, Text, TouchableOpacity, Image } from "react-native";
-import { Heart, Star, Warning, Lock } from "phosphor-react-native"; // add Lock icon
+import {
+  Heart,
+  Star,
+  Warning,
+  Lock,
+  CaretDown,
+  CaretUp,
+  Rows,
+  MapTrifold,
+  List,
+} from "phosphor-react-native";
 import Filters from "./Filters";
 
 export default function StudySpotsList({
@@ -20,6 +30,10 @@ export default function StudySpotsList({
   contentContainerStyle,
   showMapView,
   setShowMapView,
+  filtersExpanded,
+  setFiltersExpanded,
+  hideHeader,
+  ListHeaderComponent, // <-- add this prop
 }) {
   // Add helper functions:
   function getNoiseLabel(avg) {
@@ -41,70 +55,7 @@ export default function StudySpotsList({
 
   return (
     <FlatList
-      ListHeaderComponent={
-        <View style={{ paddingTop: 16 }}>
-          {/* Filters */}
-
-          {/* List/Map View Toggle Buttons */}
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "center",
-              marginBottom: 16,
-              zIndex: 20,
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => setShowMapView(false)}
-              style={{
-                backgroundColor: !showMapView
-                  ? themeColors.purple
-                  : themeColors.gray,
-                padding: 10,
-                borderRadius: 8,
-                marginRight: 8,
-                minWidth: 90,
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  color: !showMapView ? themeColors.white : themeColors.purple,
-                  fontWeight: "bold",
-                }}
-              >
-                List View
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setShowMapView(true)}
-              style={{
-                backgroundColor: showMapView
-                  ? themeColors.purple
-                  : themeColors.gray,
-                padding: 10,
-                borderRadius: 8,
-                minWidth: 90,
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  color: showMapView ? themeColors.white : themeColors.purple,
-                  fontWeight: "bold",
-                }}
-              >
-                Map View
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <Filters
-            filters={filters}
-            setFilters={setFilters}
-            themeColors={themeColors}
-          />
-        </View>
-      }
+      // Remove ListHeaderComponent (header is now only in HomeScreen)
       contentContainerStyle={{
         paddingHorizontal: 16,
         paddingTop: 0,
@@ -112,6 +63,7 @@ export default function StudySpotsList({
       }}
       data={filteredSpots}
       keyExtractor={(item) => item.id}
+      ListHeaderComponent={ListHeaderComponent}
       renderItem={({ item }) => {
         // --- Filter today's alerts only ---
         const today = new Date();
