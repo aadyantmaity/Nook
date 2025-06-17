@@ -186,7 +186,7 @@ export default function HomeScreen({ navigation, route }) {
                 backgroundColor: !showMapView
                   ? themeColors.purple
                   : themeColors.white,
-                borderWidth: 1,
+                borderWidth: 1.5,
                 borderColor: themeColors.purple,
                 padding: 10,
                 borderRadius: 8,
