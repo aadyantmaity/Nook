@@ -1,5 +1,11 @@
 import React, { useRef, useState } from "react";
-import { View, Text, Dimensions, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  Dimensions,
+  TouchableOpacity,
+  Platform,
+} from "react-native";
 import MapView, { Marker, Callout, PROVIDER_GOOGLE } from "react-native-maps";
 
 // Helper: Haversine distance in meters
@@ -128,7 +134,7 @@ export default function StudySpotsMapView({
         region={region || undefined}
         onRegionChangeComplete={setRegion}
         showsUserLocation={true}
-        provider={PROVIDER_GOOGLE}
+        {...(Platform.OS === "android" ? { provider: PROVIDER_GOOGLE } : {})}
         mapType="satellite"
         showsCompass={true}
         rotateEnabled={true}
