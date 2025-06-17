@@ -103,7 +103,6 @@ export default function Filters({
           backgroundColor: themeColors.purple,
           borderRadius: 25,
           paddingVertical: 10,
-          paddingHorizontal: 22,
           alignItems: "center",
           alignSelf: "flex-start",
           flexDirection: "row",
