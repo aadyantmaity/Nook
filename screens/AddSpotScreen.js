@@ -42,40 +42,64 @@ const TAGS = [
 ];
 
 const BUILDINGS = [
-  "Suzallo Library",
-  "Allen Library",
-  "Odegaard Library",
-  "Mary Gates Hall",
-  "Husky Union Building (HUB)",
-  "Paul G. Allen Center (CSE)",
-  "Bill-Melinda Gates Center (CSE)",
-  "Paccar Hall",
-  "Denny Hall",
-  "Bagley Hall",
-  "Smith Hall",
-  "Thomson Hall",
-  "Physics-Astronomy Building",
-  "Mechanical Engineering Building",
-  "Electrical Engineering Building",
-  "Art Building",
-  "Music Building",
-  "William H. Gates Hall",
-  "Savery Hall",
-  "Sieg Hall",
-  "Raitt Hall",
-  "Roberts Hall",
-  "Loew Hall",
-  "More Hall",
-  "Guggenheim Hall",
-  "Benson Hall",
-  "Anderson Hall",
-  "Architecture Hall",
-  "Communications Building",
-  "Clark Hall",
-  "Parrington Hall",
-  "Schmitz Hall",
-  "South Campus Center",
-  "Health Sciences Building",
+  { name: "Suzzallo Library", latitude: 47.6557, longitude: -122.3084 },
+  { name: "Allen Library", latitude: 47.6557, longitude: -122.3094 },
+  { name: "Odegaard Library", latitude: 47.656667, longitude: -122.310278 },
+  { name: "Mary Gates Hall", latitude: 47.6564, longitude: -122.307 },
+  {
+    name: "Husky Union Building (HUB)",
+    latitude: 47.6553,
+    longitude: -122.3057,
+  },
+  {
+    name: "Paul G. Allen Center (CSE)",
+    latitude: 47.6537,
+    longitude: -122.3051,
+  },
+  {
+    name: "Bill‑Melinda Gates Center (CSE)",
+    latitude: 47.6532,
+    longitude: -122.3047,
+  },
+  { name: "Paccar Hall", latitude: 47.6591, longitude: -122.3087 },
+  { name: "Denny Hall", latitude: 47.6577, longitude: -122.3122 },
+  { name: "Bagley Hall", latitude: 47.6539, longitude: -122.3087 },
+  { name: "Smith Hall", latitude: 47.6569, longitude: -122.3108 },
+  { name: "Thomson Hall", latitude: 47.6567, longitude: -122.3118 },
+  {
+    name: "Physics‑Astronomy Building",
+    latitude: 47.6532,
+    longitude: -122.3042,
+  },
+  {
+    name: "Mechanical Engineering Building",
+    latitude: 47.6535,
+    longitude: -122.3049,
+  },
+  {
+    name: "Electrical Engineering Building",
+    latitude: 47.6536,
+    longitude: -122.3056,
+  },
+  { name: "Art Building", latitude: 47.6552, longitude: -122.3089 },
+  { name: "Music Building", latitude: 47.6555, longitude: -122.3084 },
+  { name: "William H. Gates Hall", latitude: 47.6582, longitude: -122.3126 },
+  { name: "Savery Hall", latitude: 47.6562, longitude: -122.3102 },
+  { name: "Sieg Hall", latitude: 47.6538, longitude: -122.3062 },
+  { name: "Raitt Hall", latitude: 47.6563, longitude: -122.3112 },
+  { name: "Roberts Hall", latitude: 47.6537, longitude: -122.3072 },
+  { name: "Loew Hall", latitude: 47.6536, longitude: -122.3078 },
+  { name: "More Hall", latitude: 47.6535, longitude: -122.3083 },
+  { name: "Guggenheim Hall", latitude: 47.6534, longitude: -122.3088 },
+  { name: "Benson Hall", latitude: 47.6533, longitude: -122.3093 },
+  { name: "Anderson Hall", latitude: 47.6558, longitude: -122.3097 },
+  { name: "Architecture Hall", latitude: 47.6556, longitude: -122.3092 },
+  { name: "Communications Building", latitude: 47.656, longitude: -122.3076 },
+  { name: "Clark Hall", latitude: 47.6559, longitude: -122.3081 },
+  { name: "Parrington Hall", latitude: 47.6571, longitude: -122.3097 },
+  { name: "Schmitz Hall", latitude: 47.6547, longitude: -122.3072 },
+  { name: "South Campus Center", latitude: 47.6507, longitude: -122.3082 },
+  { name: "Health Sciences Building", latitude: 47.6499, longitude: -122.3077 },
 ];
 
 export default function AddSpotScreen({ navigation }) {
@@ -181,6 +205,16 @@ export default function AddSpotScreen({ navigation }) {
         return;
       }
       let photoUrl = "";
+      // --- Add coordinates for UW buildings ---
+      let coordinates = undefined;
+      if (isUWBuilding) {
+        const b = BUILDINGS.find(
+          (b) => (b.name || b) === selectedBuilding || b === selectedBuilding
+        );
+        if (b && b.latitude && b.longitude) {
+          coordinates = { latitude: b.latitude, longitude: b.longitude };
+        }
+      }
       const spotDetails = {
         name: buildingNameToCheck,
         buildingName: buildingNameToCheck,
@@ -194,7 +228,9 @@ export default function AddSpotScreen({ navigation }) {
         photoUrl: "",
         openHours,
         ...(isUWBuilding
-          ? {}
+          ? coordinates
+            ? { coordinates }
+            : {}
           : customCoords
           ? { coordinates: customCoords }
           : {}),
