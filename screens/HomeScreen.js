@@ -242,8 +242,8 @@ export default function HomeScreen({ navigation, route }) {
               backgroundColor: isFiltersPressed
                 ? themeColors.purple
                 : themeColors.white,
-              borderRadius: 8,
-              borderWidth: 1,
+              // borderRadius: 8,
+              // borderWidth: 1,
               borderColor: themeColors.purple,
               paddingVertical: 10,
               alignItems: "center",
@@ -271,9 +271,7 @@ export default function HomeScreen({ navigation, route }) {
                 marginBottom: 0,
               }}
               textStyle={{
-                color: isFiltersPressed
-                  ? themeColors.white
-                  : themeColors.purple,
+                color: isFiltersPressed ? themeColors.white : themeColors.black,
                 fontWeight: "bold",
                 fontSize: 14,
                 textAlignVertical: "center",
@@ -367,7 +365,7 @@ export default function HomeScreen({ navigation, route }) {
           zIndex: 20,
         }}
       >
-        <View
+        <TouchableOpacity
           style={{
             flexDirection: "row",
             alignItems: "center",
@@ -381,6 +379,8 @@ export default function HomeScreen({ navigation, route }) {
             shadowRadius: 4,
             elevation: 3,
           }}
+          onPress={() => navigation.navigate("AddSpot")}
+          activeOpacity={0.85}
         >
           <Plus size={24} color={themeColors.white} />
           <Text
@@ -390,11 +390,10 @@ export default function HomeScreen({ navigation, route }) {
               fontSize: 14,
               marginLeft: 8,
             }}
-            onPress={() => navigation.navigate("AddSpot")}
           >
             Add Nook
           </Text>
-        </View>
+        </TouchableOpacity>
       </View>
     </>
   );

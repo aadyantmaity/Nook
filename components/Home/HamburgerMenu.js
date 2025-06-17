@@ -48,7 +48,10 @@ export default function HamburgerMenu({
         >
           {/* Report */}
           <TouchableOpacity
-            onPress={onReportPress}
+            onPress={() => {
+              onClose();
+              setTimeout(onReportPress, 150);
+            }}
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -82,7 +85,10 @@ export default function HamburgerMenu({
           />
           {/* Theme toggle */}
           <TouchableOpacity
-            onPress={onThemeToggle}
+            onPress={() => {
+              onClose();
+              setTimeout(onThemeToggle, 150);
+            }}
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -116,7 +122,10 @@ export default function HamburgerMenu({
           />
           {/* Profile */}
           <TouchableOpacity
-            onPress={onProfilePress}
+            onPress={() => {
+              onClose();
+              setTimeout(onProfilePress, 150);
+            }}
             style={{
               flexDirection: "row",
               alignItems: "center",
