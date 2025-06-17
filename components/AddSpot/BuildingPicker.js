@@ -47,9 +47,9 @@ export default function BuildingPicker({
         />
         {BUILDINGS.map((building) => (
           <Picker.Item
-            key={building}
-            label={building}
-            value={building}
+            key={typeof building === "string" ? building : building.name}
+            label={typeof building === "string" ? building : building.name}
+            value={typeof building === "string" ? building : building.name}
             style={{
               fontSize: 18,
               color: themeColors.purple,
