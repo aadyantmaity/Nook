@@ -98,7 +98,10 @@ export default function StudySpotsList({
         return (
           <TouchableOpacity
             onPress={() =>
-              navigation.navigate("SpotDetail", { spotId: item.id })
+              navigation.navigate("SpotDetail", {
+                spotId: item.id,
+                view: showMapView ? "map" : "list",
+              })
             }
             style={{
               padding: 16,

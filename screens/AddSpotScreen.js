@@ -102,7 +102,7 @@ const BUILDINGS = [
   { name: "Health Sciences Building", latitude: 47.6499, longitude: -122.3077 },
 ];
 
-export default function AddSpotScreen({ navigation }) {
+export default function AddSpotScreen({ navigation, route }) {
   const themeCtx = useContext(ThemeContext);
   const isDarkMode = themeCtx?.isDarkMode ?? false;
   const themeColors = themeCtx?.themeColors ?? colors;
@@ -257,7 +257,10 @@ export default function AddSpotScreen({ navigation }) {
           });
         }
       }
-      navigation.navigate("Home", { refresh: true });
+      navigation.navigate(
+        "Home",
+        route?.params?.view ? { view: route.params.view } : undefined
+      );
       resetForm();
     } catch (error) {
       console.error("Error adding spot:", error);

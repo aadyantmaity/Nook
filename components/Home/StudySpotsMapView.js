@@ -145,7 +145,10 @@ export default function StudySpotsMapView({
             >
               <Callout
                 onPress={() =>
-                  navigation.navigate("SpotDetail", { spotId: cluster[0].id })
+                  navigation({
+                    spotId: cluster[0].id,
+                    view: "map",
+                  })
                 }
                 style={{ minWidth: 120 }}
               >

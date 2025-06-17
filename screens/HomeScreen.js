@@ -40,7 +40,6 @@ import {
 } from "phosphor-react-native"; // Add Heart icon
 import { colors } from "../constants/colors"; // Import colors
 import { auth, db } from "../firebaseConfig"; // Import Firebase
-import { doc, getDoc } from "firebase/firestore"; // Import Firestore functions
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system"; // <-- Add this import
 import { ThemeContext } from "../App"; // Import ThemeContext
@@ -62,9 +61,11 @@ import GeneralReportModal from "../components/Home/GeneralReportModal"; // Impor
 //hook imports
 import useStudySpots from "../hooks/useStudySpots";
 import useFavorites from "../hooks/useFavorites";
-import useSearchAndFilters from "../hooks/useSearchAndFilters";
+import useSearchAndFilters from "../hooks/useSearchAndFilters"; // already imported
 
 let imageCache = {};
+
+const HOME_VIEW_KEY = "nookHomeView"; // Add this constant
 
 export default function HomeScreen({ navigation, route }) {
   // Theme
@@ -96,6 +97,67 @@ export default function HomeScreen({ navigation, route }) {
     { key: "focus", title: "Focus Mode" },
   ]);
 
+  // --- Load user's preferred view on mount or when route changes ---
+  React.useEffect(() => {
+    const fetchUserView = async () => {
+      try {
+        // 1. Try AsyncStorage first
+        const stored = await AsyncStorage.getItem(HOME_VIEW_KEY);
+        if (stored === "map") {
+          setShowMapView(true);
+          return;
+        }
+        if (stored === "list") {
+          setShowMapView(false);
+          return;
+        }
+        // 2. Fallback to Firestore
+        const user = auth.currentUser;
+        if (!user) return;
+        const userRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          const pref = userDoc.data().homeView;
+          if (pref === "map") setShowMapView(true);
+          else setShowMapView(false);
+        }
+      } catch {}
+    };
+    // If route.params?.view is set, override and persist
+    if (route?.params?.view) {
+      setShowMapView(route.params.view === "map");
+      AsyncStorage.setItem(
+        HOME_VIEW_KEY,
+        route.params.view === "map" ? "map" : "list"
+      );
+      // Also update Firestore
+      (async () => {
+        try {
+          const user = auth.currentUser;
+          if (!user) return;
+          const userRef = doc(db, "users", user.uid);
+          await updateDoc(userRef, {
+            homeView: route.params.view === "map" ? "map" : "list",
+          });
+        } catch {}
+      })();
+    } else {
+      fetchUserView();
+    }
+  }, [route?.params?.view]);
+
+  // --- Save user's preferred view when toggled ---
+  const handleSetShowMapView = async (val) => {
+    setShowMapView(val);
+    try {
+      await AsyncStorage.setItem(HOME_VIEW_KEY, val ? "map" : "list");
+      const user = auth.currentUser;
+      if (!user) return;
+      const userRef = doc(db, "users", user.uid);
+      await updateDoc(userRef, { homeView: val ? "map" : "list" });
+    } catch {}
+  };
+
   // --- Reusable Header (toggle only, no filters) ---
   function StudySpotsHeader({
     showMapView,
@@ -118,7 +180,7 @@ export default function HomeScreen({ navigation, route }) {
           {/* Left: List/Map View Toggle */}
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <TouchableOpacity
-              onPress={() => setShowMapView(false)}
+              onPress={() => handleSetShowMapView(false)}
               style={{
                 backgroundColor: !showMapView
                   ? themeColors.purple
@@ -132,14 +194,14 @@ export default function HomeScreen({ navigation, route }) {
                 height: 42,
               }}
             >
-              <Rows // <-- Changed from List to Rows
+              <Rows
                 size={22}
                 color={!showMapView ? themeColors.white : themeColors.purple}
                 weight="bold"
               />
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => setShowMapView(true)}
+              onPress={() => handleSetShowMapView(true)}
               style={{
                 backgroundColor: showMapView
                   ? themeColors.purple
@@ -201,7 +263,7 @@ export default function HomeScreen({ navigation, route }) {
           <View style={{ paddingHorizontal: 16 }}>
             <StudySpotsHeader
               showMapView={showMapView}
-              setShowMapView={setShowMapView}
+              setShowMapView={handleSetShowMapView}
               themeColors={themeColors}
               filters={filters}
               setFilters={setFilters}
@@ -209,7 +271,13 @@ export default function HomeScreen({ navigation, route }) {
           </View>
           <StudySpotsMapView
             spots={filteredSpots}
-            navigation={navigation}
+            navigation={(navProps) => {
+              // When navigating to SpotDetail, pass the current view
+              navigation.navigate("SpotDetail", {
+                ...navProps,
+                view: showMapView ? "map" : "list",
+              });
+            }}
             themeColors={themeColors}
             containerStyle={{ marginHorizontal: 16 }}
           />
@@ -217,7 +285,20 @@ export default function HomeScreen({ navigation, route }) {
       ) : (
         <StudySpotsList
           filteredSpots={filteredSpots}
-          navigation={navigation}
+          navigation={{
+            ...navigation,
+            navigate: (screen, params) => {
+              // When navigating to SpotDetail, pass the current view
+              if (screen === "SpotDetail") {
+                navigation.navigate(screen, {
+                  ...params,
+                  view: showMapView ? "map" : "list",
+                });
+              } else {
+                navigation.navigate(screen, params);
+              }
+            },
+          }}
           favorites={favorites}
           handleToggleFavorite={toggleFavorite}
           themeColors={themeColors}
@@ -230,12 +311,11 @@ export default function HomeScreen({ navigation, route }) {
           contentContainerStyle={{ paddingBottom: 72 }}
           getLastUpdatedLabel={getLastUpdatedLabel}
           showMapView={showMapView}
-          setShowMapView={setShowMapView}
+          setShowMapView={handleSetShowMapView}
           ListHeaderComponent={
-            // Remove extra padding here to match MapView
             <StudySpotsHeader
               showMapView={showMapView}
-              setShowMapView={setShowMapView}
+              setShowMapView={handleSetShowMapView}
               themeColors={themeColors}
               filters={filters}
               setFilters={setFilters}
@@ -318,6 +398,7 @@ export default function HomeScreen({ navigation, route }) {
             paddingTop: 16,
             marginBottom: 8,
             zIndex: 10,
+            paddingHorizontal: 16, // <-- Add this line
           }}
         >
           <Text

@@ -37,7 +37,7 @@ import useStudyStats from "../hooks/useStudyStats";
 import ProfilePicture from "../components/Profile/ProfilePicture";
 import FavoriteSpotCard from "../components/Profile/FavoriteSpotCard";
 
-export default function ProfileScreen({ navigation }) {
+export default function ProfileScreen({ navigation, route }) {
   const themeCtx = useContext(ThemeContext);
   const themeColors = themeCtx?.themeColors ?? colors;
 
@@ -236,7 +236,12 @@ export default function ProfileScreen({ navigation }) {
         <View style={{ flex: 0.2, marginTop: -8 }}>
           <TouchableOpacity
             style={[styles.backButton, { top: 8 }]} // reduce top gap
-            onPress={() => navigation.navigate("Home")}
+            onPress={() =>
+              navigation.navigate(
+                "Home",
+                route?.params?.view ? { view: route.params.view } : undefined
+              )
+            }
           >
             <ArrowLeft size={24} color={themeColors.purple} />
           </TouchableOpacity>

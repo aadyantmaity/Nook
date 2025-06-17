@@ -23,6 +23,7 @@ export default function HamburgerMenu({
           flex: 1,
           backgroundColor: "rgba(0,0,0,0.35)",
           zIndex: 999,
+          paddingHorizontal: 16, // <-- Add this line
         }}
         activeOpacity={1}
         onPressOut={onClose}

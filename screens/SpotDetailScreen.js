@@ -284,7 +284,12 @@ export default function SpotDetailScreen({ route, navigation }) {
             }}
           >
             <TouchableOpacity
-              onPress={() => navigation.navigate("Home")}
+              onPress={() =>
+                navigation.navigate(
+                  "Home",
+                  route.params?.view ? { view: route.params.view } : undefined
+                )
+              }
               style={{
                 alignSelf: "flex-start",
                 flexDirection: "row",
