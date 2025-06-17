@@ -77,7 +77,8 @@ export default function StudySpotsMapView({
 
   // Calculate square size (90% of screen width)
   const screenWidth = Dimensions.get("window").width;
-  const mapSize = Math.floor(screenWidth * 0.9);
+  // Instead of 90%, use full width minus 32px (16px padding on each side)
+  const mapSize = Math.floor(screenWidth - 32);
 
   // --- Cluster spots ---
   const clusters = clusterSpots(spotsWithCoords);
@@ -115,7 +116,7 @@ export default function StudySpotsMapView({
           borderRadius: 16,
           overflow: "hidden",
           backgroundColor: themeColors.gray,
-          marginVertical: 16,
+          // marginHorizontal: 16, // <-- Remove this line, now handled by containerStyle
         },
         containerStyle,
       ]}
@@ -129,6 +130,8 @@ export default function StudySpotsMapView({
         showsUserLocation={true}
         provider={PROVIDER_GOOGLE}
         mapType="satellite"
+        showsCompass={true}
+        rotateEnabled={true}
       >
         {clusters.map((cluster, idx) =>
           cluster.length === 1 ? (
