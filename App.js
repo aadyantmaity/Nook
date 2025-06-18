@@ -101,6 +101,10 @@ export default function App() {
           <Stack.Screen name="SpotDetail" component={SpotDetailScreen} />
           <Stack.Screen name="AddSpot" component={AddSpotScreen} />
           <Stack.Screen name="Profile" component={ProfileScreen} />
+          <Stack.Screen
+            name="FindPeopleView"
+            component={require("./screens/FindPeopleView").default}
+          />
           {/* <Stack.Screen name="FindPeopleScreen" component={FindPeopleScreen} /> */}
         </Stack.Navigator>
       </NavigationContainer>
