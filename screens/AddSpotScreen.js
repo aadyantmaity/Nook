@@ -276,7 +276,7 @@ export default function AddSpotScreen({ navigation, route }) {
 
   return (
     <View
-      style={{ flex: 1, backgroundColor: themeColors.white, paddingTop: 48 }}
+      style={{ flex: 1, backgroundColor: themeColors.white, paddingTop: 36 }}
     >
       <ScrollView
         contentContainerStyle={{
@@ -293,6 +293,7 @@ export default function AddSpotScreen({ navigation, route }) {
               flexDirection: "row",
               alignItems: "center",
               marginBottom: 16,
+              marginLeft: -8,
             }}
           >
             <TouchableOpacity
