@@ -523,6 +523,7 @@ export default function HomeScreen({ navigation, route }) {
           visible={showFindPeopleModal}
           onClose={() => setShowFindPeopleModal(false)}
           themeColors={themeColors}
+          closeOnBackgroundPress={true}
         />
       </View>
     </View>

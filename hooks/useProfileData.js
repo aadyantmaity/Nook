@@ -7,6 +7,7 @@ import {
   updateDoc,
   arrayUnion,
   arrayRemove,
+  onSnapshot, // <-- add this
 } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -22,38 +23,38 @@ export default function useProfileData(targetUid = null) {
   const [following, setFollowing] = useState([]);
   const [isFollowing, setIsFollowing] = useState(false);
 
-  // Fetch user data (for any user)
-  const fetchUserData = useCallback(async () => {
+  // --- Live Firestore subscription for user data ---
+  useEffect(() => {
     const user = auth.currentUser;
     const uid = targetUid || user?.uid;
-    if (uid) {
-      try {
-        const userDoc = await getDoc(doc(db, "users", uid));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          setFirstName(data.firstName || "No First Name");
-          setLastName(data.lastName || "No Last Name");
-          setUserEmail(data.email || "No Email");
-          setUserGradYear(data.gradYear || "No Grad Year");
-          setProfilePic(data.profilePic);
-          setFollowers(data.followers || []);
-          setFollowing(data.following || []);
-          // Check if current user is following this user
-          if (user && uid !== user.uid) {
-            setIsFollowing((data.followers || []).includes(user.uid));
-          }
-        }
-      } catch (error) {
-        // handle error
-      } finally {
-        setIsLoading(false);
+    if (!uid) return;
+    setIsLoading(true);
+    const unsub = onSnapshot(doc(db, "users", uid), (userDoc) => {
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        setFirstName(data.firstName || "No First Name");
+        setLastName(data.lastName || "No Last Name");
+        setUserEmail(data.email || "No Email");
+        setUserGradYear(data.gradYear || "No Grad Year");
+        setProfilePic(data.profilePic);
+        setFollowers(data.followers || []);
+        setFollowing(data.following || []);
       }
-    }
+      setIsLoading(false);
+    });
+    return () => unsub();
   }, [targetUid]);
 
+  // --- Keep isFollowing in sync with followers and auth.currentUser ---
   useEffect(() => {
-    fetchUserData();
-  }, [fetchUserData]);
+    const user = auth.currentUser;
+    if (!user || !targetUid || user.uid === targetUid) {
+      setIsFollowing(false);
+      return;
+    }
+    // Fix: isFollowing should be true if *other user's* followers includes *current user's* UID
+    setIsFollowing(followers.includes(user.uid));
+  }, [followers, targetUid, auth.currentUser]);
 
   // Upload image to Firebase Storage and get download URL
   const uploadProfilePicToStorage = async (imageUri, userId) => {
@@ -115,15 +116,13 @@ export default function useProfileData(targetUid = null) {
     const user = auth.currentUser;
     if (!user || !targetUid || user.uid === targetUid) return;
     try {
-      // Add targetUid to current user's following, and user.uid to target's followers
       await updateDoc(doc(db, "users", user.uid), {
         following: arrayUnion(targetUid),
       });
       await updateDoc(doc(db, "users", targetUid), {
         followers: arrayUnion(user.uid),
       });
-      setIsFollowing(true);
-      setFollowers((prev) => [...prev, user.uid]);
+      // No need to manually update state, onSnapshot will handle it
     } catch {}
   };
 
@@ -137,8 +136,7 @@ export default function useProfileData(targetUid = null) {
       await updateDoc(doc(db, "users", targetUid), {
         followers: arrayRemove(user.uid),
       });
-      setIsFollowing(false);
-      setFollowers((prev) => prev.filter((id) => id !== user.uid));
+      // No need to manually update state, onSnapshot will handle it
     } catch {}
   };
 
@@ -153,7 +151,7 @@ export default function useProfileData(targetUid = null) {
     setLastName,
     setUserGradYear,
     setProfilePic,
-    fetchUserData,
+    fetchUserData: () => {}, // No-op, live updates now
     saveProfile,
     followers,
     following,
