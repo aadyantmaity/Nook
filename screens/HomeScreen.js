@@ -82,6 +82,7 @@ export default function HomeScreen({ navigation, route }) {
   const [currentAlerts, setCurrentAlerts] = useState([]);
   const [showMapView, setShowMapView] = useState(false);
   const [showFindPeopleModal, setShowFindPeopleModal] = useState(false); // <-- add state
+  const [findPeopleModalKey, setFindPeopleModalKey] = useState(0); // <-- add key state
 
   // Hooks
   const { studySpots, isLoading, fetchStudySpots } = useStudySpots();
@@ -479,7 +480,10 @@ export default function HomeScreen({ navigation, route }) {
             }}
             onFindPeoplePress={() => {
               setMenuOpen(false);
-              setTimeout(() => setShowFindPeopleModal(true), 250);
+              setTimeout(() => {
+                setFindPeopleModalKey((k) => k + 1); // <-- increment key to reset modal state
+                setShowFindPeopleModal(true);
+              }, 250);
             }}
             isDarkMode={isDarkMode}
             themeColors={themeColors}
@@ -515,6 +519,7 @@ export default function HomeScreen({ navigation, route }) {
           themeColors={themeColors}
         />
         <FindPeopleModal
+          key={findPeopleModalKey} // <-- force remount to reset state
           visible={showFindPeopleModal}
           onClose={() => setShowFindPeopleModal(false)}
           themeColors={themeColors}
