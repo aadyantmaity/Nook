@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
 } from "react-native";
 import { db, auth } from "../../firebaseConfig";
 import { collection, getDocs, query } from "firebase/firestore";
@@ -21,6 +22,7 @@ export default function FindPeopleModal({
   visible,
   onClose,
   themeColors: propColors,
+  closeOnBackgroundPress = false, // <-- new prop, default false for backward compatibility
 }) {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
@@ -105,133 +107,276 @@ export default function FindPeopleModal({
         }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <View
-          style={{
-            backgroundColor: themeColors.white,
-            borderRadius: 16,
-            padding: 24,
-            width: "92%",
-            maxHeight: "90%",
-            alignItems: "center",
-          }}
-        >
-          <View style={{ width: "100%", alignItems: "flex-end" }}>
-            <TouchableOpacity onPress={onClose} style={{ padding: 4 }}>
-              <X size={22} color={themeColors.purple} weight="bold" />
-            </TouchableOpacity>
-          </View>
-          <Text
+        {/* Use Pressable for background if closeOnBackgroundPress is true */}
+        {closeOnBackgroundPress ? (
+          <Pressable
             style={{
-              fontSize: 22,
-              fontWeight: "bold",
-              color: themeColors.purple,
-              marginBottom: 10,
-              textAlign: "center",
+              flex: 1,
+              width: "100%",
+              justifyContent: "center",
+              alignItems: "center",
             }}
+            onPress={onClose}
           >
-            Find People
-          </Text>
-          <View style={{ width: "100%", marginBottom: 12, marginTop: 8 }}>
-            <View
+            <Pressable
               style={{
-                flexDirection: "row",
+                backgroundColor: themeColors.white,
+                borderRadius: 16,
+                padding: 24,
+                width: "92%",
+                maxHeight: "90%",
                 alignItems: "center",
-                borderWidth: 1,
-                borderColor: themeColors.gray,
-                borderRadius: 12,
-                paddingHorizontal: 12,
-                backgroundColor: themeColors.lightGray || "#f7f7f7",
-                marginBottom: 8,
               }}
+              onPress={(e) => e.stopPropagation()}
             >
-              <TextInput
-                placeholder="Search by name or email"
-                value={search}
-                onChangeText={setSearch}
+              <View style={{ width: "100%", alignItems: "flex-end" }}>
+                <TouchableOpacity onPress={onClose} style={{ padding: 4 }}>
+                  <X size={22} color={themeColors.purple} weight="bold" />
+                </TouchableOpacity>
+              </View>
+              <Text
                 style={{
-                  flex: 1,
-                  height: 44,
-                  fontSize: 16,
-                  color: themeColors.black,
-                }}
-                // Remove onSubmitEditing, search is now debounced
-                returnKeyType="search"
-                placeholderTextColor={themeColors.darkGray}
-              />
-              <TouchableOpacity
-                onPress={() => {
-                  if (debounceTimer.current)
-                    clearTimeout(debounceTimer.current);
-                  handleSearch();
-                }}
-              >
-                <MagnifyingGlass size={24} color={themeColors.purple} />
-              </TouchableOpacity>
-            </View>
-          </View>
-          {loading && (
-            <ActivityIndicator
-              size="large"
-              color={themeColors.purple}
-              style={{ marginTop: 8 }}
-            />
-          )}
-          {!loading && results.length === 0 && search.length > 0 && (
-            <Text
-              style={{
-                textAlign: "center",
-                marginTop: 12,
-                fontSize: 16,
-                color: themeColors.gray,
-              }}
-            >
-              No users found.
-            </Text>
-          )}
-          <FlatList
-            data={results}
-            contentContainerStyle={{ paddingBottom: 8 }}
-            keyExtractor={(item) => item.uid}
-            style={{ width: "100%" }}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => {
-                  onClose();
-                  setTimeout(
-                    () => navigation.navigate("Profile", { uid: item.uid }),
-                    200
-                  );
-                }}
-                style={{
-                  backgroundColor: themeColors.white,
-                  borderRadius: 12,
-                  padding: 14,
+                  fontSize: 22,
+                  fontWeight: "bold",
+                  color: themeColors.purple,
                   marginBottom: 10,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 3,
-                  elevation: 1,
-                  borderWidth: 0.5,
-                  borderColor: themeColors.lightGray,
+                  textAlign: "center",
                 }}
               >
-                <Text
+                Find People
+              </Text>
+              <View style={{ width: "100%", marginBottom: 12, marginTop: 8 }}>
+                <View
                   style={{
-                    color: themeColors.black,
-                    fontSize: 17,
-                    fontWeight: "600",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    borderWidth: 1,
+                    borderColor: themeColors.gray,
+                    borderRadius: 12,
+                    paddingHorizontal: 12,
+                    backgroundColor: themeColors.lightGray || "#f7f7f7",
+                    marginBottom: 8,
                   }}
                 >
-                  {item.firstName} {item.lastName}
+                  <TextInput
+                    placeholder="Search by name or email"
+                    value={search}
+                    onChangeText={setSearch}
+                    style={{
+                      flex: 1,
+                      height: 44,
+                      fontSize: 16,
+                      color: themeColors.black,
+                    }}
+                    // Remove onSubmitEditing, search is now debounced
+                    returnKeyType="search"
+                    placeholderTextColor={themeColors.darkGray}
+                  />
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (debounceTimer.current)
+                        clearTimeout(debounceTimer.current);
+                      handleSearch();
+                    }}
+                  >
+                    <MagnifyingGlass size={24} color={themeColors.purple} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+              {loading && (
+                <ActivityIndicator
+                  size="large"
+                  color={themeColors.purple}
+                  style={{ marginTop: 8 }}
+                />
+              )}
+              {!loading && results.length === 0 && search.length > 0 && (
+                <Text
+                  style={{
+                    textAlign: "center",
+                    marginTop: 12,
+                    fontSize: 16,
+                    color: themeColors.gray,
+                  }}
+                >
+                  No users found.
                 </Text>
-                <Text style={{ color: themeColors.darkGray, marginTop: 4 }}>
-                  {item.email}
-                </Text>
+              )}
+              <FlatList
+                data={results}
+                contentContainerStyle={{ paddingBottom: 8 }}
+                keyExtractor={(item) => item.uid}
+                style={{ width: "100%" }}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    onPress={() => {
+                      onClose();
+                      setTimeout(
+                        () => navigation.navigate("Profile", { uid: item.uid }),
+                        200
+                      );
+                    }}
+                    style={{
+                      backgroundColor: themeColors.white,
+                      borderRadius: 12,
+                      padding: 14,
+                      marginBottom: 10,
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 3,
+                      elevation: 1,
+                      borderWidth: 0.5,
+                      borderColor: themeColors.lightGray,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: themeColors.black,
+                        fontSize: 17,
+                        fontWeight: "600",
+                      }}
+                    >
+                      {item.firstName} {item.lastName}
+                    </Text>
+                    <Text style={{ color: themeColors.darkGray, marginTop: 4 }}>
+                      {item.email}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              />
+            </Pressable>
+          </Pressable>
+        ) : (
+          // fallback to original modal content if not using background close
+          <View
+            style={{
+              backgroundColor: themeColors.white,
+              borderRadius: 16,
+              padding: 24,
+              width: "92%",
+              maxHeight: "90%",
+              alignItems: "center",
+            }}
+          >
+            <View style={{ width: "100%", alignItems: "flex-end" }}>
+              <TouchableOpacity onPress={onClose} style={{ padding: 4 }}>
+                <X size={22} color={themeColors.purple} weight="bold" />
               </TouchableOpacity>
+            </View>
+            <Text
+              style={{
+                fontSize: 22,
+                fontWeight: "bold",
+                color: themeColors.purple,
+                marginBottom: 10,
+                textAlign: "center",
+              }}
+            >
+              Find People
+            </Text>
+            <View style={{ width: "100%", marginBottom: 12, marginTop: 8 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  borderWidth: 1,
+                  borderColor: themeColors.gray,
+                  borderRadius: 12,
+                  paddingHorizontal: 12,
+                  backgroundColor: themeColors.lightGray || "#f7f7f7",
+                  marginBottom: 8,
+                }}
+              >
+                <TextInput
+                  placeholder="Search by name or email"
+                  value={search}
+                  onChangeText={setSearch}
+                  style={{
+                    flex: 1,
+                    height: 44,
+                    fontSize: 16,
+                    color: themeColors.black,
+                  }}
+                  // Remove onSubmitEditing, search is now debounced
+                  returnKeyType="search"
+                  placeholderTextColor={themeColors.darkGray}
+                />
+                <TouchableOpacity
+                  onPress={() => {
+                    if (debounceTimer.current)
+                      clearTimeout(debounceTimer.current);
+                    handleSearch();
+                  }}
+                >
+                  <MagnifyingGlass size={24} color={themeColors.purple} />
+                </TouchableOpacity>
+              </View>
+            </View>
+            {loading && (
+              <ActivityIndicator
+                size="large"
+                color={themeColors.purple}
+                style={{ marginTop: 8 }}
+              />
             )}
-          />
-        </View>
+            {!loading && results.length === 0 && search.length > 0 && (
+              <Text
+                style={{
+                  textAlign: "center",
+                  marginTop: 12,
+                  fontSize: 16,
+                  color: themeColors.gray,
+                }}
+              >
+                No users found.
+              </Text>
+            )}
+            <FlatList
+              data={results}
+              contentContainerStyle={{ paddingBottom: 8 }}
+              keyExtractor={(item) => item.uid}
+              style={{ width: "100%" }}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    onClose();
+                    setTimeout(
+                      () => navigation.navigate("Profile", { uid: item.uid }),
+                      200
+                    );
+                  }}
+                  style={{
+                    backgroundColor: themeColors.white,
+                    borderRadius: 12,
+                    padding: 14,
+                    marginBottom: 10,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 3,
+                    elevation: 1,
+                    borderWidth: 0.5,
+                    borderColor: themeColors.lightGray,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: themeColors.black,
+                      fontSize: 17,
+                      fontWeight: "600",
+                    }}
+                  >
+                    {item.firstName} {item.lastName}
+                  </Text>
+                  <Text style={{ color: themeColors.darkGray, marginTop: 4 }}>
+                    {item.email}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        )}
       </KeyboardAvoidingView>
     </Modal>
   );

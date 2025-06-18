@@ -96,6 +96,9 @@ export default function ProfileScreen({ navigation, route }) {
   const [showFollowingModal, setShowFollowingModal] = useState(false);
   const [userList, setUserList] = useState([]);
   const [listLoading, setListLoading] = useState(false);
+  // Add state for unfollowing from modal
+  const [unfollowingUid, setUnfollowingUid] = useState(null);
+  const [unfollowConfirmVisible, setUnfollowConfirmVisible] = useState(false); // add state
 
   // Refresh handler
   const onRefresh = async () => {
@@ -164,6 +167,44 @@ export default function ProfileScreen({ navigation, route }) {
   const openFollowing = async () => {
     await fetchUserList(following);
     setShowFollowingModal(true);
+  };
+
+  // Unfollow handler for modal
+  const handleUnfollowFromModal = async (uid) => {
+    setUnfollowingUid(uid);
+    try {
+      const { db, auth } = await import("../firebaseConfig");
+      const { updateDoc, arrayRemove, doc, getDoc } = await import(
+        "firebase/firestore"
+      );
+      const user = auth.currentUser;
+      if (!user || !uid || user.uid === uid) return;
+      await updateDoc(doc(db, "users", user.uid), {
+        following: arrayRemove(uid),
+      });
+      await updateDoc(doc(db, "users", uid), {
+        followers: arrayRemove(user.uid),
+      });
+      setUserList((prev) => prev.filter((u) => u.uid !== uid));
+      // No need to call fetchUserData, live updates now
+      // --- Refresh the userList from Firestore to ensure up-to-date ---
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (userDoc.exists()) {
+        const updatedFollowing = userDoc.data().following || [];
+        await fetchUserList(updatedFollowing);
+      }
+    } catch {}
+    setUnfollowingUid(null);
+  };
+
+  // --- New: Unfollow confirmation for main profile button ---
+  const handleUnfollowButton = () => {
+    setUnfollowConfirmVisible(true);
+  };
+  const confirmUnfollow = async () => {
+    setUnfollowConfirmVisible(false);
+    await unfollowUser();
+    // No need to call fetchUserData, live updates now
   };
 
   if (isLoading)
@@ -583,29 +624,7 @@ export default function ProfileScreen({ navigation, route }) {
                 <PencilSimple size={20} color={themeColors.white} />
               </TouchableOpacity>
             </View>
-            {/* --- Add "Following" button for own profile --- */}
-            <TouchableOpacity
-              style={{
-                marginTop: 16,
-                backgroundColor: themeColors.purple,
-                borderRadius: 8,
-                paddingVertical: 10,
-                paddingHorizontal: 24,
-                alignItems: "center",
-                alignSelf: "center",
-              }}
-              onPress={openFollowing}
-            >
-              <Text
-                style={{
-                  color: themeColors.white,
-                  fontWeight: "bold",
-                  fontSize: 16,
-                }}
-              >
-                Following
-              </Text>
-            </TouchableOpacity>
+            {/* --- Remove "Following" button for own profile --- */}
           </View>
         )}
         {/* --- Add Follow/Unfollow button for other users --- */}
@@ -615,15 +634,17 @@ export default function ProfileScreen({ navigation, route }) {
               style={[
                 styles.editButton,
                 {
-                  backgroundColor: isFollowing
-                    ? themeColors.gray
-                    : themeColors.purple,
+                  backgroundColor: themeColors.purple,
                   marginTop: 8,
                   width: 160,
                   alignSelf: "center",
                 },
               ]}
-              onPress={isFollowing ? unfollowUser : followUser}
+              onPress={
+                isFollowing
+                  ? handleUnfollowButton // show confirmation before unfollow
+                  : followUser
+              }
             >
               <Text
                 style={{
@@ -632,7 +653,7 @@ export default function ProfileScreen({ navigation, route }) {
                   fontSize: 16,
                 }}
               >
-                {isFollowing ? "Unfollow" : "Follow"}
+                {isFollowing ? "Following" : "Follow"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -864,15 +885,16 @@ export default function ProfileScreen({ navigation, route }) {
         animationType="slide"
         onRequestClose={() => setShowFollowersModal(false)}
       >
-        <View
+        <Pressable
           style={{
             flex: 1,
             backgroundColor: "rgba(0,0,0,0.3)",
             justifyContent: "center",
             alignItems: "center",
           }}
+          onPress={() => setShowFollowersModal(false)}
         >
-          <View
+          <Pressable
             style={{
               backgroundColor: themeColors.white,
               borderRadius: 12,
@@ -880,6 +902,7 @@ export default function ProfileScreen({ navigation, route }) {
               width: "85%",
               maxHeight: "70%",
             }}
+            onPress={(e) => e.stopPropagation()}
           >
             <Text
               style={{
@@ -926,8 +949,8 @@ export default function ProfileScreen({ navigation, route }) {
                 Close
               </Text>
             </TouchableOpacity>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
       {/* Following Modal */}
       <Modal
@@ -936,15 +959,16 @@ export default function ProfileScreen({ navigation, route }) {
         animationType="slide"
         onRequestClose={() => setShowFollowingModal(false)}
       >
-        <View
+        <Pressable
           style={{
             flex: 1,
             backgroundColor: "rgba(0,0,0,0.3)",
             justifyContent: "center",
             alignItems: "center",
           }}
+          onPress={() => setShowFollowingModal(false)}
         >
-          <View
+          <Pressable
             style={{
               backgroundColor: themeColors.white,
               borderRadius: 12,
@@ -952,6 +976,7 @@ export default function ProfileScreen({ navigation, route }) {
               width: "85%",
               maxHeight: "70%",
             }}
+            onPress={(e) => e.stopPropagation()}
           >
             <Text
               style={{
@@ -970,17 +995,55 @@ export default function ProfileScreen({ navigation, route }) {
                 data={userList}
                 keyExtractor={(item) => item.uid}
                 renderItem={({ item }) => (
-                  <TouchableOpacity
-                    onPress={() => {
-                      setShowFollowingModal(false);
-                      navigation.navigate("Profile", { uid: item.uid });
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      paddingVertical: 10,
                     }}
-                    style={{ paddingVertical: 10 }}
                   >
-                    <Text style={{ color: themeColors.black, fontSize: 16 }}>
-                      {item.name}
-                    </Text>
-                  </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowFollowingModal(false);
+                        navigation.navigate("Profile", { uid: item.uid });
+                      }}
+                      style={{ flex: 1 }}
+                    >
+                      <Text style={{ color: themeColors.black, fontSize: 16 }}>
+                        {item.name}
+                      </Text>
+                    </TouchableOpacity>
+                    {/* Show Unfollow button if on own profile */}
+                    {isOwnProfile && (
+                      <TouchableOpacity
+                        onPress={() => handleUnfollowFromModal(item.uid)}
+                        disabled={unfollowingUid === item.uid}
+                        style={{
+                          marginLeft: 12,
+                          backgroundColor: themeColors.red,
+                          borderRadius: 6,
+                          paddingVertical: 6,
+                          paddingHorizontal: 14,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          opacity: unfollowingUid === item.uid ? 0.6 : 1,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: themeColors.white,
+                            fontWeight: "bold",
+                            fontSize: 14,
+                          }}
+                        >
+                          {unfollowingUid === item.uid
+                            ? "Unfollowing..."
+                            : "Unfollow"}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 )}
               />
             )}
@@ -998,8 +1061,97 @@ export default function ProfileScreen({ navigation, route }) {
                 Close
               </Text>
             </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
+      {/* --- Unfollow Confirmation Modal --- */}
+      <Modal
+        visible={unfollowConfirmVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setUnfollowConfirmVisible(false)}
+      >
+        <Pressable
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.3)",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 16, // Add padding to ensure 16px from screen edge
+          }}
+          onPress={() => setUnfollowConfirmVisible(false)}
+        >
+          <View
+            style={{
+              backgroundColor: themeColors.white,
+              borderRadius: 12,
+              padding: 24,
+              alignItems: "center",
+              minWidth: 240,
+              width: "100%", // Make sure it doesn't exceed the padding
+              maxWidth: 400, // Optional: limit max width for large screens
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "bold",
+                marginBottom: 12,
+                color: themeColors.black,
+              }}
+            >
+              Unfollow User?
+            </Text>
+            <Text
+              style={{
+                fontSize: 15,
+                color: themeColors.purple,
+                marginBottom: 20,
+                textAlign: "center",
+              }}
+            >
+              Are you sure you want to unfollow this user?
+            </Text>
+            <View
+              style={{
+                flexDirection: "row",
+                width: "100%",
+                justifyContent: "space-between",
+              }}
+            >
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: themeColors.red,
+                  borderRadius: 8,
+                  padding: 12,
+                  alignItems: "center",
+                  marginRight: 8,
+                }}
+                onPress={confirmUnfollow}
+              >
+                <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+                  Unfollow
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor:
+                    themeColors.lightPurple || themeColors.purple,
+                  borderRadius: 8,
+                  padding: 12,
+                  alignItems: "center",
+                }}
+                onPress={() => setUnfollowConfirmVisible(false)}
+              >
+                <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        </Pressable>
       </Modal>
     </View>
   );
