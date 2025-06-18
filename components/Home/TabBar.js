@@ -12,6 +12,8 @@ export default function TabBar({
       style={{
         flexDirection: "row",
         backgroundColor: themeColors.white,
+        paddingHorizontal: 16,
+        marginTop: 16,
       }}
     >
       {navigationState.routes.map((route, i) => (

@@ -298,7 +298,7 @@ export default function AddSpotScreen({ navigation, route }) {
             }}
           >
             <TouchableOpacity
-              onPress={() => navigation.navigate("Home")}
+              onPress={() => navigation.goBack()}
               style={{
                 flexDirection: "row",
                 alignItems: "center",

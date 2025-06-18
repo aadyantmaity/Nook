@@ -89,14 +89,6 @@ export default function HomeScreen({ navigation, route }) {
     favorites
   );
 
-  // TabView
-  const layout = Dimensions.get("window");
-  const [index, setIndex] = useState(0);
-  const [routes] = useState([
-    { key: "home", title: "Home" },
-    { key: "focus", title: "Focus Mode" },
-  ]);
-
   // --- Load user's preferred view on mount or when route changes ---
   React.useEffect(() => {
     const fetchUserView = async () => {
@@ -283,6 +275,13 @@ export default function HomeScreen({ navigation, route }) {
     );
   }
 
+  // --- Add SocialTab ---
+  function SocialTab() {
+    // Render FindPeopleView as a full page (not a modal)
+    const FindPeopleView = require("./FindPeopleView").default;
+    return <FindPeopleView />;
+  }
+
   // Home tab content
   const HomeTab = () => (
     <>
@@ -398,10 +397,23 @@ export default function HomeScreen({ navigation, route }) {
     </>
   );
 
+  // TabView
+  const layout = Dimensions.get("window");
+  const [index, setIndex] = useState(1);
+  const [routes] = useState([
+    { key: "focus", title: "Focus Mode" },
+    { key: "home", title: "Home" },
+
+    { key: "social", title: "Social" }, // <-- Add Social tab
+  ]);
+
   // Tab scenes
   const renderScene = SceneMap({
-    home: HomeTab,
     focus: FocusTimerView,
+    home: HomeTab,
+    social: SocialTab,
+
+    // <-- Add SocialTab
   });
 
   if (isLoading) {
@@ -420,7 +432,7 @@ export default function HomeScreen({ navigation, route }) {
 
   return (
     <View
-      style={{ flex: 1, backgroundColor: themeColors.white, paddingTop: 48 }}
+      style={{ flex: 1, backgroundColor: themeColors.white, paddingTop: 40 }}
     >
       <View style={{ flex: 1 }}>
         {/* Header */}
@@ -430,7 +442,6 @@ export default function HomeScreen({ navigation, route }) {
             alignItems: "center",
             justifyContent: "space-between",
             paddingTop: 16,
-            marginBottom: 8,
             zIndex: 10,
             paddingHorizontal: 16, // <-- Add this line
           }}
