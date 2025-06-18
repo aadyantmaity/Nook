@@ -12,6 +12,9 @@ import {
 import { House, DotsThreeVertical, Warning, X } from "phosphor-react-native";
 import { colors } from "../constants/colors";
 import { ThemeContext } from "../App";
+import SpotQRModal from "../components/SpotDetail/SpotQRModal";
+
+// Firebase imports
 import {
   deleteDoc,
   doc,
@@ -41,6 +44,7 @@ import PrivateNookStats from "../components/SpotDetail/PrivateNookStats";
 import useSpotDetails from "../hooks/useSpotDetails";
 import useSpotImageCache from "../hooks/useSpotImageCache";
 import useOverallRatings from "../hooks/useOverallRatings";
+import QRCode from "react-native-qrcode-svg";
 
 export default function SpotDetailScreen({ route, navigation }) {
   const themeCtx = useContext(ThemeContext);
@@ -51,6 +55,7 @@ export default function SpotDetailScreen({ route, navigation }) {
   const [showReportModal, setShowReportModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showPrivateNotesModal, setShowPrivateNotesModal] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
 
   // Hooks
   const { spot, addedByName, isLoading, setSpot } = useSpotDetails(spotId);
@@ -368,6 +373,37 @@ export default function SpotDetailScreen({ route, navigation }) {
                       zIndex: 100,
                     }}
                   >
+                    {/* Show QR Code */}
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowMenu(false);
+                        setShowQRModal(true);
+                      }}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingVertical: 14,
+                        paddingHorizontal: 18,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: themeColors.purple,
+                          fontWeight: "bold",
+                          fontSize: 15,
+                        }}
+                      >
+                        Show QR Code
+                      </Text>
+                    </TouchableOpacity>
+                    {/* Divider */}
+                    <View
+                      style={{
+                        height: 1,
+                        backgroundColor: themeColors.gray,
+                        marginHorizontal: 10,
+                      }}
+                    />
                     {/* Report Incorrect Info */}
                     <TouchableOpacity
                       onPress={() => {
@@ -562,6 +598,13 @@ export default function SpotDetailScreen({ route, navigation }) {
                 onClose={() => setShowReportModal(false)}
                 spotId={spotId}
                 spotName={spot?.buildingName || ""}
+                themeColors={themeColors}
+              />
+              {/* QR Code Modal */}
+              <SpotQRModal
+                visible={showQRModal}
+                onClose={() => setShowQRModal(false)}
+                spotId={spotId}
                 themeColors={themeColors}
               />
             </>

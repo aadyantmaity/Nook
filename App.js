@@ -10,6 +10,7 @@ import ProfileScreen from "./screens/ProfileScreen";
 import { auth } from "./firebaseConfig"; // Import Firebase auth
 import { Text, View, ActivityIndicator, Appearance } from "react-native"; // For system color scheme
 import { colors, getThemeColors } from "./constants/colors"; // <-- Import getThemeColors
+import * as Linking from "expo-linking";
 
 const Stack = createStackNavigator();
 
@@ -18,6 +19,24 @@ export const ThemeContext = React.createContext({
   setIsDarkMode: () => {},
   themeColors: colors,
 });
+
+const linking = {
+  prefixes: [
+    "nook://",
+    "https://yourapp.page.link",
+    "exp://",
+    "exp://192.168.1.151:8081", // <-- Add your Expo dev URL here
+  ],
+  config: {
+    screens: {
+      SpotDetail: {
+        path: "spot/:spotId",
+        parse: { spotId: (id) => id },
+      },
+      // ...other screens...
+    },
+  },
+};
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(null); // Initialize as null to handle loading state
@@ -73,7 +92,7 @@ export default function App() {
   // Wrap everything in ThemeContext.Provider
   return (
     <ThemeContext.Provider value={{ isDarkMode, setIsDarkMode, themeColors }}>
-      <NavigationContainer>
+      <NavigationContainer linking={linking}>
         <Stack.Navigator
           initialRouteName="Home"
           screenOptions={{ headerShown: false }}
