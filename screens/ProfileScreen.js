@@ -318,6 +318,37 @@ export default function ProfileScreen({ navigation, route }) {
               {userGradYear}
             </Text>
           </View>
+          {/* Followers/Following Row */}
+          <View style={styles.followRow}>
+            <TouchableOpacity
+              style={styles.followColumn}
+              onPress={openFollowers}
+              disabled={followers.length === 0}
+            >
+              <Text
+                style={[styles.followLabel, { color: themeColors.darkGray }]}
+              >
+                Followers
+              </Text>
+              <Text style={[styles.followCount, { color: themeColors.black }]}>
+                {followers.length}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.followColumn}
+              onPress={openFollowing}
+              disabled={following.length === 0}
+            >
+              <Text
+                style={[styles.followLabel, { color: themeColors.darkGray }]}
+              >
+                Following
+              </Text>
+              <Text style={[styles.followCount, { color: themeColors.black }]}>
+                {following.length}
+              </Text>
+            </TouchableOpacity>
+          </View>
           {/* Study Stats */}
           <View
             style={{
@@ -552,6 +583,58 @@ export default function ProfileScreen({ navigation, route }) {
                 <PencilSimple size={20} color={themeColors.white} />
               </TouchableOpacity>
             </View>
+            {/* --- Add "Following" button for own profile --- */}
+            <TouchableOpacity
+              style={{
+                marginTop: 16,
+                backgroundColor: themeColors.purple,
+                borderRadius: 8,
+                paddingVertical: 10,
+                paddingHorizontal: 24,
+                alignItems: "center",
+                alignSelf: "center",
+              }}
+              onPress={openFollowing}
+            >
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontSize: 16,
+                }}
+              >
+                Following
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        {/* --- Add Follow/Unfollow button for other users --- */}
+        {!isOwnProfile && !isLoading && (
+          <View style={styles.optionsContainer}>
+            <TouchableOpacity
+              style={[
+                styles.editButton,
+                {
+                  backgroundColor: isFollowing
+                    ? themeColors.gray
+                    : themeColors.purple,
+                  marginTop: 8,
+                  width: 160,
+                  alignSelf: "center",
+                },
+              ]}
+              onPress={isFollowing ? unfollowUser : followUser}
+            >
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontSize: 16,
+                }}
+              >
+                {isFollowing ? "Unfollow" : "Follow"}
+              </Text>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
@@ -1097,5 +1180,25 @@ const styles = StyleSheet.create({
     fontSize: 13,
     // color: colors.darkGray, // Remove, handled inline
     marginTop: 2,
+  },
+  followRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginTop: 12,
+    marginBottom: 18,
+  },
+  followColumn: {
+    flex: 1,
+    alignItems: "center",
+  },
+  followLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 4,
+  },
+  followCount: {
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

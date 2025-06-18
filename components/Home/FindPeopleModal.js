@@ -52,6 +52,15 @@ export default function FindPeopleModal({
     // eslint-disable-next-line
   }, [search, visible]);
 
+  // Reset state when modal is opened
+  useEffect(() => {
+    if (visible) {
+      setSearch("");
+      setResults([]);
+      setLoading(false);
+    }
+  }, [visible]);
+
   // Only triggers on submit (for keyboard search button)
   const handleSearch = async () => {
     const s = search.trim().toLowerCase();
