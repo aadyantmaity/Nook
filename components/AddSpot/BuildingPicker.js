@@ -1,6 +1,6 @@
-import React from "react";
-import { Picker } from "@react-native-picker/picker";
+import React, { useState } from "react";
 import { TextInput, View } from "react-native";
+import { Picker } from "@react-native-picker/picker";
 
 export default function BuildingPicker({
   isUWBuilding,
@@ -13,6 +13,33 @@ export default function BuildingPicker({
   BUILDINGS,
   themeColors,
 }) {
+  // --- Add state for custom room number ---
+  const [customRoom, setCustomRoom] = useState("");
+  const [pickerValue, setPickerValue] = useState(
+    roomNumber && !/^\d+$/.test(roomNumber) ? "other" : roomNumber || ""
+  );
+
+  // --- Generate picker items for 1-30 ---
+  const numberOptions = Array.from({ length: 30 }, (_, i) =>
+    (i + 1).toString()
+  );
+
+  // --- Handle picker change ---
+  const handleRoomPickerChange = (val) => {
+    setPickerValue(val);
+    if (val === "other") {
+      setRoomNumber(customRoom);
+    } else {
+      setRoomNumber(val);
+    }
+  };
+
+  // --- Handle custom room input ---
+  const handleCustomRoomChange = (val) => {
+    setCustomRoom(val);
+    setRoomNumber(val);
+  };
+
   return isUWBuilding ? (
     <View
       style={{
@@ -57,18 +84,24 @@ export default function BuildingPicker({
           />
         ))}
       </Picker>
+      {/* Floor/Room Number Input */}
       <TextInput
         placeholder="Floor Number (if applicable)"
         placeholderTextColor={themeColors.darkGray}
         value={roomNumber}
-        onChangeText={setRoomNumber}
+        onChangeText={(val) => {
+          // Only allow numbers
+          const numeric = val.replace(/[^0-9]/g, "");
+          setRoomNumber(numeric);
+        }}
+        keyboardType="numeric"
         style={{
           borderWidth: 0.5,
           borderColor: themeColors.black,
           borderRadius: 8,
           padding: 12,
           marginTop: 16,
-          marginBottom: 16,
+          marginBottom: 8,
           backgroundColor: themeColors.white,
           color: themeColors.purple,
         }}
@@ -91,11 +124,17 @@ export default function BuildingPicker({
           color: themeColors.purple,
         }}
       />
+      {/* Floor/Room Number Input for custom locations */}
       <TextInput
-        placeholder="Floor Number (if applicable)"
+        placeholder="Floor/Room Number (if applicable)"
         placeholderTextColor={themeColors.darkGray}
         value={roomNumber}
-        onChangeText={setRoomNumber}
+        onChangeText={(val) => {
+          // Only allow numbers
+          const numeric = val.replace(/[^0-9]/g, "");
+          setRoomNumber(numeric);
+        }}
+        keyboardType="numeric"
         style={{
           borderWidth: 0.5,
           borderColor: themeColors.black,
