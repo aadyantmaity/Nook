@@ -300,6 +300,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                 shadowOpacity: 0.2,
                 shadowRadius: 4,
                 marginBottom: 8,
+                marginLeft: -8,
               }}
             >
               <House size={20} color={themeColors.purple} />
@@ -321,7 +322,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                   backgroundColor: themeColors.white,
                   alignItems: "center",
                   justifyContent: "center",
-                  marginRight: 8,
+                  marginRight: -8,
                 }}
               >
                 <DotsThreeVertical
