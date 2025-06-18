@@ -237,6 +237,7 @@ export default function AddSpotScreen({ navigation, route }) {
         privateNook: !isUWBuilding ? privateNook : false, // <-- set privateNook only for custom
       };
       const docRef = await addDoc(collection(db, "studySpots"), spotDetails);
+
       if (
         (!isUWBuilding && customImage) ||
         (isUWBuilding && isAmaity && customImage)
