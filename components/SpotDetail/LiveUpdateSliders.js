@@ -20,6 +20,12 @@ const CROWD_OPTIONS = [
   { label: "Busy", value: 1, icon: <Users size={23} /> },
   { label: "Full", value: 2, icon: <UsersThree size={23} /> },
 ];
+const TABLE_OPTIONS = [
+  { label: "0", value: 0 },
+  { label: "1-3", value: 1 },
+  { label: "4-6", value: 2 },
+  { label: "7+", value: 3 },
+];
 
 export default function LiveUpdateSliders({
   liveNoise,
@@ -29,6 +35,9 @@ export default function LiveUpdateSliders({
   isSubmittingLive,
   onSubmit,
   themeColors,
+  showTableAvailability, // new prop
+  tableAvailability,
+  setTableAvailability,
 }) {
   return (
     <View
@@ -57,6 +66,63 @@ export default function LiveUpdateSliders({
       >
         Live Update
       </Text>
+      {/* Table Availability for Odegaard */}
+      {showTableAvailability && (
+        <View style={{ marginBottom: 14 }}>
+          <Text
+            style={{
+              color: themeColors.black,
+              fontWeight: "700",
+              fontSize: 15,
+              marginBottom: 8,
+              textAlign: "center",
+              letterSpacing: 0.2,
+            }}
+          >
+            Tables Open
+          </Text>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "center",
+              gap: 10,
+            }}
+          >
+            {TABLE_OPTIONS.map((opt) => (
+              <TouchableOpacity
+                key={opt.value}
+                onPress={() => setTableAvailability(opt.value)}
+                style={{
+                  backgroundColor:
+                    tableAvailability === opt.value
+                      ? themeColors.purple
+                      : themeColors.gray,
+                  borderRadius: 8,
+                  paddingVertical: 8,
+                  paddingHorizontal: 14,
+                  marginHorizontal: 2,
+                  minWidth: 50,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    color:
+                      tableAvailability === opt.value
+                        ? themeColors.white
+                        : themeColors.black,
+                    fontWeight:
+                      tableAvailability === opt.value ? "bold" : "normal",
+                  }}
+                >
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
       <View style={{ flexDirection: "row", gap: 18 }}>
         {/* Noise */}
         <View style={{ flex: 1, alignItems: "center" }}>

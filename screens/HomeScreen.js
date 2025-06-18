@@ -401,7 +401,7 @@ export default function HomeScreen({ navigation, route }) {
   const layout = Dimensions.get("window");
   const [index, setIndex] = useState(1);
   const [routes] = useState([
-    { key: "focus", title: "Focus Mode" },
+    { key: "focus", title: "Focus" },
     { key: "home", title: "Home" },
 
     { key: "social", title: "Social" }, // <-- Add Social tab
@@ -415,6 +415,17 @@ export default function HomeScreen({ navigation, route }) {
 
     // <-- Add SocialTab
   });
+
+  // --- Refresh study spots if coming from SpotDetailScreen with refresh param ---
+  React.useEffect(() => {
+    if (route?.params?.refresh) {
+      fetchStudySpots();
+      // Optionally clear the param so it doesn't refetch on every render
+      if (navigation && navigation.setParams) {
+        navigation.setParams({ refresh: undefined });
+      }
+    }
+  }, [route?.params?.refresh]);
 
   if (isLoading) {
     return (
@@ -460,7 +471,6 @@ export default function HomeScreen({ navigation, route }) {
           <TouchableOpacity
             onPress={() => setMenuOpen(true)}
             style={{
-              padding: 8,
               borderRadius: 20,
               backgroundColor: themeColors.white,
               alignItems: "center",

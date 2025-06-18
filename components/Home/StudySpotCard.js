@@ -303,7 +303,7 @@ export default function StudySpotCard({
             style={{
               flexDirection: "row",
               alignItems: "center",
-              marginBottom: 8, // further reduced gap
+              marginBottom: 8,
             }}
           >
             {[1, 2, 3, 4, 5].map((star) => (
@@ -335,42 +335,134 @@ export default function StudySpotCard({
                 : "No ratings"}
             </Text>
           </View>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              marginBottom: 2,
-            }}
-          >
-            <View style={{ alignItems: "center" }}>
-              <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
-                Noise Level
-              </Text>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "bold",
-                  color: themeColors.purple,
-                }}
-              >
-                {getNoiseLabel(spot.ratings?.noise)}
-              </Text>
+          {/* --- Ratings row: 3 columns for Odegaard, 2 columns otherwise --- */}
+          {(spot.buildingName || spot.name || "")
+            .toLowerCase()
+            .includes("odegaard") ? (
+            // Odegaard: 3 columns
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginBottom: 2,
+                marginTop: 2,
+              }}
+            >
+              {/* Noise Level */}
+              <View style={{ flex: 1, alignItems: "center" }}>
+                <Text style={{ fontSize: 13, color: themeColors.darkGray }}>
+                  Noise Level
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "bold",
+                    color: themeColors.purple,
+                  }}
+                >
+                  {getNoiseLabel(spot.ratings?.noise)}
+                </Text>
+              </View>
+              {/* Crowd Level */}
+              <View style={{ flex: 1, alignItems: "center" }}>
+                <Text style={{ fontSize: 13, color: themeColors.darkGray }}>
+                  Crowd Level
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "bold",
+                    color: themeColors.purple,
+                  }}
+                >
+                  {getCrowdLabel(spot.ratings?.crowd)}
+                </Text>
+              </View>
+              {/* Tables Open */}
+              <View style={{ flex: 1, alignItems: "center" }}>
+                {spot.ratings &&
+                typeof spot.ratings.tableAvailability !== "undefined" ? (
+                  <>
+                    <Text style={{ fontSize: 13, color: themeColors.darkGray }}>
+                      Tables Open
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: "bold",
+                        color: themeColors.purple,
+                      }}
+                    >
+                      {(() => {
+                        switch (spot.ratings.tableAvailability) {
+                          case 0:
+                            return "0";
+                          case 1:
+                            return "1-3";
+                          case 2:
+                            return "4-6";
+                          case 3:
+                            return "7+";
+                          default:
+                            return "N/A";
+                        }
+                      })()}
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Text style={{ fontSize: 13, color: themeColors.darkGray }}>
+                      {/* Empty label for alignment */}
+                    </Text>
+                    <Text style={{ fontSize: 14, color: "transparent" }}>
+                      -
+                    </Text>
+                  </>
+                )}
+              </View>
             </View>
-            <View style={{ alignItems: "center" }}>
-              <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
-                Crowd Level
-              </Text>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "bold",
-                  color: themeColors.purple,
-                }}
-              >
-                {getCrowdLabel(spot.ratings?.crowd)}
-              </Text>
+          ) : (
+            // Not Odegaard: 2 columns
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginBottom: 2,
+                marginTop: 2,
+              }}
+            >
+              {/* Noise Level */}
+              <View style={{ flex: 1, alignItems: "center" }}>
+                <Text style={{ fontSize: 13, color: themeColors.darkGray }}>
+                  Noise Level
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "bold",
+                    color: themeColors.purple,
+                  }}
+                >
+                  {getNoiseLabel(spot.ratings?.noise)}
+                </Text>
+              </View>
+              {/* Crowd Level */}
+              <View style={{ flex: 1, alignItems: "center" }}>
+                <Text style={{ fontSize: 13, color: themeColors.darkGray }}>
+                  Crowd Level
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "bold",
+                    color: themeColors.purple,
+                  }}
+                >
+                  {getCrowdLabel(spot.ratings?.crowd)}
+                </Text>
+              </View>
             </View>
-          </View>
+          )}
           {/* Last updated label */}
           <Text
             style={{
