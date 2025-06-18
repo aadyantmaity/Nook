@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,8 @@ import {
   TextInput, // <-- Add TextInput for search bar
   Alert,
   Modal,
+  Animated,
+  Easing,
 } from "react-native";
 import {
   collection,
@@ -37,6 +39,7 @@ import {
   Warning,
   List,
   MapTrifold,
+  MapPin,
 } from "phosphor-react-native"; // Add Heart icon
 import { colors } from "../constants/colors"; // Import colors
 import { auth, db } from "../firebaseConfig"; // Import Firebase
@@ -57,6 +60,7 @@ import HamburgerMenu from "../components/Home/HamburgerMenu"; // Import Hamburge
 import AlertsModal from "../components/Home/AlertsModal"; // Import AlertsModal component
 import TabBar from "../components/Home/TabBar"; // Import TabBar component
 import GeneralReportModal from "../components/Home/GeneralReportModal"; // Import GeneralReportModal component
+import HomeLoadingScreen from "../components/Home/HomeLoadingScreen"; // <-- Import the new component
 
 //hook imports
 import useStudySpots from "../hooks/useStudySpots";
@@ -403,17 +407,14 @@ export default function HomeScreen({ navigation, route }) {
   const [routes] = useState([
     { key: "focus", title: "Focus" },
     { key: "home", title: "Home" },
-
-    { key: "social", title: "Social" }, // <-- Add Social tab
+    { key: "social", title: "Social" },
   ]);
 
   // Tab scenes
   const renderScene = SceneMap({
     focus: FocusTimerView,
     home: HomeTab,
-    social: SocialTab,
-
-    // <-- Add SocialTab
+    social: SocialTab, // <-- Add LoadingTab
   });
 
   // --- Refresh study spots if coming from SpotDetailScreen with refresh param ---
@@ -427,18 +428,24 @@ export default function HomeScreen({ navigation, route }) {
     }
   }, [route?.params?.refresh]);
 
-  if (isLoading) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <Text style={{ fontSize: 16, color: themeColors.black }}>
-            Loading...
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
+  // --- Track if this is the initial mount (not after navigation) ---
+  const initialMount = useRef(true);
+  const [minLoadingElapsed, setMinLoadingElapsed] = useState(false);
+
+  useEffect(() => {
+    if (initialMount.current) {
+      setMinLoadingElapsed(false);
+      const timer = setTimeout(() => {
+        setMinLoadingElapsed(true);
+        initialMount.current = false; // <-- Move this here!
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // --- Show loading screen only on initial mount and isLoading, for at least 10s ---
+  if (initialMount.current || isLoading || !minLoadingElapsed) {
+    return <HomeLoadingScreen themeColors={themeColors} />;
   }
 
   return (

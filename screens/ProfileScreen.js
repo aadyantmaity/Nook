@@ -206,21 +206,7 @@ export default function ProfileScreen({ navigation, route }) {
     // No need to call fetchUserData, live updates now
   };
 
-  if (isLoading)
-    return (
-      <SafeAreaView
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: themeColors.white,
-        }}
-      >
-        <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
-          Loading...
-        </Text>
-      </SafeAreaView>
-    );
+  if (isLoading) return null;
 
   return (
     <View

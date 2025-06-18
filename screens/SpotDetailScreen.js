@@ -221,22 +221,8 @@ export default function SpotDetailScreen({ route, navigation }) {
   };
 
   if (isLoading || !spot) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: themeColors.white,
-          justifyContent: "center",
-          alignItems: "center",
-          paddingTop: 32,
-          paddingBottom: 24,
-        }}
-      >
-        <Text style={{ color: themeColors.darkGray, fontSize: 16 }}>
-          Loading...
-        </Text>
-      </View>
-    );
+    // Remove loading screen: render nothing while loading
+    return null;
   }
 
   const tags = Array.isArray(spot.tags) ? spot.tags : [];
