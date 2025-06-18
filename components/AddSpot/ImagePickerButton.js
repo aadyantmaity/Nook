@@ -7,7 +7,7 @@ export default function ImagePickerButton({
   themeColors,
 }) {
   return (
-    <View style={{ marginTop: 8, marginBottom: 8, alignItems: "center" }}>
+    <View style={{ marginBottom: 16, alignItems: "center" }}>
       <TouchableOpacity
         onPress={onPickImage}
         style={{

@@ -7,6 +7,7 @@ import {
   Platform,
 } from "react-native";
 import MapView, { Marker, Callout, PROVIDER_GOOGLE } from "react-native-maps";
+import { auth } from "../../firebaseConfig";
 
 // Helper: Haversine distance in meters
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -94,6 +95,36 @@ export default function StudySpotsMapView({
     ? spots.filter((s) => s.isFavorite).map((s) => s.id)
     : [];
 
+  // --- Nook summary stats ---
+  const totalNooks = spotsWithCoords.length;
+  // Only count private nooks owned by the current user
+  const privateNooks = spotsWithCoords.filter(
+    (s) => s.privateNook && s.addedBy === auth.currentUser?.uid
+  ).length;
+  // Count nooks with alerts today
+  const today = new Date();
+  function isSameDay(dateObj) {
+    if (!dateObj) return false;
+    const d = new Date(dateObj);
+    return (
+      d.getFullYear() === today.getFullYear() &&
+      d.getMonth() === today.getMonth() &&
+      d.getDate() === today.getDate()
+    );
+  }
+  const nooksWithAlertsToday = spotsWithCoords.filter((s) => {
+    if (!Array.isArray(s.locationAlerts)) return false;
+    return s.locationAlerts.some((a) => {
+      const createdAt =
+        typeof a === "string"
+          ? null
+          : a.createdAt?.toDate
+          ? a.createdAt.toDate()
+          : a.createdAt;
+      return createdAt && isSameDay(createdAt);
+    });
+  }).length;
+
   // Helper to zoom to cluster
   const zoomToCluster = (cluster) => {
     if (!mapRef.current || cluster.length === 0) return;
@@ -113,130 +144,175 @@ export default function StudySpotsMapView({
   };
 
   return (
-    <View
-      style={[
-        {
-          alignSelf: "center",
-          width: mapSize,
-          height: mapSize,
-          borderRadius: 16,
-          overflow: "hidden",
-          backgroundColor: themeColors.gray,
-          // marginHorizontal: 16, // <-- Remove this line, now handled by containerStyle
-        },
-        containerStyle,
-      ]}
-    >
-      <MapView
-        ref={mapRef}
-        style={{ flex: 1 }}
-        initialRegion={defaultRegion}
-        region={region || undefined}
-        onRegionChangeComplete={setRegion}
-        showsUserLocation={true}
-        {...(Platform.OS === "android" ? { provider: PROVIDER_GOOGLE } : {})}
-        mapType="satellite"
-        showsCompass={true}
-        rotateEnabled={true}
+    <>
+      <View
+        style={[
+          {
+            alignSelf: "center",
+            width: mapSize,
+            height: mapSize,
+            borderRadius: 16,
+            overflow: "hidden",
+            backgroundColor: themeColors.gray,
+          },
+          containerStyle,
+        ]}
       >
-        {clusters.map((cluster, idx) =>
-          cluster.length === 1 ? (
-            <Marker
-              key={cluster[0].id}
-              coordinate={{
-                latitude: cluster[0].coordinates.latitude,
-                longitude: cluster[0].coordinates.longitude,
-              }}
-              pinColor={themeColors.orange}
-            >
-              <Callout
-                onPress={() =>
-                  navigation({
-                    spotId: cluster[0].id,
-                    view: "map",
-                  })
-                }
-                style={{ minWidth: 120 }}
-              >
-                <View>
-                  <Text
-                    style={{ fontWeight: "bold", color: themeColors.purple }}
-                  >
-                    {cluster[0].buildingName}
-                    {cluster[0].roomNumber
-                      ? ` - Floor ${cluster[0].roomNumber}`
-                      : ""}
-                  </Text>
-                  <Text
-                    style={{
-                      color: themeColors.orange,
-                      fontSize: 12,
-                      marginTop: 2,
-                    }}
-                  >
-                    Tap for details
-                  </Text>
-                </View>
-              </Callout>
-            </Marker>
-          ) : (
-            <Marker
-              key={"cluster_" + idx}
-              coordinate={{
-                latitude:
-                  cluster.reduce((sum, s) => sum + s.coordinates.latitude, 0) /
-                  cluster.length,
-                longitude:
-                  cluster.reduce((sum, s) => sum + s.coordinates.longitude, 0) /
-                  cluster.length,
-              }}
-              tracksViewChanges={false}
-              pinColor={themeColors.orange}
-              onPress={() => zoomToCluster(cluster)}
-            >
-              <View
-                style={{
-                  backgroundColor: themeColors.purple,
-                  borderRadius: 30,
-                  padding: 8,
-                  borderWidth: 2,
-                  borderColor: themeColors.white,
-                  minWidth: 44,
-                  minHeight: 44,
-                  alignItems: "center",
-                  justifyContent: "center",
+        <MapView
+          ref={mapRef}
+          style={{ flex: 1 }}
+          initialRegion={defaultRegion}
+          region={region || undefined}
+          onRegionChangeComplete={setRegion}
+          showsUserLocation={true}
+          {...(Platform.OS === "android" ? { provider: PROVIDER_GOOGLE } : {})}
+          mapType="satellite"
+          showsCompass={true}
+          rotateEnabled={true}
+        >
+          {clusters.map((cluster, idx) =>
+            cluster.length === 1 ? (
+              <Marker
+                key={cluster[0].id}
+                coordinate={{
+                  latitude: cluster[0].coordinates.latitude,
+                  longitude: cluster[0].coordinates.longitude,
                 }}
+                pinColor={themeColors.orange}
               >
-                <Text
+                <Callout
+                  onPress={() =>
+                    navigation({
+                      spotId: cluster[0].id,
+                      view: "map",
+                    })
+                  }
+                  style={{ minWidth: 120 }}
+                >
+                  <View>
+                    <Text
+                      style={{ fontWeight: "bold", color: themeColors.purple }}
+                    >
+                      {cluster[0].buildingName}
+                      {cluster[0].roomNumber
+                        ? ` - Floor ${cluster[0].roomNumber}`
+                        : ""}
+                    </Text>
+                    <Text
+                      style={{
+                        color: themeColors.orange,
+                        fontSize: 12,
+                        marginTop: 2,
+                      }}
+                    >
+                      Tap for details
+                    </Text>
+                  </View>
+                </Callout>
+              </Marker>
+            ) : (
+              <Marker
+                key={"cluster_" + idx}
+                coordinate={{
+                  latitude:
+                    cluster.reduce((sum, s) => sum + s.coordinates.latitude, 0) /
+                    cluster.length,
+                  longitude:
+                    cluster.reduce((sum, s) => sum + s.coordinates.longitude, 0) /
+                    cluster.length,
+                }}
+                tracksViewChanges={false}
+                pinColor={themeColors.orange}
+                onPress={() => zoomToCluster(cluster)}
+              >
+                <View
                   style={{
-                    color: themeColors.white,
-                    fontWeight: "bold",
-                    fontSize: 18,
+                    backgroundColor: themeColors.purple,
+                    borderRadius: 30,
+                    padding: 8,
+                    borderWidth: 2,
+                    borderColor: themeColors.white,
+                    minWidth: 44,
+                    minHeight: 44,
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
-                  {cluster.length}
-                </Text>
-              </View>
-            </Marker>
-          )
+                  <Text
+                    style={{
+                      color: themeColors.white,
+                      fontWeight: "bold",
+                      fontSize: 18,
+                    }}
+                  >
+                    {cluster.length}
+                  </Text>
+                </View>
+              </Marker>
+            )
+          )}
+        </MapView>
+        {spotsWithCoords.length === 0 && (
+          <View
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: 0,
+              right: 0,
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ color: themeColors.darkGray }}>
+              No nooks with map locations yet.
+            </Text>
+          </View>
         )}
-      </MapView>
-      {spotsWithCoords.length === 0 && (
-        <View
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: 0,
-            right: 0,
-            alignItems: "center",
-          }}
-        >
-          <Text style={{ color: themeColors.darkGray }}>
-            No nooks with map locations yet.
+        {/* Legend removed */}
+      </View>
+      {/* --- Nook summary panel below the map --- */}
+      <View
+        style={{
+          marginTop: 12,
+          marginBottom: 8,
+          alignSelf: "center",
+          width: mapSize,
+          backgroundColor: themeColors.white,
+          borderRadius: 12,
+          padding: 14,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 4,
+          elevation: 2,
+          flexDirection: "row",
+          justifyContent: "space-between",
+        }}
+      >
+        <View style={{ alignItems: "center", flex: 1 }}>
+          <Text style={{ color: themeColors.purple, fontWeight: "bold", fontSize: 16 }}>
+            {totalNooks}
+          </Text>
+          <Text style={{ color: themeColors.darkGray, fontSize: 13 }}>
+            Nooks
           </Text>
         </View>
-      )}
-      {/* Legend removed */}
-    </View>
+        <View style={{ alignItems: "center", flex: 1 }}>
+          <Text style={{ color: themeColors.purple, fontWeight: "bold", fontSize: 16 }}>
+            {privateNooks}
+          </Text>
+          <Text style={{ color: themeColors.darkGray, fontSize: 13 }}>
+            Private
+          </Text>
+        </View>
+        <View style={{ alignItems: "center", flex: 1 }}>
+          <Text style={{ color: themeColors.purple, fontWeight: "bold", fontSize: 16 }}>
+            {nooksWithAlertsToday}
+          </Text>
+          <Text style={{ color: themeColors.darkGray, fontSize: 13 }}>
+            Alerts Today
+          </Text>
+        </View>
+      </View>
+    </>
   );
 }
