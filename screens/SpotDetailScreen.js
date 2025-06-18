@@ -82,6 +82,8 @@ export default function SpotDetailScreen({ route, navigation }) {
       : Number(spot?.ratings?.crowd) || 0
   );
   const [isSubmittingLive, setIsSubmittingLive] = useState(false);
+  // Table availability state for Odegaard
+  const [tableAvailability, setTableAvailability] = useState(null);
 
   // --- Private Nook Notes State ---
   const [noteInput, setNoteInput] = useState("");
@@ -107,12 +109,17 @@ export default function SpotDetailScreen({ route, navigation }) {
   const handleLiveUpdate = async () => {
     setIsSubmittingLive(true);
     try {
-      await addDoc(collection(db, "ratings"), {
+      const ratingData = {
         spotId,
         noise: liveNoise,
         crowd: liveCrowd,
         timestamp: serverTimestamp(),
-      });
+      };
+      // Only add tableAvailability for Odegaard
+      if (isOdegaard && tableAvailability !== null) {
+        ratingData.tableAvailability = tableAvailability;
+      }
+      await addDoc(collection(db, "ratings"), ratingData);
     } catch (e) {
       Alert.alert("Error", "Failed to submit live update.");
     }
@@ -262,6 +269,11 @@ export default function SpotDetailScreen({ route, navigation }) {
     }
     setIsSavingNote(false);
   };
+
+  // Detect if this is Odegaard Library
+  const isOdegaard = (spot?.buildingName || spot?.name || "")
+    .toLowerCase()
+    .includes("odegaard");
 
   return (
     <View
@@ -549,6 +561,9 @@ export default function SpotDetailScreen({ route, navigation }) {
                 isSubmittingLive={isSubmittingLive}
                 onSubmit={handleLiveUpdate}
                 themeColors={themeColors}
+                showTableAvailability={isOdegaard}
+                tableAvailability={tableAvailability}
+                setTableAvailability={setTableAvailability}
               />
             </View>
           )}

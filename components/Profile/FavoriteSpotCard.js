@@ -210,6 +210,67 @@ export default function FavoriteSpotCard({
             Crowd: {getCrowdLabel(spot.ratings?.crowd)}
           </Text>
         </View>
+        {/* Table availability for Odegaard */}
+        {(spot.buildingName || spot.name || "")
+          .toLowerCase()
+          .includes("odegaard") &&
+          spot.ratings &&
+          typeof spot.ratings.tableAvailability !== "undefined" && (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginTop: 4,
+                marginBottom: 4,
+                gap: 8,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 13,
+                  color: themeColors.purple,
+                  fontWeight: "bold",
+                  marginRight: 6,
+                }}
+              >
+                Tables Open:
+              </Text>
+              <View
+                style={{
+                  backgroundColor: themeColors.purple,
+                  borderRadius: 12,
+                  paddingHorizontal: 12,
+                  paddingVertical: 4,
+                  minWidth: 38,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    color: themeColors.white,
+                    fontWeight: "bold",
+                    fontSize: 13,
+                  }}
+                >
+                  {(() => {
+                    switch (spot.ratings.tableAvailability) {
+                      case 0:
+                        return "0";
+                      case 1:
+                        return "1-3";
+                      case 2:
+                        return "4-6";
+                      case 3:
+                        return "7+";
+                      default:
+                        return "N/A";
+                    }
+                  })()}
+                </Text>
+              </View>
+            </View>
+          )}
         <Text
           style={{
             fontSize: 11,

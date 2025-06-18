@@ -54,6 +54,31 @@ export default function useStudySpots() {
           );
           const ratingsSnapshot = await getDocs(ratingsQuery);
 
+          // For Odegaard: aggregate tableAvailability (most recent)
+          let tableAvailability = undefined;
+          if (
+            (spotData.buildingName || spotData.name || "")
+              .toLowerCase()
+              .includes("odegaard")
+          ) {
+            let latestTable = null;
+            let latestTs = null;
+            ratingsSnapshot.forEach((ratingDoc) => {
+              const ratingData = ratingDoc.data();
+              if (
+                typeof ratingData.tableAvailability !== "undefined" &&
+                ratingData.timestamp
+              ) {
+                const ts = ratingData.timestamp.toMillis();
+                if (latestTs === null || ts > latestTs) {
+                  latestTable = ratingData.tableAvailability;
+                  latestTs = ts;
+                }
+              }
+            });
+            tableAvailability = latestTable;
+          }
+
           const now = Timestamp.now().toMillis();
           const thirtyMinutesAgo = now - 30 * 60 * 1000;
           const todayStart = new Date();
@@ -202,6 +227,9 @@ export default function useStudySpots() {
                 lastUpdated: null,
                 lastUpdatedType: null,
                 lastWindowHours: null,
+                ...(typeof tableAvailability !== "undefined"
+                  ? { tableAvailability }
+                  : {}),
               },
               averageOverallRating: 0,
               overallRatingsCount: 0,
@@ -221,6 +249,9 @@ export default function useStudySpots() {
               lastUpdated,
               lastUpdatedType,
               lastWindowHours,
+              ...(typeof tableAvailability !== "undefined"
+                ? { tableAvailability }
+                : {}),
             },
             averageOverallRating,
             overallRatingsCount: overallCount,
