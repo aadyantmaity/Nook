@@ -283,12 +283,7 @@ export default function ProfileScreen({ navigation, route }) {
         <View style={{ flex: 0.2, marginTop: -8 }}>
           <TouchableOpacity
             style={[styles.backButton, { top: 8 }]} // reduce top gap
-            onPress={() =>
-              navigation.navigate(
-                "Home",
-                route?.params?.view ? { view: route.params.view } : undefined
-              )
-            }
+            onPress={() => navigation.goBack()}
           >
             <ArrowLeft size={24} color={themeColors.purple} />
           </TouchableOpacity>

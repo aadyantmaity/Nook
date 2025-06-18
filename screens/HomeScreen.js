@@ -57,6 +57,7 @@ import HamburgerMenu from "../components/Home/HamburgerMenu"; // Import Hamburge
 import AlertsModal from "../components/Home/AlertsModal"; // Import AlertsModal component
 import TabBar from "../components/Home/TabBar"; // Import TabBar component
 import GeneralReportModal from "../components/Home/GeneralReportModal"; // Import GeneralReportModal component
+import FindPeopleModal from "../components/Home/FindPeopleModal"; // <-- new component
 
 //hook imports
 import useStudySpots from "../hooks/useStudySpots";
@@ -80,6 +81,7 @@ export default function HomeScreen({ navigation, route }) {
   const [showAlertsModal, setShowAlertsModal] = useState(false);
   const [currentAlerts, setCurrentAlerts] = useState([]);
   const [showMapView, setShowMapView] = useState(false);
+  const [showFindPeopleModal, setShowFindPeopleModal] = useState(false); // <-- add state
 
   // Hooks
   const { studySpots, isLoading, fetchStudySpots } = useStudySpots();
@@ -475,7 +477,10 @@ export default function HomeScreen({ navigation, route }) {
               setMenuOpen(false);
               setTimeout(() => navigation.navigate("Profile"), 250);
             }}
-            onFindPeoplePress={() => navigation.navigate("FindPeopleScreen")}
+            onFindPeoplePress={() => {
+              setMenuOpen(false);
+              setTimeout(() => setShowFindPeopleModal(true), 250);
+            }}
             isDarkMode={isDarkMode}
             themeColors={themeColors}
           />
@@ -507,6 +512,11 @@ export default function HomeScreen({ navigation, route }) {
           visible={showAlertsModal}
           onClose={() => setShowAlertsModal(false)}
           alerts={currentAlerts}
+          themeColors={themeColors}
+        />
+        <FindPeopleModal
+          visible={showFindPeopleModal}
+          onClose={() => setShowFindPeopleModal(false)}
           themeColors={themeColors}
         />
       </View>
