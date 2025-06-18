@@ -109,10 +109,10 @@ export default function FindPeopleView({ navigation: propNavigation }) {
               flexDirection: "row",
               alignItems: "center",
               borderWidth: 1,
-              borderColor: themeColors.gray,
+              borderColor: themeColors.darkGray,
               borderRadius: 12,
               paddingHorizontal: 12,
-              backgroundColor: themeColors.lightGray || "#f7f7f7",
+              backgroundColor: themeColors.white,
               marginBottom: 8,
             }}
           >
@@ -179,7 +179,7 @@ export default function FindPeopleView({ navigation: propNavigation }) {
                 shadowRadius: 3,
                 elevation: 1,
                 borderWidth: 0.5,
-                borderColor: themeColors.lightGray,
+                borderColor: themeColors.darkGray,
               }}
             >
               <Text
