@@ -327,7 +327,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                   backgroundColor: themeColors.white,
                   alignItems: "center",
                   justifyContent: "center",
-                  marginRight: -8,
+                  marginRight: -16,
                 }}
               >
                 <DotsThreeVertical
