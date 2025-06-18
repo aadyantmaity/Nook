@@ -8,7 +8,7 @@ import LoginScreen from "./screens/LoginScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import { auth } from "./firebaseConfig"; // Import Firebase auth
-import { Text, View, ActivityIndicator, Appearance } from "react-native"; // For system color scheme
+import { Appearance } from "react-native"; // For system color scheme
 import { colors, getThemeColors } from "./constants/colors"; // <-- Import getThemeColors
 import * as Linking from "expo-linking";
 
@@ -40,7 +40,6 @@ const linking = {
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(null); // Initialize as null to handle loading state
-  const [isLoading, setIsLoading] = useState(false); // Add loading state for screen transitions
   const [isDarkMode, setIsDarkMode] = useState(
     Appearance.getColorScheme() === "dark"
   );
@@ -54,28 +53,8 @@ export default function App() {
   }, []);
 
   if (isAuthenticated === null) {
-    // Show a loading screen while checking authentication state
-    return (
-      <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen
-            name="Loading"
-            component={() => (
-              <View
-                style={{
-                  flex: 1,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <ActivityIndicator size="large" color={colors.purple} />
-                <Text style={{ color: colors.black }}>Loading...</Text>
-              </View>
-            )}
-          />
-        </Stack.Navigator>
-      </NavigationContainer>
-    );
+    // Remove loading screen: render nothing while checking auth state
+    return null;
   }
 
   if (!isAuthenticated) {
