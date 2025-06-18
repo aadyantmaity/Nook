@@ -475,6 +475,7 @@ export default function HomeScreen({ navigation, route }) {
               setMenuOpen(false);
               setTimeout(() => navigation.navigate("Profile"), 250);
             }}
+            onFindPeoplePress={() => navigation.navigate("FindPeopleScreen")}
             isDarkMode={isDarkMode}
             themeColors={themeColors}
           />

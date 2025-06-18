@@ -1,6 +1,12 @@
 import React from "react";
 import { Modal, View, TouchableOpacity, Text } from "react-native";
-import { ExclamationMark, Sun, Moon, User } from "phosphor-react-native";
+import {
+  ExclamationMark,
+  Sun,
+  Moon,
+  User,
+  MagnifyingGlass,
+} from "phosphor-react-native";
 
 export default function HamburgerMenu({
   isOpen,
@@ -8,6 +14,7 @@ export default function HamburgerMenu({
   onReportPress,
   onThemeToggle,
   onProfilePress,
+  onFindPeoplePress, // <-- Add this prop
   isDarkMode,
   themeColors,
 }) {
@@ -23,7 +30,7 @@ export default function HamburgerMenu({
           flex: 1,
           backgroundColor: "rgba(0,0,0,0.35)",
           zIndex: 999,
-          paddingHorizontal: 16, // <-- Add this line
+          paddingHorizontal: 16,
         }}
         activeOpacity={1}
         onPressOut={onClose}
@@ -143,6 +150,39 @@ export default function HamburgerMenu({
               }}
             >
               Profile
+            </Text>
+          </TouchableOpacity>
+          {/* Find People */}
+          <TouchableOpacity
+            onPress={() => {
+              onClose();
+              setTimeout(() => {
+                if (typeof onFindPeoplePress === "function") {
+                  onFindPeoplePress();
+                }
+              }, 150);
+            }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingVertical: 12,
+              paddingHorizontal: 20,
+            }}
+          >
+            <MagnifyingGlass
+              size={20}
+              color={themeColors.purple}
+              weight="bold"
+            />
+            <Text
+              style={{
+                marginLeft: 12,
+                color: themeColors.purple,
+                fontWeight: "bold",
+                fontSize: 16,
+              }}
+            >
+              Find People
             </Text>
           </TouchableOpacity>
         </View>

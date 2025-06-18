@@ -9,7 +9,7 @@ import {
   where,
 } from "firebase/firestore";
 
-export default function useStudyStats() {
+export default function useStudyStats(targetUid = null) {
   const [studyStats, setStudyStats] = useState({
     totalSessions: 0,
     favoriteSpotId: null,
@@ -18,12 +18,14 @@ export default function useStudyStats() {
   });
 
   const fetchStudyStats = useCallback(async () => {
+    // Accept targetUid, fallback to current user
     const user = auth.currentUser;
-    if (!user) return;
+    const uid = targetUid || user?.uid;
+    if (!uid) return;
     try {
       const q = query(
         collection(db, "focusSessions"),
-        where("userId", "==", user.uid)
+        where("userId", "==", uid)
       );
       const snapshot = await getDocs(q);
       let total = 0;
@@ -85,7 +87,7 @@ export default function useStudyStats() {
         totalTimeStudied: 0,
       });
     }
-  }, []);
+  }, [targetUid]);
 
   useEffect(() => {
     fetchStudyStats();

@@ -7,6 +7,7 @@ import AddSpotScreen from "./screens/AddSpotScreen";
 import LoginScreen from "./screens/LoginScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import ProfileScreen from "./screens/ProfileScreen";
+import FindPeopleScreen from "./screens/FindPeopleScreen";
 import { auth } from "./firebaseConfig"; // Import Firebase auth
 import { Text, View, ActivityIndicator, Appearance } from "react-native"; // For system color scheme
 import { colors, getThemeColors } from "./constants/colors"; // <-- Import getThemeColors
@@ -101,7 +102,8 @@ export default function App() {
           <Stack.Screen name="SpotDetail" component={SpotDetailScreen} />
           <Stack.Screen name="AddSpot" component={AddSpotScreen} />
           <Stack.Screen name="Profile" component={ProfileScreen} />
-          {/* <-- Add this line */}
+          <Stack.Screen name="FindPeopleScreen" component={FindPeopleScreen} />
+          {/* <-- Use FindPeopleScreen as the name */}
         </Stack.Navigator>
       </NavigationContainer>
     </ThemeContext.Provider>
