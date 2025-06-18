@@ -11,6 +11,8 @@ import {
   RefreshControl,
   ScrollView,
   Image,
+  FlatList,
+  ActivityIndicator,
 } from "react-native";
 import { signOut } from "firebase/auth";
 import { colors } from "../constants/colors";
@@ -36,10 +38,18 @@ import useFavoriteSpots from "../hooks/useFavoriteSpots";
 import useStudyStats from "../hooks/useStudyStats";
 import ProfilePicture from "../components/Profile/ProfilePicture";
 import FavoriteSpotCard from "../components/Profile/FavoriteSpotCard";
+import { auth } from "../firebaseConfig";
 
 export default function ProfileScreen({ navigation, route }) {
   const themeCtx = useContext(ThemeContext);
   const themeColors = themeCtx?.themeColors ?? colors;
+
+  // --- Use uid from route.params if present ---
+  const targetUid = route?.params?.uid || null;
+  const currentUserUid = auth.currentUser?.uid;
+
+  // Add this line to fix the error
+  const isOwnProfile = !targetUid || targetUid === currentUserUid;
 
   // Profile data
   const {
@@ -49,24 +59,29 @@ export default function ProfileScreen({ navigation, route }) {
     userGradYear,
     profilePic,
     isLoading,
+    followers,
+    following,
+    isFollowing,
     setFirstName,
     setLastName,
     setUserGradYear,
     setProfilePic,
     fetchUserData,
     saveProfile,
-  } = useProfileData();
+    followUser,
+    unfollowUser,
+  } = useProfileData(targetUid);
 
-  // Favorites
+  // Favorites: pass targetUid to useFavoriteSpots
   const {
     favoriteSpots,
     favoriteSpotsLoading,
     cachedFavoriteSpotImages,
     fetchFavoriteSpots,
-  } = useFavoriteSpots();
+  } = useFavoriteSpots(targetUid);
 
   // Study stats
-  const { studyStats, fetchStudyStats } = useStudyStats();
+  const { studyStats, fetchStudyStats } = useStudyStats(targetUid);
 
   // UI state
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -77,6 +92,10 @@ export default function ProfileScreen({ navigation, route }) {
   const [refreshing, setRefreshing] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [favoritesExpanded, setFavoritesExpanded] = useState(false);
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
+  const [userList, setUserList] = useState([]);
+  const [listLoading, setListLoading] = useState(false);
 
   // Refresh handler
   const onRefresh = async () => {
@@ -117,6 +136,34 @@ export default function ProfileScreen({ navigation, route }) {
       const asset = result.assets ? result.assets[0] : result;
       setEditedProfilePic(asset.uri);
     }
+  };
+
+  // Fetch user list for followers/following
+  const fetchUserList = async (userIds) => {
+    setListLoading(true);
+    try {
+      const { db } = await import("../firebaseConfig");
+      const { getDoc, doc } = await import("firebase/firestore");
+      const users = [];
+      for (const id of userIds) {
+        const userDoc = await getDoc(doc(db, "users", id));
+        if (userDoc.exists()) {
+          const d = userDoc.data();
+          users.push({ uid: id, name: `${d.firstName} ${d.lastName}` });
+        }
+      }
+      setUserList(users);
+    } catch {}
+    setListLoading(false);
+  };
+
+  const openFollowers = async () => {
+    await fetchUserList(followers);
+    setShowFollowersModal(true);
+  };
+  const openFollowing = async () => {
+    await fetchUserList(following);
+    setShowFollowingModal(true);
   };
 
   if (isLoading)
@@ -476,7 +523,7 @@ export default function ProfileScreen({ navigation, route }) {
           )}
         </View>
         {/* Buttons */}
-        {!isLoading && (
+        {isOwnProfile && !isLoading && (
           <View style={styles.optionsContainer}>
             <View style={styles.buttonRow}>
               <TouchableOpacity
@@ -731,6 +778,150 @@ export default function ProfileScreen({ navigation, route }) {
             </View>
           </Pressable>
         </Pressable>
+      </Modal>
+      {/* Followers Modal */}
+      <Modal
+        visible={showFollowersModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowFollowersModal(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.3)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: themeColors.white,
+              borderRadius: 12,
+              padding: 18,
+              width: "85%",
+              maxHeight: "70%",
+            }}
+          >
+            <Text
+              style={{
+                fontWeight: "bold",
+                fontSize: 18,
+                color: themeColors.purple,
+                marginBottom: 8,
+              }}
+            >
+              Followers
+            </Text>
+            {listLoading ? (
+              <ActivityIndicator color={themeColors.purple} />
+            ) : (
+              <FlatList
+                data={userList}
+                keyExtractor={(item) => item.uid}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setShowFollowersModal(false);
+                      navigation.navigate("Profile", { uid: item.uid });
+                    }}
+                    style={{ paddingVertical: 10 }}
+                  >
+                    <Text style={{ color: themeColors.black, fontSize: 16 }}>
+                      {item.name}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+            <TouchableOpacity
+              onPress={() => setShowFollowersModal(false)}
+              style={{
+                marginTop: 12,
+                backgroundColor: themeColors.purple,
+                borderRadius: 8,
+                paddingVertical: 10,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+                Close
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+      {/* Following Modal */}
+      <Modal
+        visible={showFollowingModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowFollowingModal(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.3)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: themeColors.white,
+              borderRadius: 12,
+              padding: 18,
+              width: "85%",
+              maxHeight: "70%",
+            }}
+          >
+            <Text
+              style={{
+                fontWeight: "bold",
+                fontSize: 18,
+                color: themeColors.purple,
+                marginBottom: 8,
+              }}
+            >
+              Following
+            </Text>
+            {listLoading ? (
+              <ActivityIndicator color={themeColors.purple} />
+            ) : (
+              <FlatList
+                data={userList}
+                keyExtractor={(item) => item.uid}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setShowFollowingModal(false);
+                      navigation.navigate("Profile", { uid: item.uid });
+                    }}
+                    style={{ paddingVertical: 10 }}
+                  >
+                    <Text style={{ color: themeColors.black, fontSize: 16 }}>
+                      {item.name}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+            <TouchableOpacity
+              onPress={() => setShowFollowingModal(false)}
+              style={{
+                marginTop: 12,
+                backgroundColor: themeColors.purple,
+                borderRadius: 8,
+                paddingVertical: 10,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+                Close
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
     </View>
   );
