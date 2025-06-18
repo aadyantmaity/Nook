@@ -369,28 +369,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                     }}
                   >
                     {/* Show QR Code */}
-                    <TouchableOpacity
-                      onPress={() => {
-                        setShowMenu(false);
-                        setShowQRModal(true);
-                      }}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        paddingVertical: 14,
-                        paddingHorizontal: 18,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: themeColors.purple,
-                          fontWeight: "bold",
-                          fontSize: 15,
-                        }}
-                      >
-                        Show QR Code
-                      </Text>
-                    </TouchableOpacity>
+                    {/* Removed QR Code option */}
                     {/* Divider */}
                     <View
                       style={{
@@ -596,12 +575,12 @@ export default function SpotDetailScreen({ route, navigation }) {
                 themeColors={themeColors}
               />
               {/* QR Code Modal */}
-              <SpotQRModal
+              {/* <SpotQRModal
                 visible={showQRModal}
                 onClose={() => setShowQRModal(false)}
                 spotId={spotId}
                 themeColors={themeColors}
-              />
+              /> */}
             </>
           )}
           {/* Private Nook: Personal Notes and Stats */}
