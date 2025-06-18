@@ -432,7 +432,7 @@ export default function HomeScreen({ navigation, route }) {
 
   return (
     <View
-      style={{ flex: 1, backgroundColor: themeColors.white, paddingTop: 48 }}
+      style={{ flex: 1, backgroundColor: themeColors.white, paddingTop: 40 }}
     >
       <View style={{ flex: 1 }}>
         {/* Header */}
@@ -442,7 +442,6 @@ export default function HomeScreen({ navigation, route }) {
             alignItems: "center",
             justifyContent: "space-between",
             paddingTop: 16,
-            marginBottom: 8,
             zIndex: 10,
             paddingHorizontal: 16, // <-- Add this line
           }}
