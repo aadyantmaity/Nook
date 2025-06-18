@@ -5,12 +5,10 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StyleSheet,
-  Modal,
-  TextInput,
-  Pressable,
   RefreshControl,
   ScrollView,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { signOut } from "firebase/auth";
 import { colors } from "../constants/colors";
@@ -21,7 +19,6 @@ import {
   Envelope,
   GraduationCap,
   Heart,
-  X,
   CaretDown,
   CaretRight,
   User,
@@ -36,10 +33,23 @@ import useFavoriteSpots from "../hooks/useFavoriteSpots";
 import useStudyStats from "../hooks/useStudyStats";
 import ProfilePicture from "../components/Profile/ProfilePicture";
 import FavoriteSpotCard from "../components/Profile/FavoriteSpotCard";
+import LogoutModal from "../components/Profile/LogoutModal";
+import EditProfileModal from "../components/Profile/EditProfileModal";
+import FollowersModal from "../components/Profile/FollowersModal";
+import FollowingModal from "../components/Profile/FollowingModal";
+import UnfollowConfirmModal from "../components/Profile/UnfollowConfirmModal";
+import { auth } from "../firebaseConfig";
 
 export default function ProfileScreen({ navigation, route }) {
   const themeCtx = useContext(ThemeContext);
   const themeColors = themeCtx?.themeColors ?? colors;
+
+  // --- Use uid from route.params if present ---
+  const targetUid = route?.params?.uid || null;
+  const currentUserUid = auth.currentUser?.uid;
+
+  // Add this line to fix the error
+  const isOwnProfile = !targetUid || targetUid === currentUserUid;
 
   // Profile data
   const {
@@ -49,24 +59,29 @@ export default function ProfileScreen({ navigation, route }) {
     userGradYear,
     profilePic,
     isLoading,
+    followers,
+    following,
+    isFollowing,
     setFirstName,
     setLastName,
     setUserGradYear,
     setProfilePic,
     fetchUserData,
     saveProfile,
-  } = useProfileData();
+    followUser,
+    unfollowUser,
+  } = useProfileData(targetUid);
 
-  // Favorites
+  // Favorites: pass targetUid to useFavoriteSpots
   const {
     favoriteSpots,
     favoriteSpotsLoading,
     cachedFavoriteSpotImages,
     fetchFavoriteSpots,
-  } = useFavoriteSpots();
+  } = useFavoriteSpots(targetUid);
 
   // Study stats
-  const { studyStats, fetchStudyStats } = useStudyStats();
+  const { studyStats, fetchStudyStats } = useStudyStats(targetUid);
 
   // UI state
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -77,6 +92,12 @@ export default function ProfileScreen({ navigation, route }) {
   const [refreshing, setRefreshing] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [favoritesExpanded, setFavoritesExpanded] = useState(false);
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
+  const [userList, setUserList] = useState([]);
+  const [listLoading, setListLoading] = useState(false);
+  const [unfollowingUid, setUnfollowingUid] = useState(null);
+  const [unfollowConfirmVisible, setUnfollowConfirmVisible] = useState(false);
 
   // Refresh handler
   const onRefresh = async () => {
@@ -119,6 +140,72 @@ export default function ProfileScreen({ navigation, route }) {
     }
   };
 
+  // Fetch user list for followers/following
+  const fetchUserList = async (userIds) => {
+    setListLoading(true);
+    try {
+      const { db } = await import("../firebaseConfig");
+      const { getDoc, doc } = await import("firebase/firestore");
+      const users = [];
+      for (const id of userIds) {
+        const userDoc = await getDoc(doc(db, "users", id));
+        if (userDoc.exists()) {
+          const d = userDoc.data();
+          users.push({ uid: id, name: `${d.firstName} ${d.lastName}` });
+        }
+      }
+      setUserList(users);
+    } catch {}
+    setListLoading(false);
+  };
+
+  const openFollowers = async () => {
+    await fetchUserList(followers);
+    setShowFollowersModal(true);
+  };
+  const openFollowing = async () => {
+    await fetchUserList(following);
+    setShowFollowingModal(true);
+  };
+
+  // Unfollow handler for modal
+  const handleUnfollowFromModal = async (uid) => {
+    setUnfollowingUid(uid);
+    try {
+      const { db, auth } = await import("../firebaseConfig");
+      const { updateDoc, arrayRemove, doc, getDoc } = await import(
+        "firebase/firestore"
+      );
+      const user = auth.currentUser;
+      if (!user || !uid || user.uid === uid) return;
+      await updateDoc(doc(db, "users", user.uid), {
+        following: arrayRemove(uid),
+      });
+      await updateDoc(doc(db, "users", uid), {
+        followers: arrayRemove(user.uid),
+      });
+      setUserList((prev) => prev.filter((u) => u.uid !== uid));
+      // No need to call fetchUserData, live updates now
+      // --- Refresh the userList from Firestore to ensure up-to-date ---
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (userDoc.exists()) {
+        const updatedFollowing = userDoc.data().following || [];
+        await fetchUserList(updatedFollowing);
+      }
+    } catch {}
+    setUnfollowingUid(null);
+  };
+
+  // --- New: Unfollow confirmation for main profile button ---
+  const handleUnfollowButton = () => {
+    setUnfollowConfirmVisible(true);
+  };
+  const confirmUnfollow = async () => {
+    setUnfollowConfirmVisible(false);
+    await unfollowUser();
+    // No need to call fetchUserData, live updates now
+  };
+
   if (isLoading)
     return (
       <SafeAreaView
@@ -140,90 +227,12 @@ export default function ProfileScreen({ navigation, route }) {
       style={{ flex: 1, backgroundColor: themeColors.white, paddingTop: 48 }}
     >
       {/* Logout Modal */}
-      <Modal
+      <LogoutModal
         visible={logoutModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setLogoutModalVisible(false)}
-      >
-        <Pressable
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.3)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-          onPress={() => setLogoutModalVisible(false)}
-        >
-          <View
-            style={{
-              backgroundColor: themeColors.white,
-              borderRadius: 12,
-              padding: 24,
-              alignItems: "center",
-              minWidth: 240,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "bold",
-                marginBottom: 12,
-                color: themeColors.black,
-              }}
-            >
-              Confirm Logout
-            </Text>
-            <Text
-              style={{
-                fontSize: 15,
-                color: themeColors.purple,
-                marginBottom: 20,
-              }}
-            >
-              Are you sure you want to log out?
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                width: "100%",
-                justifyContent: "space-between",
-              }}
-            >
-              <TouchableOpacity
-                style={{
-                  flex: 1,
-                  backgroundColor: themeColors.red,
-                  borderRadius: 8,
-                  padding: 12,
-                  alignItems: "center",
-                  marginRight: 8,
-                }}
-                onPress={confirmLogout}
-              >
-                <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
-                  Log Out
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{
-                  flex: 1,
-                  backgroundColor:
-                    themeColors.lightPurple || themeColors.purple,
-                  borderRadius: 8,
-                  padding: 12,
-                  alignItems: "center",
-                }}
-                onPress={() => setLogoutModalVisible(false)}
-              >
-                <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Pressable>
-      </Modal>
+        onCancel={() => setLogoutModalVisible(false)}
+        onConfirm={confirmLogout}
+        themeColors={themeColors}
+      />
 
       <ScrollView
         refreshControl={
@@ -235,13 +244,8 @@ export default function ProfileScreen({ navigation, route }) {
         {/* Back Button */}
         <View style={{ flex: 0.2, marginTop: -8 }}>
           <TouchableOpacity
-            style={[styles.backButton, { top: 8 }]} // reduce top gap
-            onPress={() =>
-              navigation.navigate(
-                "Home",
-                route?.params?.view ? { view: route.params.view } : undefined
-              )
-            }
+            style={[styles.backButton, { top: 8 }]}
+            onPress={() => navigation.goBack()}
           >
             <ArrowLeft size={24} color={themeColors.purple} />
           </TouchableOpacity>
@@ -275,6 +279,37 @@ export default function ProfileScreen({ navigation, route }) {
             <Text style={[styles.userGradYear, { color: themeColors.black }]}>
               {userGradYear}
             </Text>
+          </View>
+          {/* Followers/Following Row */}
+          <View style={styles.followRow}>
+            <TouchableOpacity
+              style={styles.followColumn}
+              onPress={openFollowers}
+              disabled={followers.length === 0}
+            >
+              <Text
+                style={[styles.followLabel, { color: themeColors.darkGray }]}
+              >
+                Followers
+              </Text>
+              <Text style={[styles.followCount, { color: themeColors.black }]}>
+                {followers.length}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.followColumn}
+              onPress={openFollowing}
+              disabled={following.length === 0}
+            >
+              <Text
+                style={[styles.followLabel, { color: themeColors.darkGray }]}
+              >
+                Following
+              </Text>
+              <Text style={[styles.followCount, { color: themeColors.black }]}>
+                {following.length}
+              </Text>
+            </TouchableOpacity>
           </View>
           {/* Study Stats */}
           <View
@@ -476,7 +511,7 @@ export default function ProfileScreen({ navigation, route }) {
           )}
         </View>
         {/* Buttons */}
-        {!isLoading && (
+        {isOwnProfile && !isLoading && (
           <View style={styles.optionsContainer}>
             <View style={styles.buttonRow}>
               <TouchableOpacity
@@ -510,228 +545,86 @@ export default function ProfileScreen({ navigation, route }) {
                 <PencilSimple size={20} color={themeColors.white} />
               </TouchableOpacity>
             </View>
+            {/* --- Remove "Following" button for own profile --- */}
+          </View>
+        )}
+        {/* --- Add Follow/Unfollow button for other users --- */}
+        {!isOwnProfile && !isLoading && (
+          <View style={styles.optionsContainer}>
+            <TouchableOpacity
+              style={[
+                styles.editButton,
+                {
+                  backgroundColor: themeColors.purple,
+                  marginTop: 8,
+                  width: 160,
+                  alignSelf: "center",
+                },
+              ]}
+              onPress={
+                isFollowing
+                  ? handleUnfollowButton // show confirmation before unfollow
+                  : followUser
+              }
+            >
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontSize: 16,
+                }}
+              >
+                {isFollowing ? "Unfollow" : "Follow"}
+              </Text>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
       {/* Modal for editing profile */}
-      <Modal
+      <EditProfileModal
         visible={isModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setIsModalVisible(false)}
-      >
-        <Pressable
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.3)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-          onPress={() => setIsModalVisible(false)}
-        >
-          <Pressable
-            style={[
-              styles.modalContent,
-              { width: "80%", backgroundColor: themeColors.white },
-            ]}
-            onPress={(e) => e.stopPropagation()}
-          >
-            {/* Close (X) button */}
-            <TouchableOpacity
-              style={{
-                position: "absolute",
-                top: 10,
-                right: 10,
-                zIndex: 10,
-                padding: 6,
-              }}
-              onPress={() => setIsModalVisible(false)}
-              hitSlop={10}
-            >
-              <X size={22} color={themeColors.purple} weight="bold" />
-            </TouchableOpacity>
-            <Text style={[styles.modalTitle, { color: themeColors.black }]}>
-              Edit Profile
-            </Text>
-            {/* Profile picture preview and picker */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 16,
-              }}
-            >
-              {/* Current profile picture */}
-              <View style={{ alignItems: "center", marginRight: 12 }}>
-                <Text
-                  style={{
-                    fontSize: 12,
-                    color: themeColors.darkGray,
-                    marginBottom: 4,
-                  }}
-                >
-                  Current
-                </Text>
-                {profilePic ? (
-                  <Image
-                    source={{ uri: profilePic }}
-                    style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 28,
-                      borderWidth: 0.5,
-                      borderColor: themeColors.black,
-                    }}
-                  />
-                ) : (
-                  <View
-                    style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 28,
-                      backgroundColor: themeColors.purple,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      borderWidth: 0.5,
-                      borderColor: themeColors.gray,
-                    }}
-                  >
-                    <User size={32} color={themeColors.white} weight="bold" />
-                  </View>
-                )}
-              </View>
-              {/* New profile picture */}
-              <View style={{ alignItems: "center", marginRight: 12 }}>
-                <Text
-                  style={{
-                    fontSize: 12,
-                    color: themeColors.darkGray,
-                    marginBottom: 4,
-                  }}
-                >
-                  New
-                </Text>
-                {editedProfilePic ? (
-                  <Image
-                    source={{ uri: editedProfilePic }}
-                    style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 28,
-                      borderWidth: 0.5,
-                      borderColor: themeColors.black,
-                    }}
-                  />
-                ) : (
-                  <View
-                    style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 28,
-                      backgroundColor: "#f0eafd",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      borderWidth: 0.5,
-                      borderColor: themeColors.black,
-                    }}
-                  >
-                    <User size={32} color={themeColors.purple} weight="bold" />
-                  </View>
-                )}
-              </View>
-              <TouchableOpacity
-                style={{
-                  backgroundColor: themeColors.purple,
-                  borderRadius: 8,
-                  paddingVertical: 8,
-                  paddingHorizontal: 12,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginTop: 18,
-                }}
-                onPress={handlePickProfilePic}
-              >
-                <Text
-                  style={{
-                    color: themeColors.white,
-                    fontWeight: "bold",
-                    fontSize: 13,
-                  }}
-                >
-                  Change Picture
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <TextInput
-              style={styles.input}
-              placeholder="First Name"
-              value={editedFirstName}
-              onChangeText={setEditedFirstName}
-              placeholderTextColor={themeColors.darkGray}
-              color={themeColors.black}
-              borderColor={themeColors.purple}
-              borderWidth={0.5}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Last Name"
-              value={editedLastName}
-              onChangeText={setEditedLastName}
-              placeholderTextColor={themeColors.darkGray}
-              color={themeColors.black}
-              borderColor={themeColors.purple}
-              borderWidth={0.5}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Graduation Year"
-              value={editedGradYear}
-              onChangeText={setEditedGradYear}
-              keyboardType="numeric"
-              placeholderTextColor={themeColors.darkGray}
-              color={themeColors.black}
-              borderColor={themeColors.purple}
-              borderWidth={0.5}
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[
-                  styles.cancelButton,
-                  {
-                    backgroundColor: themeColors.white,
-                    borderColor: themeColors.black,
-                    borderWidth: 0.5,
-                    marginRight: 8,
-                  },
-                ]}
-                onPress={() => setIsModalVisible(false)}
-              >
-                <Text
-                  style={[
-                    styles.cancelButtonText,
-                    { color: themeColors.purple },
-                  ]}
-                >
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.saveButton,
-                  { backgroundColor: themeColors.purple },
-                ]}
-                onPress={handleSaveProfile}
-              >
-                <Text
-                  style={[styles.saveButtonText, { color: themeColors.white }]}
-                >
-                  Save
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        onClose={() => setIsModalVisible(false)}
+        onSave={handleSaveProfile}
+        editedFirstName={editedFirstName}
+        setEditedFirstName={setEditedFirstName}
+        editedLastName={editedLastName}
+        setEditedLastName={setEditedLastName}
+        editedGradYear={editedGradYear}
+        setEditedGradYear={setEditedGradYear}
+        editedProfilePic={editedProfilePic}
+        setEditedProfilePic={setEditedProfilePic}
+        profilePic={profilePic}
+        themeColors={themeColors}
+        handlePickProfilePic={handlePickProfilePic}
+      />
+      {/* Followers Modal */}
+      <FollowersModal
+        visible={showFollowersModal}
+        onClose={() => setShowFollowersModal(false)}
+        userList={userList}
+        listLoading={listLoading}
+        navigation={navigation}
+        themeColors={themeColors}
+      />
+      {/* Following Modal */}
+      <FollowingModal
+        visible={showFollowingModal}
+        onClose={() => setShowFollowingModal(false)}
+        userList={userList}
+        listLoading={listLoading}
+        navigation={navigation}
+        themeColors={themeColors}
+        isOwnProfile={isOwnProfile}
+        handleUnfollowFromModal={handleUnfollowFromModal}
+        unfollowingUid={unfollowingUid}
+      />
+      {/* Unfollow Confirmation Modal */}
+      <UnfollowConfirmModal
+        visible={unfollowConfirmVisible}
+        onClose={() => setUnfollowConfirmVisible(false)}
+        onConfirm={confirmUnfollow}
+        themeColors={themeColors}
+      />
     </View>
   );
 }
@@ -853,7 +746,7 @@ const styles = StyleSheet.create({
   input: {
     width: "100%",
     borderWidth: 0.5,
-    // borderColor: themeColors.darkGray, // Remove, handled inline
+    // borderColor={themeColors.darkGray} // Remove, handled inline
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
@@ -911,5 +804,25 @@ const styles = StyleSheet.create({
     fontSize: 13,
     // color: colors.darkGray, // Remove, handled inline
     marginTop: 2,
+  },
+  followRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginTop: 12,
+    marginBottom: 18,
+  },
+  followColumn: {
+    flex: 1,
+    alignItems: "center",
+  },
+  followLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 4,
+  },
+  followCount: {
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

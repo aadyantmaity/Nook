@@ -50,6 +50,8 @@ export default function SignUpScreen({ navigation }) {
         email,
         gradYear,
         profilePic: null,
+        followers: [],
+        following: [],
       });
 
       // Navigate to Home on successful sign-up

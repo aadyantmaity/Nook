@@ -9,7 +9,7 @@ import {
   where,
 } from "firebase/firestore";
 
-export default function useFavoriteSpots() {
+export default function useFavoriteSpots(targetUid = null) {
   const [favorites, setFavorites] = useState([]);
   const [favoriteSpots, setFavoriteSpots] = useState([]);
   const [favoriteSpotsLoading, setFavoriteSpotsLoading] = useState(true);
@@ -19,12 +19,13 @@ export default function useFavoriteSpots() {
     setFavoriteSpotsLoading(true);
     try {
       const user = auth.currentUser;
-      if (!user) {
+      const uid = targetUid || user?.uid;
+      if (!uid) {
         setFavoriteSpots([]);
         setFavoriteSpotsLoading(false);
         return;
       }
-      const userDoc = await getDoc(doc(db, "users", user.uid));
+      const userDoc = await getDoc(doc(db, "users", uid));
       let favIds = [];
       if (userDoc.exists()) {
         favIds = userDoc.data().favorites || [];
@@ -45,7 +46,7 @@ export default function useFavoriteSpots() {
         if (docSnap.exists()) {
           const spotData = docSnap.data();
           // --- Filter out private nooks not owned by user ---
-          if (spotData.privateNook && spotData.addedBy !== user.uid) continue;
+          if (spotData.privateNook && spotData.addedBy !== uid) continue;
           // Hide ratings for private nooks
           let ratings = spotData.privateNook
             ? {
@@ -214,7 +215,7 @@ export default function useFavoriteSpots() {
     } finally {
       setFavoriteSpotsLoading(false);
     }
-  }, []);
+  }, [targetUid]);
 
   useEffect(() => {
     fetchFavoriteSpots();
