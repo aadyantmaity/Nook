@@ -57,7 +57,6 @@ import HamburgerMenu from "../components/Home/HamburgerMenu"; // Import Hamburge
 import AlertsModal from "../components/Home/AlertsModal"; // Import AlertsModal component
 import TabBar from "../components/Home/TabBar"; // Import TabBar component
 import GeneralReportModal from "../components/Home/GeneralReportModal"; // Import GeneralReportModal component
-import FindPeopleModal from "../components/Home/FindPeopleModal"; // <-- new component
 
 //hook imports
 import useStudySpots from "../hooks/useStudySpots";
@@ -81,8 +80,6 @@ export default function HomeScreen({ navigation, route }) {
   const [showAlertsModal, setShowAlertsModal] = useState(false);
   const [currentAlerts, setCurrentAlerts] = useState([]);
   const [showMapView, setShowMapView] = useState(false);
-  const [showFindPeopleModal, setShowFindPeopleModal] = useState(false); // <-- add state
-  const [findPeopleModalKey, setFindPeopleModalKey] = useState(0); // <-- add key state
 
   // Hooks
   const { studySpots, isLoading, fetchStudySpots } = useStudySpots();
@@ -91,14 +88,6 @@ export default function HomeScreen({ navigation, route }) {
     studySpots,
     favorites
   );
-
-  // TabView
-  const layout = Dimensions.get("window");
-  const [index, setIndex] = useState(0);
-  const [routes] = useState([
-    { key: "home", title: "Home" },
-    { key: "focus", title: "Focus Mode" },
-  ]);
 
   // --- Load user's preferred view on mount or when route changes ---
   React.useEffect(() => {
@@ -286,6 +275,13 @@ export default function HomeScreen({ navigation, route }) {
     );
   }
 
+  // --- Add SocialTab ---
+  function SocialTab() {
+    // Render FindPeopleView as a full page (not a modal)
+    const FindPeopleView = require("./FindPeopleView").default;
+    return <FindPeopleView />;
+  }
+
   // Home tab content
   const HomeTab = () => (
     <>
@@ -401,10 +397,23 @@ export default function HomeScreen({ navigation, route }) {
     </>
   );
 
+  // TabView
+  const layout = Dimensions.get("window");
+  const [index, setIndex] = useState(1);
+  const [routes] = useState([
+    { key: "focus", title: "Focus Mode" },
+    { key: "home", title: "Home" },
+
+    { key: "social", title: "Social" }, // <-- Add Social tab
+  ]);
+
   // Tab scenes
   const renderScene = SceneMap({
-    home: HomeTab,
     focus: FocusTimerView,
+    home: HomeTab,
+    social: SocialTab,
+
+    // <-- Add SocialTab
   });
 
   if (isLoading) {
@@ -478,13 +487,6 @@ export default function HomeScreen({ navigation, route }) {
               setMenuOpen(false);
               setTimeout(() => navigation.navigate("Profile"), 250);
             }}
-            onFindPeoplePress={() => {
-              setMenuOpen(false);
-              setTimeout(() => {
-                setFindPeopleModalKey((k) => k + 1); // <-- increment key to reset modal state
-                setShowFindPeopleModal(true);
-              }, 250);
-            }}
             isDarkMode={isDarkMode}
             themeColors={themeColors}
           />
@@ -517,13 +519,6 @@ export default function HomeScreen({ navigation, route }) {
           onClose={() => setShowAlertsModal(false)}
           alerts={currentAlerts}
           themeColors={themeColors}
-        />
-        <FindPeopleModal
-          key={findPeopleModalKey} // <-- force remount to reset state
-          visible={showFindPeopleModal}
-          onClose={() => setShowFindPeopleModal(false)}
-          themeColors={themeColors}
-          closeOnBackgroundPress={true}
         />
       </View>
     </View>

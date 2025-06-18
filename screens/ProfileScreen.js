@@ -653,7 +653,7 @@ export default function ProfileScreen({ navigation, route }) {
                   fontSize: 16,
                 }}
               >
-                {isFollowing ? "Following" : "Follow"}
+                {isFollowing ? "Unfollow" : "Follow"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -924,7 +924,7 @@ export default function ProfileScreen({ navigation, route }) {
                   <TouchableOpacity
                     onPress={() => {
                       setShowFollowersModal(false);
-                      navigation.navigate("Profile", { uid: item.uid });
+                      navigation.push("Profile", { uid: item.uid });
                     }}
                     style={{ paddingVertical: 10 }}
                   >
@@ -1006,7 +1006,7 @@ export default function ProfileScreen({ navigation, route }) {
                     <TouchableOpacity
                       onPress={() => {
                         setShowFollowingModal(false);
-                        navigation.navigate("Profile", { uid: item.uid });
+                        navigation.push("Profile", { uid: item.uid });
                       }}
                       style={{ flex: 1 }}
                     >
