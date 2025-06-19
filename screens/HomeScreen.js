@@ -425,17 +425,6 @@ export default function HomeScreen({ navigation, route }) {
     social: SocialTab, // <-- Add LoadingTab
   });
 
-  // --- Refresh study spots if coming from SpotDetailScreen with refresh param ---
-  React.useEffect(() => {
-    if (route?.params?.refresh) {
-      fetchStudySpots();
-      // Optionally clear the param so it doesn't refetch on every render
-      if (navigation && navigation.setParams) {
-        navigation.setParams({ refresh: undefined });
-      }
-    }
-  }, [route?.params?.refresh]);
-
   // --- Track if this is the initial mount (not after navigation) ---
   const initialMount = useRef(true);
   const [minLoadingElapsed, setMinLoadingElapsed] = useState(false);
@@ -445,11 +434,27 @@ export default function HomeScreen({ navigation, route }) {
       setMinLoadingElapsed(false);
       const timer = setTimeout(() => {
         setMinLoadingElapsed(true);
-        initialMount.current = false; // <-- Move this here!
+        initialMount.current = false;
       }, 2000);
       return () => clearTimeout(timer);
     }
   }, []);
+
+  // --- Refresh study spots if coming from SpotDetailScreen with refresh param ---
+  React.useEffect(() => {
+    if (route?.params?.refresh) {
+      initialMount.current = false; // <-- Skip first-load screen during pull-to-refresh
+      // Clear deleting and creating params before showing anything
+      if (navigation && navigation.setParams) {
+        navigation.setParams({
+          refresh: undefined,
+          deleting: undefined,
+          creating: undefined,
+        });
+      }
+      fetchStudySpots();
+    }
+  }, [route?.params?.refresh]);
 
   // Wait for font to load before rendering (move this before any other return)
   if (!fontsLoaded) {
@@ -458,15 +463,27 @@ export default function HomeScreen({ navigation, route }) {
 
   // --- Show loading screen only on initial mount and isLoading, for at least 10s ---
   // Determine loading message based on navigation params
-  let loadingMessage = undefined;
-  if (route?.params?.deleting) {
-    loadingMessage = "Deleting nook...";
-  } else if (route?.params?.creating) {
-    loadingMessage = "Creating nook...";
-  } else if (route?.params?.homeLoading) {
-    loadingMessage = "Loading nooks...";
+  let loadingMessage;
+  if (route?.params?.refresh) {
+    loadingMessage = "Fetching your nooks...";
   }
-  if (initialMount.current || isLoading || !minLoadingElapsed) {
+
+  // Show loading screen immediately if refreshing from home page
+  if (route?.params?.refresh) {
+    return (
+      <HomeLoadingScreen
+        themeColors={themeColors}
+        loadingMessage={loadingMessage}
+      />
+    );
+  }
+
+  // Helper to determine if loading screen should show
+  const shouldShowLoadingScreen = () => {
+    return initialMount.current || isLoading || !minLoadingElapsed;
+  };
+
+  if (shouldShowLoadingScreen()) {
     return (
       <HomeLoadingScreen
         themeColors={themeColors}
