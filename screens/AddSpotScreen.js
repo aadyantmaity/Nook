@@ -340,6 +340,7 @@ export default function AddSpotScreen({ navigation, route }) {
                 style={{
                   color: isUWBuilding ? themeColors.white : themeColors.purple,
                   fontWeight: "bold",
+                  fontFamily: "CarosSoft",
                 }}
               >
                 UW Building
@@ -364,6 +365,7 @@ export default function AddSpotScreen({ navigation, route }) {
                 style={{
                   color: !isUWBuilding ? themeColors.white : themeColors.purple,
                   fontWeight: "bold",
+                  fontFamily: "CarosSoft",
                 }}
               >
                 Custom Location
@@ -376,6 +378,7 @@ export default function AddSpotScreen({ navigation, route }) {
               fontSize: 20,
               marginBottom: 8,
               color: themeColors.black,
+              fontFamily: "CarosSoft",
             }}
           >
             {isUWBuilding ? "Select Building:" : "Enter Location Name:"}
@@ -417,6 +420,7 @@ export default function AddSpotScreen({ navigation, route }) {
                     marginRight: 8,
                     backgroundColor: themeColors.white,
                     color: themeColors.purple,
+                    fontFamily: "CarosSoft",
                   }}
                 />
                 <TouchableOpacity
@@ -457,6 +461,7 @@ export default function AddSpotScreen({ navigation, route }) {
                   color: themeColors.purple,
                   // Match width to name input
                   width: "100%",
+                  fontFamily: "CarosSoft",
                 }}
               />
             </>
@@ -496,6 +501,7 @@ export default function AddSpotScreen({ navigation, route }) {
                 fontSize: 19,
                 marginBottom: 8,
                 color: themeColors.black,
+                fontFamily: "CarosSoft",
               }}
             >
               Husky Card Needed:
@@ -523,6 +529,7 @@ export default function AddSpotScreen({ navigation, route }) {
                     color: !huskyCardNeeded
                       ? themeColors.white
                       : themeColors.purple,
+                    fontFamily: "CarosSoft",
                   }}
                 >
                   No
@@ -548,6 +555,7 @@ export default function AddSpotScreen({ navigation, route }) {
                     color: huskyCardNeeded
                       ? themeColors.white
                       : themeColors.purple,
+                    fontFamily: "CarosSoft",
                   }}
                 >
                   Yes
@@ -569,13 +577,19 @@ export default function AddSpotScreen({ navigation, route }) {
                 marginBottom: 16,
                 backgroundColor: themeColors.white,
                 color: themeColors.purple,
+                fontFamily: "CarosSoft",
               }}
             />
           )}
 
           {/* Tags */}
           <Text
-            style={{ fontSize: 19, marginBottom: 8, color: themeColors.black }}
+            style={{
+              fontSize: 19,
+              marginBottom: 8,
+              color: themeColors.black,
+              fontFamily: "CarosSoft",
+            }}
           >
             Tags:
           </Text>
@@ -607,6 +621,7 @@ export default function AddSpotScreen({ navigation, route }) {
               marginBottom: 16,
               backgroundColor: themeColors.white,
               color: themeColors.purple,
+              fontFamily: "CarosSoft",
             }}
             accessibilityLabel="Open or Quiet Hours"
             accessible={true}
@@ -643,6 +658,7 @@ export default function AddSpotScreen({ navigation, route }) {
                     color: privateNook ? themeColors.white : themeColors.purple,
                     fontWeight: "bold",
                     marginRight: 6,
+                    fontFamily: "CarosSoft",
                   }}
                 >
                   Private Nook
@@ -660,7 +676,13 @@ export default function AddSpotScreen({ navigation, route }) {
                   }}
                 />
               </TouchableOpacity>
-              <Text style={{ color: themeColors.darkGray, fontSize: 13 }}>
+              <Text
+                style={{
+                  color: themeColors.darkGray,
+                  fontSize: 13,
+                  fontFamily: "CarosSoft",
+                }}
+              >
                 Only you will see this nook
               </Text>
             </View>
@@ -706,6 +728,7 @@ export default function AddSpotScreen({ navigation, route }) {
                   fontSize: 13,
                   textAlign: "center",
                   flex: 1,
+                  fontFamily: "CarosSoft",
                 }}
               >
                 Reset
@@ -744,6 +767,7 @@ export default function AddSpotScreen({ navigation, route }) {
                   fontSize: 13,
                   textAlign: "center",
                   flex: 1,
+                  fontFamily: "CarosSoft",
                 }}
               >
                 Add Nook

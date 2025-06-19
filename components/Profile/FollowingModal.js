@@ -52,6 +52,7 @@ export default function FollowingModal({
               fontSize: 18,
               color: themeColors.purple,
               marginBottom: 8,
+              fontFamily: "CarosSoft",
             }}
           >
             Following
@@ -78,7 +79,13 @@ export default function FollowingModal({
                     }}
                     style={{ flex: 1 }}
                   >
-                    <Text style={{ color: themeColors.black, fontSize: 16 }}>
+                    <Text
+                      style={{
+                        color: themeColors.black,
+                        fontSize: 16,
+                        fontFamily: "CarosSoft",
+                      }}
+                    >
                       {item.name}
                     </Text>
                   </TouchableOpacity>
@@ -102,6 +109,7 @@ export default function FollowingModal({
                           color: themeColors.white,
                           fontWeight: "bold",
                           fontSize: 14,
+                          fontFamily: "CarosSoft",
                         }}
                       >
                         {unfollowingUid === item.uid
@@ -124,7 +132,13 @@ export default function FollowingModal({
               alignItems: "center",
             }}
           >
-            <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+            <Text
+              style={{
+                color: themeColors.white,
+                fontWeight: "bold",
+                fontFamily: "CarosSoft",
+              }}
+            >
               Close
             </Text>
           </TouchableOpacity>

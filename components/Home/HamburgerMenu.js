@@ -70,6 +70,7 @@ export default function HamburgerMenu({
                 color: themeColors.purple,
                 fontWeight: "bold",
                 fontSize: 16,
+                fontFamily: "CarosSoft",
               }}
             >
               Suggestion / Report
@@ -107,6 +108,7 @@ export default function HamburgerMenu({
                 color: themeColors.purple,
                 fontWeight: "bold",
                 fontSize: 16,
+                fontFamily: "CarosSoft",
               }}
             >
               {isDarkMode ? "Light Mode" : "Dark Mode"}
@@ -140,6 +142,7 @@ export default function HamburgerMenu({
                 color: themeColors.purple,
                 fontWeight: "bold",
                 fontSize: 16,
+                fontFamily: "CarosSoft",
               }}
             >
               Profile

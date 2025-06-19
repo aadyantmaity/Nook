@@ -52,7 +52,13 @@ export default function AlertsModal({ visible, onClose, alerts, themeColors }) {
     );
   };
   const filteredAlerts = parsedAlerts.filter(
-    (a) => a.createdAt && isSameDay(typeof a.createdAt === "object" && a.createdAt.toDate ? a.createdAt.toDate() : a.createdAt)
+    (a) =>
+      a.createdAt &&
+      isSameDay(
+        typeof a.createdAt === "object" && a.createdAt.toDate
+          ? a.createdAt.toDate()
+          : a.createdAt
+      )
   );
 
   // State for expand/collapse per alert
@@ -93,6 +99,7 @@ export default function AlertsModal({ visible, onClose, alerts, themeColors }) {
               color: themeColors.purple,
               marginBottom: 8,
               textAlign: "center",
+              fontFamily: "CarosSoft",
             }}
           >
             Location Alerts
@@ -103,6 +110,7 @@ export default function AlertsModal({ visible, onClose, alerts, themeColors }) {
               fontSize: 14,
               marginBottom: 10,
               textAlign: "center",
+              fontFamily: "CarosSoft",
             }}
           >
             {filteredAlerts.length === 1
@@ -150,6 +158,7 @@ export default function AlertsModal({ visible, onClose, alerts, themeColors }) {
                           fontSize: 16,
                           color: themeColors.black,
                           marginBottom: 2,
+                          fontFamily: "CarosSoft",
                         }}
                       >
                         {displayText}
@@ -159,6 +168,7 @@ export default function AlertsModal({ visible, onClose, alerts, themeColors }) {
                               color: themeColors.purple,
                               fontSize: 14,
                               fontWeight: "bold",
+                              fontFamily: "CarosSoft",
                             }}
                             onPress={() =>
                               setExpanded((prev) => ({
@@ -176,6 +186,7 @@ export default function AlertsModal({ visible, onClose, alerts, themeColors }) {
                           fontSize: 13,
                           color: themeColors.darkGray,
                           marginTop: 2,
+                          fontFamily: "CarosSoft",
                         }}
                       >
                         {addedLabel}
@@ -185,7 +196,13 @@ export default function AlertsModal({ visible, onClose, alerts, themeColors }) {
                 );
               })
             ) : (
-              <Text style={{ fontSize: 16, color: themeColors.darkGray }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: themeColors.darkGray,
+                  fontFamily: "CarosSoft",
+                }}
+              >
                 No alerts available.
               </Text>
             )}
@@ -202,7 +219,13 @@ export default function AlertsModal({ visible, onClose, alerts, themeColors }) {
               width: "70%",
             }}
           >
-            <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+            <Text
+              style={{
+                color: themeColors.white,
+                fontWeight: "bold",
+                fontFamily: "CarosSoft",
+              }}
+            >
               Close
             </Text>
           </TouchableOpacity>

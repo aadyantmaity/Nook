@@ -58,10 +58,12 @@ export default function BuildingPicker({
           borderColor: themeColors.black,
           borderWidth: 0.5,
           borderRadius: 8,
+          fontFamily: "CarosSoft",
         }}
         itemStyle={{
           fontSize: 18,
           color: themeColors.purple,
+          fontFamily: "CarosSoft",
         }}
       >
         <Picker.Item
@@ -70,6 +72,7 @@ export default function BuildingPicker({
           style={{
             fontSize: 18,
             color: themeColors.purple,
+            fontFamily: "CarosSoft",
           }}
         />
         {BUILDINGS.map((building) => (
@@ -80,6 +83,7 @@ export default function BuildingPicker({
             style={{
               fontSize: 18,
               color: themeColors.purple,
+              fontFamily: "CarosSoft",
             }}
           />
         ))}
@@ -104,6 +108,7 @@ export default function BuildingPicker({
           marginBottom: 8,
           backgroundColor: themeColors.white,
           color: themeColors.purple,
+          fontFamily: "CarosSoft",
         }}
       />
     </View>
@@ -122,6 +127,7 @@ export default function BuildingPicker({
           marginBottom: 16,
           backgroundColor: themeColors.white,
           color: themeColors.purple,
+          fontFamily: "CarosSoft",
         }}
       />
       {/* Floor/Room Number Input for custom locations */}
@@ -143,6 +149,7 @@ export default function BuildingPicker({
           marginBottom: 16,
           backgroundColor: themeColors.white,
           color: themeColors.purple,
+          fontFamily: "CarosSoft",
         }}
       />
     </>

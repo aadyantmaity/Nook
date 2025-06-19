@@ -203,6 +203,7 @@ export default function StudySpotsList({
                         fontSize: 11,
                         fontWeight: "bold",
                         textAlign: "center",
+                        fontFamily: "CarosSoft",
                       }}
                     >
                       {todaysAlerts.length}
@@ -239,7 +240,11 @@ export default function StudySpotsList({
                   resizeMode="cover"
                 />
               ) : (
-                <Text style={{ color: themeColors.black }}>No Image</Text>
+                <Text
+                  style={{ color: themeColors.black, fontFamily: "CarosSoft" }}
+                >
+                  No Image
+                </Text>
               )}
             </View>
             {/* Heart icon for favorite */}
@@ -272,6 +277,7 @@ export default function StudySpotsList({
                 marginBottom: 6,
                 flexDirection: "row",
                 alignItems: "center",
+                fontFamily: "CarosSoft",
               }}
             >
               {item.name}
@@ -281,6 +287,7 @@ export default function StudySpotsList({
                     fontSize: 18,
                     color: themeColors.black,
                     fontWeight: "bold",
+                    fontFamily: "CarosSoft",
                   }}
                 >
                   {" - Floor "}
@@ -298,6 +305,7 @@ export default function StudySpotsList({
                   marginBottom: 8,
                   marginTop: 2,
                   fontWeight: item.huskyCardNeeded ? "bold" : "normal",
+                  fontFamily: "CarosSoft",
                 }}
               >
                 {item.huskyCardNeeded && "Husky Card Required"}
@@ -306,6 +314,7 @@ export default function StudySpotsList({
                     style={{
                       color: themeColors.darkGray,
                       fontWeight: "normal",
+                      fontFamily: "CarosSoft",
                     }}
                   >
                     {" "}
@@ -317,6 +326,7 @@ export default function StudySpotsList({
                     style={{
                       color: themeColors.darkGray,
                       fontWeight: "normal",
+                      fontFamily: "CarosSoft",
                     }}
                   >
                     Department: {item.department}
@@ -353,6 +363,7 @@ export default function StudySpotsList({
                           color: themeColors.white || "#fff",
                           fontSize: 12,
                           fontWeight: "bold",
+                          fontFamily: "CarosSoft",
                         }}
                       >
                         {tag}
@@ -364,6 +375,7 @@ export default function StudySpotsList({
                   style={{
                     color: themeColors.darkGray || "#AAA",
                     fontSize: 12,
+                    fontFamily: "CarosSoft",
                   }}
                 >
                   No tags
@@ -402,6 +414,7 @@ export default function StudySpotsList({
                       marginLeft: 8,
                       color: themeColors.darkGray,
                       fontSize: 13,
+                      fontFamily: "CarosSoft",
                     }}
                   >
                     {item.overallRatingsCount > 0
@@ -424,7 +437,11 @@ export default function StudySpotsList({
                     {/* Noise Level */}
                     <View style={{ flex: 1, alignItems: "center" }}>
                       <Text
-                        style={{ fontSize: 15, color: themeColors.darkGray }}
+                        style={{
+                          fontSize: 15,
+                          color: themeColors.darkGray,
+                          fontFamily: "CarosSoft",
+                        }}
                       >
                         Noise Level
                       </Text>
@@ -433,6 +450,7 @@ export default function StudySpotsList({
                           fontSize: 16,
                           fontWeight: "bold",
                           color: themeColors.purple,
+                          fontFamily: "CarosSoft",
                         }}
                       >
                         {getNoiseLabel(item.ratings?.noise)}
@@ -441,7 +459,11 @@ export default function StudySpotsList({
                     {/* Crowd Level */}
                     <View style={{ flex: 1, alignItems: "center" }}>
                       <Text
-                        style={{ fontSize: 15, color: themeColors.darkGray }}
+                        style={{
+                          fontSize: 15,
+                          color: themeColors.darkGray,
+                          fontFamily: "CarosSoft",
+                        }}
                       >
                         Crowd Level
                       </Text>
@@ -450,6 +472,7 @@ export default function StudySpotsList({
                           fontSize: 16,
                           fontWeight: "bold",
                           color: themeColors.purple,
+                          fontFamily: "CarosSoft",
                         }}
                       >
                         {getCrowdLabel(item.ratings?.crowd)}
@@ -464,6 +487,7 @@ export default function StudySpotsList({
                             style={{
                               fontSize: 15,
                               color: themeColors.darkGray,
+                              fontFamily: "CarosSoft",
                             }}
                           >
                             Tables Open
@@ -473,6 +497,7 @@ export default function StudySpotsList({
                               fontSize: 16,
                               fontWeight: "bold",
                               color: themeColors.purple,
+                              fontFamily: "CarosSoft",
                             }}
                           >
                             {(() => {
@@ -497,11 +522,18 @@ export default function StudySpotsList({
                             style={{
                               fontSize: 15,
                               color: themeColors.darkGray,
+                              fontFamily: "CarosSoft",
                             }}
                           >
                             {/* Empty label for alignment */}
                           </Text>
-                          <Text style={{ fontSize: 16, color: "transparent" }}>
+                          <Text
+                            style={{
+                              fontSize: 16,
+                              color: "transparent",
+                              fontFamily: "CarosSoft",
+                            }}
+                          >
                             -
                           </Text>
                         </>
@@ -520,7 +552,11 @@ export default function StudySpotsList({
                     {/* Noise Level */}
                     <View style={{ flex: 1, alignItems: "center" }}>
                       <Text
-                        style={{ fontSize: 15, color: themeColors.darkGray }}
+                        style={{
+                          fontSize: 15,
+                          color: themeColors.darkGray,
+                          fontFamily: "CarosSoft",
+                        }}
                       >
                         Noise Level
                       </Text>
@@ -529,6 +565,7 @@ export default function StudySpotsList({
                           fontSize: 16,
                           fontWeight: "bold",
                           color: themeColors.purple,
+                          fontFamily: "CarosSoft",
                         }}
                       >
                         {getNoiseLabel(item.ratings?.noise)}
@@ -537,7 +574,11 @@ export default function StudySpotsList({
                     {/* Crowd Level */}
                     <View style={{ flex: 1, alignItems: "center" }}>
                       <Text
-                        style={{ fontSize: 15, color: themeColors.darkGray }}
+                        style={{
+                          fontSize: 15,
+                          color: themeColors.darkGray,
+                          fontFamily: "CarosSoft",
+                        }}
                       >
                         Crowd Level
                       </Text>
@@ -546,6 +587,7 @@ export default function StudySpotsList({
                           fontSize: 16,
                           fontWeight: "bold",
                           color: themeColors.purple,
+                          fontFamily: "CarosSoft",
                         }}
                       >
                         {getCrowdLabel(item.ratings?.crowd)}
@@ -560,6 +602,7 @@ export default function StudySpotsList({
                     color: themeColors.darkGray,
                     marginTop: 6,
                     textAlign: "right",
+                    fontFamily: "CarosSoft",
                   }}
                 >
                   {getLastUpdatedLabel && item.ratings

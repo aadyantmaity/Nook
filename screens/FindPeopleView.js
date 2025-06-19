@@ -99,6 +99,7 @@ export default function FindPeopleView({ navigation: propNavigation }) {
             color: themeColors.purple,
             marginBottom: 10,
             textAlign: "center",
+            fontFamily: "CarosSoft",
           }}
         >
           Find People
@@ -125,6 +126,7 @@ export default function FindPeopleView({ navigation: propNavigation }) {
                 height: 44,
                 fontSize: 16,
                 color: themeColors.black,
+                fontFamily: "CarosSoft",
               }}
               returnKeyType="search"
               placeholderTextColor={themeColors.darkGray}
@@ -153,6 +155,7 @@ export default function FindPeopleView({ navigation: propNavigation }) {
               marginTop: 12,
               fontSize: 16,
               color: themeColors.gray,
+              fontFamily: "CarosSoft",
             }}
           >
             No users found.
@@ -187,11 +190,18 @@ export default function FindPeopleView({ navigation: propNavigation }) {
                   color: themeColors.black,
                   fontSize: 17,
                   fontWeight: "600",
+                  fontFamily: "CarosSoft",
                 }}
               >
                 {item.firstName} {item.lastName}
               </Text>
-              <Text style={{ color: themeColors.darkGray, marginTop: 4 }}>
+              <Text
+                style={{
+                  color: themeColors.darkGray,
+                  marginTop: 4,
+                  fontFamily: "CarosSoft",
+                }}
+              >
                 {item.email}
               </Text>
             </TouchableOpacity>

@@ -38,6 +38,7 @@ export default function LogoutModal({
               fontWeight: "bold",
               marginBottom: 12,
               color: themeColors.black,
+              fontFamily: "CarosSoft",
             }}
           >
             Confirm Logout
@@ -47,6 +48,7 @@ export default function LogoutModal({
               fontSize: 15,
               color: themeColors.purple,
               marginBottom: 20,
+              fontFamily: "CarosSoft",
             }}
           >
             Are you sure you want to log out?
@@ -69,7 +71,13 @@ export default function LogoutModal({
               }}
               onPress={onConfirm}
             >
-              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                }}
+              >
                 Log Out
               </Text>
             </TouchableOpacity>
@@ -83,7 +91,13 @@ export default function LogoutModal({
               }}
               onPress={onCancel}
             >
-              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                }}
+              >
                 Cancel
               </Text>
             </TouchableOpacity>

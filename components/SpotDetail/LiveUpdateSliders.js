@@ -62,6 +62,7 @@ export default function LiveUpdateSliders({
           color: themeColors.black,
           marginBottom: 11,
           textAlign: "center",
+          fontFamily: "CarosSoft",
         }}
       >
         Live Update
@@ -77,6 +78,7 @@ export default function LiveUpdateSliders({
               marginBottom: 8,
               textAlign: "center",
               letterSpacing: 0.2,
+              fontFamily: "CarosSoft",
             }}
           >
             Tables Open
@@ -114,6 +116,7 @@ export default function LiveUpdateSliders({
                         : themeColors.black,
                     fontWeight:
                       tableAvailability === opt.value ? "bold" : "normal",
+                    fontFamily: "CarosSoft",
                   }}
                 >
                   {opt.label}
@@ -133,6 +136,7 @@ export default function LiveUpdateSliders({
               fontWeight: "700",
               fontSize: 15,
               letterSpacing: 0.2,
+              fontFamily: "CarosSoft",
             }}
           >
             Noise
@@ -179,6 +183,7 @@ export default function LiveUpdateSliders({
                         : themeColors.black,
                     fontSize: 13,
                     fontWeight: liveNoise === opt.value ? "bold" : "normal",
+                    fontFamily: "CarosSoft",
                   }}
                 >
                   {opt.label}
@@ -196,6 +201,7 @@ export default function LiveUpdateSliders({
               fontWeight: "700",
               fontSize: 15,
               letterSpacing: 0.2,
+              fontFamily: "CarosSoft",
             }}
           >
             Crowd
@@ -242,6 +248,7 @@ export default function LiveUpdateSliders({
                         : themeColors.black,
                     fontSize: 13,
                     fontWeight: liveCrowd === opt.value ? "bold" : "normal",
+                    fontFamily: "CarosSoft",
                   }}
                 >
                   {opt.label}
@@ -286,6 +293,7 @@ export default function LiveUpdateSliders({
               color: themeColors.white,
               fontWeight: "bold",
               fontSize: 13,
+              fontFamily: "CarosSoft",
             }}
           >
             {isSubmittingLive ? "Submitting..." : "Submit"}

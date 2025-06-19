@@ -138,6 +138,7 @@ export default function StudySpotCard({
                   fontSize: 11,
                   fontWeight: "bold",
                   textAlign: "center",
+                  fontFamily: "CarosSoft",
                 }}
               >
                 {todaysAlerts.length}
@@ -173,7 +174,9 @@ export default function StudySpotCard({
             resizeMode="cover"
           />
         ) : (
-          <Text style={{ color: themeColors.black }}>No Image</Text>
+          <Text style={{ color: themeColors.black, fontFamily: "CarosSoft" }}>
+            No Image
+          </Text>
         )}
       </View>
 
@@ -209,6 +212,7 @@ export default function StudySpotCard({
           marginBottom: 6,
           flexDirection: "row",
           alignItems: "center",
+          fontFamily: "CarosSoft",
         }}
       >
         {spot.name}
@@ -218,6 +222,7 @@ export default function StudySpotCard({
               fontSize: 18,
               color: themeColors.black,
               fontWeight: "bold",
+              fontFamily: "CarosSoft",
             }}
           >
             {" - Floor "}
@@ -237,17 +242,30 @@ export default function StudySpotCard({
             marginBottom: 8,
             marginTop: 2,
             fontWeight: spot.huskyCardNeeded ? "bold" : "normal",
+            fontFamily: "CarosSoft",
           }}
         >
           {spot.huskyCardNeeded && "Husky Card Required"}
           {spot.huskyCardNeeded && spot.department && (
-            <Text style={{ color: themeColors.darkGray, fontWeight: "normal" }}>
+            <Text
+              style={{
+                color: themeColors.darkGray,
+                fontWeight: "normal",
+                fontFamily: "CarosSoft",
+              }}
+            >
               {" "}
               •{" "}
             </Text>
           )}
           {spot.department && (
-            <Text style={{ color: themeColors.darkGray, fontWeight: "normal" }}>
+            <Text
+              style={{
+                color: themeColors.darkGray,
+                fontWeight: "normal",
+                fontFamily: "CarosSoft",
+              }}
+            >
               Department: {spot.department}
             </Text>
           )}
@@ -283,6 +301,7 @@ export default function StudySpotCard({
                     color: themeColors.white || "#fff",
                     fontSize: 12,
                     fontWeight: "bold",
+                    fontFamily: "CarosSoft",
                   }}
                 >
                   {tag}
@@ -290,7 +309,13 @@ export default function StudySpotCard({
               </View>
             ))
         ) : (
-          <Text style={{ color: themeColors.darkGray || "#AAA", fontSize: 12 }}>
+          <Text
+            style={{
+              color: themeColors.darkGray || "#AAA",
+              fontSize: 12,
+              fontFamily: "CarosSoft",
+            }}
+          >
             No tags
           </Text>
         )}
@@ -326,6 +351,7 @@ export default function StudySpotCard({
                 marginLeft: 8,
                 color: themeColors.darkGray,
                 fontSize: 13,
+                fontFamily: "CarosSoft",
               }}
             >
               {spot.overallRatingsCount > 0
@@ -350,14 +376,21 @@ export default function StudySpotCard({
             >
               {/* Noise Level */}
               <View style={{ flex: 1, alignItems: "center" }}>
-                <Text style={{ fontSize: 13, color: themeColors.darkGray }}>
+                <Text
+                  style={{
+                    fontSize: 15,
+                    color: themeColors.darkGray,
+                    fontFamily: "CarosSoft",
+                  }}
+                >
                   Noise Level
                 </Text>
                 <Text
                   style={{
-                    fontSize: 14,
+                    fontSize: 16,
                     fontWeight: "bold",
                     color: themeColors.purple,
+                    fontFamily: "CarosSoft",
                   }}
                 >
                   {getNoiseLabel(spot.ratings?.noise)}
@@ -365,14 +398,21 @@ export default function StudySpotCard({
               </View>
               {/* Crowd Level */}
               <View style={{ flex: 1, alignItems: "center" }}>
-                <Text style={{ fontSize: 13, color: themeColors.darkGray }}>
+                <Text
+                  style={{
+                    fontSize: 15,
+                    color: themeColors.darkGray,
+                    fontFamily: "CarosSoft",
+                  }}
+                >
                   Crowd Level
                 </Text>
                 <Text
                   style={{
-                    fontSize: 14,
+                    fontSize: 16,
                     fontWeight: "bold",
                     color: themeColors.purple,
+                    fontFamily: "CarosSoft",
                   }}
                 >
                   {getCrowdLabel(spot.ratings?.crowd)}
@@ -383,14 +423,21 @@ export default function StudySpotCard({
                 {spot.ratings &&
                 typeof spot.ratings.tableAvailability !== "undefined" ? (
                   <>
-                    <Text style={{ fontSize: 13, color: themeColors.darkGray }}>
+                    <Text
+                      style={{
+                        fontSize: 15,
+                        color: themeColors.darkGray,
+                        fontFamily: "CarosSoft",
+                      }}
+                    >
                       Tables Open
                     </Text>
                     <Text
                       style={{
-                        fontSize: 14,
+                        fontSize: 16,
                         fontWeight: "bold",
                         color: themeColors.purple,
+                        fontFamily: "CarosSoft",
                       }}
                     >
                       {(() => {
@@ -411,10 +458,22 @@ export default function StudySpotCard({
                   </>
                 ) : (
                   <>
-                    <Text style={{ fontSize: 13, color: themeColors.darkGray }}>
+                    <Text
+                      style={{
+                        fontSize: 15,
+                        color: themeColors.darkGray,
+                        fontFamily: "CarosSoft",
+                      }}
+                    >
                       {/* Empty label for alignment */}
                     </Text>
-                    <Text style={{ fontSize: 14, color: "transparent" }}>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        color: "transparent",
+                        fontFamily: "CarosSoft",
+                      }}
+                    >
                       -
                     </Text>
                   </>
@@ -433,14 +492,21 @@ export default function StudySpotCard({
             >
               {/* Noise Level */}
               <View style={{ flex: 1, alignItems: "center" }}>
-                <Text style={{ fontSize: 13, color: themeColors.darkGray }}>
+                <Text
+                  style={{
+                    fontSize: 15,
+                    color: themeColors.darkGray,
+                    fontFamily: "CarosSoft",
+                  }}
+                >
                   Noise Level
                 </Text>
                 <Text
                   style={{
-                    fontSize: 14,
+                    fontSize: 16,
                     fontWeight: "bold",
                     color: themeColors.purple,
+                    fontFamily: "CarosSoft",
                   }}
                 >
                   {getNoiseLabel(spot.ratings?.noise)}
@@ -448,14 +514,21 @@ export default function StudySpotCard({
               </View>
               {/* Crowd Level */}
               <View style={{ flex: 1, alignItems: "center" }}>
-                <Text style={{ fontSize: 13, color: themeColors.darkGray }}>
+                <Text
+                  style={{
+                    fontSize: 15,
+                    color: themeColors.darkGray,
+                    fontFamily: "CarosSoft",
+                  }}
+                >
                   Crowd Level
                 </Text>
                 <Text
                   style={{
-                    fontSize: 14,
+                    fontSize: 16,
                     fontWeight: "bold",
                     color: themeColors.purple,
+                    fontFamily: "CarosSoft",
                   }}
                 >
                   {getCrowdLabel(spot.ratings?.crowd)}
@@ -470,6 +543,7 @@ export default function StudySpotCard({
               color: themeColors.darkGray,
               marginTop: 6,
               textAlign: "right",
+              fontFamily: "CarosSoft",
             }}
           >
             {getLastUpdatedLabel && spot.ratings

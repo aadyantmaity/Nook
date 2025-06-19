@@ -44,6 +44,7 @@ export default function TagSelector({
                 : themeColors.purple,
               fontSize: 14,
               fontWeight: "bold",
+              fontFamily: "CarosSoft",
             }}
           >
             {tag}

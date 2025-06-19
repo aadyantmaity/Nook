@@ -62,6 +62,7 @@ export default function AddAlertModal({
                 fontWeight: "bold",
                 marginBottom: 12,
                 color: themeColors.black,
+                fontFamily: "CarosSoft",
               }}
             >
               Add Alert
@@ -80,6 +81,7 @@ export default function AddAlertModal({
                 marginBottom: 16,
                 color: themeColors.black,
                 backgroundColor: themeColors.white,
+                fontFamily: "CarosSoft",
               }}
               multiline
             />
@@ -102,7 +104,13 @@ export default function AddAlertModal({
                   marginRight: 8,
                 }}
               >
-                <Text style={{ color: themeColors.black, fontWeight: "bold" }}>
+                <Text
+                  style={{
+                    color: themeColors.black,
+                    fontWeight: "bold",
+                    fontFamily: "CarosSoft",
+                  }}
+                >
                   Cancel
                 </Text>
               </TouchableOpacity>
@@ -118,7 +126,13 @@ export default function AddAlertModal({
                   marginLeft: 8,
                 }}
               >
-                <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+                <Text
+                  style={{
+                    color: themeColors.white,
+                    fontWeight: "bold",
+                    fontFamily: "CarosSoft",
+                  }}
+                >
                   Add
                 </Text>
               </TouchableOpacity>

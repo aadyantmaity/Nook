@@ -44,6 +44,7 @@ export default function ActionButtons({ onAddAlert, themeColors }) {
             color: "#FFFFFF",
             fontWeight: "bold",
             fontSize: 16,
+            fontFamily: "CarosSoft",
           }}
         >
           Add Alert

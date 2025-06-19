@@ -119,6 +119,7 @@ export default function Filters({
             fontWeight: "bold",
             fontSize: 14,
             marginRight: 8,
+            fontFamily: "CarosSoft",
           },
         ]}
       >
@@ -161,6 +162,7 @@ export default function Filters({
                 fontWeight: "bold",
                 color: themeColors.purple,
                 marginBottom: 12,
+                fontFamily: "CarosSoft",
               }}
             >
               Filter Study Spots
@@ -215,6 +217,7 @@ export default function Filters({
                               : themeColors.purple,
                             fontWeight: "bold",
                             fontSize: 11,
+                            fontFamily: "CarosSoft",
                           }}
                           numberOfLines={1}
                           ellipsizeMode="tail"
@@ -259,7 +262,13 @@ export default function Filters({
                   marginRight: 8,
                 }}
               >
-                <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
+                <Text
+                  style={{
+                    color: themeColors.purple,
+                    fontWeight: "bold",
+                    fontFamily: "CarosSoft",
+                  }}
+                >
                   Cancel
                 </Text>
               </TouchableOpacity>
@@ -277,7 +286,13 @@ export default function Filters({
                   marginLeft: 8,
                 }}
               >
-                <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+                <Text
+                  style={{
+                    color: themeColors.white,
+                    fontWeight: "bold",
+                    fontFamily: "CarosSoft",
+                  }}
+                >
                   Apply
                 </Text>
               </TouchableOpacity>

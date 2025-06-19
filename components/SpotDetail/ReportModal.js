@@ -45,12 +45,22 @@ export default function ReportModal({
               fontWeight: "bold",
               marginBottom: 12,
               color: themeColors.black,
+              fontFamily: "CarosSoft",
             }}
           >
             Report Incorrect Information
           </Text>
-          <Text style={{ color: themeColors.black, marginBottom: 8 }}>
-            Spot: <Text style={{ fontWeight: "bold" }}>{spotName}</Text>
+          <Text
+            style={{
+              color: themeColors.black,
+              marginBottom: 8,
+              fontFamily: "CarosSoft",
+            }}
+          >
+            Spot:{" "}
+            <Text style={{ fontWeight: "bold", fontFamily: "CarosSoft" }}>
+              {spotName}
+            </Text>
           </Text>
           <TextInput
             placeholder="Describe the issue"
@@ -66,6 +76,7 @@ export default function ReportModal({
               marginBottom: 16,
               color: themeColors.black,
               backgroundColor: themeColors.white,
+              fontFamily: "CarosSoft",
             }}
             multiline
           />
@@ -88,7 +99,13 @@ export default function ReportModal({
                 marginRight: 8,
               }}
             >
-              <Text style={{ color: themeColors.black, fontWeight: "bold" }}>
+              <Text
+                style={{
+                  color: themeColors.black,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                }}
+              >
                 Cancel
               </Text>
             </TouchableOpacity>
@@ -104,7 +121,13 @@ export default function ReportModal({
                 marginLeft: 8,
               }}
             >
-              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                }}
+              >
                 Submit
               </Text>
             </TouchableOpacity>

@@ -41,7 +41,14 @@ export default function LoginScreen({ navigation }) {
     <SafeAreaView
       style={[styles.container, { backgroundColor: themeColors.white }]}
     >
-      <Text style={[styles.title, { color: themeColors.black }]}>Login</Text>
+      <Text
+        style={[
+          styles.title,
+          { color: themeColors.black, fontFamily: "CarosSoft" },
+        ]}
+      >
+        Login
+      </Text>
       <View style={styles.formContainer}>
         <TextInput
           style={[
@@ -76,14 +83,22 @@ export default function LoginScreen({ navigation }) {
           style={[styles.button, { backgroundColor: themeColors.purple }]}
           onPress={handleLogin}
         >
-          <Text style={[styles.buttonText, { color: themeColors.white }]}>
+          <Text
+            style={[
+              styles.buttonText,
+              { color: themeColors.white, fontFamily: "CarosSoft" },
+            ]}
+          >
             {/* Use black for button text */}
             Login
           </Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.secondaryButton} onPress={handleSignUp}>
           <Text
-            style={[styles.secondaryButtonText, { color: themeColors.purple }]}
+            style={[
+              styles.secondaryButtonText,
+              { color: themeColors.purple, fontFamily: "CarosSoft" },
+            ]}
           >
             Sign Up
           </Text>
@@ -103,6 +118,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 32,
+    fontFamily: "CarosSoft",
   },
   formContainer: {
     width: "100%",
@@ -125,6 +141,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontWeight: "bold",
     fontSize: 16,
+    fontFamily: "CarosSoft",
   },
   secondaryButton: {
     marginTop: 16,
@@ -133,5 +150,6 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     fontWeight: "bold",
     fontSize: 16,
+    fontFamily: "CarosSoft",
   },
 });

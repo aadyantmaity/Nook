@@ -394,6 +394,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                           color: themeColors.purple,
                           fontWeight: "bold",
                           fontSize: 15,
+                          fontFamily: "CarosSoft",
                         }}
                       >
                         Report Incorrect Information
@@ -425,6 +426,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                           color: themeColors.red,
                           fontWeight: "bold",
                           fontSize: 15,
+                          fontFamily: "CarosSoft",
                         }}
                       >
                         Delete Nook
@@ -452,6 +454,7 @@ export default function SpotDetailScreen({ route, navigation }) {
               marginBottom: 6,
               flexDirection: "row",
               alignItems: "center",
+              fontFamily: "CarosSoft",
             }}
           >
             {spot.buildingName}
@@ -461,6 +464,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                   fontSize: 24,
                   color: themeColors.black,
                   fontWeight: "bold",
+                  fontFamily: "CarosSoft",
                 }}
               >
                 {" - Floor "}
@@ -468,7 +472,6 @@ export default function SpotDetailScreen({ route, navigation }) {
               </Text>
             )}
           </Text>
-
           {/* Husky Card/Department info */}
           {(spot.huskyCardNeeded || spot.department) && (
             <Text
@@ -480,12 +483,17 @@ export default function SpotDetailScreen({ route, navigation }) {
                 marginBottom: 8,
                 marginTop: 2,
                 fontWeight: spot.huskyCardNeeded ? "bold" : "normal",
+                fontFamily: "CarosSoft",
               }}
             >
               {spot.huskyCardNeeded && "Husky Card Required"}
               {spot.huskyCardNeeded && spot.department && (
                 <Text
-                  style={{ color: themeColors.darkGray, fontWeight: "normal" }}
+                  style={{
+                    color: themeColors.darkGray,
+                    fontWeight: "normal",
+                    fontFamily: "CarosSoft",
+                  }}
                 >
                   {" "}
                   •{" "}
@@ -493,7 +501,11 @@ export default function SpotDetailScreen({ route, navigation }) {
               )}
               {spot.department && (
                 <Text
-                  style={{ color: themeColors.darkGray, fontWeight: "normal" }}
+                  style={{
+                    color: themeColors.darkGray,
+                    fontWeight: "normal",
+                    fontFamily: "CarosSoft",
+                  }}
                 >
                   Department: {spot.department}
                 </Text>
@@ -529,7 +541,13 @@ export default function SpotDetailScreen({ route, navigation }) {
                 getLastUpdatedLabel={getLastUpdatedLabel}
               />
               <View style={{ marginTop: 8, alignItems: "flex-end" }}>
-                <Text style={{ color: themeColors.darkGray, fontSize: 13 }}>
+                <Text
+                  style={{
+                    color: themeColors.darkGray,
+                    fontSize: 13,
+                    fontFamily: "CarosSoft",
+                  }}
+                >
                   {getLastUpdatedLabel(spot.ratings)}
                 </Text>
               </View>
@@ -604,6 +622,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                     fontSize: 16,
                     color: themeColors.purple,
                     marginBottom: 6,
+                    fontFamily: "CarosSoft",
                   }}
                 >
                   Personal Notes
@@ -621,6 +640,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                     backgroundColor: themeColors.white,
                     color: themeColors.black,
                     marginBottom: 8,
+                    fontFamily: "CarosSoft",
                   }}
                   multiline
                   editable={!isSavingNote}
@@ -644,7 +664,11 @@ export default function SpotDetailScreen({ route, navigation }) {
                     }}
                   >
                     <Text
-                      style={{ color: themeColors.white, fontWeight: "bold" }}
+                      style={{
+                        color: themeColors.white,
+                        fontWeight: "bold",
+                        fontFamily: "CarosSoft",
+                      }}
                     >
                       {isSavingNote ? "Saving..." : "Save Note"}
                     </Text>
@@ -660,7 +684,11 @@ export default function SpotDetailScreen({ route, navigation }) {
                     }}
                   >
                     <Text
-                      style={{ color: themeColors.purple, fontWeight: "bold" }}
+                      style={{
+                        color: themeColors.purple,
+                        fontWeight: "bold",
+                        fontFamily: "CarosSoft",
+                      }}
                     >
                       View All Notes
                     </Text>
@@ -710,6 +738,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                         color: themeColors.purple,
                         marginBottom: 10,
                         textAlign: "center",
+                        fontFamily: "CarosSoft",
                       }}
                     >
                       Notes Archive
@@ -736,6 +765,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                                 color: themeColors.black,
                                 fontSize: 15,
                                 marginBottom: 4,
+                                fontFamily: "CarosSoft",
                               }}
                             >
                               {item.text}
@@ -745,6 +775,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                                 color: themeColors.darkGray,
                                 fontSize: 12,
                                 textAlign: "right",
+                                fontFamily: "CarosSoft",
                               }}
                             >
                               {item.createdAt
@@ -761,7 +792,11 @@ export default function SpotDetailScreen({ route, navigation }) {
                       />
                     ) : (
                       <Text
-                        style={{ color: themeColors.darkGray, fontSize: 15 }}
+                        style={{
+                          color: themeColors.darkGray,
+                          fontSize: 15,
+                          fontFamily: "CarosSoft",
+                        }}
                       >
                         No notes yet.
                       </Text>
@@ -770,7 +805,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                 </TouchableOpacity>
               </Modal>
               {/* --- End Notes Archive Modal --- */}
-
               <PrivateNookNotesModal
                 visible={showPrivateNotesModal}
                 onClose={() => setShowPrivateNotesModal(false)}
@@ -823,6 +857,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                   fontWeight: "bold",
                   fontSize: 14,
                   marginLeft: 8,
+                  fontFamily: "CarosSoft",
                 }}
               >
                 Add Alert

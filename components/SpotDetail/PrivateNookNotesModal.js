@@ -96,6 +96,7 @@ export default function PrivateNookNotesModal({
               fontWeight: "bold",
               color: themeColors.purple,
               marginBottom: 8,
+              fontFamily: "CarosSoft",
             }}
           >
             Personal Notes
@@ -112,6 +113,7 @@ export default function PrivateNookNotesModal({
               backgroundColor: themeColors.white,
               marginBottom: 12,
               textAlignVertical: "top",
+              fontFamily: "CarosSoft",
             }}
             placeholder="Write your notes for this nook..."
             placeholderTextColor={themeColors.darkGray}
@@ -135,7 +137,13 @@ export default function PrivateNookNotesModal({
               }}
               disabled={saving}
             >
-              <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                }}
+              >
                 Cancel
               </Text>
             </TouchableOpacity>
@@ -151,7 +159,13 @@ export default function PrivateNookNotesModal({
               }}
               disabled={saving}
             >
-              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                }}
+              >
                 {saving ? "Saving..." : "Save"}
               </Text>
             </TouchableOpacity>

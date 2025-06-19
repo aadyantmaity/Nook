@@ -37,7 +37,13 @@ export default function FavoriteToggle({
           weight={isFavorite ? "fill" : "regular"}
         />
       </TouchableOpacity>
-      <Text style={{ color: themeColors.black, fontSize: 14.5 }}>
+      <Text
+        style={{
+          color: themeColors.black,
+          fontSize: 14.5,
+          fontFamily: "CarosSoft",
+        }}
+      >
         Mark this spot as a favorite
       </Text>
     </View>
