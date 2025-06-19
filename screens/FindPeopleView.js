@@ -88,8 +88,8 @@ export default function FindPeopleView({ navigation: propNavigation }) {
           padding: 24,
           width: "92%",
           maxWidth: 600,
+          marginTop: -8,
           alignItems: "center",
-          marginTop: 8,
         }}
       >
         <Text
