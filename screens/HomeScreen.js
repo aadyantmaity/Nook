@@ -446,7 +446,7 @@ export default function HomeScreen({ navigation, route }) {
       const timer = setTimeout(() => {
         setMinLoadingElapsed(true);
         initialMount.current = false; // <-- Move this here!
-      }, 3000);
+      }, 2000);
       return () => clearTimeout(timer);
     }
   }, []);
@@ -463,6 +463,8 @@ export default function HomeScreen({ navigation, route }) {
     loadingMessage = "Deleting nook...";
   } else if (route?.params?.creating) {
     loadingMessage = "Creating nook...";
+  } else if (route?.params?.homeLoading) {
+    loadingMessage = "Loading nooks...";
   }
   if (initialMount.current || isLoading || !minLoadingElapsed) {
     return (

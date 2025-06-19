@@ -1699,6 +1699,47 @@ export function FocusTimerView({ navigation }) {
               width: "100%",
             }}
           >
+            {/* --- Location Picker Button --- */}
+            <TouchableOpacity
+              onPress={() => setShowSpotModal(true)}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: themeColors.white,
+                borderRadius: 18,
+                borderWidth: 1,
+                borderColor: themeColors.purple,
+                paddingVertical: 10,
+                paddingHorizontal: 18,
+                marginBottom: 18,
+                alignSelf: "center",
+                shadowColor: themeColors.black,
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.06,
+                shadowRadius: 2,
+                elevation: 1,
+              }}
+              accessibilityLabel="Select Location"
+            >
+              <MapPin size={22} color={themeColors.purple} weight="bold" />
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontWeight: "bold",
+                  fontSize: 15,
+                  marginLeft: 8,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                {selectedSpot
+                  ? `${selectedSpot.buildingName}${
+                      selectedSpot.roomNumber
+                        ? ` - Floor ${selectedSpot.roomNumber}`
+                        : ""
+                    }`
+                  : "Select Location"}
+              </Text>
+            </TouchableOpacity>
             {/* Timer row with settings button on the right */}
             <View
               style={{

@@ -207,7 +207,7 @@ export default function Filters({
                           ? themeColors.white
                           : themeColors.purple,
                         fontWeight: "bold",
-                        fontSize: 14,
+                        fontSize: 12.5,
                         fontFamily: "CarosSoft",
                       }}
                       numberOfLines={1}
