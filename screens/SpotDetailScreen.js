@@ -428,35 +428,37 @@ export default function SpotDetailScreen({ route, navigation }) {
                       }}
                     />
                     {/* Delete Nook (only for owner) */}
-                    <TouchableOpacity
-                      onPress={() => {
-                        setShowMenu(false);
-                        setTimeout(handleDeleteNook, 200);
-                      }}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        paddingVertical: 14,
-                        paddingHorizontal: 18,
-                      }}
-                    >
-                      <Trash
-                        size={18}
-                        color={themeColors.red}
-                        weight="bold"
-                        style={{ marginRight: 10 }}
-                      />
-                      <Text
+                    {user && spot.addedBy === user.uid && (
+                      <TouchableOpacity
+                        onPress={() => {
+                          setShowMenu(false);
+                          setTimeout(handleDeleteNook, 200);
+                        }}
                         style={{
-                          color: themeColors.red,
-                          fontWeight: "bold",
-                          fontSize: 15,
-                          fontFamily: "CarosSoft",
+                          flexDirection: "row",
+                          alignItems: "center",
+                          paddingVertical: 14,
+                          paddingHorizontal: 18,
                         }}
                       >
-                        Delete Nook
-                      </Text>
-                    </TouchableOpacity>
+                        <Trash
+                          size={18}
+                          color={themeColors.red}
+                          weight="bold"
+                          style={{ marginRight: 10 }}
+                        />
+                        <Text
+                          style={{
+                            color: themeColors.red,
+                            fontWeight: "bold",
+                            fontSize: 15,
+                            fontFamily: "CarosSoft",
+                          }}
+                        >
+                          Delete Nook
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </>
               )}
