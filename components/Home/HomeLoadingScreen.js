@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from "react";
 import { View, Text, Animated, Easing } from "react-native";
 import { MapPin } from "phosphor-react-native";
 
-function HomeLoadingScreen({ themeColors }) {
+function HomeLoadingScreen({ themeColors, loadingMessage }) {
   const pinPulse = useRef(new Animated.Value(1)).current;
   const markerPulses = Array.from(
     { length: 5 },
@@ -120,30 +120,35 @@ function HomeLoadingScreen({ themeColors }) {
           elevation: 10,
         }}
       >
-        <MapPin size={80} color={themeColors.orange} weight="fill" />
+        <MapPin size={64} color={themeColors.orange} weight="fill" />
       </Animated.View>
-      <Text
-        style={{
-          fontSize: 60,
-          fontWeight: "bold",
-          color: themeColors.purple,
-          marginTop: 0,
-          letterSpacing: 0.5,
-          fontFamily: "CarosSoft",
-        }}
-      >
-        Nook
-      </Text>
+      {/* Only show "Nook" text if not deleting or creating a nook */}
+      {loadingMessage !== "Deleting nook..." &&
+        loadingMessage !== "Creating nook..." && (
+          <Text
+            style={{
+              fontSize: 48,
+              fontWeight: "bold",
+              color: themeColors.purple,
+              marginTop: 0,
+              letterSpacing: 0.5,
+              fontFamily: "CarosSoft",
+            }}
+          >
+            Nook
+          </Text>
+        )}
       <Text
         style={{
           fontSize: 20,
           color: themeColors.darkGray,
+          marginTop: 8,
           textAlign: "center",
           maxWidth: 260,
           fontFamily: "CarosSoft",
         }}
       >
-        Finding your Nooks...
+        {loadingMessage || "Fetching your nooks..."}
       </Text>
     </View>
   );

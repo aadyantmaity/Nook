@@ -17,8 +17,8 @@ const NOISE_OPTIONS = [
 ];
 const CROWD_OPTIONS = [
   { label: "Empty", value: 0, icon: <User size={23} /> },
-  { label: "Busy", value: 1, icon: <Users size={23} /> },
-  { label: "Full", value: 2, icon: <UsersThree size={23} /> },
+  { label: "Light", value: 1, icon: <Users size={23} /> },
+  { label: "Busy", value: 2, icon: <UsersThree size={23} /> },
 ];
 const TABLE_OPTIONS = [
   { label: "0", value: 0 },

@@ -10,7 +10,14 @@ import {
   FlatList,
   Image,
 } from "react-native";
-import { House, DotsThreeVertical, Warning, X } from "phosphor-react-native";
+import {
+  House,
+  DotsThreeVertical,
+  Warning,
+  X,
+  Trash,
+  Flag,
+} from "phosphor-react-native";
 import { colors } from "../constants/colors";
 import { ThemeContext } from "../App";
 import SpotQRModal from "../components/SpotDetail/SpotQRModal";
@@ -216,7 +223,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                   }
                 }
               }
-              navigation.navigate("Home", { refresh: true });
+              navigation.navigate("Home", { deleting: true });
             } catch (e) {
               Alert.alert("Error", "Failed to delete nook.");
             }
@@ -395,6 +402,12 @@ export default function SpotDetailScreen({ route, navigation }) {
                         paddingHorizontal: 18,
                       }}
                     >
+                      <Flag
+                        size={18}
+                        color={themeColors.purple}
+                        weight="bold"
+                        style={{ marginRight: 10 }}
+                      />
                       <Text
                         style={{
                           color: themeColors.purple,
@@ -427,6 +440,12 @@ export default function SpotDetailScreen({ route, navigation }) {
                         paddingHorizontal: 18,
                       }}
                     >
+                      <Trash
+                        size={18}
+                        color={themeColors.red}
+                        weight="bold"
+                        style={{ marginRight: 10 }}
+                      />
                       <Text
                         style={{
                           color: themeColors.red,

@@ -33,7 +33,7 @@ import MapLocationPicker from "../components/AddSpot/MapLocationPicker";
 
 const TAGS = [
   "Quiet",
-  "Group Friendly",
+  "Groups",
   "WiFi",
   "Outlets",
   "Natural Light",
@@ -260,7 +260,9 @@ export default function AddSpotScreen({ navigation, route }) {
       }
       navigation.navigate(
         "Home",
-        route?.params?.view ? { view: route.params.view } : undefined
+        route?.params?.view
+          ? { view: route.params.view, creating: true }
+          : { creating: true }
       );
       resetForm();
     } catch (error) {

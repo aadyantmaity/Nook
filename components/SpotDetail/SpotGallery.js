@@ -89,7 +89,7 @@ export default function SpotGallery({
   if (!spotId) return null;
 
   return (
-    <View style={{ marginTop: 8, marginBottom: -8 }}>
+    <View style={{ marginTop: 8 }}>
       <View
         style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}
       >

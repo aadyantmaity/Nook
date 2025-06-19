@@ -1699,17 +1699,44 @@ export function FocusTimerView({ navigation }) {
               width: "100%",
             }}
           >
-            <Text
+            {/* Timer row with settings button on the right */}
+            <View
               style={{
-                fontSize: 48,
-                fontWeight: "bold",
-                color: themeColors.purple,
-                fontFamily: "CarosSoft",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
                 marginBottom: 8,
+                width: "100%",
               }}
             >
-              {formatTime(timer)}
-            </Text>
+              <Text
+                style={{
+                  fontSize: 48,
+                  fontWeight: "bold",
+                  color: themeColors.purple,
+                  fontFamily: "CarosSoft",
+                  // marginBottom: 8, // moved to row
+                }}
+              >
+                {formatTime(timer)}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowSettingsModal(true)}
+                style={{
+                  backgroundColor: themeColors.white,
+                  borderRadius: 30,
+                  padding: 14,
+                  marginLeft: 12,
+                  borderWidth: 1,
+                  borderColor: themeColors.purple,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                accessibilityLabel="Pomodoro Settings"
+              >
+                <Timer size={22} color={themeColors.purple} weight="bold" />
+              </TouchableOpacity>
+            </View>
             <Text
               style={{
                 color: themeColors.darkGray,
@@ -1764,23 +1791,7 @@ export function FocusTimerView({ navigation }) {
               >
                 <Stop size={28} color={themeColors.white} />
               </TouchableOpacity>
-              {/* Pomodoro Settings Button (now next to timer controls) */}
-              <TouchableOpacity
-                onPress={() => setShowSettingsModal(true)}
-                style={{
-                  backgroundColor: themeColors.white,
-                  borderRadius: 30,
-                  padding: 14,
-                  marginLeft: 8,
-                  borderWidth: 1,
-                  borderColor: themeColors.purple,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-                accessibilityLabel="Pomodoro Settings"
-              >
-                <Timer size={22} color={themeColors.purple} weight="bold" />
-              </TouchableOpacity>
+              {/* Pomodoro Settings Button REMOVED from here */}
             </View>
             {/* --- This Week's Focus Stats Dropdown --- */}
             <View
