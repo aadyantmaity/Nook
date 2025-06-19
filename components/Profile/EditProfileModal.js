@@ -71,6 +71,7 @@ export default function EditProfileModal({
               fontWeight: "bold",
               color: themeColors.black,
               marginBottom: 16,
+              fontFamily: "CarosSoft",
             }}
           >
             Edit Profile
@@ -88,6 +89,7 @@ export default function EditProfileModal({
                   fontSize: 12,
                   color: themeColors.darkGray,
                   marginBottom: 4,
+                  fontFamily: "CarosSoft",
                 }}
               >
                 Current
@@ -126,6 +128,7 @@ export default function EditProfileModal({
                   fontSize: 12,
                   color: themeColors.darkGray,
                   marginBottom: 4,
+                  fontFamily: "CarosSoft",
                 }}
               >
                 New
@@ -175,6 +178,7 @@ export default function EditProfileModal({
                   color: themeColors.white,
                   fontWeight: "bold",
                   fontSize: 13,
+                  fontFamily: "CarosSoft",
                 }}
               >
                 Change Picture
@@ -191,6 +195,7 @@ export default function EditProfileModal({
               marginBottom: 16,
               color: themeColors.black,
               backgroundColor: themeColors.white,
+              fontFamily: "CarosSoft",
             }}
             placeholder="First Name"
             value={editedFirstName}
@@ -207,6 +212,7 @@ export default function EditProfileModal({
               marginBottom: 16,
               color: themeColors.black,
               backgroundColor: themeColors.white,
+              fontFamily: "CarosSoft",
             }}
             placeholder="Last Name"
             value={editedLastName}
@@ -223,6 +229,7 @@ export default function EditProfileModal({
               marginBottom: 16,
               color: themeColors.black,
               backgroundColor: themeColors.white,
+              fontFamily: "CarosSoft",
             }}
             placeholder="Graduation Year"
             value={editedGradYear}
@@ -250,7 +257,13 @@ export default function EditProfileModal({
               }}
               onPress={onClose}
             >
-              <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                }}
+              >
                 Cancel
               </Text>
             </TouchableOpacity>
@@ -265,7 +278,13 @@ export default function EditProfileModal({
               }}
               onPress={onSave}
             >
-              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                }}
+              >
                 Save
               </Text>
             </TouchableOpacity>

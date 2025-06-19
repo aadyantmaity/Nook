@@ -20,7 +20,13 @@ export default function ImagePickerButton({
         accessibilityLabel="Pick an image for this location"
         accessible={true}
       >
-        <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+        <Text
+          style={{
+            color: themeColors.white,
+            fontWeight: "bold",
+            fontFamily: "CarosSoft",
+          }}
+        >
           {customImage ? "Change Image" : "Upload Image"}
         </Text>
       </TouchableOpacity>

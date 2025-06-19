@@ -129,6 +129,7 @@ function HomeLoadingScreen({ themeColors }) {
           color: themeColors.purple,
           marginTop: 0,
           letterSpacing: 0.5,
+          fontFamily: "CarosSoft",
         }}
       >
         Nook
@@ -139,6 +140,7 @@ function HomeLoadingScreen({ themeColors }) {
           color: themeColors.darkGray,
           textAlign: "center",
           maxWidth: 260,
+          fontFamily: "CarosSoft",
         }}
       >
         Finding your Nooks...

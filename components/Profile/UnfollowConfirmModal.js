@@ -41,6 +41,7 @@ export default function UnfollowConfirmModal({
               fontWeight: "bold",
               marginBottom: 12,
               color: themeColors.black,
+              fontFamily: "CarosSoft",
             }}
           >
             Unfollow User?
@@ -51,6 +52,7 @@ export default function UnfollowConfirmModal({
               color: themeColors.purple,
               marginBottom: 20,
               textAlign: "center",
+              fontFamily: "CarosSoft",
             }}
           >
             Are you sure you want to unfollow this user?
@@ -73,7 +75,13 @@ export default function UnfollowConfirmModal({
               }}
               onPress={onConfirm}
             >
-              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                }}
+              >
                 Unfollow
               </Text>
             </TouchableOpacity>
@@ -87,7 +95,13 @@ export default function UnfollowConfirmModal({
               }}
               onPress={onClose}
             >
-              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                }}
+              >
                 Cancel
               </Text>
             </TouchableOpacity>

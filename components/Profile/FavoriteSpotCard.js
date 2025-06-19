@@ -131,6 +131,7 @@ export default function FavoriteSpotCard({
             fontWeight: "bold",
             color: themeColors.black,
             marginBottom: 6,
+            fontFamily: "CarosSoft",
           }}
         >
           {spot.buildingName}
@@ -140,6 +141,7 @@ export default function FavoriteSpotCard({
                 fontSize: 18,
                 color: themeColors.black,
                 fontWeight: "bold",
+                fontFamily: "CarosSoft",
               }}
             >
               {" - Floor "}
@@ -169,6 +171,7 @@ export default function FavoriteSpotCard({
                         color: themeColors.white,
                         fontSize: 11,
                         fontWeight: "bold",
+                        fontFamily: "CarosSoft",
                       }}
                     >
                       {tag}
@@ -183,6 +186,7 @@ export default function FavoriteSpotCard({
                 fontSize: 11,
                 fontWeight: "bold",
                 marginTop: 2,
+                fontFamily: "CarosSoft",
               }}
             >
               +{spot.tags.length - 3} more
@@ -196,6 +200,7 @@ export default function FavoriteSpotCard({
               fontSize: 13,
               fontWeight: "bold",
               marginRight: 12,
+              fontFamily: "CarosSoft",
             }}
           >
             Noise: {getNoiseLabel(spot.ratings?.noise)}
@@ -205,6 +210,7 @@ export default function FavoriteSpotCard({
               color: themeColors.purple,
               fontSize: 13,
               fontWeight: "bold",
+              fontFamily: "CarosSoft",
             }}
           >
             Crowd: {getCrowdLabel(spot.ratings?.crowd)}
@@ -231,6 +237,7 @@ export default function FavoriteSpotCard({
                   color: themeColors.purple,
                   fontWeight: "bold",
                   marginRight: 6,
+                  fontFamily: "CarosSoft",
                 }}
               >
                 Tables Open:
@@ -251,6 +258,7 @@ export default function FavoriteSpotCard({
                     color: themeColors.white,
                     fontWeight: "bold",
                     fontSize: 13,
+                    fontFamily: "CarosSoft",
                   }}
                 >
                   {(() => {
@@ -277,6 +285,7 @@ export default function FavoriteSpotCard({
             color: themeColors.darkGray,
             marginTop: 2,
             textAlign: "right",
+            fontFamily: "CarosSoft",
           }}
         >
           {getLastUpdatedLabel(spot.ratings || {})}

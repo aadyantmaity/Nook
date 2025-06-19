@@ -43,6 +43,7 @@ export default function SpotQRModal({ visible, onClose, spotId, themeColors }) {
               color: themeColors.purple,
               marginBottom: 18,
               textAlign: "center",
+              fontFamily: "CarosSoft",
             }}
           >
             Spot QR Code
@@ -59,6 +60,7 @@ export default function SpotQRModal({ visible, onClose, spotId, themeColors }) {
               fontSize: 15,
               marginTop: 18,
               textAlign: "center",
+              fontFamily: "CarosSoft",
             }}
           >
             Scan to open this app in Expo Go.
@@ -79,6 +81,7 @@ export default function SpotQRModal({ visible, onClose, spotId, themeColors }) {
                 color: themeColors.white,
                 fontWeight: "bold",
                 fontSize: 16,
+                fontFamily: "CarosSoft",
               }}
             >
               Close

@@ -53,6 +53,7 @@ export default function TabBar({
                   currentIndex === i ? themeColors.black : themeColors.darkGray,
                 fontWeight: currentIndex === i ? "bold" : "normal",
                 fontSize: 16,
+                fontFamily: "CarosSoft",
               }}
             >
               {route.title}

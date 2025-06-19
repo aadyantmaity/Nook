@@ -88,6 +88,7 @@ export default function GeneralReportModal({
                 fontWeight: "bold",
                 color: themeColors.black,
                 marginBottom: 8,
+                fontFamily: "CarosSoft",
               }}
             >
               Suggestion / Report an Issue
@@ -103,6 +104,7 @@ export default function GeneralReportModal({
                 backgroundColor: themeColors.white,
                 marginBottom: 12,
                 textAlignVertical: "top",
+                fontFamily: "CarosSoft",
               }}
               placeholder="Describe your suggestion or issue..."
               placeholderTextColor={themeColors.darkGray}
@@ -127,7 +129,13 @@ export default function GeneralReportModal({
                   opacity: submitting ? 0.7 : 1,
                 }}
               >
-                <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+                <Text
+                  style={{
+                    color: themeColors.white,
+                    fontWeight: "bold",
+                    fontFamily: "CarosSoft",
+                  }}
+                >
                   {submitting ? "Submitting..." : "Submit"}
                 </Text>
               </TouchableOpacity>
@@ -144,7 +152,13 @@ export default function GeneralReportModal({
                   borderWidth: 0.5,
                 }}
               >
-                <Text style={{ color: themeColors.purple, fontWeight: "bold" }}>
+                <Text
+                  style={{
+                    color: themeColors.purple,
+                    fontWeight: "bold",
+                    fontFamily: "CarosSoft",
+                  }}
+                >
                   Cancel
                 </Text>
               </TouchableOpacity>

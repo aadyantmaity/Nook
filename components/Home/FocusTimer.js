@@ -635,7 +635,13 @@ export function FocusTimerView({ navigation }) {
 
     if (nonBreakStats.length === 0) {
       return (
-        <Text style={{ color: themeColors.darkGray, marginTop: 8 }}>
+        <Text
+          style={{
+            color: themeColors.darkGray,
+            marginTop: 8,
+            fontFamily: "CarosSoft",
+          }}
+        >
           No focus sessions this week.
         </Text>
       );
@@ -671,12 +677,18 @@ export function FocusTimerView({ navigation }) {
               color: themeColors.white,
               fontWeight: "bold",
               fontSize: 16,
+              fontFamily: "CarosSoft",
             }}
           >
             Total Focus Time
           </Text>
           <Text
-            style={{ color: themeColors.white, fontSize: 18, marginTop: 2 }}
+            style={{
+              color: themeColors.white,
+              fontSize: 18,
+              marginTop: 2,
+              fontFamily: "CarosSoft",
+            }}
           >
             {totalHours}h {totalMinutes}m {totalSecs}s
           </Text>
@@ -732,6 +744,7 @@ export function FocusTimerView({ navigation }) {
                       color: themeColors.purple,
                       fontWeight: "bold",
                       fontSize: 15,
+                      fontFamily: "CarosSoft",
                     }}
                   >
                     {spot?.buildingName || "Unknown"}
@@ -742,6 +755,7 @@ export function FocusTimerView({ navigation }) {
                       color: themeColors.black,
                       fontSize: 14,
                       marginTop: 2,
+                      fontFamily: "CarosSoft",
                     }}
                   >
                     {hours}h {minutes}m {seconds}s
@@ -762,6 +776,7 @@ export function FocusTimerView({ navigation }) {
                       color: themeColors.purple,
                       fontSize: 13,
                       fontWeight: "bold",
+                      fontFamily: "CarosSoft",
                     }}
                   >
                     {`${totalHours}h ${totalMinutes}m ${totalSecs}s`}
@@ -1193,6 +1208,7 @@ export function FocusTimerView({ navigation }) {
                   marginBottom: 4,
                   textAlign: "center",
                   letterSpacing: 0.2,
+                  fontFamily: "CarosSoft",
                 }}
               >
                 Session Reflection
@@ -1204,6 +1220,7 @@ export function FocusTimerView({ navigation }) {
                   marginBottom: 18,
                   textAlign: "center",
                   lineHeight: 20,
+                  fontFamily: "CarosSoft",
                 }}
               >
                 How did your Pomodoro session go? Write a quick note or
@@ -1267,6 +1284,7 @@ export function FocusTimerView({ navigation }) {
                       color: themeColors.white,
                       fontWeight: "bold",
                       fontSize: 16,
+                      fontFamily: "CarosSoft",
                     }}
                   >
                     Save
@@ -1308,19 +1326,28 @@ export function FocusTimerView({ navigation }) {
                 color: themeColors.purple,
                 marginBottom: 10,
                 textAlign: "center",
+                fontFamily: "CarosSoft",
               }}
             >
               Focus Archive
             </Text>
             {archiveLoading ? (
               <Text
-                style={{ color: themeColors.darkGray, textAlign: "center" }}
+                style={{
+                  color: themeColors.darkGray,
+                  textAlign: "center",
+                  fontFamily: "CarosSoft",
+                }}
               >
                 Loading...
               </Text>
             ) : Object.keys(archiveData).length === 0 ? (
               <Text
-                style={{ color: themeColors.darkGray, textAlign: "center" }}
+                style={{
+                  color: themeColors.darkGray,
+                  textAlign: "center",
+                  fontFamily: "CarosSoft",
+                }}
               >
                 No focus sessions found.
               </Text>
@@ -1339,6 +1366,7 @@ export function FocusTimerView({ navigation }) {
                           fontWeight: "bold",
                           fontSize: 16,
                           marginBottom: 2,
+                          fontFamily: "CarosSoft",
                         }}
                       >
                         {year}
@@ -1365,6 +1393,7 @@ export function FocusTimerView({ navigation }) {
                                     fontSize: 15,
                                     fontWeight: "bold",
                                     flex: 1,
+                                    fontFamily: "CarosSoft",
                                   }}
                                 >
                                   {new Date(
@@ -1422,6 +1451,7 @@ export function FocusTimerView({ navigation }) {
                                                 fontSize: 14,
                                                 fontWeight: "bold",
                                                 flex: 1,
+                                                fontFamily: "CarosSoft",
                                               }}
                                             >
                                               {spot
@@ -1495,6 +1525,8 @@ export function FocusTimerView({ navigation }) {
                                                               themeColors.black,
                                                             fontWeight: "bold",
                                                             fontSize: 13,
+                                                            fontFamily:
+                                                              "CarosSoft",
                                                           }}
                                                         >
                                                           {date.toLocaleDateString()}{" "}
@@ -1511,6 +1543,8 @@ export function FocusTimerView({ navigation }) {
                                                             color:
                                                               themeColors.darkGray,
                                                             fontSize: 13,
+                                                            fontFamily:
+                                                              "CarosSoft",
                                                           }}
                                                         >
                                                           Duration: {hours}h{" "}
@@ -1577,7 +1611,13 @@ export function FocusTimerView({ navigation }) {
                 alignItems: "center",
               }}
             >
-              <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                }}
+              >
                 Close
               </Text>
             </TouchableOpacity>
@@ -1635,6 +1675,7 @@ export function FocusTimerView({ navigation }) {
                   marginLeft: 6,
                   letterSpacing: 0.5,
                   textAlign: "center",
+                  fontFamily: "CarosSoft",
                 }}
               >
                 Archive
@@ -1669,6 +1710,7 @@ export function FocusTimerView({ navigation }) {
                   color: themeColors.white,
                   fontWeight: "bold",
                   marginLeft: 8,
+                  fontFamily: "CarosSoft",
                 }}
               >
                 {selectedSpot ? selectedSpot.buildingName : "Select Location"}
@@ -1679,11 +1721,18 @@ export function FocusTimerView({ navigation }) {
                 fontSize: 48,
                 fontWeight: "bold",
                 color: themeColors.purple,
+                fontFamily: "CarosSoft",
               }}
             >
               {formatTime(timer)}
             </Text>
-            <Text style={{ color: themeColors.darkGray, marginBottom: 18 }}>
+            <Text
+              style={{
+                color: themeColors.darkGray,
+                marginBottom: 18,
+                fontFamily: "CarosSoft",
+              }}
+            >
               {isBreak ? "Break" : "Pomodoro"}
             </Text>
             {/* Timer control buttons row */}
@@ -1771,6 +1820,7 @@ export function FocusTimerView({ navigation }) {
                         color: themeColors.purple,
                         fontSize: 17,
                         flex: 1,
+                        fontFamily: "CarosSoft",
                       }}
                     >
                       This Week's Focus Stats
@@ -1790,6 +1840,7 @@ export function FocusTimerView({ navigation }) {
                           color: themeColors.purple,
                           fontSize: 13,
                           fontWeight: "bold",
+                          fontFamily: "CarosSoft",
                         }}
                       >
                         {`${totalHours}h ${totalMinutes}m ${totalSecs}s`}
@@ -1857,6 +1908,7 @@ export function FocusTimerView({ navigation }) {
                                 fontWeight: "bold",
                                 fontSize: 14,
                                 flex: 1,
+                                fontFamily: "CarosSoft",
                               }}
                             >
                               {spot
@@ -1873,6 +1925,7 @@ export function FocusTimerView({ navigation }) {
                                 fontSize: 13,
                                 marginRight: 8,
                                 fontWeight: "bold",
+                                fontFamily: "CarosSoft",
                               }}
                             >
                               {hours}h {minutes}m {seconds}s
@@ -1918,6 +1971,7 @@ export function FocusTimerView({ navigation }) {
                                               color: themeColors.black,
                                               fontSize: 13,
                                               fontWeight: "bold",
+                                              fontFamily: "CarosSoft",
                                             }}
                                           >
                                             {s.start
@@ -1934,6 +1988,7 @@ export function FocusTimerView({ navigation }) {
                                             <Text
                                               style={{
                                                 color: themeColors.black,
+                                                fontFamily: "CarosSoft",
                                               }}
                                             >
                                               {(() => {
@@ -1963,6 +2018,7 @@ export function FocusTimerView({ navigation }) {
                                                 fontSize: 13,
                                                 marginTop: 2,
                                                 fontStyle: "italic",
+                                                fontFamily: "CarosSoft",
                                               }}
                                             >
                                               “{s.note}”
@@ -1998,6 +2054,7 @@ export function FocusTimerView({ navigation }) {
                                     color: themeColors.darkGray,
                                     fontSize: 13,
                                     marginLeft: 8,
+                                    fontFamily: "CarosSoft",
                                   }}
                                 >
                                   No sessions.
@@ -2014,6 +2071,7 @@ export function FocusTimerView({ navigation }) {
                       color: themeColors.darkGray,
                       fontSize: 13,
                       marginLeft: 4,
+                      fontFamily: "CarosSoft",
                     }}
                   >
                     No focus sessions.
@@ -2048,6 +2106,7 @@ export function FocusTimerView({ navigation }) {
                       fontWeight: "bold",
                       color: themeColors.black,
                       marginBottom: 12,
+                      fontFamily: "CarosSoft",
                     }}
                   >
                     Select Location
@@ -2078,6 +2137,7 @@ export function FocusTimerView({ navigation }) {
                           style={{
                             color: themeColors.purple,
                             fontWeight: "bold",
+                            fontFamily: "CarosSoft",
                           }}
                         >
                           {item.buildingName}
@@ -2087,6 +2147,7 @@ export function FocusTimerView({ navigation }) {
                             style={{
                               color: themeColors.darkGray,
                               fontSize: 13,
+                              fontFamily: "CarosSoft",
                             }}
                           >
                             Floor {item.roomNumber}
@@ -2106,7 +2167,11 @@ export function FocusTimerView({ navigation }) {
                     }}
                   >
                     <Text
-                      style={{ color: themeColors.white, fontWeight: "bold" }}
+                      style={{
+                        color: themeColors.white,
+                        fontWeight: "bold",
+                        fontFamily: "CarosSoft",
+                      }}
                     >
                       Close
                     </Text>
@@ -2145,6 +2210,7 @@ export function FocusTimerView({ navigation }) {
                       fontWeight: "bold",
                       color: themeColors.black,
                       marginBottom: 8,
+                      fontFamily: "CarosSoft",
                     }}
                   >
                     {selectedStatSpot?.spot
@@ -2160,6 +2226,7 @@ export function FocusTimerView({ navigation }) {
                       fontSize: 16,
                       color: themeColors.purple,
                       marginBottom: 8,
+                      fontFamily: "CarosSoft",
                     }}
                   >
                     Focused for:{" "}
@@ -2206,6 +2273,7 @@ export function FocusTimerView({ navigation }) {
                                     color: themeColors.black,
                                     fontWeight: "bold",
                                     fontSize: 15,
+                                    fontFamily: "CarosSoft",
                                   }}
                                 >
                                   {date.toLocaleDateString()}{" "}
@@ -2218,6 +2286,7 @@ export function FocusTimerView({ navigation }) {
                                   style={{
                                     color: themeColors.darkGray,
                                     fontSize: 13,
+                                    fontFamily: "CarosSoft",
                                   }}
                                 >
                                   Duration: {hours}h {minutes}m {seconds}s
@@ -2229,6 +2298,7 @@ export function FocusTimerView({ navigation }) {
                                       fontSize: 14,
                                       marginTop: 2,
                                       fontStyle: "italic",
+                                      fontFamily: "CarosSoft",
                                     }}
                                   >
                                     “{session.note}”
@@ -2252,7 +2322,11 @@ export function FocusTimerView({ navigation }) {
                         })
                     ) : (
                       <Text
-                        style={{ color: themeColors.darkGray, fontSize: 14 }}
+                        style={{
+                          color: themeColors.darkGray,
+                          fontSize: 14,
+                          fontFamily: "CarosSoft",
+                        }}
                       >
                         No sessions for this spot this week.
                       </Text>
@@ -2264,6 +2338,7 @@ export function FocusTimerView({ navigation }) {
                       color: themeColors.darkGray,
                       marginBottom: 18,
                       textAlign: "center",
+                      fontFamily: "CarosSoft",
                     }}
                   >
                     You can view your sessions for this spot.
@@ -2287,6 +2362,7 @@ export function FocusTimerView({ navigation }) {
                         style={{
                           color: themeColors.purple,
                           fontWeight: "bold",
+                          fontFamily: "CarosSoft",
                         }}
                       >
                         Close

@@ -50,6 +50,7 @@ import { TabView, SceneMap } from "react-native-tab-view";
 import { Dimensions } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { getLastUpdatedLabel } from "../utils/lastUpdatedLabel";
+import { useFonts } from "expo-font"; // <-- Add this import
 
 // components imports
 import Filters from "../components/Home/Filters"; // Import Filters component
@@ -72,6 +73,11 @@ let imageCache = {};
 const HOME_VIEW_KEY = "nookHomeView"; // Add this constant
 
 export default function HomeScreen({ navigation, route }) {
+  // Load CarosSoft font (move this to the top, before any early returns)
+  const [fontsLoaded] = useFonts({
+    CarosSoft: require("../assets/fonts/CarosSoftBold.otf"),
+  });
+
   // Theme
   const themeCtx = useContext(ThemeContext);
   const isDarkMode = themeCtx?.isDarkMode ?? false;
@@ -271,6 +277,7 @@ export default function HomeScreen({ navigation, route }) {
                 fontWeight: "bold",
                 fontSize: 14,
                 textAlignVertical: "center",
+                fontFamily: "CarosSoft", // <-- Add fontFamily here
               }}
             />
           </TouchableOpacity>
@@ -392,6 +399,7 @@ export default function HomeScreen({ navigation, route }) {
               fontWeight: "bold",
               fontSize: 14,
               marginLeft: 8,
+              fontFamily: "CarosSoft", // <-- Add fontFamily here
             }}
           >
             Add Nook
@@ -443,6 +451,11 @@ export default function HomeScreen({ navigation, route }) {
     }
   }, []);
 
+  // Wait for font to load before rendering (move this before any other return)
+  if (!fontsLoaded) {
+    return null;
+  }
+
   // --- Show loading screen only on initial mount and isLoading, for at least 10s ---
   if (initialMount.current || isLoading || !minLoadingElapsed) {
     return <HomeLoadingScreen themeColors={themeColors} />;
@@ -461,7 +474,7 @@ export default function HomeScreen({ navigation, route }) {
             justifyContent: "space-between",
             paddingTop: 16,
             zIndex: 10,
-            paddingHorizontal: 16, // <-- Add this line
+            paddingHorizontal: 16,
           }}
         >
           <Text
@@ -470,6 +483,7 @@ export default function HomeScreen({ navigation, route }) {
               fontWeight: "bold",
               color: themeColors.purple,
               marginRight: 12,
+              fontFamily: "CarosSoft", // <-- Use CarosSoft font for header
             }}
           >
             Nook
@@ -520,7 +534,12 @@ export default function HomeScreen({ navigation, route }) {
           )}
           style={{ flex: 1 }}
           renderTabBar={(props) => (
-            <TabBar {...props} themeColors={themeColors} currentIndex={index} />
+            <TabBar
+              {...props}
+              themeColors={themeColors}
+              currentIndex={index}
+              labelStyle={{ fontFamily: "CarosSoft" }} // <-- Add fontFamily for tab labels
+            />
           )}
         />
 

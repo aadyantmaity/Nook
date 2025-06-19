@@ -66,12 +66,19 @@ export default function RatingsDisplay({
               fontSize: 16,
               fontWeight: "bold",
               marginTop: 8,
+              fontFamily: "CarosSoft",
             }}
           >
             Noise: {getNoiseLabel(ratings?.noise)}
           </Text>
           {typeof ratings?.noise === "number" && (
-            <Text style={{ color: themeColors.darkGray, fontSize: 12 }}>
+            <Text
+              style={{
+                color: themeColors.darkGray,
+                fontSize: 12,
+                fontFamily: "CarosSoft",
+              }}
+            >
               ({ratings.noise.toFixed(1)} avg)
             </Text>
           )}
@@ -94,12 +101,19 @@ export default function RatingsDisplay({
               fontSize: 16,
               fontWeight: "bold",
               marginTop: 8,
+              fontFamily: "CarosSoft",
             }}
           >
             Crowd: {getCrowdLabel(ratings?.crowd)}
           </Text>
           {typeof ratings?.crowd === "number" && (
-            <Text style={{ color: themeColors.darkGray, fontSize: 12 }}>
+            <Text
+              style={{
+                color: themeColors.darkGray,
+                fontSize: 12,
+                fontFamily: "CarosSoft",
+              }}
+            >
               ({ratings.crowd.toFixed(1)} avg)
             </Text>
           )}

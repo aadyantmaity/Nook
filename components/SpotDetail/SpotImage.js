@@ -37,7 +37,9 @@ export default function SpotImage({ photoUrl, themeColors }) {
             marginBottom: 16,
           }}
         >
-          <Text style={{ color: themeColors.black }}>No Image</Text>
+          <Text style={{ color: themeColors.black, fontFamily: "CarosSoft" }}>
+            No Image
+          </Text>
         </View>
       )}
     </View>

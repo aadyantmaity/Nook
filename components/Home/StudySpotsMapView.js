@@ -191,7 +191,11 @@ export default function StudySpotsMapView({
                 >
                   <View>
                     <Text
-                      style={{ fontWeight: "bold", color: themeColors.purple }}
+                      style={{
+                        fontWeight: "bold",
+                        color: themeColors.purple,
+                        fontFamily: "CarosSoft",
+                      }}
                     >
                       {cluster[0].buildingName}
                       {cluster[0].roomNumber
@@ -203,6 +207,7 @@ export default function StudySpotsMapView({
                         color: themeColors.orange,
                         fontSize: 12,
                         marginTop: 2,
+                        fontFamily: "CarosSoft",
                       }}
                     >
                       Tap for details
@@ -215,11 +220,15 @@ export default function StudySpotsMapView({
                 key={"cluster_" + idx}
                 coordinate={{
                   latitude:
-                    cluster.reduce((sum, s) => sum + s.coordinates.latitude, 0) /
-                    cluster.length,
+                    cluster.reduce(
+                      (sum, s) => sum + s.coordinates.latitude,
+                      0
+                    ) / cluster.length,
                   longitude:
-                    cluster.reduce((sum, s) => sum + s.coordinates.longitude, 0) /
-                    cluster.length,
+                    cluster.reduce(
+                      (sum, s) => sum + s.coordinates.longitude,
+                      0
+                    ) / cluster.length,
                 }}
                 tracksViewChanges={false}
                 pinColor={themeColors.orange}
@@ -243,6 +252,7 @@ export default function StudySpotsMapView({
                       color: themeColors.white,
                       fontWeight: "bold",
                       fontSize: 18,
+                      fontFamily: "CarosSoft",
                     }}
                   >
                     {cluster.length}
@@ -289,26 +299,65 @@ export default function StudySpotsMapView({
         }}
       >
         <View style={{ alignItems: "center", flex: 1 }}>
-          <Text style={{ color: themeColors.purple, fontWeight: "bold", fontSize: 16 }}>
+          <Text
+            style={{
+              color: themeColors.purple,
+              fontWeight: "bold",
+              fontSize: 16,
+              fontFamily: "CarosSoft",
+            }}
+          >
             {totalNooks}
           </Text>
-          <Text style={{ color: themeColors.darkGray, fontSize: 13 }}>
+          <Text
+            style={{
+              color: themeColors.darkGray,
+              fontSize: 13,
+              fontFamily: "CarosSoft",
+            }}
+          >
             Nooks
           </Text>
         </View>
         <View style={{ alignItems: "center", flex: 1 }}>
-          <Text style={{ color: themeColors.purple, fontWeight: "bold", fontSize: 16 }}>
+          <Text
+            style={{
+              color: themeColors.purple,
+              fontWeight: "bold",
+              fontSize: 16,
+              fontFamily: "CarosSoft",
+            }}
+          >
             {privateNooks}
           </Text>
-          <Text style={{ color: themeColors.darkGray, fontSize: 13 }}>
+          <Text
+            style={{
+              color: themeColors.darkGray,
+              fontSize: 13,
+              fontFamily: "CarosSoft",
+            }}
+          >
             Private
           </Text>
         </View>
         <View style={{ alignItems: "center", flex: 1 }}>
-          <Text style={{ color: themeColors.purple, fontWeight: "bold", fontSize: 16 }}>
+          <Text
+            style={{
+              color: themeColors.purple,
+              fontWeight: "bold",
+              fontSize: 16,
+              fontFamily: "CarosSoft",
+            }}
+          >
             {nooksWithAlertsToday}
           </Text>
-          <Text style={{ color: themeColors.darkGray, fontSize: 13 }}>
+          <Text
+            style={{
+              color: themeColors.darkGray,
+              fontSize: 13,
+              fontFamily: "CarosSoft",
+            }}
+          >
             Alerts Today
           </Text>
         </View>

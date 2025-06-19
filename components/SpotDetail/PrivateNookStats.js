@@ -70,6 +70,7 @@ export default function PrivateNookStats({ spotId, themeColors }) {
           fontSize: 16,
           color: themeColors.purple,
           marginBottom: 6,
+          fontFamily: "CarosSoft",
         }}
       >
         Your Focus Stats for this Nook
@@ -79,10 +80,17 @@ export default function PrivateNookStats({ spotId, themeColors }) {
           color: themeColors.black,
           fontSize: 15,
           marginBottom: 2,
+          fontFamily: "CarosSoft",
         }}
       >
         Sessions logged:{" "}
-        <Text style={{ fontWeight: "bold", color: themeColors.purple }}>
+        <Text
+          style={{
+            fontWeight: "bold",
+            color: themeColors.purple,
+            fontFamily: "CarosSoft",
+          }}
+        >
           {stats.totalSessions}
         </Text>
       </Text>
@@ -91,10 +99,17 @@ export default function PrivateNookStats({ spotId, themeColors }) {
           color: themeColors.black,
           fontSize: 15,
           marginBottom: 2,
+          fontFamily: "CarosSoft",
         }}
       >
         Time focused:{" "}
-        <Text style={{ fontWeight: "bold", color: themeColors.purple }}>
+        <Text
+          style={{
+            fontWeight: "bold",
+            color: themeColors.purple,
+            fontFamily: "CarosSoft",
+          }}
+        >
           {formatTime(stats.totalTime)}
         </Text>
       </Text>

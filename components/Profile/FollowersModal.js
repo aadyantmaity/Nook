@@ -49,6 +49,7 @@ export default function FollowersModal({
               fontSize: 18,
               color: themeColors.purple,
               marginBottom: 8,
+              fontFamily: "CarosSoft",
             }}
           >
             Followers
@@ -67,7 +68,13 @@ export default function FollowersModal({
                   }}
                   style={{ paddingVertical: 10 }}
                 >
-                  <Text style={{ color: themeColors.black, fontSize: 16 }}>
+                  <Text
+                    style={{
+                      color: themeColors.black,
+                      fontSize: 16,
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
                     {item.name}
                   </Text>
                 </TouchableOpacity>
@@ -84,7 +91,13 @@ export default function FollowersModal({
               alignItems: "center",
             }}
           >
-            <Text style={{ color: themeColors.white, fontWeight: "bold" }}>
+            <Text
+              style={{
+                color: themeColors.white,
+                fontWeight: "bold",
+                fontFamily: "CarosSoft",
+              }}
+            >
               Close
             </Text>
           </TouchableOpacity>

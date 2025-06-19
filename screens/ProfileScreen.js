@@ -251,18 +251,33 @@ export default function ProfileScreen({ navigation, route }) {
         </View>
         {/* Profile Details */}
         <View style={styles.profileContainer}>
-          <Text style={[styles.userName, { color: themeColors.black }]}>
+          <Text
+            style={[
+              styles.userName,
+              { color: themeColors.black, fontFamily: "CarosSoft" },
+            ]}
+          >
             {firstName} {lastName}
           </Text>
           <View style={styles.detailRow}>
             <Envelope size={20} color={themeColors.purple} />
-            <Text style={[styles.userEmail, { color: themeColors.black }]}>
+            <Text
+              style={[
+                styles.userEmail,
+                { color: themeColors.black, fontFamily: "CarosSoft" },
+              ]}
+            >
               {userEmail}
             </Text>
           </View>
           <View style={styles.detailRow}>
             <GraduationCap size={20} color={themeColors.purple} />
-            <Text style={[styles.userGradYear, { color: themeColors.black }]}>
+            <Text
+              style={[
+                styles.userGradYear,
+                { color: themeColors.black, fontFamily: "CarosSoft" },
+              ]}
+            >
               {userGradYear}
             </Text>
           </View>
@@ -274,11 +289,19 @@ export default function ProfileScreen({ navigation, route }) {
               disabled={followers.length === 0}
             >
               <Text
-                style={[styles.followLabel, { color: themeColors.darkGray }]}
+                style={[
+                  styles.followLabel,
+                  { color: themeColors.darkGray, fontFamily: "CarosSoft" },
+                ]}
               >
                 Followers
               </Text>
-              <Text style={[styles.followCount, { color: themeColors.black }]}>
+              <Text
+                style={[
+                  styles.followCount,
+                  { color: themeColors.black, fontFamily: "CarosSoft" },
+                ]}
+              >
                 {followers.length}
               </Text>
             </TouchableOpacity>
@@ -288,11 +311,19 @@ export default function ProfileScreen({ navigation, route }) {
               disabled={following.length === 0}
             >
               <Text
-                style={[styles.followLabel, { color: themeColors.darkGray }]}
+                style={[
+                  styles.followLabel,
+                  { color: themeColors.darkGray, fontFamily: "CarosSoft" },
+                ]}
               >
                 Following
               </Text>
-              <Text style={[styles.followCount, { color: themeColors.black }]}>
+              <Text
+                style={[
+                  styles.followCount,
+                  { color: themeColors.black, fontFamily: "CarosSoft" },
+                ]}
+              >
                 {following.length}
               </Text>
             </TouchableOpacity>
@@ -315,6 +346,7 @@ export default function ProfileScreen({ navigation, route }) {
                 fontSize: 16,
                 color: themeColors.purple,
                 marginBottom: 6,
+                fontFamily: "CarosSoft",
               }}
             >
               Lifetime Focus Mode Summary
@@ -324,10 +356,17 @@ export default function ProfileScreen({ navigation, route }) {
                 color: themeColors.black,
                 fontSize: 15,
                 marginBottom: 2,
+                fontFamily: "CarosSoft",
               }}
             >
               Sessions logged:{" "}
-              <Text style={{ fontWeight: "bold", color: themeColors.purple }}>
+              <Text
+                style={{
+                  fontWeight: "bold",
+                  color: themeColors.purple,
+                  fontFamily: "CarosSoft",
+                }}
+              >
                 {studyStats.totalSessions}
               </Text>
             </Text>
@@ -336,10 +375,17 @@ export default function ProfileScreen({ navigation, route }) {
                 color: themeColors.black,
                 fontSize: 15,
                 marginBottom: 2,
+                fontFamily: "CarosSoft",
               }}
             >
               Time focused:{" "}
-              <Text style={{ fontWeight: "bold", color: themeColors.purple }}>
+              <Text
+                style={{
+                  fontWeight: "bold",
+                  color: themeColors.purple,
+                  fontFamily: "CarosSoft",
+                }}
+              >
                 {(() => {
                   const ms = studyStats.totalTimeStudied || 0;
                   const totalSeconds = Math.floor(ms / 1000);
@@ -372,7 +418,11 @@ export default function ProfileScreen({ navigation, route }) {
               <Text
                 style={[
                   styles.favoritesTitle,
-                  { marginLeft: 8, color: themeColors.black },
+                  {
+                    marginLeft: 8,
+                    color: themeColors.black,
+                    fontFamily: "CarosSoft",
+                  },
                 ]}
               >
                 Favorites
@@ -472,7 +522,11 @@ export default function ProfileScreen({ navigation, route }) {
                 <Text
                   style={[
                     styles.noFavoritesText,
-                    { color: themeColors.darkGray, padding: 16 },
+                    {
+                      color: themeColors.darkGray,
+                      padding: 16,
+                      fontFamily: "CarosSoft",
+                    },
                   ]}
                 >
                   No favorites yet.
@@ -620,6 +674,7 @@ const styles = StyleSheet.create({
     flex: 1,
     // backgroundColor: colors.white, // Remove, handled by themeColors
     padding: 16,
+    fontFamily: "CarosSoft",
   },
   backButton: {
     position: "absolute",
@@ -656,6 +711,7 @@ const styles = StyleSheet.create({
     // color: colors.purple, // Remove, handled inline
     marginBottom: 8,
     paddingTop: 16,
+    fontFamily: "CarosSoft",
   },
   detailRow: {
     flexDirection: "row",
@@ -667,12 +723,14 @@ const styles = StyleSheet.create({
     // color: themeColors.darkGray, // Remove, handled inline
     marginLeft: 8,
     textAlign: "center",
+    fontFamily: "CarosSoft",
   },
   userGradYear: {
     fontSize: 16,
     // color: themeColors.darkGray, // Remove, handled inline
     marginLeft: 8,
     textAlign: "center",
+    fontFamily: "CarosSoft",
   },
   divider: {
     height: 1,
@@ -772,12 +830,14 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     // color: colors.purple, // Remove, handled inline
     alignSelf: "flex-start",
+    fontFamily: "CarosSoft",
   },
   noFavoritesText: {
     fontSize: 15,
     // color: colors.darkGray, // Remove, handled inline
     marginBottom: 8,
     alignSelf: "flex-start",
+    fontFamily: "CarosSoft",
   },
   favoriteSpotContainer: {
     backgroundColor: colors.gray,
@@ -790,6 +850,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     // color: colors.darkGray, // Remove, handled inline
     marginTop: 2,
+    fontFamily: "CarosSoft",
   },
   followRow: {
     flexDirection: "row",
@@ -806,9 +867,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     marginBottom: 4,
+    fontFamily: "CarosSoft",
   },
   followCount: {
     fontSize: 16,
     fontWeight: "bold",
+    fontFamily: "CarosSoft",
   },
 });

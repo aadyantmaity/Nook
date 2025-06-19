@@ -48,6 +48,7 @@ export default function SpotFeedback({ spotId, themeColors }) {
           fontSize: 15,
           fontWeight: "bold",
           marginBottom: 8,
+          fontFamily: "CarosSoft",
         }}
       >
         Did the noise & crowd ratings match your expectations?
@@ -101,6 +102,7 @@ export default function SpotFeedback({ spotId, themeColors }) {
             fontSize: 13,
             marginTop: 8,
             fontWeight: "bold",
+            fontFamily: "CarosSoft",
           }}
         >
           Thank you for your feedback!

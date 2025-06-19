@@ -138,7 +138,12 @@ export default function MapLocationPicker({
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.overlay}>
             <View style={styles.modal}>
-              <Text style={[styles.title, { color: themeColors.purple }]}>
+              <Text
+                style={[
+                  styles.title,
+                  { color: themeColors.purple, fontFamily: "CarosSoft" },
+                ]}
+              >
                 Search Location
               </Text>
               <View style={styles.searchContainer}>
@@ -164,6 +169,7 @@ export default function MapLocationPicker({
                           color: "#888",
                           textAlign: "center",
                           marginTop: 8,
+                          fontFamily: "CarosSoft",
                         }}
                       >
                         Loading...
@@ -183,7 +189,13 @@ export default function MapLocationPicker({
                           style={styles.suggestionItem}
                           onPress={() => handleSuggestionPick(item)}
                         >
-                          <Text style={styles.suggestionText} numberOfLines={2}>
+                          <Text
+                            style={[
+                              styles.suggestionText,
+                              { fontFamily: "CarosSoft" },
+                            ]}
+                            numberOfLines={2}
+                          >
                             {item.display_name}
                           </Text>
                         </TouchableOpacity>
@@ -198,6 +210,7 @@ export default function MapLocationPicker({
                           color: "#888",
                           textAlign: "center",
                           marginTop: 8,
+                          fontFamily: "CarosSoft",
                         }}
                       >
                         No results found
@@ -227,7 +240,13 @@ export default function MapLocationPicker({
                       }}
                     />
                   </MapView>
-                  <Text style={styles.mapPreviewLabel} numberOfLines={2}>
+                  <Text
+                    style={[
+                      styles.mapPreviewLabel,
+                      { fontFamily: "CarosSoft" },
+                    ]}
+                    numberOfLines={2}
+                  >
                     {selectedLocation.name}
                   </Text>
                 </View>
@@ -239,6 +258,7 @@ export default function MapLocationPicker({
                     color: "red",
                     marginVertical: 8,
                     textAlign: "center",
+                    fontFamily: "CarosSoft",
                   }}
                 >
                   Could not find a valid location for this address.
@@ -258,7 +278,11 @@ export default function MapLocationPicker({
                   ]}
                 >
                   <Text
-                    style={{ color: themeColors.purple, fontWeight: "bold" }}
+                    style={{
+                      color: themeColors.purple,
+                      fontWeight: "bold",
+                      fontFamily: "CarosSoft",
+                    }}
                   >
                     Cancel
                   </Text>
@@ -281,6 +305,7 @@ export default function MapLocationPicker({
                     style={{
                       color: selectedLocation ? themeColors.white : "#888",
                       fontWeight: "bold",
+                      fontFamily: "CarosSoft",
                     }}
                   >
                     Pick Location
@@ -317,6 +342,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 8,
+    fontFamily: "CarosSoft",
   },
   searchContainer: {
     width: "100%",
@@ -334,10 +360,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     fontSize: 15,
     color: "#222",
+    fontFamily: "CarosSoft",
   },
   loadingText: {
     marginLeft: 8,
     color: "#888",
+    fontFamily: "CarosSoft",
   },
   suggestionsBox: {
     width: "100%",
@@ -369,6 +397,7 @@ const styles = StyleSheet.create({
   suggestionText: {
     fontSize: 14,
     color: "#222",
+    fontFamily: "CarosSoft",
   },
   buttonRow: {
     flexDirection: "row",
@@ -401,5 +430,6 @@ const styles = StyleSheet.create({
     color: "#444",
     textAlign: "center",
     width: "100%",
+    fontFamily: "CarosSoft",
   },
 });

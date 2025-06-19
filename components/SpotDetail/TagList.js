@@ -18,13 +18,25 @@ export default function TagList({ tags, themeColors }) {
                 marginBottom: 8,
               }}
             >
-              <Text style={{ color: themeColors.white, fontSize: 14 }}>
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontSize: 14,
+                  fontFamily: "CarosSoft",
+                }}
+              >
                 {String(tag)}
               </Text>
             </View>
           ))
         ) : (
-          <Text style={{ fontSize: 16, color: themeColors.black }}>
+          <Text
+            style={{
+              fontSize: 16,
+              color: themeColors.black,
+              fontFamily: "CarosSoft",
+            }}
+          >
             No tags available
           </Text>
         )}
