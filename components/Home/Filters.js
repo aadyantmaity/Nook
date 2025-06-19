@@ -24,6 +24,15 @@ const TAGS = [
   "Private",
 ];
 
+const SORT_OPTIONS = [
+  { label: "Default", value: "default" },
+  { label: "Name (A-Z)", value: "name-asc" },
+  { label: "Name (Z-A)", value: "name-desc" },
+  { label: "Noise (Low to High)", value: "noise-asc" },
+  { label: "Crowd (Low to High)", value: "crowd-asc" },
+  { label: "Overall Rating", value: "overall-desc" },
+];
+
 // Enable LayoutAnimation on Android
 if (
   Platform.OS === "android" &&
@@ -38,17 +47,26 @@ export default function Filters({
   themeColors,
   buttonStyle,
   textStyle,
+  sortBy,
+  setSortBy,
 }) {
   // Modal open state
   const [modalVisible, setModalVisible] = useState(false);
   // Local filter state for modal (so parent state doesn't interfere)
   const [localFilters, setLocalFilters] = useState(filters);
+  // Local sort state for modal
+  const [localSortBy, setLocalSortBy] = useState(sortBy || "default");
 
   // Keep localFilters in sync with parent filters only when modal is closed
   useEffect(() => {
     if (!modalVisible) setLocalFilters(filters);
     // eslint-disable-next-line
   }, [filters, modalVisible]);
+
+  // Keep localSortBy in sync with parent sortBy only when modal is closed
+  useEffect(() => {
+    if (!modalVisible) setLocalSortBy(sortBy || "default");
+  }, [sortBy, modalVisible]);
 
   const handlePress = (label) => {
     if (label === "All") {
@@ -219,6 +237,65 @@ export default function Filters({
                 );
               })}
             </View>
+            {/* --- Sort By Section --- */}
+            <View style={{ width: "100%", marginBottom: 10 }}>
+              <Text
+                style={{
+                  fontSize: 15,
+                  fontWeight: "bold",
+                  color: themeColors.purple,
+                  marginBottom: 8,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                Sort By
+              </Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                }}
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <TouchableOpacity
+                    key={opt.value}
+                    onPress={() => setLocalSortBy(opt.value)}
+                    style={{
+                      backgroundColor:
+                        localSortBy === opt.value
+                          ? themeColors.purple
+                          : themeColors.white,
+                      borderRadius: 18,
+                      paddingVertical: 7,
+                      paddingHorizontal: 14,
+                      marginRight: 8,
+                      marginBottom: 8,
+                      borderWidth: 1,
+                      borderColor:
+                        localSortBy === opt.value
+                          ? themeColors.purple
+                          : themeColors.gray,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color:
+                          localSortBy === opt.value
+                            ? themeColors.white
+                            : themeColors.purple,
+                        fontWeight: "bold",
+                        fontSize: 12.5,
+                        fontFamily: "CarosSoft",
+                      }}
+                    >
+                      {opt.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+            {/* --- End Sort By Section --- */}
             <View
               style={{ flexDirection: "row", marginTop: 18, width: "100%" }}
             >
@@ -226,6 +303,7 @@ export default function Filters({
                 onPress={() => {
                   setModalVisible(false);
                   setLocalFilters(filters); // Reset to parent filters
+                  setLocalSortBy(sortBy || "default");
                 }}
                 style={{
                   flex: 1,
@@ -251,6 +329,7 @@ export default function Filters({
               <TouchableOpacity
                 onPress={() => {
                   setFilters(localFilters);
+                  setSortBy && setSortBy(localSortBy);
                   setModalVisible(false);
                 }}
                 style={{

@@ -2,6 +2,7 @@ import { useState } from "react";
 
 export default function useSearchAndFilters(studySpots, favorites) {
   const [filters, setFilters] = useState([]);
+  const [sortBy, setSortBy] = useState("default");
 
   const matchFilters = (spot) => {
     if (!filters.length) return true;
@@ -16,13 +17,50 @@ export default function useSearchAndFilters(studySpots, favorites) {
     });
   };
 
-  const filteredSpots = studySpots.filter((spot) => matchFilters(spot));
+  // --- Sorting logic ---
+  function sortSpots(spots) {
+    switch (sortBy) {
+      case "name-asc":
+        return [...spots].sort((a, b) =>
+          (a.name || "").localeCompare(b.name || "")
+        );
+      case "name-desc":
+        return [...spots].sort((a, b) =>
+          (b.name || "").localeCompare(a.name || "")
+        );
+      case "noise-asc":
+        return [...spots].sort(
+          (a, b) =>
+            (typeof a.ratings?.noise === "number" ? a.ratings.noise : 99) -
+            (typeof b.ratings?.noise === "number" ? b.ratings.noise : 99)
+        );
+      case "crowd-asc":
+        return [...spots].sort(
+          (a, b) =>
+            (typeof a.ratings?.crowd === "number" ? a.ratings.crowd : 99) -
+            (typeof b.ratings?.crowd === "number" ? b.ratings.crowd : 99)
+        );
+      case "overall-desc":
+        return [...spots].sort(
+          (a, b) =>
+            (b.averageOverallRating || 0) - (a.averageOverallRating || 0)
+        );
+      default:
+        return spots;
+    }
+  }
 
-  // Expose matchFilters for use in map view
+  const filteredSpots = sortSpots(
+    studySpots.filter((spot) => matchFilters(spot))
+  );
+
+  // Expose matchFilters and sortBy for use in map/list view
   return {
     filters,
     setFilters,
     filteredSpots,
     matchFilters,
+    sortBy,
+    setSortBy,
   };
 }
