@@ -22,6 +22,7 @@ import {
   Trash,
   CaretRight,
   Archive,
+  Timer,
 } from "phosphor-react-native";
 import { db, auth } from "../../firebaseConfig";
 import {
@@ -40,14 +41,24 @@ import { colors } from "../../constants/colors";
 import * as Notifications from "expo-notifications";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
+import PomodoroSettingsModal from "./PomodoroSettingsModal";
 
-// Timer durations are defined as constants at the top of the file:
+// Add these constants at the top (after imports)
+const POMODORO_SETTINGS_KEY = "focusPomodoroSettings";
+
+// --- Timer Feature State ---
 const DEFAULT_POMODORO_MINUTES = 25;
 const DEFAULT_BREAK_MINUTES = 5;
 
 export function FocusTimerView({ navigation }) {
   const themeCtx = useContext(ThemeContext);
   const themeColors = themeCtx?.themeColors ?? colors;
+
+  // Add these lines to fix the missing state for pomodoroMinutes and breakMinutes
+  const [pomodoroMinutes, setPomodoroMinutes] = useState(
+    DEFAULT_POMODORO_MINUTES
+  );
+  const [breakMinutes, setBreakMinutes] = useState(DEFAULT_BREAK_MINUTES);
 
   const [studySpots, setStudySpots] = useState([]);
   const [selectedSpot, setSelectedSpot] = useState(null);
@@ -58,6 +69,7 @@ export function FocusTimerView({ navigation }) {
   const [focusStats, setFocusStats] = useState({}); // { spotId: [session, ...] }
   const [showSpotModal, setShowSpotModal] = useState(false);
   const [sessionStart, setSessionStart] = useState(null);
+  const [showSettingsModal, setShowSettingsModal] = useState(false); // Add this line to fix the error
 
   // Track timer start time and duration for persistence
   const timerStartRef = useRef(null); // {start: Date, duration: seconds}
@@ -405,25 +417,25 @@ export function FocusTimerView({ navigation }) {
 
     if (sessionStart) {
       if (!isBreak) {
-        // Always use the default Pomodoro duration for work session
+        // Always use the custom Pomodoro duration for work session
         const sessionEnd = new Timestamp(
           sessionStart.seconds !== undefined
-            ? sessionStart.seconds + DEFAULT_POMODORO_MINUTES * 60
-            : Math.floor(sessionStart / 1000) + DEFAULT_POMODORO_MINUTES * 60,
+            ? sessionStart.seconds + pomodoroMinutes * 60
+            : Math.floor(sessionStart / 1000) + pomodoroMinutes * 60,
           sessionStart.nanoseconds !== undefined ? sessionStart.nanoseconds : 0
         );
         setPendingSession({
           start: sessionStart,
           end: sessionEnd,
           isBreak: isBreak,
-          sessionDuration: DEFAULT_POMODORO_MINUTES * 60,
+          sessionDuration: pomodoroMinutes * 60,
         });
         setShowNoteModal(true);
       } else {
         // If break ends, just transition to Pomodoro, no reflection
         setSessionStart(null);
         setIsBreak(false);
-        setTimer(DEFAULT_POMODORO_MINUTES * 60);
+        setTimer(pomodoroMinutes * 60);
         Alert.alert("Break over!", "Ready for another Pomodoro?");
         if (autoStartNext) {
           setTimeout(() => {
@@ -432,7 +444,7 @@ export function FocusTimerView({ navigation }) {
               setSessionStart(Timestamp.now());
               timerStartRef.current = {
                 start: Date.now(),
-                duration: DEFAULT_POMODORO_MINUTES * 60,
+                duration: pomodoroMinutes * 60,
               };
             }
           }, 1200);
@@ -444,7 +456,7 @@ export function FocusTimerView({ navigation }) {
     setSessionStart(null);
     if (!isBreak) {
       setIsBreak(true);
-      setTimer(DEFAULT_BREAK_MINUTES * 60);
+      setTimer(breakMinutes * 60);
       Alert.alert(
         "Pomodoro complete!",
         "Go to the Focus mode to start another Pomodoro."
@@ -456,14 +468,14 @@ export function FocusTimerView({ navigation }) {
             setSessionStart(Timestamp.now());
             timerStartRef.current = {
               start: Date.now(),
-              duration: DEFAULT_BREAK_MINUTES * 60,
+              duration: breakMinutes * 60,
             };
           }
         }, 1200);
       }
     } else {
       setIsBreak(false);
-      setTimer(DEFAULT_POMODORO_MINUTES * 60);
+      setTimer(pomodoroMinutes * 60);
       Alert.alert("Break over!", "Ready for another Pomodoro?");
       if (autoStartNext) {
         setTimeout(() => {
@@ -472,7 +484,7 @@ export function FocusTimerView({ navigation }) {
             setSessionStart(Timestamp.now());
             timerStartRef.current = {
               start: Date.now(),
-              duration: DEFAULT_POMODORO_MINUTES * 60,
+              duration: pomodoroMinutes * 60,
             };
           }
         }, 1200);
@@ -495,25 +507,22 @@ export function FocusTimerView({ navigation }) {
         (endMillis % 1000) * 1000000
       );
       if (!isBreak) {
-        // If Pomodoro, show note modal and after saving, start break
         setPendingSession({
           start: sessionStart,
           end: end,
           isBreak: isBreak,
-          sessionDuration: DEFAULT_POMODORO_MINUTES * 60,
+          sessionDuration: pomodoroMinutes * 60,
         });
         setShowNoteModal(true);
-        // Don't reset timer/isBreak here, do it after note is saved
       } else {
-        // If break, just save session and reset state
         await addSessionAndUpdateStats(sessionStart, end, isBreak);
         setSessionStart(null);
-        setTimer(DEFAULT_POMODORO_MINUTES * 60);
+        setTimer(pomodoroMinutes * 60);
         setIsBreak(false);
       }
     } else {
       setSessionStart(null);
-      setTimer(DEFAULT_POMODORO_MINUTES * 60);
+      setTimer(pomodoroMinutes * 60);
       setIsBreak(false);
     }
   };
@@ -537,11 +546,11 @@ export function FocusTimerView({ navigation }) {
       // After saving note, start break timer
       setTimeout(() => {
         setIsBreak(true);
-        setTimer(DEFAULT_BREAK_MINUTES * 60);
+        setTimer(breakMinutes * 60);
         setSessionStart(Timestamp.now());
         timerStartRef.current = {
           start: Date.now(),
-          duration: DEFAULT_BREAK_MINUTES * 60,
+          duration: breakMinutes * 60,
         };
         setIsRunning(true);
       }, 500);
@@ -1682,46 +1691,21 @@ export function FocusTimerView({ navigation }) {
               </Text>
             </TouchableOpacity>
           </View>
-          <View style={{ alignItems: "center", marginTop: 2, width: "100%" }}>
-            <TouchableOpacity
-              onPress={() => {
-                if (isRunning) {
-                  Alert.alert(
-                    "Cannot Switch Location",
-                    "Please finish or stop your current session before changing location."
-                  );
-                  return;
-                }
-                setShowSpotModal(true);
-              }}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor: themeColors.purple,
-                borderRadius: 20,
-                paddingHorizontal: 18,
-                paddingVertical: 10,
-                marginBottom: 18,
-              }}
-            >
-              <MapPin size={20} color={themeColors.white} />
-              <Text
-                style={{
-                  color: themeColors.white,
-                  fontWeight: "bold",
-                  marginLeft: 8,
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                {selectedSpot ? selectedSpot.buildingName : "Select Location"}
-              </Text>
-            </TouchableOpacity>
+          <View
+            style={{
+              alignItems: "center",
+              justifyContent: "center",
+              marginTop: 2,
+              width: "100%",
+            }}
+          >
             <Text
               style={{
                 fontSize: 48,
                 fontWeight: "bold",
                 color: themeColors.purple,
                 fontFamily: "CarosSoft",
+                marginBottom: 8,
               }}
             >
               {formatTime(timer)}
@@ -1736,7 +1720,13 @@ export function FocusTimerView({ navigation }) {
               {isBreak ? "Break" : "Pomodoro"}
             </Text>
             {/* Timer control buttons row */}
-            <View style={{ flexDirection: "row", marginTop: 12 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                marginTop: 12,
+                alignItems: "center",
+              }}
+            >
               {!isRunning && (
                 <TouchableOpacity
                   onPress={handleStart}
@@ -1774,8 +1764,24 @@ export function FocusTimerView({ navigation }) {
               >
                 <Stop size={28} color={themeColors.white} />
               </TouchableOpacity>
+              {/* Pomodoro Settings Button (now next to timer controls) */}
+              <TouchableOpacity
+                onPress={() => setShowSettingsModal(true)}
+                style={{
+                  backgroundColor: themeColors.white,
+                  borderRadius: 30,
+                  padding: 14,
+                  marginLeft: 8,
+                  borderWidth: 1,
+                  borderColor: themeColors.purple,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                accessibilityLabel="Pomodoro Settings"
+              >
+                <Timer size={22} color={themeColors.purple} weight="bold" />
+              </TouchableOpacity>
             </View>
-
             {/* --- This Week's Focus Stats Dropdown --- */}
             <View
               style={{
@@ -2376,6 +2382,20 @@ export function FocusTimerView({ navigation }) {
           </View>
         </ScrollView>
       </View>
+
+      {/* Pomodoro Settings Modal */}
+      <PomodoroSettingsModal
+        visible={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+        pomodoroMinutes={pomodoroMinutes}
+        setPomodoroMinutes={setPomodoroMinutes}
+        breakMinutes={breakMinutes}
+        setBreakMinutes={setBreakMinutes}
+        isRunning={isRunning}
+        isBreak={isBreak}
+        setTimer={setTimer}
+        themeColors={themeColors}
+      />
     </>
   );
 }

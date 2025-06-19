@@ -446,7 +446,7 @@ export default function HomeScreen({ navigation, route }) {
       const timer = setTimeout(() => {
         setMinLoadingElapsed(true);
         initialMount.current = false; // <-- Move this here!
-      }, 4000);
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, []);
