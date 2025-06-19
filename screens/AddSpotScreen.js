@@ -33,7 +33,7 @@ import MapLocationPicker from "../components/AddSpot/MapLocationPicker";
 
 const TAGS = [
   "Quiet",
-  "Groups",
+  "Group Friendly",
   "WiFi",
   "Outlets",
   "Natural Light",

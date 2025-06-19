@@ -94,10 +94,8 @@ export default function HomeScreen({ navigation, route }) {
   // Hooks
   const { studySpots, isLoading, fetchStudySpots } = useStudySpots();
   const { favorites, toggleFavorite } = useFavorites();
-  const { filters, setFilters, filteredSpots } = useSearchAndFilters(
-    studySpots,
-    favorites
-  );
+  const { filters, setFilters, filteredSpots, sortBy, setSortBy } =
+    useSearchAndFilters(studySpots, favorites);
 
   // --- Load user's preferred view on mount or when route changes ---
   React.useEffect(() => {
@@ -167,6 +165,8 @@ export default function HomeScreen({ navigation, route }) {
     themeColors,
     filters,
     setFilters,
+    sortBy, // <-- add
+    setSortBy, // <-- add
   }) {
     const [isFiltersPressed, setIsFiltersPressed] = React.useState(false);
     return (
@@ -260,6 +260,8 @@ export default function HomeScreen({ navigation, route }) {
               filters={filters}
               setFilters={setFilters}
               themeColors={themeColors}
+              sortBy={sortBy} // <-- pass sortBy
+              setSortBy={setSortBy} // <-- pass setSortBy
               buttonStyle={{
                 backgroundColor: "transparent",
                 borderRadius: 8,
@@ -310,6 +312,8 @@ export default function HomeScreen({ navigation, route }) {
               themeColors={themeColors}
               filters={filters}
               setFilters={setFilters}
+              sortBy={sortBy} // <-- pass sortBy
+              setSortBy={setSortBy} // <-- pass setSortBy
             />
           </View>
           <StudySpotsMapView
@@ -355,6 +359,8 @@ export default function HomeScreen({ navigation, route }) {
           getLastUpdatedLabel={getLastUpdatedLabel}
           showMapView={showMapView}
           setShowMapView={handleSetShowMapView}
+          sortBy={sortBy} // <-- pass sortBy
+          setSortBy={setSortBy} // <-- pass setSortBy
           ListHeaderComponent={
             <StudySpotsHeader
               showMapView={showMapView}
@@ -362,6 +368,8 @@ export default function HomeScreen({ navigation, route }) {
               themeColors={themeColors}
               filters={filters}
               setFilters={setFilters}
+              sortBy={sortBy} // <-- pass sortBy
+              setSortBy={setSortBy} // <-- pass setSortBy
             />
           }
         />

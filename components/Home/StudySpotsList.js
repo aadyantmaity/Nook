@@ -34,6 +34,8 @@ export default function StudySpotsList({
   setFiltersExpanded,
   hideHeader,
   ListHeaderComponent, // <-- add this prop
+  sortBy, // <-- add
+  setSortBy, // <-- add
 }) {
   // Add helper functions:
   function getNoiseLabel(avg) {
