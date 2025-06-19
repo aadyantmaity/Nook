@@ -457,8 +457,20 @@ export default function HomeScreen({ navigation, route }) {
   }
 
   // --- Show loading screen only on initial mount and isLoading, for at least 10s ---
+  // Determine loading message based on navigation params
+  let loadingMessage = undefined;
+  if (route?.params?.deleting) {
+    loadingMessage = "Deleting nook...";
+  } else if (route?.params?.creating) {
+    loadingMessage = "Creating nook...";
+  }
   if (initialMount.current || isLoading || !minLoadingElapsed) {
-    return <HomeLoadingScreen themeColors={themeColors} />;
+    return (
+      <HomeLoadingScreen
+        themeColors={themeColors}
+        loadingMessage={loadingMessage}
+      />
+    );
   }
 
   return (

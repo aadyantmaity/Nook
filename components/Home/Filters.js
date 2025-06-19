@@ -84,17 +84,6 @@ export default function Filters({
     return localFilters.includes(normalized);
   };
 
-  // --- Helper: group tags into rows for a grid layout ---
-  // You can adjust numCols for your modal width and tag count
-  const numCols = 3;
-  function getTagRows(tags) {
-    const rows = [];
-    for (let i = 0; i < tags.length; i += numCols) {
-      rows.push(tags.slice(i, i + numCols));
-    }
-    return rows;
-  }
-
   return (
     <TouchableOpacity
       onPress={() => setModalVisible(true)}
@@ -165,83 +154,70 @@ export default function Filters({
                 fontFamily: "CarosSoft",
               }}
             >
-              Filter Study Spots
+              Filter Nooks
             </Text>
             {/* Grid layout for tags */}
-            <View style={{ width: "100%", marginBottom: 16 }}>
-              {getTagRows(TAGS).map((row, rowIdx) => (
-                <View
-                  key={rowIdx}
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    marginBottom: 8,
-                  }}
-                >
-                  {row.map((label, colIdx) => {
-                    const selected = isSelected(label);
-                    return (
-                      <TouchableOpacity
-                        key={label}
-                        onPress={() => handlePress(label)}
-                        style={{
-                          flex: 1,
-                          marginRight: colIdx < row.length - 1 ? 8 : 0,
-                          paddingVertical: 10,
-                          paddingHorizontal: 0,
-                          backgroundColor: selected
-                            ? themeColors.purple
-                            : themeColors.white,
-                          borderRadius: 25,
-                          alignItems: "center",
-                          shadowColor: themeColors.purple,
-                          shadowOffset: { width: 0, height: 2 },
-                          shadowOpacity: 0.1,
-                          shadowRadius: 4,
-                          borderWidth:
-                            themeColors.white !== "#fff" &&
-                            themeColors.white !== "#ffffff"
-                              ? 1
-                              : 0,
-                          borderColor:
-                            themeColors.white !== "#fff" &&
-                            themeColors.white !== "#ffffff"
-                              ? themeColors.purple
-                              : "transparent",
-                        }}
-                      >
-                        <Text
-                          style={{
-                            color: selected
-                              ? themeColors.white
-                              : themeColors.purple,
-                            fontWeight: "bold",
-                            fontSize: 11,
-                            fontFamily: "CarosSoft",
-                          }}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                        >
-                          {label}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                  {/* Fill empty columns for last row */}
-                  {row.length < numCols &&
-                    Array(numCols - row.length)
-                      .fill(0)
-                      .map((_, i) => (
-                        <View
-                          key={`empty-${i}`}
-                          style={{
-                            flex: 1,
-                            marginRight: i < numCols - row.length - 1 ? 8 : 0,
-                          }}
-                        />
-                      ))}
-                </View>
-              ))}
+            <View
+              style={{
+                width: "100%",
+                marginBottom: 16,
+                flexDirection: "row",
+                flexWrap: "wrap",
+                justifyContent: "center", // changed from "flex-start" to "center"
+              }}
+            >
+              {TAGS.map((label, idx) => {
+                const selected = isSelected(label);
+                return (
+                  <TouchableOpacity
+                    key={label}
+                    onPress={() => handlePress(label)}
+                    style={{
+                      marginRight: 8,
+                      marginBottom: 8,
+                      paddingVertical: 10,
+                      paddingHorizontal: 18,
+                      backgroundColor: selected
+                        ? themeColors.purple
+                        : themeColors.white,
+                      borderRadius: 25,
+                      alignItems: "center",
+                      alignSelf: "flex-start",
+                      shadowColor: themeColors.purple,
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 4,
+                      borderWidth:
+                        themeColors.white !== "#fff" &&
+                        themeColors.white !== "#ffffff"
+                          ? 1
+                          : 0,
+                      borderColor:
+                        themeColors.white !== "#fff" &&
+                        themeColors.white !== "#ffffff"
+                          ? themeColors.purple
+                          : "transparent",
+                      minWidth: 0,
+                      maxWidth: "48%",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: selected
+                          ? themeColors.white
+                          : themeColors.purple,
+                        fontWeight: "bold",
+                        fontSize: 14,
+                        fontFamily: "CarosSoft",
+                      }}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
             <View
               style={{ flexDirection: "row", marginTop: 18, width: "100%" }}

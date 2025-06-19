@@ -49,8 +49,8 @@ export default function StudySpotsList({
     if (typeof avg === "string") avg = parseFloat(avg);
     if (isNaN(avg)) return "N/A";
     if (avg < 0.5) return "Empty";
-    if (avg < 1.5) return "Busy";
-    return "Full";
+    if (avg < 1.5) return "Light";
+    return "Busy";
   }
 
   return (
