@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   collection,
   getDocs,
@@ -6,6 +6,7 @@ import {
   where,
   doc,
   getDoc,
+  onSnapshot,
 } from "firebase/firestore";
 import { Timestamp } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
@@ -13,6 +14,7 @@ import { auth, db } from "../firebaseConfig";
 export default function useStudySpots() {
   const [studySpots, setStudySpots] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const unsubRefs = useRef([]);
 
   const fetchStudySpots = async () => {
     setIsLoading(true);
@@ -20,12 +22,21 @@ export default function useStudySpots() {
       const user = auth.currentUser;
       if (!user) throw new Error("Not authenticated");
 
+      // --- Use onSnapshot for real-time updates ---
       const allQuery = collection(db, "studySpots");
-      const allSnap = await getDocs(allQuery);
-      const allDocs = allSnap.docs;
+      // Remove previous listeners
+      unsubRefs.current.forEach((unsub) => {
+        try {
+          unsub();
+        } catch {}
+      });
+      unsubRefs.current = [];
 
-      const spots = await Promise.all(
-        allDocs.map(async (docSnap) => {
+      const unsub = onSnapshot(allQuery, async (allSnap) => {
+        const allDocs = allSnap.docs;
+
+        // For each spot, set up a ratings listener
+        const spotPromises = allDocs.map(async (docSnap) => {
           const spotData = docSnap.data();
           // --- Filter out private nooks not owned by user ---
           if (spotData.privateNook && spotData.addedBy !== user.uid) {
@@ -38,7 +49,6 @@ export default function useStudySpots() {
           let locationAlerts = locationAlertsDoc.exists()
             ? locationAlertsDoc.data().locationAlerts || []
             : [];
-          // Normalize alerts: ensure each is { text, createdAt }
           locationAlerts = Array.isArray(locationAlerts)
             ? locationAlerts.map((a) =>
                 typeof a === "string"
@@ -47,227 +57,223 @@ export default function useStudySpots() {
               )
             : [];
 
-          // Fetch ratings for the spot
-          const ratingsQuery = query(
-            collection(db, "ratings"),
-            where("spotId", "==", docSnap.id)
-          );
-          const ratingsSnapshot = await getDocs(ratingsQuery);
-
-          // For Odegaard: aggregate tableAvailability (most recent)
-          let tableAvailability = undefined;
-          if (
-            (spotData.buildingName || spotData.name || "")
-              .toLowerCase()
-              .includes("odegaard")
-          ) {
-            let latestTable = null;
-            let latestTs = null;
-            ratingsSnapshot.forEach((ratingDoc) => {
-              const ratingData = ratingDoc.data();
+          // --- Listen to ratings for live updates ---
+          return new Promise((resolve) => {
+            const ratingsQuery = query(
+              collection(db, "ratings"),
+              where("spotId", "==", docSnap.id)
+            );
+            const unsubRating = onSnapshot(ratingsQuery, (ratingsSnapshot) => {
+              // For Odegaard: aggregate tableAvailability (most recent)
+              let tableAvailability = undefined;
               if (
-                typeof ratingData.tableAvailability !== "undefined" &&
-                ratingData.timestamp
+                (spotData.buildingName || spotData.name || "")
+                  .toLowerCase()
+                  .includes("odegaard")
               ) {
+                let latestTable = null;
+                let latestTs = null;
+                ratingsSnapshot.forEach((ratingDoc) => {
+                  const ratingData = ratingDoc.data();
+                  if (
+                    typeof ratingData.tableAvailability !== "undefined" &&
+                    ratingData.timestamp
+                  ) {
+                    const ts = ratingData.timestamp.toMillis();
+                    if (latestTs === null || ts > latestTs) {
+                      latestTable = ratingData.tableAvailability;
+                      latestTs = ts;
+                    }
+                  }
+                });
+                tableAvailability = latestTable;
+              }
+
+              const now = Date.now();
+              const thirtyMinutesAgo = now - 30 * 60 * 1000;
+              const todayStart = new Date();
+              todayStart.setHours(0, 0, 0, 0);
+              const todayStartMillis = todayStart.getTime();
+
+              let recentRatings = [];
+              let recentLastTimestamp = null;
+              ratingsSnapshot.forEach((ratingDoc) => {
+                const ratingData = ratingDoc.data();
+                if (!ratingData.timestamp) return;
                 const ts = ratingData.timestamp.toMillis();
-                if (latestTs === null || ts > latestTs) {
-                  latestTable = ratingData.tableAvailability;
-                  latestTs = ts;
+                if (ts >= thirtyMinutesAgo) {
+                  recentRatings.push(ratingData);
+                  if (!recentLastTimestamp || ts > recentLastTimestamp)
+                    recentLastTimestamp = ts;
+                }
+              });
+
+              let averageNoise,
+                averageCrowd,
+                lastUpdated,
+                lastUpdatedType,
+                lastWindowHours;
+
+              if (recentRatings.length > 0) {
+                let noiseSum = 0,
+                  crowdSum = 0;
+                recentRatings.forEach((r) => {
+                  noiseSum += r.noise;
+                  crowdSum += r.crowd;
+                });
+                averageNoise = noiseSum / recentRatings.length;
+                averageCrowd = crowdSum / recentRatings.length;
+                lastUpdated = recentLastTimestamp;
+                lastUpdatedType = "recent";
+                lastWindowHours = null;
+              } else {
+                let bestWindow = null;
+                let bestWindowRatings = [];
+                let lastRecentTimestamp = null;
+                let found = false;
+                for (let hours = 1; hours <= 6; hours++) {
+                  const windowStart = now - hours * 60 * 60 * 1000;
+                  let windowRatings = [];
+                  let windowLastTimestamp = null;
+                  ratingsSnapshot.forEach((ratingDoc) => {
+                    const ratingData = ratingDoc.data();
+                    const ts = ratingData.timestamp
+                      ? ratingData.timestamp.toMillis()
+                      : null;
+                    if (ts !== null && ts >= windowStart) {
+                      windowRatings.push(ratingData);
+                      if (!windowLastTimestamp || ts > windowLastTimestamp)
+                        windowLastTimestamp = ts;
+                    }
+                  });
+                  if (windowRatings.length > 0) {
+                    bestWindow = hours;
+                    bestWindowRatings = windowRatings;
+                    lastRecentTimestamp = windowLastTimestamp;
+                    found = true;
+                    break;
+                  }
+                }
+                let todayRatings = [];
+                if (!found) {
+                  ratingsSnapshot.forEach((ratingDoc) => {
+                    const ratingData = ratingDoc.data();
+                    const ts = ratingData.timestamp
+                      ? ratingData.timestamp.toMillis()
+                      : null;
+                    if (ts !== null && ts >= todayStartMillis) {
+                      todayRatings.push(ratingData);
+                    }
+                  });
+                }
+
+                if (found && bestWindowRatings.length > 0) {
+                  let noiseSum = 0,
+                    crowdSum = 0;
+                  bestWindowRatings.forEach((r) => {
+                    noiseSum += r.noise;
+                    crowdSum += r.crowd;
+                  });
+                  averageNoise = noiseSum / bestWindowRatings.length;
+                  averageCrowd = crowdSum / bestWindowRatings.length;
+                  lastUpdated = lastRecentTimestamp;
+                  lastUpdatedType = "window";
+                  lastWindowHours = bestWindow;
+                } else if (todayRatings.length > 0) {
+                  let noiseSumDay = 0,
+                    crowdSumDay = 0;
+                  todayRatings.forEach((r) => {
+                    noiseSumDay += r.noise;
+                    crowdSumDay += r.crowd;
+                  });
+                  averageNoise = noiseSumDay / todayRatings.length;
+                  averageCrowd = crowdSumDay / todayRatings.length;
+                  lastUpdated = Math.max(
+                    ...todayRatings
+                      .map((r) => (r.timestamp ? r.timestamp.toMillis() : null))
+                      .filter((v) => v !== null)
+                  );
+                  lastUpdatedType = "today";
+                  lastWindowHours = null;
+                } else {
+                  averageNoise = "No rating yet";
+                  averageCrowd = "No rating yet";
+                  lastUpdated = null;
+                  lastUpdatedType = null;
+                  lastWindowHours = null;
                 }
               }
-            });
-            tableAvailability = latestTable;
-          }
 
-          const now = Timestamp.now().toMillis();
-          const thirtyMinutesAgo = now - 30 * 60 * 1000;
-          const todayStart = new Date();
-          todayStart.setHours(0, 0, 0, 0);
-          const todayStartMillis = todayStart.getTime();
-
-          let recentRatings = [];
-          let recentLastTimestamp = null;
-          ratingsSnapshot.forEach((ratingDoc) => {
-            const ratingData = ratingDoc.data();
-            if (!ratingData.timestamp) return;
-            const ts = ratingData.timestamp.toMillis();
-            if (ts >= thirtyMinutesAgo) {
-              recentRatings.push(ratingData);
-              if (!recentLastTimestamp || ts > recentLastTimestamp)
-                recentLastTimestamp = ts;
-            }
-          });
-
-          let averageNoise,
-            averageCrowd,
-            lastUpdated,
-            lastUpdatedType,
-            lastWindowHours;
-
-          if (recentRatings.length > 0) {
-            let noiseSum = 0,
-              crowdSum = 0;
-            recentRatings.forEach((r) => {
-              noiseSum += r.noise;
-              crowdSum += r.crowd;
-            });
-            averageNoise = noiseSum / recentRatings.length;
-            averageCrowd = crowdSum / recentRatings.length;
-            lastUpdated = recentLastTimestamp;
-            lastUpdatedType = "recent";
-            lastWindowHours = null;
-          } else {
-            let bestWindow = null;
-            let bestWindowRatings = [];
-            let bestWindowStart = null;
-            let bestWindowEnd = null;
-            let lastRecentTimestamp = null;
-            let found = false;
-            for (let hours = 1; hours <= 6; hours++) {
-              const windowStart = now - hours * 60 * 60 * 1000;
-              let windowRatings = [];
-              let windowLastTimestamp = null;
-              ratingsSnapshot.forEach((ratingDoc) => {
-                const ratingData = ratingDoc.data();
-                const ts = ratingData.timestamp
-                  ? ratingData.timestamp.toMillis()
-                  : null;
-                if (ts !== null && ts >= windowStart) {
-                  windowRatings.push(ratingData);
-                  if (!windowLastTimestamp || ts > windowLastTimestamp)
-                    windowLastTimestamp = ts;
-                }
-              });
-              if (windowRatings.length > 0) {
-                bestWindow = hours;
-                bestWindowRatings = windowRatings;
-                bestWindowStart = windowStart;
-                bestWindowEnd = now;
-                lastRecentTimestamp = windowLastTimestamp;
-                found = true;
-                break;
+              // Hide ratings/alerts for private nooks
+              if (spotData.privateNook) {
+                resolve({
+                  id: docSnap.id,
+                  ...spotData,
+                  locationAlerts: [],
+                  photoUrl: spotData.photoUrl || "",
+                  cachedPhotoUri: spotData.photoUrl || "",
+                  ratings: {
+                    noise: "N/A",
+                    crowd: "N/A",
+                    lastUpdated: null,
+                    lastUpdatedType: null,
+                    lastWindowHours: null,
+                    ...(typeof tableAvailability !== "undefined"
+                      ? { tableAvailability }
+                      : {}),
+                  },
+                  averageOverallRating: 0,
+                  overallRatingsCount: 0,
+                });
+                return;
               }
-            }
-            let todayRatings = [];
-            if (!found) {
-              ratingsSnapshot.forEach((ratingDoc) => {
-                const ratingData = ratingDoc.data();
-                const ts = ratingData.timestamp
-                  ? ratingData.timestamp.toMillis()
-                  : null;
-                if (ts !== null && ts >= todayStartMillis) {
-                  todayRatings.push(ratingData);
-                }
-              });
-            }
 
-            if (found && bestWindowRatings.length > 0) {
-              let noiseSum = 0,
-                crowdSum = 0;
-              bestWindowRatings.forEach((r) => {
-                noiseSum += r.noise;
-                crowdSum += r.crowd;
+              resolve({
+                id: docSnap.id,
+                ...spotData,
+                locationAlerts,
+                photoUrl: spotData.photoUrl || "",
+                cachedPhotoUri: spotData.photoUrl || "",
+                ratings: {
+                  noise: averageNoise,
+                  crowd: averageCrowd,
+                  lastUpdated,
+                  lastUpdatedType,
+                  lastWindowHours,
+                  ...(typeof tableAvailability !== "undefined"
+                    ? { tableAvailability }
+                    : {}),
+                },
+                // averageOverallRating and overallRatingsCount can be fetched as before if needed
               });
-              averageNoise = noiseSum / bestWindowRatings.length;
-              averageCrowd = crowdSum / bestWindowRatings.length;
-              lastUpdated = lastRecentTimestamp;
-              lastUpdatedType = "window";
-              lastWindowHours = bestWindow;
-            } else if (todayRatings.length > 0) {
-              let noiseSumDay = 0,
-                crowdSumDay = 0;
-              todayRatings.forEach((r) => {
-                noiseSumDay += r.noise;
-                crowdSumDay += r.crowd;
-              });
-              averageNoise = noiseSumDay / todayRatings.length;
-              averageCrowd = crowdSumDay / todayRatings.length;
-              lastUpdated = Math.max(
-                ...todayRatings
-                  .map((r) => (r.timestamp ? r.timestamp.toMillis() : null))
-                  .filter((v) => v !== null)
-              );
-              lastUpdatedType = "today";
-              lastWindowHours = null;
-            } else {
-              averageNoise = "No rating yet";
-              averageCrowd = "No rating yet";
-              lastUpdated = null;
-              lastUpdatedType = null;
-              lastWindowHours = null;
-            }
-          }
-
-          // Fetch overall ratings for the spot
-          const overallRatingsQuery = query(
-            collection(db, "overallRatings"),
-            where("spotId", "==", docSnap.id)
-          );
-          const overallRatingsSnapshot = await getDocs(overallRatingsQuery);
-          let overallSum = 0;
-          let overallCount = 0;
-          overallRatingsSnapshot.forEach((r) => {
-            overallSum += r.data().rating || 0;
-            overallCount++;
+            });
+            unsubRefs.current.push(unsubRating);
           });
-          const averageOverallRating =
-            overallCount > 0 ? overallSum / overallCount : 0;
+        });
 
-          // Hide ratings/alerts for private nooks
-          if (spotData.privateNook) {
-            return {
-              id: docSnap.id,
-              ...spotData,
-              locationAlerts: [],
-              photoUrl: spotData.photoUrl || "",
-              cachedPhotoUri: spotData.photoUrl || "",
-              ratings: {
-                noise: "N/A",
-                crowd: "N/A",
-                lastUpdated: null,
-                lastUpdatedType: null,
-                lastWindowHours: null,
-                ...(typeof tableAvailability !== "undefined"
-                  ? { tableAvailability }
-                  : {}),
-              },
-              averageOverallRating: 0,
-              overallRatingsCount: 0,
-            };
-          }
+        // Wait for all spot promises to resolve
+        const spots = (await Promise.all(spotPromises)).filter(Boolean);
+        setStudySpots(spots);
+        setIsLoading(false);
+      });
 
-          // No image caching, just use photoUrl
-          return {
-            id: docSnap.id,
-            ...spotData,
-            locationAlerts,
-            photoUrl: spotData.photoUrl || "",
-            cachedPhotoUri: spotData.photoUrl || "",
-            ratings: {
-              noise: averageNoise,
-              crowd: averageCrowd,
-              lastUpdated,
-              lastUpdatedType,
-              lastWindowHours,
-              ...(typeof tableAvailability !== "undefined"
-                ? { tableAvailability }
-                : {}),
-            },
-            averageOverallRating,
-            overallRatingsCount: overallCount,
-          };
-        })
-      );
-      setStudySpots(spots.filter(Boolean)); // filter out nulls
+      unsubRefs.current.push(unsub);
     } catch (error) {
       console.error("Error fetching study spots:", error);
-    } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
     fetchStudySpots();
+    return () => {
+      unsubRefs.current.forEach((unsub) => {
+        try {
+          unsub();
+        } catch {}
+      });
+      unsubRefs.current = [];
+    };
   }, []);
 
   return { studySpots, isLoading, fetchStudySpots };

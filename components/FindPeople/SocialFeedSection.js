@@ -29,9 +29,43 @@ export default function SocialFeedSection() {
   const [posting, setPosting] = React.useState(false);
   const [feed, setFeed] = React.useState([]);
   const [feedLoading, setFeedLoading] = React.useState(true);
+  const [refreshing, setRefreshing] = React.useState(false); // <-- add this
   const themeCtx = useContext(ThemeContext);
   const themeColors = themeCtx?.themeColors ?? colors;
   const user = auth.currentUser;
+
+  // Extract feed loading logic to a function for reuse
+  const loadFeed = React.useCallback(async () => {
+    setFeedLoading(true);
+    const q = query(
+      collection(db, "posts"),
+      orderBy("createdAt", "desc"),
+      limit(50)
+    );
+    const snap = await getDocs(q);
+    const posts = [];
+    for (const docSnap of snap.docs) {
+      const post = docSnap.data();
+      let userName = "Unknown";
+      if (post.uid) {
+        try {
+          const userDoc = await getDocs(query(collection(db, "users")));
+          const user = userDoc.docs.find((d) => d.id === post.uid);
+          if (user) {
+            const d = user.data();
+            userName = `${d.firstName || ""} ${d.lastName || ""}`.trim();
+          }
+        } catch {}
+      }
+      posts.push({
+        id: docSnap.id,
+        ...post,
+        userName,
+      });
+    }
+    setFeed(posts);
+    setFeedLoading(false);
+  }, [db]);
 
   React.useEffect(() => {
     setFeedLoading(true);
@@ -66,6 +100,13 @@ export default function SocialFeedSection() {
     });
     return () => unsub();
   }, []);
+
+  // Pull-to-refresh handler
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadFeed();
+    setRefreshing(false);
+  };
 
   const handlePost = async () => {
     if (!postText.trim() || posting) return;
@@ -102,18 +143,6 @@ export default function SocialFeedSection() {
         alignItems: "center",
       }}
     >
-      <Text
-        style={{
-          fontSize: 22,
-          fontWeight: "bold",
-          color: themeColors.purple,
-          marginBottom: 10,
-          textAlign: "center",
-          fontFamily: "CarosSoft",
-        }}
-      >
-        Social Feed
-      </Text>
       <View
         style={{
           width: "100%",
@@ -257,6 +286,8 @@ export default function SocialFeedSection() {
                 ) : null}
               </View>
             )}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
           />
         </View>
       )}
