@@ -8,11 +8,13 @@ import {
   TextInput,
   Modal,
   FlatList,
+  Image,
 } from "react-native";
 import { House, DotsThreeVertical, Warning, X } from "phosphor-react-native";
 import { colors } from "../constants/colors";
 import { ThemeContext } from "../App";
 import SpotQRModal from "../components/SpotDetail/SpotQRModal";
+import * as ImagePicker from "expo-image-picker";
 
 // Firebase imports
 import {
@@ -26,6 +28,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // Extracted components
 import TagList from "../components/SpotDetail/TagList";
@@ -39,6 +42,7 @@ import LiveUpdateSliders from "../components/SpotDetail/LiveUpdateSliders";
 import SpotFeedback from "../components/SpotDetail/SpotFeedback";
 import PrivateNookNotesModal from "../components/SpotDetail/PrivateNookNotesModal";
 import PrivateNookStats from "../components/SpotDetail/PrivateNookStats";
+import SpotGallery from "../components/SpotDetail/SpotGallery";
 
 // Hooks
 import useSpotDetails from "../hooks/useSpotDetails";
@@ -56,6 +60,8 @@ export default function SpotDetailScreen({ route, navigation }) {
   const [showMenu, setShowMenu] = useState(false);
   const [showPrivateNotesModal, setShowPrivateNotesModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
+  // REMOVE: const [galleryImages, setGalleryImages] = useState([]);
+  // REMOVE: const [isUploadingGallery, setIsUploadingGallery] = useState(false);
 
   // Hooks
   const { spot, addedByName, isLoading, setSpot } = useSpotDetails(spotId);
@@ -572,6 +578,14 @@ export default function SpotDetailScreen({ route, navigation }) {
             </View>
           )}
 
+          {/* Spot Gallery */}
+          <SpotGallery
+            spotId={spotId}
+            galleryImages={spot.galleryImages}
+            setSpot={setSpot}
+            themeColors={themeColors}
+          />
+
           {/* Spot Feedback (Thumbs up/down) */}
           {!isPrivateNook && (
             <SpotFeedback spotId={spotId} themeColors={themeColors} />
@@ -843,7 +857,6 @@ export default function SpotDetailScreen({ route, navigation }) {
             <TouchableOpacity
               onPress={() => setShowAddAlertModal(true)}
               accessibilityLabel="Add Alert"
-              accessible={true}
               activeOpacity={0.85}
               style={{
                 flexDirection: "row",
