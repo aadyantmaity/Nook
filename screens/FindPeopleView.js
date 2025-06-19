@@ -33,9 +33,7 @@ export default function FindPeopleView({ navigation: propNavigation }) {
             paddingVertical: 10,
             paddingHorizontal: 28,
             backgroundColor:
-              selectedTab === "findPeople"
-                ? themeColors.purple
-                : "transparent",
+              selectedTab === "findPeople" ? themeColors.purple : "transparent",
             borderRadius: 10,
           }}
         >
@@ -59,9 +57,7 @@ export default function FindPeopleView({ navigation: propNavigation }) {
             paddingVertical: 10,
             paddingHorizontal: 28,
             backgroundColor:
-              selectedTab === "socialFeed"
-                ? themeColors.purple
-                : "transparent",
+              selectedTab === "socialFeed" ? themeColors.purple : "transparent",
             borderRadius: 10,
           }}
         >
