@@ -65,49 +65,6 @@ function HomeLoadingScreen({ themeColors, loadingMessage }) {
         justifyContent: "center",
       }}
     >
-      <View
-        style={{
-          position: "absolute",
-          width: "100%",
-          height: "100%",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-        pointerEvents="none"
-      >
-        <View
-          style={{
-            width: 320,
-            height: 320,
-            borderRadius: 160,
-            backgroundColor: themeColors.gray + "22",
-            alignItems: "center",
-            justifyContent: "center",
-            position: "relative",
-          }}
-        >
-          {/* 
-          {markerPositions.map((pos, i) => (
-            <Animated.View
-              key={i}
-              style={{
-                position: "absolute",
-                ...pos,
-                transform: [{ scale: markerPulses[i % markerPulses.length] }],
-                opacity: 0.7,
-                shadowColor: themeColors.purple,
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.7,
-                shadowRadius: 8,
-                elevation: 6,
-              }}
-            >
-              <MapPin size={28} color={themeColors.purple} weight="fill" />
-            </Animated.View>
-          ))}
-          */}
-        </View>
-      </View>
       <Animated.View
         style={{
           alignItems: "center",
