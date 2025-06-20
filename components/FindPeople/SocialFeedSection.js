@@ -23,8 +23,9 @@ import {
 import { colors } from "../../constants/colors";
 import { ThemeContext } from "../../App";
 import { PaperPlaneRight, Trash } from "phosphor-react-native";
+import { useNavigation } from "@react-navigation/native";
 
-export default function SocialFeedSection() {
+export default function SocialFeedSection({ navigation: propNavigation }) {
   const [postText, setPostText] = React.useState("");
   const [posting, setPosting] = React.useState(false);
   const [feed, setFeed] = React.useState([]);
@@ -32,6 +33,7 @@ export default function SocialFeedSection() {
   const themeCtx = useContext(ThemeContext);
   const themeColors = themeCtx?.themeColors ?? colors;
   const user = auth.currentUser;
+  const navigation = propNavigation || useNavigation();
 
   React.useEffect(() => {
     setFeedLoading(true);
@@ -189,16 +191,25 @@ export default function SocialFeedSection() {
                 }}
               >
                 <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      color: themeColors.purple,
-                      fontWeight: "bold",
-                      fontSize: 15,
-                      fontFamily: "CarosSoft",
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (item.uid) {
+                        navigation.navigate("Profile", { uid: item.uid });
+                      }
                     }}
+                    activeOpacity={0.7}
                   >
-                    {item.userName || "Unknown"}
-                  </Text>
+                    <Text
+                      style={{
+                        color: themeColors.purple,
+                        fontWeight: "bold",
+                        fontSize: 15,
+                        fontFamily: "CarosSoft",
+                      }}
+                    >
+                      {item.userName || "Unknown"}
+                    </Text>
+                  </TouchableOpacity>
                   <Text
                     style={{
                       color: themeColors.black,

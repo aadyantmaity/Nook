@@ -48,7 +48,7 @@ export default function SpotGallery({
       setIsUploading(true);
       // Use the correct ImagePicker API for Expo SDK 48+
       let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaType.IMAGE,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [5, 3],
         quality: 0.8,
