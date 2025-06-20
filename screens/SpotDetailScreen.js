@@ -17,11 +17,14 @@ import {
   X,
   Trash,
   Flag,
+  PaperPlaneRight,
+  MapPin,
 } from "phosphor-react-native";
 import { colors } from "../constants/colors";
 import { ThemeContext } from "../App";
 import SpotQRModal from "../components/SpotDetail/SpotQRModal";
 import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Firebase imports
 import {
@@ -50,6 +53,7 @@ import SpotFeedback from "../components/SpotDetail/SpotFeedback";
 import PrivateNookNotesModal from "../components/SpotDetail/PrivateNookNotesModal";
 import PrivateNookStats from "../components/SpotDetail/PrivateNookStats";
 import SpotGallery from "../components/SpotDetail/SpotGallery";
+import CheckInButton from "../components/SpotDetail/CheckInButton";
 
 // Hooks
 import useSpotDetails from "../hooks/useSpotDetails";
@@ -61,12 +65,20 @@ export default function SpotDetailScreen({ route, navigation }) {
   const themeCtx = useContext(ThemeContext);
   const themeColors = themeCtx?.themeColors ?? colors;
 
+  // Add this line to define user
+  const user = auth.currentUser;
+
   const { spotId } = route.params || {};
   const [showAddAlertModal, setShowAddAlertModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showPrivateNotesModal, setShowPrivateNotesModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
+  const [isSubmittingLive, setIsSubmittingLive] = useState(false);
+
+  // Add this missing state:
+  const [lastCheckIn, setLastCheckIn] = useState(null);
+
   // REMOVE: const [galleryImages, setGalleryImages] = useState([]);
   // REMOVE: const [isUploadingGallery, setIsUploadingGallery] = useState(false);
 
@@ -94,7 +106,6 @@ export default function SpotDetailScreen({ route, navigation }) {
       ? 0
       : Number(spot?.ratings?.crowd) || 0
   );
-  const [isSubmittingLive, setIsSubmittingLive] = useState(false);
   // Table availability state for Odegaard
   const [tableAvailability, setTableAvailability] = useState(null);
 
@@ -117,6 +128,23 @@ export default function SpotDetailScreen({ route, navigation }) {
       fetchNotes();
     }
   }, [spot?.privateNook, spotId, showNotesArchive]);
+
+  // Check-in cooldown: 1 hour per spot per user
+  React.useEffect(() => {
+    if (!spotId || !user) return;
+    const key = `nook_checkin_${spotId}_${user.uid}`;
+    // Use AsyncStorage instead of localStorage
+    (async () => {
+      try {
+        const last = Number((await AsyncStorage.getItem(key)) || 0);
+        setLastCheckIn(last);
+      } catch {
+        setLastCheckIn(0);
+      }
+    })();
+  }, [spotId, user]);
+
+  const canCheckIn = !lastCheckIn || Date.now() - lastCheckIn > 60 * 60 * 1000;
 
   // Submit handler for live update
   const handleLiveUpdate = async () => {
@@ -606,6 +634,16 @@ export default function SpotDetailScreen({ route, navigation }) {
             setSpot={setSpot}
             themeColors={themeColors}
           />
+
+          {/* --- Check In Button --- */}
+          {!isPrivateNook && (
+            <CheckInButton
+              spot={spot}
+              spotId={spotId}
+              themeColors={themeColors}
+            />
+          )}
+          {/* --- End Check In Button --- */}
 
           {/* Spot Feedback (Thumbs up/down) */}
           {!isPrivateNook && (
