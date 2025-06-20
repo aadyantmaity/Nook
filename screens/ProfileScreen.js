@@ -112,7 +112,7 @@ export default function ProfileScreen({ navigation, route }) {
   const handleLogout = () => setLogoutModalVisible(true);
   const confirmLogout = () => {
     setLogoutModalVisible(false);
-    signOut().catch((error) => {});
+    signOut(auth).catch((error) => {});
   };
 
   // Save profile

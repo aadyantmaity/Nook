@@ -268,7 +268,9 @@ export default function FindPeopleSection({ navigation }) {
                     paddingHorizontal: 16,
                   }}
                   onPress={() => handleFollow(item.uid)}
-                  disabled={followingIds.includes(item.uid) || followLoading[item.uid]}
+                  disabled={
+                    followingIds.includes(item.uid) || followLoading[item.uid]
+                  }
                 >
                   <Text
                     style={{

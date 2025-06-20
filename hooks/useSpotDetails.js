@@ -219,7 +219,18 @@ export default function useSpotDetails(spotId) {
                   }
                 }
               });
-              tableAvailability = latestTable;
+              // --- Clear tableAvailability if no ratings from today ---
+              let hasTodayRating = false;
+              snapshot.forEach((doc) => {
+                const data = doc.data();
+                if (
+                  data.timestamp &&
+                  data.timestamp.toMillis() >= todayStartMillis
+                ) {
+                  hasTodayRating = true;
+                }
+              });
+              tableAvailability = hasTodayRating ? latestTable : "N/A";
             }
 
             setSpot((prev) => ({

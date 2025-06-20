@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext } from "react";
 import { View, TouchableOpacity, Text } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { colors } from "../constants/colors";
@@ -6,12 +6,14 @@ import { ThemeContext } from "../App";
 import FindPeopleSection from "../components/FindPeople/FindPeopleSection";
 import SocialFeedSection from "../components/FindPeople/SocialFeedSection";
 
-export default function FindPeopleView({ navigation: propNavigation }) {
+export default function FindPeopleView({
+  navigation: propNavigation,
+  selectedTab,
+  setSelectedTab,
+}) {
   const themeCtx = useContext(ThemeContext);
   const themeColors = themeCtx?.themeColors ?? colors;
   const navigation = propNavigation || useNavigation();
-
-  const [selectedTab, setSelectedTab] = useState("findPeople");
 
   return (
     <View style={{ flex: 1, backgroundColor: themeColors.white }}>
