@@ -8,7 +8,7 @@ import {
   onSnapshot,
   Timestamp,
 } from "firebase/firestore";
-import { db } from "../firebaseConfig";
+import { db, auth } from "../firebaseConfig";
 
 export default function useSpotDetails(spotId) {
   const [spot, setSpot] = useState(null);
@@ -32,6 +32,19 @@ export default function useSpotDetails(spotId) {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const spotData = docSnap.data();
+          // --- Filter out private nooks not owned by user or not shared ---
+          const user = auth.currentUser;
+          if (
+            spotData.privateNook &&
+            spotData.addedBy !== user?.uid &&
+            !(
+              Array.isArray(spotData.sharedWith) &&
+              spotData.sharedWith.includes(user?.uid)
+            )
+          ) {
+            setSpot(null);
+            return;
+          }
           setSpot(spotData);
 
           // Fetch username using addedBy user ID

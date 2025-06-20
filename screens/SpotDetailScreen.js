@@ -571,7 +571,7 @@ export default function SpotDetailScreen({ route, navigation }) {
             )}
           </Text>
           {/* Husky Card/Department info */}
-          {(spot.huskyCardNeeded || spot.department) && (
+          {!isPrivateNook && (spot.huskyCardNeeded || spot.department) && (
             <Text
               style={{
                 fontSize: 15,

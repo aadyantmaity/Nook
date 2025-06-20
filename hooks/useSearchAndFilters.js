@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { auth } from "../firebaseConfig"; // Adjust the import based on your project structure
 
 export default function useSearchAndFilters(studySpots, favorites) {
   const [filters, setFilters] = useState([]);
@@ -9,7 +10,13 @@ export default function useSearchAndFilters(studySpots, favorites) {
     return filters.every((f) => {
       if (f === "favorites") return favorites.includes(spot.id);
       if (f === "no-husky-card") return !spot.huskyCardNeeded;
-      if (f === "private") return !!spot.privateNook;
+      if (f === "private")
+        return (
+          !!spot.privateNook &&
+          (spot.addedBy === auth.currentUser?.uid ||
+            (Array.isArray(spot.sharedWith) &&
+              spot.sharedWith.includes(auth.currentUser?.uid)))
+        );
       // Tag filter: match case-insensitively
       return (spot.tags || [])
         .map((t) => String(t).toLowerCase())

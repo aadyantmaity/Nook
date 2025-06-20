@@ -97,9 +97,13 @@ export default function StudySpotsMapView({
 
   // --- Nook summary stats ---
   const totalNooks = spotsWithCoords.length;
-  // Only count private nooks owned by the current user
+  // Only count private nooks owned by the current user or shared with them
   const privateNooks = spotsWithCoords.filter(
-    (s) => s.privateNook && s.addedBy === auth.currentUser?.uid
+    (s) =>
+      s.privateNook &&
+      (s.addedBy === auth.currentUser?.uid ||
+        (Array.isArray(s.sharedWith) &&
+          s.sharedWith.includes(auth.currentUser?.uid)))
   ).length;
   // Count nooks with alerts today
   const today = new Date();

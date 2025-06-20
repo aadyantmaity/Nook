@@ -298,7 +298,7 @@ export default function StudySpotsList({
                 </Text>
               )}
             </Text>
-            {(item.huskyCardNeeded || item.department) && (
+            {!item.privateNook && (item.huskyCardNeeded || item.department) && (
               <Text
                 style={{
                   fontSize: 13,
