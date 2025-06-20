@@ -103,7 +103,6 @@ export function ArchiveButton({
       <View
         style={{
           marginBottom: 36,
-          zIndex: 20,
           paddingHorizontal: 16,
           alignSelf: "flex-end",
           position: "absolute",

@@ -47,6 +47,7 @@ import { LocationPickerModal } from "./FocusTimerComponents/LocationPicker";
 import { FocusStatsDropdown } from "./FocusTimerComponents/FocusStatsDropdown";
 import { PauseStopButtons } from "./FocusTimerComponents/PauseStopButtons";
 import { TimerControls } from "./FocusTimerComponents/TimerControls";
+import { FocusGoalCard } from "./FocusTimerComponents/FocusGoalCard";
 
 // Add these constants at the top (after imports)
 const POMODORO_SETTINGS_KEY = "focusPomodoroSettings";
@@ -396,6 +397,13 @@ export function FocusTimerView({ navigation }) {
       }
       // --- Fetch stats from Firestore to ensure up-to-date ---
       await fetchStats();
+      // --- Add session to goal progress if not a break and has sessionId ---
+      if (!isBreakSession && sessionObj.sessionId) {
+        await addSessionToGoal({
+          ...sessionObj,
+          duration,
+        });
+      }
     }
   };
 
@@ -1178,6 +1186,27 @@ export function FocusTimerView({ navigation }) {
     }
   }, [sessionStart]);
 
+  // --- Add: Reset goal card after achievement message is cleared ---
+  useEffect(() => {
+    let timeout;
+    if (goal.achieved) {
+      timeout = setTimeout(() => {
+        setGoal({
+          title: "",
+          target: 0,
+          progress: 0,
+          sessionIds: [],
+          achieved: false,
+        });
+        setGoalTitleInput("");
+        setGoalInput({ h: "", m: "", s: "" });
+      }, 2000); // 2 seconds after achievement
+    }
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [goal.achieved]);
+
   return (
     <>
       {/* Session Note Modal */}
@@ -1315,13 +1344,7 @@ export function FocusTimerView({ navigation }) {
       {/* --- Main Timer View --- */}
       <View style={{ flex: 1 }}>
         {/* Archive Icon Button (top right, overlay absolute) */}
-        <ArchiveButton
-          themeColors={themeColors}
-          studySpots={studySpots}
-          auth={auth}
-          db={db}
-          handleDeleteSession={handleDeleteSession}
-        />
+
         {/* Move all content below the archive button */}
         <ScrollView
           style={{ flex: 1 }}
@@ -1332,6 +1355,13 @@ export function FocusTimerView({ navigation }) {
           }}
           showsVerticalScrollIndicator={false}
         >
+          <ArchiveButton
+            themeColors={themeColors}
+            studySpots={studySpots}
+            auth={auth}
+            db={db}
+            handleDeleteSession={handleDeleteSession}
+          />
           <View
             style={{
               alignItems: "center",
@@ -1340,6 +1370,13 @@ export function FocusTimerView({ navigation }) {
               width: "100%",
             }}
           >
+            {/* --- Focus Goal Card --- */}
+            <FocusGoalCard
+              goal={goal}
+              setShowGoalModal={setShowGoalModal}
+              themeColors={themeColors}
+              onDelete={handleGoalDelete}
+            />
             {/* --- Location Picker Button --- */}
             <TouchableOpacity
               onPress={() => setShowSpotModal(true)}
@@ -1435,6 +1472,196 @@ export function FocusTimerView({ navigation }) {
         setTimer={setTimer}
         themeColors={themeColors}
       />
+
+      {/* Goal Modal */}
+      <Modal visible={showGoalModal} transparent animationType="fade">
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.3)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: themeColors.white,
+              borderRadius: 16,
+              padding: 24,
+              width: "85%",
+              alignItems: "center",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 20,
+                fontWeight: "bold",
+                color: themeColors.purple,
+                marginBottom: 12,
+                fontFamily: "CarosSoft",
+              }}
+            >
+              Set Focus Goal
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: themeColors.purple,
+                borderRadius: 8,
+                padding: 10,
+                color: themeColors.black,
+                backgroundColor: themeColors.white,
+                fontSize: 16,
+                fontFamily: "CarosSoft",
+                marginBottom: 12,
+                width: "100%",
+              }}
+              placeholder="Goal Title (optional)"
+              placeholderTextColor={themeColors.darkGray}
+              value={goalTitleInput}
+              onChangeText={setGoalTitleInput}
+              maxLength={40}
+            />
+            <View
+              style={{ flexDirection: "row", width: "100%", marginBottom: 12 }}
+            >
+              <TextInput
+                style={{
+                  flex: 1,
+                  borderWidth: 1,
+                  borderColor: themeColors.purple,
+                  borderRadius: 8,
+                  padding: 10,
+                  color: themeColors.black,
+                  backgroundColor: themeColors.white,
+                  fontSize: 16,
+                  fontFamily: "CarosSoft",
+                  marginRight: 6,
+                }}
+                keyboardType="numeric"
+                value={goalInput.h}
+                onChangeText={(v) =>
+                  setGoalInput((prev) => ({
+                    ...prev,
+                    h: v.replace(/[^0-9]/g, ""),
+                  }))
+                }
+                maxLength={2}
+                placeholder="H"
+                placeholderTextColor={themeColors.darkGray}
+              />
+              <TextInput
+                style={{
+                  flex: 1,
+                  borderWidth: 1,
+                  borderColor: themeColors.purple,
+                  borderRadius: 8,
+                  padding: 10,
+                  color: themeColors.black,
+                  backgroundColor: themeColors.white,
+                  fontSize: 16,
+                  fontFamily: "CarosSoft",
+                  marginRight: 6,
+                }}
+                keyboardType="numeric"
+                value={goalInput.m}
+                onChangeText={(v) =>
+                  setGoalInput((prev) => ({
+                    ...prev,
+                    m: v.replace(/[^0-9]/g, ""),
+                  }))
+                }
+                maxLength={2}
+                placeholder="M"
+                placeholderTextColor={themeColors.darkGray}
+              />
+              <TextInput
+                style={{
+                  flex: 1,
+                  borderWidth: 1,
+                  borderColor: themeColors.purple,
+                  borderRadius: 8,
+                  padding: 10,
+                  color: themeColors.black,
+                  backgroundColor: themeColors.white,
+                  fontSize: 16,
+                  fontFamily: "CarosSoft",
+                }}
+                keyboardType="numeric"
+                value={goalInput.s}
+                onChangeText={(v) =>
+                  setGoalInput((prev) => ({
+                    ...prev,
+                    s: v.replace(/[^0-9]/g, ""),
+                  }))
+                }
+                maxLength={2}
+                placeholder="S"
+                placeholderTextColor={themeColors.darkGray}
+              />
+            </View>
+            <View style={{ flexDirection: "row", width: "100%" }}>
+              <TouchableOpacity
+                onPress={handleGoalSave}
+                style={{
+                  flex: 1,
+                  backgroundColor: themeColors.purple,
+                  borderRadius: 8,
+                  paddingVertical: 10,
+                  alignItems: "center",
+                  marginRight: 8,
+                }}
+              >
+                <Text
+                  style={{
+                    color: themeColors.white,
+                    fontWeight: "bold",
+                    fontFamily: "CarosSoft",
+                  }}
+                >
+                  Save
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setShowGoalModal(false)}
+                style={{
+                  flex: 1,
+                  backgroundColor: themeColors.gray,
+                  borderRadius: 8,
+                  paddingVertical: 10,
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    color: themeColors.purple,
+                    fontWeight: "bold",
+                    fontFamily: "CarosSoft",
+                  }}
+                >
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
+            {goal.target > 0 && (
+              <TouchableOpacity
+                onPress={handleGoalDelete}
+                style={{
+                  marginTop: 10,
+                  alignSelf: "center",
+                  padding: 6,
+                }}
+              >
+                <Text
+                  style={{ color: themeColors.red, fontFamily: "CarosSoft" }}
+                >
+                  Delete Goal
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }

@@ -681,9 +681,9 @@ export default function SpotDetailScreen({ route, navigation }) {
           {/* --- End Check In Button --- */}
 
           {/* Spot Feedback (Thumbs up/down) */}
-          {!isPrivateNook && (
+          {/* {!isPrivateNook && (
             <SpotFeedback spotId={spotId} themeColors={themeColors} />
-          )}
+          )} */}
 
           {/* Modals */}
           {!isPrivateNook && (
