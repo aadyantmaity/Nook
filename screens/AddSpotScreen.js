@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   SafeAreaView,
   Image,
+  Modal,
 } from "react-native";
 import { ArrowLeft, Check, MapPin } from "phosphor-react-native";
 import { ThemeContext } from "../App";
@@ -30,6 +31,8 @@ import BuildingPicker from "../components/AddSpot/BuildingPicker";
 import ImagePickerButton from "../components/AddSpot/ImagePickerButton";
 import FavoriteToggle from "../components/AddSpot/FavoriteToggle";
 import MapLocationPicker from "../components/AddSpot/MapLocationPicker";
+// --- Add import for ShareWithModal ---
+import ShareWithModal from "../components/AddSpot/ShareWithModal";
 
 const TAGS = [
   "Quiet",
@@ -117,11 +120,43 @@ export default function AddSpotScreen({ navigation, route }) {
   const [isUWBuilding, setIsUWBuilding] = useState(true);
   const [customBuilding, setCustomBuilding] = useState("");
   const [isFavorite, setIsFavorite] = useState(false);
-  const [openHours, setOpenHours] = useState("");
   const [customImage, setCustomImage] = useState(null);
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [customCoords, setCustomCoords] = useState(null);
-  const [privateNook, setPrivateNook] = useState(false); // <-- add state
+  const [privateNook, setPrivateNook] = useState(false);
+  // --- Add state for sharing ---
+  const [sharedWith, setSharedWith] = useState([]);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [followingList, setFollowingList] = useState([]);
+
+  // Fetch following list for sharing
+  useEffect(() => {
+    const fetchFollowing = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (userDoc.exists()) {
+        const following = userDoc.data().following || [];
+        // Fetch user info for display
+        const users = [];
+        for (let uid of following) {
+          const uDoc = await getDoc(doc(db, "users", uid));
+          if (uDoc.exists()) {
+            users.push({
+              uid,
+              name:
+                `${uDoc.data().firstName || ""} ${
+                  uDoc.data().lastName || ""
+                }`.trim() || uDoc.data().email,
+              email: uDoc.data().email,
+            });
+          }
+        }
+        setFollowingList(users);
+      }
+    };
+    if (privateNook && !isUWBuilding) fetchFollowing();
+  }, [privateNook, isUWBuilding]);
 
   const toggleTag = (tag) => {
     setSelectedTags((tags) =>
@@ -142,7 +177,8 @@ export default function AddSpotScreen({ navigation, route }) {
     setOpenHours("");
     setCustomImage(null);
     setCustomCoords(null);
-    setPrivateNook(false); // <-- reset
+    setPrivateNook(false);
+    setSharedWith([]); // <-- reset
   };
 
   const isAmaity =
@@ -234,7 +270,8 @@ export default function AddSpotScreen({ navigation, route }) {
           : customCoords
           ? { coordinates: customCoords }
           : {}),
-        privateNook: !isUWBuilding ? privateNook : false, // <-- set privateNook only for custom
+        privateNook: !isUWBuilding ? privateNook : false,
+        sharedWith: !isUWBuilding && privateNook ? sharedWith : [], // <-- add this
       };
       const docRef = await addDoc(collection(db, "studySpots"), spotDetails);
 
@@ -276,6 +313,16 @@ export default function AddSpotScreen({ navigation, route }) {
     setIsUWBuilding(isUW);
     setCustomImage(null);
   };
+
+  // --- Show share modal after toggling private nook ---
+  useEffect(() => {
+    if (privateNook && !isUWBuilding) {
+      setShowShareModal(true);
+    } else {
+      setShowShareModal(false);
+      setSharedWith([]);
+    }
+  }, [privateNook, isUWBuilding]);
 
   return (
     <View
@@ -448,7 +495,7 @@ export default function AddSpotScreen({ navigation, route }) {
                 </TouchableOpacity>
               </View>
               <TextInput
-                placeholder="Floor/Room number (if applicable)"
+                placeholder="Floor number (if applicable)"
                 placeholderTextColor={themeColors.darkGray}
                 value={roomNumber}
                 onChangeText={setRoomNumber}
@@ -497,75 +544,81 @@ export default function AddSpotScreen({ navigation, route }) {
           />
 
           {/* Husky Card Needed */}
-          <View style={{ marginBottom: 16 }}>
-            <Text
-              style={{
-                fontSize: 19,
-                marginBottom: 8,
-                color: themeColors.black,
-                fontFamily: "CarosSoft",
-              }}
-            >
-              Husky Card Needed:
-            </Text>
-            <View
-              style={{ flexDirection: "row", justifyContent: "space-between" }}
-            >
-              <TouchableOpacity
-                onPress={() => setHuskyCardNeeded(false)}
+          {isUWBuilding && (
+            <View style={{ marginBottom: 16 }}>
+              <Text
                 style={{
-                  flex: 1,
-                  alignItems: "center",
-                  padding: 12,
-                  marginRight: 8,
-                  backgroundColor: !huskyCardNeeded
-                    ? themeColors.purple
-                    : themeColors.white,
-                  borderRadius: 8,
-                  borderColor: themeColors.black,
-                  borderWidth: 0.5,
+                  fontSize: 19,
+                  marginBottom: 8,
+                  color: themeColors.black,
+                  fontFamily: "CarosSoft",
                 }}
               >
-                <Text
-                  style={{
-                    color: !huskyCardNeeded
-                      ? themeColors.white
-                      : themeColors.purple,
-                    fontFamily: "CarosSoft",
-                  }}
-                >
-                  No
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setHuskyCardNeeded(true)}
+                Husky Card Needed:
+              </Text>
+              <View
                 style={{
-                  flex: 1,
-                  alignItems: "center",
-                  padding: 12,
-                  marginLeft: 8,
-                  backgroundColor: huskyCardNeeded
-                    ? themeColors.purple
-                    : themeColors.white,
-                  borderRadius: 8,
-                  borderColor: themeColors.black,
-                  borderWidth: 0.5,
+                  flexDirection: "row",
+                  justifyContent: "space-between",
                 }}
               >
-                <Text
+                <TouchableOpacity
+                  onPress={() => setHuskyCardNeeded(false)}
                   style={{
-                    color: huskyCardNeeded
-                      ? themeColors.white
-                      : themeColors.purple,
-                    fontFamily: "CarosSoft",
+                    flex: 1,
+                    alignItems: "center",
+                    padding: 12,
+                    marginRight: 8,
+                    backgroundColor: !huskyCardNeeded
+                      ? themeColors.purple
+                      : themeColors.white,
+                    borderRadius: 8,
+                    borderColor: themeColors.black,
+                    borderWidth: 0.5,
                   }}
                 >
-                  Yes
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={{
+                      color: !huskyCardNeeded
+                        ? themeColors.white
+                        : themeColors.purple,
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    No
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setHuskyCardNeeded(true)}
+                  style={{
+                    flex: 1,
+                    alignItems: "center",
+                    padding: 12,
+                    marginLeft: 8,
+                    backgroundColor: huskyCardNeeded
+                      ? themeColors.purple
+                      : themeColors.white,
+                    borderRadius: 8,
+                    borderColor: themeColors.black,
+                    borderWidth: 0.5,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: huskyCardNeeded
+                        ? themeColors.white
+                        : themeColors.purple,
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    Yes
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-          {huskyCardNeeded && (
+          )}
+          {/* Department input only for UW buildings */}
+          {isUWBuilding && huskyCardNeeded && (
             <TextInput
               placeholder="Department (if applicable)"
               placeholderTextColor={themeColors.darkGray}
@@ -607,26 +660,6 @@ export default function AddSpotScreen({ navigation, route }) {
             isFavorite={isFavorite}
             setIsFavorite={setIsFavorite}
             themeColors={themeColors}
-          />
-
-          {/* Open/Quiet Hours */}
-          <TextInput
-            placeholder="Open/Quiet Hours (e.g. 8am-10pm, Quiet at 6pm)"
-            placeholderTextColor={themeColors.darkGray}
-            value={openHours}
-            onChangeText={setOpenHours}
-            style={{
-              borderWidth: 0.5,
-              borderColor: themeColors.black,
-              borderRadius: 8,
-              padding: 12,
-              marginBottom: 16,
-              backgroundColor: themeColors.white,
-              color: themeColors.purple,
-              fontFamily: "CarosSoft",
-            }}
-            accessibilityLabel="Open or Quiet Hours"
-            accessible={true}
           />
 
           {/* Only show private toggle for custom locations */}
@@ -678,16 +711,19 @@ export default function AddSpotScreen({ navigation, route }) {
                   }}
                 />
               </TouchableOpacity>
-              <Text
-                style={{
-                  color: themeColors.darkGray,
-                  fontSize: 13,
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                Only you will see this nook
-              </Text>
             </View>
+          )}
+
+          {/* --- Share Modal --- */}
+          {showShareModal && (
+            <ShareWithModal
+              visible={showShareModal}
+              onClose={() => setShowShareModal(false)}
+              sharedWith={sharedWith}
+              setSharedWith={setSharedWith}
+              themeColors={themeColors}
+              followingList={followingList}
+            />
           )}
 
           {/* Buttons */}

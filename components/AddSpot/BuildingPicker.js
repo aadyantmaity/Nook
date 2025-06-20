@@ -90,7 +90,7 @@ export default function BuildingPicker({
       </Picker>
       {/* Floor/Room Number Input */}
       <TextInput
-        placeholder="Floor Number (if applicable)"
+        placeholder="Floor number (if applicable)"
         placeholderTextColor={themeColors.darkGray}
         value={roomNumber}
         onChangeText={(val) => {
@@ -105,7 +105,7 @@ export default function BuildingPicker({
           borderRadius: 8,
           padding: 12,
           marginTop: 16,
-          marginBottom: 8,
+          marginBottom: -8,
           backgroundColor: themeColors.white,
           color: themeColors.purple,
           fontFamily: "CarosSoft",

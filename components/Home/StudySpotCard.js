@@ -232,7 +232,7 @@ export default function StudySpotCard({
       </Text>
 
       {/* Husky Card/Department info */}
-      {(spot.huskyCardNeeded || spot.department) && (
+      {!spot.privateNook && (spot.huskyCardNeeded || spot.department) && (
         <Text
           style={{
             fontSize: 13,

@@ -38,8 +38,15 @@ export default function useStudySpots() {
         // For each spot, set up a ratings listener
         const spotPromises = allDocs.map(async (docSnap) => {
           const spotData = docSnap.data();
-          // --- Filter out private nooks not owned by user ---
-          if (spotData.privateNook && spotData.addedBy !== user.uid) {
+          // --- Filter out private nooks not owned by user or not shared ---
+          if (
+            spotData.privateNook &&
+            spotData.addedBy !== user.uid &&
+            !(
+              Array.isArray(spotData.sharedWith) &&
+              spotData.sharedWith.includes(user.uid)
+            )
+          ) {
             return null;
           }
 
