@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -54,6 +54,7 @@ import PrivateNookNotesModal from "../components/SpotDetail/PrivateNookNotesModa
 import PrivateNookStats from "../components/SpotDetail/PrivateNookStats";
 import SpotGallery from "../components/SpotDetail/SpotGallery";
 import CheckInButton from "../components/SpotDetail/CheckInButton";
+import HomeLoadingScreen from "../components/Home/HomeLoadingScreen"; // Add this import
 
 // Hooks
 import useSpotDetails from "../hooks/useSpotDetails";
@@ -261,9 +262,37 @@ export default function SpotDetailScreen({ route, navigation }) {
     );
   };
 
-  if (isLoading || !spot) {
-    // Remove loading screen: render nothing while loading
-    return null;
+  // --- Minimum loading duration state ---
+  const [minLoadingElapsed, setMinLoadingElapsed] = useState(false);
+  const initialMount = useRef(true);
+
+  useEffect(() => {
+    setMinLoadingElapsed(false);
+    initialMount.current = true;
+    const timer = setTimeout(() => {
+      setMinLoadingElapsed(true);
+      initialMount.current = false;
+    }, 750); // 1.5 seconds
+    return () => clearTimeout(timer);
+  }, [
+    route?.params?.spotId,
+    route?.params?.id,
+    route?.params?.view,
+    route?.params?.refresh,
+    route?.params?.deleting,
+    route?.params?.creating,
+    route?.params?.homeLoading,
+  ]);
+  // The dependency array ensures timer resets on navigation
+
+  // --- Show loading screen until both data and timer are ready ---
+  if (isLoading || !spot || !minLoadingElapsed) {
+    return (
+      <HomeLoadingScreen
+        themeColors={themeColors}
+        loadingMessage="Loading nook details..."
+      />
+    );
   }
 
   const tags = Array.isArray(spot.tags) ? spot.tags : [];

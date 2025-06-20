@@ -443,7 +443,7 @@ export default function HomeScreen({ navigation, route }) {
       const timer = setTimeout(() => {
         setMinLoadingElapsed(true);
         initialMount.current = false;
-      }, 2000);
+      }, 1000);
       return () => clearTimeout(timer);
     }
   }, []);
