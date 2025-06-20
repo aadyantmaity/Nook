@@ -91,6 +91,9 @@ export default function HomeScreen({ navigation, route }) {
   const [currentAlerts, setCurrentAlerts] = useState([]);
   const [showMapView, setShowMapView] = useState(false);
 
+  // Social tab selectedTab state
+  const [socialSelectedTab, setSocialSelectedTab] = useState("findPeople");
+
   // Hooks
   const { studySpots, isLoading, fetchStudySpots } = useStudySpots();
   const { favorites, toggleFavorite } = useFavorites();
@@ -292,7 +295,12 @@ export default function HomeScreen({ navigation, route }) {
   function SocialTab() {
     // Render FindPeopleView as a full page (not a modal)
     const FindPeopleView = require("./FindPeopleView").default;
-    return <FindPeopleView />;
+    return (
+      <FindPeopleView
+        selectedTab={socialSelectedTab}
+        setSelectedTab={setSocialSelectedTab}
+      />
+    );
   }
 
   // Home tab content

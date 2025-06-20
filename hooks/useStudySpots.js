@@ -95,7 +95,18 @@ export default function useStudySpots() {
                       }
                     }
                   });
-                  tableAvailability = latestTable;
+                  // --- Clear tableAvailability if no ratings from today ---
+                  let hasTodayRating = false;
+                  ratingsSnapshot.forEach((ratingDoc) => {
+                    const ratingData = ratingDoc.data();
+                    if (
+                      ratingData.timestamp &&
+                      ratingData.timestamp.toMillis() >= todayStartMillis
+                    ) {
+                      hasTodayRating = true;
+                    }
+                  });
+                  tableAvailability = hasTodayRating ? latestTable : "N/A";
                 }
 
                 const now = Date.now();
