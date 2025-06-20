@@ -20,6 +20,7 @@ export default function SpotGallery({
   galleryImages,
   setSpot,
   themeColors,
+  imageStyle, // <-- add imageStyle prop
 }) {
   const [isUploading, setIsUploading] = useState(false);
   const [images, setImages] = useState(
@@ -47,7 +48,7 @@ export default function SpotGallery({
       setIsUploading(true);
       // Use the correct ImagePicker API for Expo SDK 48+
       let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ImagePicker.MediaType.IMAGE,
         allowsEditing: true,
         aspect: [5, 3],
         quality: 0.8,
@@ -128,14 +129,30 @@ export default function SpotGallery({
         )}
       </View>
       {images && images.length > 0 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
+            minHeight: imageStyle?.height || 120,
+            alignItems: "center",
+          }}
+        >
           {images.map((img, idx) => (
             <View
               key={idx}
               style={{
-                width: 140,
-                height: 90,
-                borderRadius: 8,
+                width:
+                  typeof imageStyle?.width === "number"
+                    ? imageStyle.width
+                    : 180,
+                height:
+                  typeof imageStyle?.height === "number"
+                    ? imageStyle.height
+                    : 120,
+                borderRadius:
+                  typeof imageStyle?.borderRadius === "number"
+                    ? imageStyle.borderRadius
+                    : 8,
                 overflow: "hidden",
                 marginRight: 10,
                 borderWidth: 0.5,
@@ -143,11 +160,22 @@ export default function SpotGallery({
                 backgroundColor: "#EEE",
                 alignItems: "center",
                 justifyContent: "center",
+                marginBottom:
+                  typeof imageStyle?.marginBottom === "number"
+                    ? imageStyle.marginBottom
+                    : 0,
               }}
             >
               <Image
                 source={{ uri: img }}
-                style={{ width: "100%", height: "100%" }}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  borderRadius:
+                    typeof imageStyle?.borderRadius === "number"
+                      ? imageStyle.borderRadius
+                      : 8,
+                }}
                 resizeMode="cover"
               />
             </View>

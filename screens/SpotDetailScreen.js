@@ -191,7 +191,7 @@ export default function SpotDetailScreen({ route, navigation }) {
       return `Last updated: ${ratings.lastWindowHours} hours ago (${ratings.lastWindowHours}h avg)`;
     }
     if (ratings.lastUpdatedType === "today") {
-      return "Last updated: Today (daily avg)";
+      return "Last updated: Today (day avg)";
     }
     if (diffMin < 30 && diffMin >= 0) {
       if (diffMin === 0) return "Last updated: just now";
@@ -494,10 +494,24 @@ export default function SpotDetailScreen({ route, navigation }) {
           </View>
 
           {/* Spot Image */}
-          <SpotImage
+          {/* <SpotImage
             photoUrl={spot.photoUrl}
             cachedPhotoUri={cachedPhotoUri}
             themeColors={themeColors}
+          /> */}
+
+          {/* Spot Gallery (replaces SpotImage, matches image size) */}
+          <SpotGallery
+            spotId={spotId}
+            galleryImages={spot.galleryImages}
+            setSpot={setSpot}
+            themeColors={themeColors}
+            imageStyle={{
+              width: "100%",
+              height: 150,
+              borderRadius: 8,
+              marginBottom: 16,
+            }}
           />
 
           {/* Spot Name and Floor */}
@@ -626,14 +640,6 @@ export default function SpotDetailScreen({ route, navigation }) {
               />
             </View>
           )}
-
-          {/* Spot Gallery */}
-          <SpotGallery
-            spotId={spotId}
-            galleryImages={spot.galleryImages}
-            setSpot={setSpot}
-            themeColors={themeColors}
-          />
 
           {/* --- Check In Button --- */}
           {!isPrivateNook && (

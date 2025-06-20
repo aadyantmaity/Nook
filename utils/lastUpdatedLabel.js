@@ -27,7 +27,7 @@ export function getLastUpdatedLabel(ratings) {
     return `Last updated: ${ratings.lastWindowHours} hours ago (${ratings.lastWindowHours}h avg)`;
   }
   if (ratings.lastUpdatedType === "today") {
-    return "Last updated: Today (daily avg)";
+    return "Last updated: Today (day avg)";
   }
   if (diffMin < 30 && diffMin >= 0) {
     if (diffMin === 0) return "Last updated: just now";

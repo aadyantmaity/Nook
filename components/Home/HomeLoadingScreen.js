@@ -79,33 +79,17 @@ function HomeLoadingScreen({ themeColors, loadingMessage }) {
       >
         <MapPin size={64} color={themeColors.orange} weight="fill" />
       </Animated.View>
-      {/* Only show "Nook" text if not deleting or creating a nook */}
-      {loadingMessage !== "Deleting nook..." &&
-        loadingMessage !== "Creating nook..." && (
-          <Text
-            style={{
-              fontSize: 48,
-              fontWeight: "bold",
-              color: themeColors.purple,
-              marginTop: 0,
-              letterSpacing: 0.5,
-              fontFamily: "CarosSoft",
-            }}
-          >
-            Nook
-          </Text>
-        )}
       <Text
         style={{
-          fontSize: 20,
-          color: themeColors.darkGray,
-          marginTop: 8,
-          textAlign: "center",
-          maxWidth: 260,
+          fontSize: 48,
+          fontWeight: "bold",
+          color: themeColors.purple,
+          marginTop: 0,
+          letterSpacing: 0.5,
           fontFamily: "CarosSoft",
         }}
       >
-        {loadingMessage || "Fetching your nooks..."}
+        Nook
       </Text>
     </View>
   );
