@@ -80,7 +80,7 @@ export default function FindPeopleView({ navigation: propNavigation }) {
       {selectedTab === "findPeople" ? (
         <FindPeopleSection navigation={navigation} />
       ) : (
-        <SocialFeedSection />
+        <SocialFeedSection navigation={navigation} />
       )}
     </View>
   );
