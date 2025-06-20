@@ -12,6 +12,7 @@ import {
   List,
 } from "phosphor-react-native";
 import Filters from "./Filters";
+import HomeLoadingScreen from "./HomeLoadingScreen"; // Import the loading screen
 
 export default function StudySpotsList({
   filteredSpots,
@@ -104,12 +105,12 @@ export default function StudySpotsList({
 
         return (
           <TouchableOpacity
-            onPress={() =>
+            onPress={() => {
               navigation.navigate("SpotDetail", {
                 spotId: item.id,
                 view: showMapView ? "map" : "list",
-              })
-            }
+              });
+            }}
             style={{
               padding: 16,
               marginBottom: 12,

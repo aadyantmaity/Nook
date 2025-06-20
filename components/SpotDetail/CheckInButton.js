@@ -16,6 +16,38 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [lastCheckIn, setLastCheckIn] = useState(null);
 
+  // --- Listen for check-in post deletion and clear cooldown if deleted ---
+  useEffect(() => {
+    if (!spotId || !user) return;
+    const key = `nook_checkin_${spotId}_${user.uid}`;
+    let unsub = null;
+    (async () => {
+      try {
+        // Listen for check-in posts for this user and spot
+        const { db } = await import("../../firebaseConfig");
+        const { collection, query, where, onSnapshot } = await import(
+          "firebase/firestore"
+        );
+        const q = query(
+          collection(db, "posts"),
+          where("uid", "==", user.uid),
+          where("spotId", "==", spotId),
+          where("type", "==", "checkin")
+        );
+        unsub = onSnapshot(q, async (snap) => {
+          if (snap.empty) {
+            // No check-in post exists, clear cooldown
+            await AsyncStorage.removeItem(key);
+            setLastCheckIn(0);
+          }
+        });
+      } catch {}
+    })();
+    return () => {
+      if (unsub) unsub();
+    };
+  }, [spotId, user]);
+
   useEffect(() => {
     if (!spotId || !user) return;
     const key = `nook_checkin_${spotId}_${user.uid}`;

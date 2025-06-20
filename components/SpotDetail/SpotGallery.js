@@ -182,9 +182,13 @@ export default function SpotGallery({
           ))}
         </ScrollView>
       ) : (
-        <Text style={{ color: themeColors.darkGray, fontFamily: "CarosSoft" }}>
-          No gallery images yet.
-        </Text>
+        <View style={{ marginBottom: 16 }}>
+          <Text
+            style={{ color: themeColors.darkGray, fontFamily: "CarosSoft" }}
+          >
+            No gallery images yet.
+          </Text>
+        </View>
       )}
     </View>
   );
