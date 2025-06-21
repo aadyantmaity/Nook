@@ -373,7 +373,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                 marginLeft: -8,
               }}
             >
-              <House size={20} color={themeColors.purple} />
+              <House size={24} color={themeColors.purple} />
             </TouchableOpacity>
             {/* Add Alert button and More Info Dropdown Menu */}
             <View
@@ -396,7 +396,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                 }}
               >
                 <DotsThreeVertical
-                  size={26}
+                  size={27}
                   color={themeColors.purple}
                   weight="bold"
                 />
@@ -558,6 +558,19 @@ export default function SpotDetailScreen({ route, navigation }) {
             }}
           >
             {spot.buildingName}
+            {spot.privateNook && (
+              <Text
+                style={{
+                  fontSize: 18,
+                  color: themeColors.purple,
+                  fontWeight: "bold",
+                  marginLeft: 10,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                (Private)
+              </Text>
+            )}
             {spot.roomNumber && (
               <Text
                 style={{
@@ -966,7 +979,7 @@ export default function SpotDetailScreen({ route, navigation }) {
         <View
           style={{
             position: "absolute",
-            bottom: 25,
+            bottom: 30,
             right: 16,
             zIndex: 20,
           }}

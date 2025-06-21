@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Image } from "react-native";
-import { Heart, Warning, Star, Lock } from "phosphor-react-native";
+import { Heart, Warning, Star } from "phosphor-react-native";
 
 export default function StudySpotCard({
   spot,
@@ -30,7 +30,7 @@ export default function StudySpotCard({
       }}
       activeOpacity={0.9}
     >
-      {/* Badge Icon: Lock for private, Warning for alerts */}
+      {/* Badge Icon: Warning for alerts */}
       {(() => {
         // --- Filter today's alerts only ---
         const today = new Date();
@@ -59,35 +59,6 @@ export default function StudySpotCard({
                 : a.createdAt
             )
         );
-        if (spot.privateNook) {
-          return (
-            <View
-              style={{
-                position: "absolute",
-                top: 12,
-                left: 12,
-                zIndex: 20,
-                backgroundColor: themeColors.white,
-                borderRadius: 20,
-                padding: 4,
-                borderWidth: 0.5,
-                borderColor: themeColors.purple,
-                shadowColor: themeColors.purple,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.18,
-                shadowRadius: 4,
-                elevation: 6,
-                width: 38,
-                height: 38,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              pointerEvents="none"
-            >
-              <Lock size={24} color={themeColors.purple} weight="fill" />
-            </View>
-          );
-        }
         if (todaysAlerts.length === 0) return null;
         return (
           <TouchableOpacity
@@ -216,6 +187,19 @@ export default function StudySpotCard({
         }}
       >
         {spot.name}
+        {spot.privateNook && (
+          <Text
+            style={{
+              fontSize: 14,
+              color: themeColors.purple,
+              fontWeight: "bold",
+              marginLeft: 8,
+              fontFamily: "CarosSoft",
+            }}
+          >
+            {" \u2022 Private"}
+          </Text>
+        )}
         {spot.roomNumber && (
           <Text
             style={{

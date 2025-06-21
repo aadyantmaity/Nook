@@ -4,7 +4,6 @@ import {
   Heart,
   Star,
   Warning,
-  Lock,
   CaretDown,
   CaretUp,
   Rows,
@@ -128,31 +127,7 @@ export default function StudySpotsList({
           >
             {/* Badge Icon: Lock for private, Warning for alerts */}
             {isPrivateNook ? (
-              <View
-                style={{
-                  position: "absolute",
-                  top: 12,
-                  left: 12,
-                  zIndex: 20,
-                  backgroundColor: themeColors.white,
-                  borderRadius: 20,
-                  padding: 4,
-                  borderWidth: 0.5,
-                  borderColor: themeColors.purple,
-                  shadowColor: themeColors.purple,
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.18,
-                  shadowRadius: 4,
-                  elevation: 6,
-                  width: 38,
-                  height: 38,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-                pointerEvents="none"
-              >
-                <Lock size={24} color={themeColors.purple} weight="fill" />
-              </View>
+              <View style={{}} pointerEvents="none"></View>
             ) : (
               todaysAlerts.length > 0 && (
                 <TouchableOpacity
@@ -284,6 +259,19 @@ export default function StudySpotsList({
               }}
             >
               {item.name}
+              {isPrivateNook && (
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: themeColors.purple,
+                    fontWeight: "bold",
+                    marginLeft: 8,
+                    fontFamily: "CarosSoft",
+                  }}
+                >
+                  {" \u2022 Private"}
+                </Text>
+              )}
               {item.roomNumber && (
                 <Text
                   style={{

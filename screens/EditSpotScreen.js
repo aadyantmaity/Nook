@@ -100,15 +100,12 @@ export default function EditSpotScreen({ navigation, route }) {
     typeof spot?.revealIdentity === "boolean" ? spot.revealIdentity : false
   );
   const [isUWBuilding, setIsUWBuilding] = useState(
-    spot?.buildingName && !spot?.coordinates
-      ? true
-      : false
+    spot?.buildingName && !spot?.coordinates ? true : false
   );
   const [customBuilding, setCustomBuilding] = useState(
     !spot?.buildingName || spot?.coordinates ? spot?.buildingName || "" : ""
   );
-  const [isFavorite, setIsFavorite] = useState(false); // You may want to check user's favorites
-  const [openHours, setOpenHours] = useState(spot?.openHours || "");
+  const [isFavorite, setIsFavorite] = useState(false); // You may want
   const [customImage, setCustomImage] = useState(null);
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [customCoords, setCustomCoords] = useState(spot?.coordinates || null);
@@ -133,7 +130,6 @@ export default function EditSpotScreen({ navigation, route }) {
     setIsUWBuilding(true);
     setCustomBuilding("");
     setIsFavorite(false);
-    setOpenHours("");
     setCustomImage(null);
     setCustomCoords(null);
     setPrivateNook(false); // <-- reset
@@ -210,7 +206,6 @@ export default function EditSpotScreen({ navigation, route }) {
         addedBy: user.uid,
         revealIdentity: showAddedBy,
         photoUrl: "",
-        openHours,
         ...(isUWBuilding
           ? {}
           : customCoords
@@ -273,14 +268,17 @@ export default function EditSpotScreen({ navigation, route }) {
       const getValue = (newVal, currentVal) =>
         newVal !== undefined && newVal !== "" ? newVal : currentVal;
 
-      const buildingNameToCheck = isUWBuilding ? selectedBuilding : customBuilding;
+      const buildingNameToCheck = isUWBuilding
+        ? selectedBuilding
+        : customBuilding;
 
       // Always ensure tags is an array
-      let tagsValue = Array.isArray(selectedTags) && selectedTags.length > 0
-        ? selectedTags
-        : Array.isArray(currentData.tags)
-        ? currentData.tags
-        : [];
+      let tagsValue =
+        Array.isArray(selectedTags) && selectedTags.length > 0
+          ? selectedTags
+          : Array.isArray(currentData.tags)
+          ? currentData.tags
+          : [];
 
       // Defensive: If tagsValue is not an array, make it an empty array
       if (!Array.isArray(tagsValue)) tagsValue = [];
@@ -293,18 +291,18 @@ export default function EditSpotScreen({ navigation, route }) {
           typeof huskyCardNeeded === "boolean"
             ? huskyCardNeeded
             : currentData.huskyCardNeeded,
-        department:
-          (typeof huskyCardNeeded === "boolean"
+        department: (
+          typeof huskyCardNeeded === "boolean"
             ? huskyCardNeeded
-            : currentData.huskyCardNeeded)
-            ? getValue(department, currentData.department)
-            : null,
+            : currentData.huskyCardNeeded
+        )
+          ? getValue(department, currentData.department)
+          : null,
         tags: tagsValue,
         revealIdentity:
           typeof showAddedBy === "boolean"
             ? showAddedBy
             : currentData.revealIdentity,
-        openHours: getValue(openHours, currentData.openHours),
         privateNook: !isUWBuilding
           ? typeof privateNook === "boolean"
             ? privateNook
@@ -499,6 +497,7 @@ export default function EditSpotScreen({ navigation, route }) {
                     justifyContent: "center",
                     minWidth: 44,
                     minHeight: 44,
+                    flexDirection: "row",
                   }}
                   accessibilityLabel={
                     customCoords
@@ -508,6 +507,16 @@ export default function EditSpotScreen({ navigation, route }) {
                   accessible={true}
                 >
                   <MapPin size={20} color={themeColors.white} weight="bold" />
+                  <Text
+                    style={{
+                      color: themeColors.white,
+                      marginLeft: 6,
+                      fontSize: 13,
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Pick on Map
+                  </Text>
                 </TouchableOpacity>
               </View>
               <TextInput
@@ -666,8 +675,6 @@ export default function EditSpotScreen({ navigation, route }) {
           <TextInput
             placeholder="Open/Quiet Hours (e.g. 8am-10pm, Quiet at 6pm)"
             placeholderTextColor={themeColors.darkGray}
-            value={openHours}
-            onChangeText={setOpenHours}
             style={{
               borderWidth: 0.5,
               borderColor: themeColors.black,

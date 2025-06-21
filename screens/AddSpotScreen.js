@@ -174,7 +174,6 @@ export default function AddSpotScreen({ navigation, route }) {
     setIsUWBuilding(true);
     setCustomBuilding("");
     setIsFavorite(false);
-    setOpenHours("");
     setCustomImage(null);
     setCustomCoords(null);
     setPrivateNook(false);
@@ -262,7 +261,6 @@ export default function AddSpotScreen({ navigation, route }) {
         addedBy: user.uid,
         revealIdentity: showAddedBy,
         photoUrl: "",
-        openHours,
         ...(isUWBuilding
           ? coordinates
             ? { coordinates }
@@ -483,6 +481,7 @@ export default function AddSpotScreen({ navigation, route }) {
                     justifyContent: "center",
                     minWidth: 44,
                     minHeight: 44,
+                    flexDirection: "row",
                   }}
                   accessibilityLabel={
                     customCoords
@@ -492,6 +491,17 @@ export default function AddSpotScreen({ navigation, route }) {
                   accessible={true}
                 >
                   <MapPin size={20} color={themeColors.white} weight="bold" />
+                  <Text
+                    style={{
+                      color: themeColors.white,
+                      marginLeft: 6,
+                      fontSize: 13,
+                      fontFamily: "CarosSoft",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Search
+                  </Text>
                 </TouchableOpacity>
               </View>
               <TextInput
