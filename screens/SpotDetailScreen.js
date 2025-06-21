@@ -21,6 +21,7 @@ import {
   MapPin,
   PencilSimple,
   Plus,
+  UsersThree,
 } from "phosphor-react-native";
 import { colors } from "../constants/colors";
 import { ThemeContext } from "../App";
@@ -451,7 +452,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                           fontFamily: "CarosSoft",
                         }}
                       >
-                        Report Incorrect Information
+                        Report
                       </Text>
                     </TouchableOpacity>
                     {/* Divider */}
@@ -462,6 +463,37 @@ export default function SpotDetailScreen({ route, navigation }) {
                         marginHorizontal: 10,
                       }}
                     />
+                    {isOwner && isPrivateNook && (
+                      <TouchableOpacity
+                        onPress={() => {
+                          setShowMenu(false);
+                          setTimeout(() => setShowShareModal(true), 150);
+                        }}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          paddingVertical: 14,
+                          paddingHorizontal: 18,
+                        }}
+                      >
+                        <UsersThree
+                          size={18}
+                          color={themeColors.purple}
+                          weight="bold"
+                          style={{ marginRight: 10 }}
+                        />
+                        <Text
+                          style={{
+                            color: themeColors.purple,
+                            fontWeight: "bold",
+                            fontSize: 15,
+                            fontFamily: "CarosSoft",
+                          }}
+                        >
+                          Manage Sharing
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                     {/* Delete Nook (only for owner) */}
                     {user && spot.addedBy === user.uid && (
                       <TouchableOpacity
@@ -495,32 +527,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                       </TouchableOpacity>
                     )}
                     {/* --- Add menu option for private nook sharing management --- */}
-                    {isOwner && isPrivateNook && (
-                      <TouchableOpacity
-                        onPress={() => {
-                          setShowMenu(false);
-                          setTimeout(() => setShowShareModal(true), 150);
-                        }}
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          paddingVertical: 14,
-                          paddingHorizontal: 18,
-                        }}
-                      >
-                        <Text
-                          style={{
-                            marginLeft: 0,
-                            color: themeColors.purple,
-                            fontWeight: "bold",
-                            fontSize: 16,
-                            fontFamily: "CarosSoft",
-                          }}
-                        >
-                          Manage Sharing
-                        </Text>
-                      </TouchableOpacity>
-                    )}
                   </View>
                 </>
               )}

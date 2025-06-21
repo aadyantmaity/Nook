@@ -102,10 +102,29 @@ export function FocusTimerView({ navigation }) {
 
   // Persist goal to AsyncStorage whenever it changes
   useEffect(() => {
-    AsyncStorage.setItem(GOAL_STATE_KEY, JSON.stringify(goal)).catch(() => {});
+    if (goal && typeof goal === "object") {
+      AsyncStorage.setItem(GOAL_STATE_KEY, JSON.stringify(goal)).catch(
+        () => {}
+      );
+    }
   }, [goal]);
 
-  // --- Robust Goal Restore on Tab/Screen Focus ---
+  // --- Robust Goal Restore on Tab/Screen Focus and on mount ---
+  useEffect(() => {
+    const restoreGoal = async () => {
+      try {
+        const raw = await AsyncStorage.getItem(GOAL_STATE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === "object") {
+            setGoal(parsed);
+          }
+        }
+      } catch {}
+    };
+    restoreGoal();
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       const restoreGoal = async () => {
@@ -852,7 +871,35 @@ export function FocusTimerView({ navigation }) {
     if (achieved) {
       Alert.alert(
         "Goal Achieved!",
-        "Congratulations, you've reached your focus goal!"
+        "Congratulations, you've reached your focus goal!",
+        [
+          {
+            text: "OK",
+            onPress: async () => {
+              setGoal({
+                title: "",
+                target: 0,
+                progress: 0,
+                sessionIds: [],
+                achieved: false,
+              });
+              try {
+                await AsyncStorage.setItem(
+                  GOAL_STATE_KEY,
+                  JSON.stringify({
+                    title: "",
+                    target: 0,
+                    progress: 0,
+                    sessionIds: [],
+                    achieved: false,
+                  })
+                );
+              } catch (e) {
+                // optional: log or handle error
+              }
+            },
+          },
+        ]
       );
     }
   };
@@ -1136,7 +1183,7 @@ export function FocusTimerView({ navigation }) {
 
               await removeSessionFromGoal(session.sessionId, session.duration);
 
-              // Archive modal UI update
+              // Archive modal UI update (move here, after confirmation)
               if (archiveContext) {
                 const { year, month, spotId: archiveSpotId } = archiveContext;
                 setArchiveData((prev) => {
@@ -1185,27 +1232,6 @@ export function FocusTimerView({ navigation }) {
       handleSessionEnd();
     }
   }, [sessionStart]);
-
-  // --- Add: Reset goal card after achievement message is cleared ---
-  useEffect(() => {
-    let timeout;
-    if (goal.achieved) {
-      timeout = setTimeout(() => {
-        setGoal({
-          title: "",
-          target: 0,
-          progress: 0,
-          sessionIds: [],
-          achieved: false,
-        });
-        setGoalTitleInput("");
-        setGoalInput({ h: "", m: "", s: "" });
-      }, 2000); // 2 seconds after achievement
-    }
-    return () => {
-      if (timeout) clearTimeout(timeout);
-    };
-  }, [goal.achieved]);
 
   return (
     <>
