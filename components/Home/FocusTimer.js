@@ -98,6 +98,7 @@ export function FocusTimerView({ navigation }) {
     type: "time", // "time" or "custom"
     customDescription: "",
   });
+  const [goalLoaded, setGoalLoaded] = useState(false); // Track if goal is loaded from storage
   const [goalInput, setGoalInput] = useState({ h: "", m: "", s: "" });
   const [goalTitleInput, setGoalTitleInput] = useState("");
   const [goalTypeInput, setGoalTypeInput] = useState("time"); // new
@@ -107,12 +108,12 @@ export function FocusTimerView({ navigation }) {
 
   // Persist goal to AsyncStorage whenever it changes
   useEffect(() => {
-    if (goal && typeof goal === "object") {
+    if (goalLoaded && goal && typeof goal === "object") {
       AsyncStorage.setItem(GOAL_STATE_KEY, JSON.stringify(goal)).catch(
         () => {}
       );
     }
-  }, [goal]);
+  }, [goal, goalLoaded]);
 
   // --- Robust Goal Restore on Tab/Screen Focus and on mount ---
   useEffect(() => {
@@ -126,6 +127,7 @@ export function FocusTimerView({ navigation }) {
           }
         }
       } catch {}
+      setGoalLoaded(true);
     };
     restoreGoal();
   }, []);
@@ -142,6 +144,7 @@ export function FocusTimerView({ navigation }) {
             }
           }
         } catch {}
+        setGoalLoaded(true);
       };
       restoreGoal();
     }, [])
@@ -208,6 +211,7 @@ export function FocusTimerView({ navigation }) {
       const elapsed = Math.floor((now - timerStartRef.current.start) / 1000);
       const newTime = Math.max(timerStartRef.current.duration - elapsed, 0);
       setTimer(newTime);
+      await recalculateGoalProgressOnBack();
     } else {
       await AsyncStorage.setItem(
         TIMER_RUNNING_KEY,
@@ -219,6 +223,98 @@ export function FocusTimerView({ navigation }) {
           sessionStart,
         })
       );
+    }
+  };
+
+  // --- Live Goal Progress Update ---
+  const goalProgressIntervalRef = useRef(null);
+
+  // Helper to update goal progress in real time
+  const updateGoalProgressLive = useCallback(() => {
+    if (
+      isRunning &&
+      !isBreak &&
+      goal.type === "time" &&
+      !goal.achieved &&
+      sessionStart &&
+      timerStartRef.current &&
+      goal.target > 0
+    ) {
+      const now = Date.now();
+      const elapsed = Math.floor((now - timerStartRef.current.start) / 1000);
+      const sessionElapsed = Math.min(
+        timerStartRef.current.duration - (timer - elapsed),
+        timerStartRef.current.duration
+      );
+      const newProgress = goal.progress + elapsed;
+      setGoal((prev) => {
+        if (prev.achieved) return prev;
+        let progress = prev.progress + 1;
+        if (progress > prev.target) progress = prev.target;
+        return { ...prev, progress };
+      });
+    }
+  }, [isRunning, isBreak, goal, sessionStart, timer]);
+
+  // Effect to update goal progress every second while running
+  useEffect(() => {
+    if (
+      isRunning &&
+      !isBreak &&
+      goal.type === "time" &&
+      !goal.achieved &&
+      sessionStart &&
+      timerStartRef.current &&
+      goal.target > 0
+    ) {
+      goalProgressIntervalRef.current = setInterval(() => {
+        setGoal((prev) => {
+          if (prev.achieved) return prev;
+          let progress = prev.progress + 1;
+          if (progress > prev.target) progress = prev.target;
+          return { ...prev, progress };
+        });
+      }, 1000);
+    } else {
+      if (goalProgressIntervalRef.current) {
+        clearInterval(goalProgressIntervalRef.current);
+        goalProgressIntervalRef.current = null;
+      }
+    }
+    return () => {
+      if (goalProgressIntervalRef.current) {
+        clearInterval(goalProgressIntervalRef.current);
+        goalProgressIntervalRef.current = null;
+      }
+    };
+  }, [
+    isRunning,
+    isBreak,
+    goal.type,
+    goal.achieved,
+    sessionStart,
+    timerStartRef.current,
+    goal.target,
+  ]);
+
+  // --- Recalculate goal progress on app resume/quit ---
+  const recalculateGoalProgressOnBack = async () => {
+    if (
+      isRunning &&
+      !isBreak &&
+      goal.type === "time" &&
+      !goal.achieved &&
+      sessionStart &&
+      timerStartRef.current &&
+      goal.target > 0
+    ) {
+      const now = Date.now();
+      const elapsed = Math.floor((now - timerStartRef.current.start) / 1000);
+      setGoal((prev) => {
+        let progress = prev.progress + elapsed;
+        if (progress > prev.target) progress = prev.target;
+        return { ...prev, progress };
+      });
     }
   };
 
@@ -382,7 +478,13 @@ export function FocusTimerView({ navigation }) {
   };
 
   // Helper to add a session to Firestore and update stats immediately
-  const addSessionAndUpdateStats = async (start, end, isBreakSession, note) => {
+  const addSessionAndUpdateStats = async (
+    start,
+    end,
+    isBreakSession,
+    note,
+    skipGoal
+  ) => {
     if (start && end && auth.currentUser && selectedSpot) {
       const duration = end.toMillis() - start.toMillis();
       const sessionId = `${
@@ -422,7 +524,7 @@ export function FocusTimerView({ navigation }) {
       // --- Fetch stats from Firestore to ensure up-to-date ---
       await fetchStats();
       // --- Add session to goal progress if not a break and has sessionId ---
-      if (!isBreakSession && sessionObj.sessionId) {
+      if (!isBreakSession && sessionObj.sessionId && !skipGoal) {
         await addSessionToGoal({
           ...sessionObj,
           duration,
@@ -568,9 +670,32 @@ export function FocusTimerView({ navigation }) {
           isBreak: isBreak,
           sessionDuration: pomodoroMinutes * 60,
         });
-        setShowNoteModal(true);
+        if (reflectionsEnabled) {
+          setShowNoteModal(true);
+        } else {
+          // Save session without note and start break, but skip goal update to avoid double-counting
+          await addSessionAndUpdateStats(sessionStart, end, isBreak, "", true);
+          setSessionNote("");
+          setPendingSession(null);
+          setTimeout(() => {
+            setIsBreak(true);
+            setTimer(breakMinutes * 60);
+            setSessionStart(Timestamp.now());
+            timerStartRef.current = {
+              start: Date.now(),
+              duration: breakMinutes * 60,
+            };
+            setIsRunning(true);
+          }, 500);
+        }
       } else {
-        await addSessionAndUpdateStats(sessionStart, end, isBreak);
+        await addSessionAndUpdateStats(
+          sessionStart,
+          end,
+          isBreak,
+          undefined,
+          true
+        );
         setSessionStart(null);
         setTimer(pomodoroMinutes * 60);
         setIsBreak(false);
@@ -589,11 +714,13 @@ export function FocusTimerView({ navigation }) {
   const handleSaveSessionNote = async () => {
     if (pendingSession) {
       const end = pendingSession.end;
+      // Only add to goal if not already counted (skipGoal: false)
       await addSessionAndUpdateStats(
         pendingSession.start,
         end,
         pendingSession.isBreak,
-        sessionNote
+        sessionNote,
+        false
       );
       setSessionNote("");
       setPendingSession(null);
@@ -1372,6 +1499,11 @@ export function FocusTimerView({ navigation }) {
       );
     } catch {}
   };
+
+  // Only render UI after goalLoaded is true
+  if (!goalLoaded) {
+    return null;
+  }
 
   return (
     <>
