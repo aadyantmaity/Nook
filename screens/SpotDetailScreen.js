@@ -56,6 +56,7 @@ import PrivateNookStats from "../components/SpotDetail/PrivateNookStats";
 import SpotGallery from "../components/SpotDetail/SpotGallery";
 import CheckInButton from "../components/SpotDetail/CheckInButton";
 import HomeLoadingScreen from "../components/Home/HomeLoadingScreen"; // Add this import
+import PrivateNookShareModal from "../components/SpotDetail/PrivateNookShareModal";
 
 // Hooks
 import useSpotDetails from "../hooks/useSpotDetails";
@@ -77,6 +78,7 @@ export default function SpotDetailScreen({ route, navigation }) {
   const [showPrivateNotesModal, setShowPrivateNotesModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [isSubmittingLive, setIsSubmittingLive] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   // Add this missing state:
   const [lastCheckIn, setLastCheckIn] = useState(null);
@@ -125,6 +127,7 @@ export default function SpotDetailScreen({ route, navigation }) {
         const spotRef = doc(db, "studySpots", spotId);
         const spotSnap = await getDoc(spotRef);
         if (spotSnap.exists()) {
+          // Notes are now array of objects: {text, createdAt, author}
           setNotes(spotSnap.data().privateNotes || []);
         }
       };
@@ -306,22 +309,23 @@ export default function SpotDetailScreen({ route, navigation }) {
     setIsSavingNote(true);
     try {
       const spotRef = doc(db, "studySpots", spotId);
-      const noteObj = {
+      const spotSnap = await getDoc(spotRef);
+      let prevNotes = [];
+      if (spotSnap.exists()) {
+        prevNotes = spotSnap.data().privateNotes || [];
+      }
+      // Add author info to note
+      const author = user?.displayName || user?.email || user?.uid || "Unknown";
+      const newNote = {
         text: noteInput.trim(),
         createdAt: Date.now(),
+        author,
       };
-      const prevNotes = Array.isArray(spot.privateNotes)
-        ? spot.privateNotes
-        : [];
-      await updateDoc(spotRef, {
-        privateNotes: [...prevNotes, noteObj],
-      });
-      setNotes([...prevNotes, noteObj]);
-      setSpot((prev) => ({
-        ...prev,
-        privateNotes: [...prevNotes, noteObj],
-      }));
+      const updatedNotes = [...prevNotes, newNote];
+      await updateDoc(spotRef, { privateNotes: updatedNotes });
+      setNotes(updatedNotes);
       setNoteInput("");
+      setShowNotesArchive(false);
     } catch (e) {
       Alert.alert("Error", "Failed to save note.");
     }
@@ -518,6 +522,33 @@ export default function SpotDetailScreen({ route, navigation }) {
                         </Text>
                       </TouchableOpacity>
                     )}
+                    {/* --- Add menu option for private nook sharing management --- */}
+                    {isOwner && isPrivateNook && (
+                      <TouchableOpacity
+                        onPress={() => {
+                          setShowMenu(false);
+                          setTimeout(() => setShowShareModal(true), 150);
+                        }}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          paddingVertical: 14,
+                          paddingHorizontal: 18,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            marginLeft: 0,
+                            color: themeColors.purple,
+                            fontWeight: "bold",
+                            fontSize: 16,
+                            fontFamily: "CarosSoft",
+                          }}
+                        >
+                          Manage Sharing
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </>
               )}
@@ -568,7 +599,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                   fontFamily: "CarosSoft",
                 }}
               >
-                (Private)
+                {" \u2022 Private"}
               </Text>
             )}
             {spot.roomNumber && (
@@ -748,7 +779,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                     fontFamily: "CarosSoft",
                   }}
                 >
-                  Personal Notes
+                  Notes
                 </Text>
                 <TextInput
                   placeholder="Write a note about this nook..."
@@ -910,6 +941,15 @@ export default function SpotDetailScreen({ route, navigation }) {
                                   })
                                 : ""}
                             </Text>
+                            <Text
+                              style={{
+                                fontSize: 12,
+                                color: themeColors.darkGray,
+                                marginTop: 2,
+                              }}
+                            >
+                              {item.author ? `By: ${item.author}` : ""}
+                            </Text>
                           </View>
                         )}
                       />
@@ -1024,6 +1064,14 @@ export default function SpotDetailScreen({ route, navigation }) {
           </View>
         </View>
       )}
+
+      <PrivateNookShareModal
+        visible={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        spotId={spotId}
+        themeColors={themeColors}
+        ownerUid={user?.uid}
+      />
     </View>
   );
 }
