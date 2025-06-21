@@ -19,6 +19,7 @@ import {
   Flag,
   PaperPlaneRight,
   MapPin,
+  PencilSimple,
 } from "phosphor-react-native";
 import { colors } from "../constants/colors";
 import { ThemeContext } from "../App";
@@ -85,6 +86,7 @@ export default function SpotDetailScreen({ route, navigation }) {
 
   // Hooks
   const { spot, addedByName, isLoading, setSpot } = useSpotDetails(spotId);
+  const isOwner = !!user && !!spot && spot.addedBy === user.uid;
   const cachedPhotoUri = useSpotImageCache(spotId, spot?.photoUrl);
   const {
     userOverallRating,
@@ -923,6 +925,42 @@ export default function SpotDetailScreen({ route, navigation }) {
           )}
         </ScrollView>
       </View>
+
+      {/* Floating Action Button for Edit Nook (only for owner, not private nooks) */}
+      {isOwner && (
+        <View
+          style={{
+            position: "absolute",
+            bottom: 25,
+            left: 16,
+            zIndex: 20,
+          }}
+        >
+          <TouchableOpacity
+            onPress={() => navigation.navigate("EditSpot", { spotId, spot })}
+            style={{
+              padding: 10,
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: themeColors.purple,
+              borderRadius: 8,
+            }}
+          >
+            <PencilSimple size={20} color={themeColors.white} />
+            <Text
+              style={{
+                color: themeColors.white,
+                marginLeft: 8,
+                fontWeight: "bold",
+                fontFamily: "CarosSoft",
+              }}
+            >
+              Edit Nook
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Floating Action Button for Add Alert */}
       {!isPrivateNook && (
         <View
