@@ -20,6 +20,7 @@ import {
   PaperPlaneRight,
   MapPin,
   PencilSimple,
+  Plus,
 } from "phosphor-react-native";
 import { colors } from "../constants/colors";
 import { ThemeContext } from "../App";
@@ -57,6 +58,7 @@ import SpotGallery from "../components/SpotDetail/SpotGallery";
 import CheckInButton from "../components/SpotDetail/CheckInButton";
 import HomeLoadingScreen from "../components/Home/HomeLoadingScreen"; // Add this import
 import PrivateNookShareModal from "../components/SpotDetail/PrivateNookShareModal";
+import AddPrivateNookNoteModal from "../components/SpotDetail/AddPrivateNookNoteModal";
 
 // Hooks
 import useSpotDetails from "../hooks/useSpotDetails";
@@ -115,8 +117,7 @@ export default function SpotDetailScreen({ route, navigation }) {
   const [tableAvailability, setTableAvailability] = useState(null);
 
   // --- Private Nook Notes State ---
-  const [noteInput, setNoteInput] = useState("");
-  const [isSavingNote, setIsSavingNote] = useState(false);
+  const [showAddNoteModal, setShowAddNoteModal] = useState(false);
   const [showNotesArchive, setShowNotesArchive] = useState(false);
   const [notes, setNotes] = useState([]);
 
@@ -302,35 +303,6 @@ export default function SpotDetailScreen({ route, navigation }) {
 
   const tags = Array.isArray(spot.tags) ? spot.tags : [];
   const isPrivateNook = !!spot.privateNook;
-
-  // Save note for private nook
-  const handleSaveNote = async () => {
-    if (!noteInput.trim()) return;
-    setIsSavingNote(true);
-    try {
-      const spotRef = doc(db, "studySpots", spotId);
-      const spotSnap = await getDoc(spotRef);
-      let prevNotes = [];
-      if (spotSnap.exists()) {
-        prevNotes = spotSnap.data().privateNotes || [];
-      }
-      // Add author info to note
-      const author = user?.displayName || user?.email || user?.uid || "Unknown";
-      const newNote = {
-        text: noteInput.trim(),
-        createdAt: Date.now(),
-        author,
-      };
-      const updatedNotes = [...prevNotes, newNote];
-      await updateDoc(spotRef, { privateNotes: updatedNotes });
-      setNotes(updatedNotes);
-      setNoteInput("");
-      setShowNotesArchive(false);
-    } catch (e) {
-      Alert.alert("Error", "Failed to save note.");
-    }
-    setIsSavingNote(false);
-  };
 
   // Detect if this is Odegaard Library
   const isOdegaard = (spot?.buildingName || spot?.name || "")
@@ -572,7 +544,6 @@ export default function SpotDetailScreen({ route, navigation }) {
               width: "100%",
               height: 150,
               borderRadius: 8,
-              marginBottom: 16,
             }}
           />
 
@@ -583,25 +554,13 @@ export default function SpotDetailScreen({ route, navigation }) {
               fontWeight: "bold",
               color: themeColors.black,
               marginBottom: 6,
+              marginTop: 8,
               flexDirection: "row",
               alignItems: "center",
               fontFamily: "CarosSoft",
             }}
           >
             {spot.buildingName}
-            {spot.privateNook && (
-              <Text
-                style={{
-                  fontSize: 18,
-                  color: themeColors.purple,
-                  fontWeight: "bold",
-                  marginLeft: 10,
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                {" \u2022 Private"}
-              </Text>
-            )}
             {spot.roomNumber && (
               <Text
                 style={{
@@ -760,7 +719,7 @@ export default function SpotDetailScreen({ route, navigation }) {
           {spot?.privateNook && (
             <>
               <PrivateNookStats spotId={spotId} themeColors={themeColors} />
-              {/* --- Inline Notes Input --- */}
+              {/* --- Notes Section --- */}
               <View
                 style={{
                   marginTop: 18,
@@ -770,155 +729,71 @@ export default function SpotDetailScreen({ route, navigation }) {
                   padding: 14,
                 }}
               >
-                <Text
-                  style={{
-                    fontWeight: "bold",
-                    fontSize: 16,
-                    color: themeColors.purple,
-                    marginBottom: 6,
-                    fontFamily: "CarosSoft",
-                  }}
-                >
-                  Notes
-                </Text>
-                <TextInput
-                  placeholder="Write a note about this nook..."
-                  placeholderTextColor={themeColors.darkGray}
-                  value={noteInput}
-                  onChangeText={setNoteInput}
-                  style={{
-                    borderWidth: 1,
-                    borderColor: themeColors.purple,
-                    borderRadius: 8,
-                    padding: 10,
-                    backgroundColor: themeColors.white,
-                    color: themeColors.black,
-                    marginBottom: 8,
-                    fontFamily: "CarosSoft",
-                  }}
-                  multiline
-                  editable={!isSavingNote}
-                />
                 <View
                   style={{
                     flexDirection: "row",
+                    alignItems: "center",
                     justifyContent: "space-between",
+                    marginBottom: 6,
                   }}
                 >
+                  <Text
+                    style={{
+                      fontWeight: "bold",
+                      fontSize: 22,
+                      color: themeColors.purple,
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    Notes
+                  </Text>
                   <TouchableOpacity
-                    onPress={handleSaveNote}
-                    disabled={isSavingNote || !noteInput.trim()}
+                    onPress={() => setShowAddNoteModal(true)}
                     style={{
                       backgroundColor: themeColors.purple,
                       borderRadius: 8,
-                      paddingVertical: 8,
-                      paddingHorizontal: 18,
+                      paddingVertical: 6,
+                      paddingHorizontal: 12,
                       alignItems: "center",
-                      opacity: isSavingNote || !noteInput.trim() ? 0.6 : 1,
+                      marginLeft: 10,
+                      flexDirection: "row",
+                      justifyContent: "center",
                     }}
                   >
-                    <Text
-                      style={{
-                        color: themeColors.white,
-                        fontWeight: "bold",
-                        fontFamily: "CarosSoft",
-                      }}
-                    >
-                      {isSavingNote ? "Saving..." : "Save Note"}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => setShowNotesArchive(true)}
-                    style={{
-                      backgroundColor: themeColors.gray,
-                      borderRadius: 8,
-                      paddingVertical: 8,
-                      paddingHorizontal: 18,
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: themeColors.purple,
-                        fontWeight: "bold",
-                        fontFamily: "CarosSoft",
-                      }}
-                    >
-                      View All Notes
-                    </Text>
+                    <Plus size={18} color={themeColors.white} weight="bold" />
                   </TouchableOpacity>
                 </View>
-              </View>
-              {/* --- Notes Archive Modal --- */}
-              <Modal
-                visible={showNotesArchive}
-                transparent
-                animationType="slide"
-                onRequestClose={() => setShowNotesArchive(false)}
-              >
-                <TouchableOpacity
-                  activeOpacity={1}
+                {/* Notes List - always show scrollable list below Notes title */}
+                <View
                   style={{
-                    flex: 1,
-                    backgroundColor: "rgba(0,0,0,0.3)",
-                    justifyContent: "center",
-                    alignItems: "center",
+                    maxHeight: 220,
+                    minHeight: 40,
+                    width: "100%",
                   }}
-                  onPressOut={() => setShowNotesArchive(false)}
                 >
-                  <View
-                    style={{
-                      backgroundColor: themeColors.white,
-                      borderRadius: 16,
-                      padding: 24,
-                      width: "85%",
-                      maxHeight: "70%",
-                      alignItems: "center",
-                    }}
-                    onStartShouldSetResponder={() => true}
+                  <ScrollView
+                    style={{ width: "100%" }}
+                    contentContainerStyle={{ paddingBottom: 4 }}
+                    showsVerticalScrollIndicator={true}
                   >
-                    <View style={{ width: "100%", alignItems: "flex-end" }}>
-                      <TouchableOpacity
-                        onPress={() => setShowNotesArchive(false)}
-                        style={{ padding: 4 }}
-                      >
-                        <X size={22} color={themeColors.purple} weight="bold" />
-                      </TouchableOpacity>
-                    </View>
-                    <Text
-                      style={{
-                        fontSize: 18,
-                        fontWeight: "bold",
-                        color: themeColors.purple,
-                        marginBottom: 10,
-                        textAlign: "center",
-                        fontFamily: "CarosSoft",
-                      }}
-                    >
-                      Notes Archive
-                    </Text>
                     {notes && notes.length > 0 ? (
-                      <FlatList
-                        data={[...notes].sort(
-                          (a, b) => b.createdAt - a.createdAt
-                        )}
-                        keyExtractor={(_, idx) => idx.toString()}
-                        style={{ width: "100%" }}
-                        contentContainerStyle={{ paddingBottom: 8 }}
-                        renderItem={({ item }) => (
+                      [...notes]
+                        .sort((a, b) => b.createdAt - a.createdAt)
+                        .map((item, idx) => (
                           <View
+                            key={idx}
                             style={{
-                              marginBottom: 14,
+                              marginBottom: 10,
                               backgroundColor: themeColors.gray + "18",
                               borderRadius: 10,
-                              padding: 12,
+                              padding: 10,
                             }}
                           >
                             <Text
                               style={{
                                 color: themeColors.black,
                                 fontSize: 15,
-                                marginBottom: 4,
+                                marginBottom: 2,
                                 fontFamily: "CarosSoft",
                               }}
                             >
@@ -951,8 +826,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                               {item.author ? `By: ${item.author}` : ""}
                             </Text>
                           </View>
-                        )}
-                      />
+                        ))
                     ) : (
                       <Text
                         style={{
@@ -964,15 +838,22 @@ export default function SpotDetailScreen({ route, navigation }) {
                         No notes yet.
                       </Text>
                     )}
-                  </View>
-                </TouchableOpacity>
-              </Modal>
-              {/* --- End Notes Archive Modal --- */}
+                  </ScrollView>
+                </View>
+              </View>
+              {/* --- End Notes Section --- */}
               <PrivateNookNotesModal
                 visible={showPrivateNotesModal}
                 onClose={() => setShowPrivateNotesModal(false)}
                 spotId={spotId}
                 themeColors={themeColors}
+              />
+              <AddPrivateNookNoteModal
+                visible={showAddNoteModal}
+                onClose={() => setShowAddNoteModal(false)}
+                spotId={spotId}
+                themeColors={themeColors}
+                onNoteAdded={setNotes}
               />
             </>
           )}

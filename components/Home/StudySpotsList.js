@@ -259,19 +259,6 @@ export default function StudySpotsList({
               }}
             >
               {item.name}
-              {isPrivateNook && (
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: themeColors.purple,
-                    fontWeight: "bold",
-                    marginLeft: 8,
-                    fontFamily: "CarosSoft",
-                  }}
-                >
-                  {" \u2022 Private"}
-                </Text>
-              )}
               {item.roomNumber && (
                 <Text
                   style={{
@@ -283,6 +270,19 @@ export default function StudySpotsList({
                 >
                   {" - Floor "}
                   {item.roomNumber}
+                </Text>
+              )}
+              {isPrivateNook && (
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: themeColors.black,
+                    fontWeight: "bold",
+                    marginLeft: 8,
+                    fontFamily: "CarosSoft",
+                  }}
+                >
+                  {" \u2022 Private"}
                 </Text>
               )}
             </Text>

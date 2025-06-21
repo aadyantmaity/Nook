@@ -190,8 +190,8 @@ export default function StudySpotCard({
         {spot.privateNook && (
           <Text
             style={{
-              fontSize: 14,
-              color: themeColors.purple,
+              fontSize: 18,
+              color: themeColors.black,
               fontWeight: "bold",
               marginLeft: 8,
               fontFamily: "CarosSoft",

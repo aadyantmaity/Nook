@@ -107,19 +107,6 @@ export default function FavoriteSpotCard({
           }}
         >
           {spot.buildingName}
-          {spot.privateNook && (
-            <Text
-              style={{
-                fontSize: 14,
-                color: themeColors.purple,
-                fontWeight: "bold",
-                marginLeft: 8,
-                fontFamily: "CarosSoft",
-              }}
-            >
-              {" \u2022 Private"}
-            </Text>
-          )}
           {spot.roomNumber && (
             <Text
               style={{
@@ -131,6 +118,19 @@ export default function FavoriteSpotCard({
             >
               {" - Floor "}
               {spot.roomNumber}
+            </Text>
+          )}
+          {spot.privateNook && (
+            <Text
+              style={{
+                fontSize: 18,
+                color: themeColors.black,
+                fontWeight: "bold",
+                marginLeft: 8,
+                fontFamily: "CarosSoft",
+              }}
+            >
+              {" \u2022 Private"}
             </Text>
           )}
         </Text>
