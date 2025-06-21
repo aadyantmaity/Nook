@@ -22,6 +22,8 @@ import {
   Timestamp,
   updateDoc,
   addDoc,
+  onSnapshot,
+  doc,
 } from "firebase/firestore"; // Ensure Timestamp is imported
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -62,6 +64,7 @@ import AlertsModal from "../components/Home/AlertsModal"; // Import AlertsModal 
 import TabBar from "../components/Home/TabBar"; // Import TabBar component
 import GeneralReportModal from "../components/Home/GeneralReportModal"; // Import GeneralReportModal component
 import HomeLoadingScreen from "../components/Home/HomeLoadingScreen"; // <-- Import the new component
+import ProfilePicture from "../components/Profile/ProfilePicture";
 
 //hook imports
 import useStudySpots from "../hooks/useStudySpots";
@@ -99,6 +102,24 @@ export default function HomeScreen({ navigation, route }) {
   const { favorites, toggleFavorite } = useFavorites();
   const { filters, setFilters, filteredSpots, sortBy, setSortBy } =
     useSearchAndFilters(studySpots, favorites);
+
+  // Add state for profile picture
+  const [profilePic, setProfilePic] = useState(null);
+  const [isProfilePicLoading, setIsProfilePicLoading] = useState(true); // <-- add loading state
+  const user = auth.currentUser;
+
+  // Subscribe to user's profilePic for instant updates
+  useEffect(() => {
+    if (!user) return;
+    setIsProfilePicLoading(true); // set loading true before fetching
+    const unsub = onSnapshot(doc(db, "users", user.uid), (userDoc) => {
+      if (userDoc.exists()) {
+        setProfilePic(userDoc.data().profilePic || null);
+      }
+      setIsProfilePicLoading(false); // set loading false after fetch
+    });
+    return () => unsub();
+  }, [user]);
 
   // --- Load user's preferred view on mount or when route changes ---
   React.useEffect(() => {
@@ -535,21 +556,24 @@ export default function HomeScreen({ navigation, route }) {
           >
             Nook
           </Text>
-          {/* Hamburger icon button */}
-          <TouchableOpacity
-            onPress={() => setMenuOpen(true)}
-            style={{
-              borderRadius: 20,
-              backgroundColor: themeColors.white,
-              alignItems: "center",
-              justifyContent: "center",
-              elevation: 2,
-            }}
-            accessibilityLabel="Open menu"
-            accessible={true}
-          >
-            <List size={24} color={themeColors.purple} weight="bold" />
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            {/* Hamburger icon button */}
+            <TouchableOpacity
+              onPress={() => setMenuOpen(true)}
+              style={{
+                borderRadius: 20,
+                backgroundColor: themeColors.white,
+                alignItems: "center",
+                justifyContent: "center",
+                elevation: 2,
+                marginLeft: 8,
+              }}
+              accessibilityLabel="Open menu"
+              accessible={true}
+            >
+              <List size={24} color={themeColors.purple} weight="bold" />
+            </TouchableOpacity>
+          </View>
           {/* HamburgerMenu modal */}
           <HamburgerMenu
             isOpen={menuOpen}

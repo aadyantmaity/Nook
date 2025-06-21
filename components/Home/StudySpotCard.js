@@ -315,21 +315,47 @@ export default function StudySpotCard({
               marginBottom: 8,
             }}
           >
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Star
-                key={star}
-                size={18}
-                color={
-                  star <= (spot.averageOverallRating || 0)
-                    ? themeColors.purple
-                    : themeColors.darkGray
+            {/* Render stars with support for half stars */}
+            {(() => {
+              const avg = spot.averageOverallRating || 0;
+              const fullStars = Math.floor(avg);
+              const hasHalf = avg - fullStars >= 0.25 && avg - fullStars < 0.75;
+              const stars = [];
+              for (let i = 1; i <= 5; i++) {
+                if (i <= fullStars) {
+                  stars.push(
+                    <Star
+                      key={i}
+                      size={18}
+                      color={themeColors.purple}
+                      weight="fill"
+                      style={{ marginRight: 2 }}
+                    />
+                  );
+                } else if (i === fullStars + 1 && hasHalf) {
+                  stars.push(
+                    <Star
+                      key={i}
+                      size={18}
+                      color={themeColors.purple}
+                      weight="duotone"
+                      style={{ marginRight: 2 }}
+                    />
+                  );
+                } else {
+                  stars.push(
+                    <Star
+                      key={i}
+                      size={18}
+                      color={themeColors.darkGray}
+                      weight="regular"
+                      style={{ marginRight: 2 }}
+                    />
+                  );
                 }
-                weight={
-                  star <= (spot.averageOverallRating || 0) ? "fill" : "regular"
-                }
-                style={{ marginRight: 2 }}
-              />
-            ))}
+              }
+              return stars;
+            })()}
             <Text
               style={{
                 marginLeft: 8,

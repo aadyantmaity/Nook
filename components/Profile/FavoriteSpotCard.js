@@ -264,6 +264,65 @@ export default function FavoriteSpotCard({
               </View>
             </View>
           )}
+        <View
+          style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}
+        >
+          {/* Render stars with support for half stars */}
+          {(() => {
+            const avg = spot.averageOverallRating || 0;
+            const fullStars = Math.floor(avg);
+            const hasHalf = avg - fullStars >= 0.25 && avg - fullStars < 0.75;
+            const stars = [];
+            for (let i = 1; i <= 5; i++) {
+              if (i <= fullStars) {
+                stars.push(
+                  <Star
+                    key={i}
+                    size={16}
+                    color={themeColors.purple}
+                    weight="fill"
+                    style={{ marginRight: 1 }}
+                  />
+                );
+              } else if (i === fullStars + 1 && hasHalf) {
+                stars.push(
+                  <Star
+                    key={i}
+                    size={16}
+                    color={themeColors.purple}
+                    weight="duotone"
+                    style={{ marginRight: 1 }}
+                  />
+                );
+              } else {
+                stars.push(
+                  <Star
+                    key={i}
+                    size={16}
+                    color={themeColors.darkGray}
+                    weight="regular"
+                    style={{ marginRight: 1 }}
+                  />
+                );
+              }
+            }
+            return stars;
+          })()}
+          <Text
+            style={{
+              marginLeft: 6,
+              color: themeColors.darkGray,
+              fontSize: 12,
+              fontFamily: "CarosSoft",
+            }}
+          >
+            {spot.overallRatingsCount > 0
+              ? `${spot.averageOverallRating.toFixed(1)} (${
+                  spot.overallRatingsCount
+                })`
+              : "No ratings"}
+          </Text>
+        </View>
         <Text
           style={{
             fontSize: 11,

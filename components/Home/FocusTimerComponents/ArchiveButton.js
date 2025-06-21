@@ -93,8 +93,35 @@ export function ArchiveButton({
     archiveContext
   ) => {
     if (handleDeleteSession) {
-      handleDeleteSession(session, spotId, archiveContext);
-      // UI update for archiveData is handled in parent via setArchiveData if needed
+      await handleDeleteSession(session, spotId, archiveContext);
+      // UI update for archiveData is handled here for instant feedback
+      if (archiveContext && session.sessionId) {
+        const { year, month, spotId: archiveSpotId } = archiveContext;
+        setArchiveData((prev) => {
+          const newData = JSON.parse(JSON.stringify(prev));
+          try {
+            if (
+              newData[year] &&
+              newData[year][month] &&
+              newData[year][month][archiveSpotId]
+            ) {
+              newData[year][month][archiveSpotId] = newData[year][month][
+                archiveSpotId
+              ].filter((sess) => sess.sessionId !== session.sessionId);
+              if (newData[year][month][archiveSpotId].length === 0) {
+                delete newData[year][month][archiveSpotId];
+              }
+              if (Object.keys(newData[year][month]).length === 0) {
+                delete newData[year][month];
+              }
+              if (Object.keys(newData[year]).length === 0) {
+                delete newData[year];
+              }
+            }
+          } catch {}
+          return newData;
+        });
+      }
     }
   };
 
