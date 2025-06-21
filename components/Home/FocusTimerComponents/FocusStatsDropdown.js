@@ -37,7 +37,7 @@ export function FocusStatsDropdown({
         style={{
           width: "91.5%",
           alignSelf: "center",
-          marginTop: 60,
+          marginTop: 36,
           marginBottom: 8,
         }}
       >

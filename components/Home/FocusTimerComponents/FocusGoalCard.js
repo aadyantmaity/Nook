@@ -1,5 +1,12 @@
 import React from "react";
-import { View, Text, TouchableOpacity, Modal, TextInput } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+  TextInput,
+  Alert,
+} from "react-native";
 import { Trophy, PencilSimple, Trash } from "phosphor-react-native";
 
 export function FocusGoalCard({
@@ -56,31 +63,88 @@ export function FocusGoalCard({
             fontFamily: "CarosSoft",
           }}
         >
-          {goal.title || "Focus Goal"}
+          {goal.title ||
+            (goal.type === "custom" ? "Custom Goal" : "Focus Goal")}
         </Text>
+        {/* Edit and Delete buttons */}
         <TouchableOpacity
           onPress={() => setShowGoalModal(true)}
           style={{ marginRight: 8 }}
         >
           <PencilSimple size={22} color={themeColors.purple} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={onDelete}>
+        <TouchableOpacity
+          onPress={onDelete}
+          style={{ marginRight: goal.type === "custom" ? 8 : 0 }}
+        >
           <Trash size={22} color={themeColors.red} />
         </TouchableOpacity>
+        {/* Custom goal: show check button if not achieved */}
+        {goal.type === "custom" && !goal.achieved && (
+          <TouchableOpacity
+            onPress={() => {
+              // Show confirmation alert and clear goal on OK
+              Alert.alert(
+                "Goal Achieved!",
+                "Congratulations, you've reached your focus goal!",
+                [
+                  {
+                    text: "OK",
+                    onPress: async () => {
+                      onDelete && onDelete();
+                    },
+                  },
+                ]
+              );
+            }}
+            style={{
+              marginLeft: 2,
+              backgroundColor: themeColors.green,
+              borderRadius: 6,
+              padding: 4,
+            }}
+            accessibilityLabel="Mark as Achieved"
+          >
+            <Text
+              style={{
+                color: themeColors.white,
+                fontWeight: "bold",
+                fontSize: 16,
+              }}
+            >
+              ✓
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
-      <Text
-        style={{
-          color: themeColors.black,
-          fontSize: 15,
-          marginBottom: 8,
-          fontFamily: "CarosSoft",
-        }}
-      >
-        {target > 0
-          ? `Progress: ${formatHMS(progress)} / ${formatHMS(target)}`
-          : "No goal set"}
-      </Text>
-      {target > 0 && (
+      {/* Custom goal description or time progress */}
+      {goal.type === "custom" ? (
+        <Text
+          style={{
+            color: themeColors.black,
+            fontSize: 15,
+            marginBottom: 8,
+            fontFamily: "CarosSoft",
+          }}
+        >
+          {goal.customDescription}
+        </Text>
+      ) : (
+        <Text
+          style={{
+            color: themeColors.black,
+            fontSize: 15,
+            marginBottom: 8,
+            fontFamily: "CarosSoft",
+          }}
+        >
+          {target > 0
+            ? `Progress: ${formatHMS(progress)} / ${formatHMS(target)}`
+            : "No goal set"}
+        </Text>
+      )}
+      {/* Progress bar for time goals only */}
+      {goal.type === "time" && target > 0 && (
         <View
           style={{
             height: 12,

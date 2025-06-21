@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Modal, View, Text, TextInput, TouchableOpacity } from "react-native";
-import { Timer } from "phosphor-react-native";
+import {
+  Modal,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Switch,
+} from "react-native";
+import { Check } from "phosphor-react-native";
 
 export default function PomodoroSettingsModal({
   visible,
@@ -13,6 +20,8 @@ export default function PomodoroSettingsModal({
   isBreak,
   setTimer,
   themeColors,
+  reflectionsEnabled = true,
+  setReflectionsEnabled,
 }) {
   const [workInput, setWorkInput] = useState(String(pomodoroMinutes));
   const [breakInput, setBreakInput] = useState(String(breakMinutes));
@@ -74,6 +83,8 @@ export default function PomodoroSettingsModal({
           >
             Pomodoro Settings
           </Text>
+          {/* Reflections toggle */}
+
           <View style={{ width: "100%", marginBottom: 18 }}>
             <Text
               style={{
@@ -124,7 +135,6 @@ export default function PomodoroSettingsModal({
                 backgroundColor: themeColors.white,
                 fontSize: 16,
                 fontFamily: "CarosSoft",
-                marginBottom: 12,
               }}
               keyboardType="numeric"
               value={breakInput}
@@ -132,6 +142,40 @@ export default function PomodoroSettingsModal({
               maxLength={2}
               placeholder="5"
               placeholderTextColor={themeColors.darkGray}
+            />
+          </View>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 8,
+              alignSelf: "flex-end",
+            }}
+          >
+            <Text
+              style={{
+                color: themeColors.purple,
+                fontWeight: "bold",
+                fontFamily: "CarosSoft",
+                marginRight: 8,
+              }}
+            >
+              {reflectionsEnabled
+                ? "Reflections Enabled"
+                : "Reflections Disabled"}
+            </Text>
+            <Switch
+              value={!!reflectionsEnabled}
+              onValueChange={setReflectionsEnabled}
+              trackColor={{ false: themeColors.gray, true: themeColors.purple }}
+              thumbColor={
+                reflectionsEnabled ? themeColors.white : themeColors.gray
+              }
+              accessibilityLabel={
+                reflectionsEnabled
+                  ? "Disable Reflections"
+                  : "Enable Reflections"
+              }
             />
           </View>
           <TouchableOpacity
