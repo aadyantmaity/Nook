@@ -8,10 +8,12 @@ import LoginScreen from "./screens/LoginScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import EditSpotScreen from "./screens/EditSpotScreen";
-import { auth } from "./firebaseConfig"; // Import Firebase auth
-import { Appearance } from "react-native"; // For system color scheme
-import { colors, getThemeColors } from "./constants/colors"; // <-- Import getThemeColors
+import { auth } from "./firebaseConfig";
+import { Appearance } from "react-native";
+import { colors, getThemeColors } from "./constants/colors";
 import * as Linking from "expo-linking";
+import * as Font from "expo-font";
+import AppLoading from "expo-app-loading"; // Show while fonts are loading
 
 const Stack = createStackNavigator();
 
@@ -26,7 +28,7 @@ const linking = {
     "nook://",
     "https://yourapp.page.link",
     "exp://",
-    "exp://192.168.1.151:8081", // <-- Add your Expo dev URL here
+    "exp://192.168.1.151:8081",
   ],
   config: {
     screens: {
@@ -34,60 +36,68 @@ const linking = {
         path: "spot/:spotId",
         parse: { spotId: (id) => id },
       },
-      // ...other screens...
     },
   },
 };
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(null); // Initialize as null to handle loading state
+  const [isAuthenticated, setIsAuthenticated] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(
     Appearance.getColorScheme() === "dark"
   );
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+
   const themeColors = getThemeColors(isDarkMode);
 
   useEffect(() => {
+    const loadFonts = async () => {
+      await Font.loadAsync({
+        CarosSoft: require("./assets/fonts/CarosSoftBold.otf"),
+      });
+      setFontsLoaded(true);
+    };
+    loadFonts();
+  }, []);
+
+  useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
-      setIsAuthenticated(!!user); // Set true if user exists, false otherwise
+      setIsAuthenticated(!!user);
     });
     return unsubscribe;
   }, []);
 
-  if (isAuthenticated === null) {
-    // Remove loading screen: render nothing while checking auth state
-    return null;
+  if (!fontsLoaded || isAuthenticated === null) {
+    return <AppLoading />;
   }
 
-  if (!isAuthenticated) {
-    return (
-      <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="SignUp" component={SignUpScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    );
-  }
+  const AuthStack = () => (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="SignUp" component={SignUpScreen} />
+    </Stack.Navigator>
+  );
 
-  // Wrap everything in ThemeContext.Provider
+  const MainStack = () => (
+    <Stack.Navigator
+      initialRouteName="Home"
+      screenOptions={{ headerShown: false }}
+    >
+      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="SpotDetail" component={SpotDetailScreen} />
+      <Stack.Screen name="AddSpot" component={AddSpotScreen} />
+      <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="EditSpot" component={EditSpotScreen} />
+      <Stack.Screen
+        name="FindPeopleView"
+        component={require("./screens/FindPeopleView").default}
+      />
+    </Stack.Navigator>
+  );
+
   return (
     <ThemeContext.Provider value={{ isDarkMode, setIsDarkMode, themeColors }}>
       <NavigationContainer linking={linking}>
-        <Stack.Navigator
-          initialRouteName="Home"
-          screenOptions={{ headerShown: false }}
-        >
-          <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="SpotDetail" component={SpotDetailScreen} />
-          <Stack.Screen name="AddSpot" component={AddSpotScreen} />
-          <Stack.Screen name="Profile" component={ProfileScreen} />
-          <Stack.Screen name="EditSpot" component={EditSpotScreen} />
-          <Stack.Screen
-            name="FindPeopleView"
-            component={require("./screens/FindPeopleView").default}
-          />
-          {/* <Stack.Screen name="FindPeopleScreen" component={FindPeopleScreen} /> */}
-        </Stack.Navigator>
+        {isAuthenticated ? <MainStack /> : <AuthStack />}
       </NavigationContainer>
     </ThemeContext.Provider>
   );

@@ -11,7 +11,6 @@ export default function useAddSpotForm(initialState = {}) {
   const [isUWBuilding, setIsUWBuilding] = useState(true);
   const [customBuilding, setCustomBuilding] = useState("");
   const [isFavorite, setIsFavorite] = useState(false);
-  const [openHours, setOpenHours] = useState("");
   const [showPreview, setShowPreview] = useState(false);
   const [customImage, setCustomImage] = useState(null);
 
@@ -25,7 +24,6 @@ export default function useAddSpotForm(initialState = {}) {
     setIsUWBuilding(true);
     setCustomBuilding("");
     setIsFavorite(false);
-    setOpenHours("");
     setCustomImage(null);
   };
 
@@ -50,8 +48,6 @@ export default function useAddSpotForm(initialState = {}) {
     setCustomBuilding,
     isFavorite,
     setIsFavorite,
-    openHours,
-    setOpenHours,
     showPreview,
     setShowPreview,
     customImage,

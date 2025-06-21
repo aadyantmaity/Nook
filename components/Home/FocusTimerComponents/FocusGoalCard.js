@@ -62,10 +62,10 @@ export function FocusGoalCard({
           onPress={() => setShowGoalModal(true)}
           style={{ marginRight: 8 }}
         >
-          <PencilSimple size={18} color={themeColors.purple} />
+          <PencilSimple size={22} color={themeColors.purple} />
         </TouchableOpacity>
         <TouchableOpacity onPress={onDelete}>
-          <Trash size={18} color={themeColors.red} />
+          <Trash size={22} color={themeColors.red} />
         </TouchableOpacity>
       </View>
       <Text

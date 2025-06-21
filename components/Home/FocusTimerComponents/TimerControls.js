@@ -76,56 +76,114 @@ export function TimerControls({
         }}
       >
         {!isRunning && (
-          <TouchableOpacity
-            onPress={onStart}
-            style={{
-              backgroundColor: themeColors.green,
-              borderRadius: 30,
-              padding: 18,
-              marginHorizontal: 8,
-            }}
-          >
-            <Play size={28} color={themeColors.white} />
-          </TouchableOpacity>
+          <View style={{ alignItems: "center", marginHorizontal: 8 }}>
+            <TouchableOpacity
+              onPress={onStart}
+              style={{
+                backgroundColor: themeColors.green,
+                borderRadius: 30,
+                padding: 18,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Play size={28} color={themeColors.white} />
+            </TouchableOpacity>
+            <Text
+              style={{
+                color: themeColors.green,
+                fontSize: 12,
+                fontWeight: "bold",
+                marginTop: 4,
+                fontFamily: "CarosSoft",
+              }}
+            >
+              Start
+            </Text>
+          </View>
         )}
         {isRunning && (
           <>
-            <TouchableOpacity
-              onPress={onPause}
-              style={{
-                backgroundColor: themeColors.purple,
-                borderRadius: 30,
-                padding: 18,
-                marginHorizontal: 8,
-              }}
-            >
-              <Pause size={28} color={themeColors.white} />
-            </TouchableOpacity>
+            <View style={{ alignItems: "center", marginHorizontal: 8 }}>
+              <TouchableOpacity
+                onPress={onPause}
+                style={{
+                  backgroundColor: themeColors.purple,
+                  borderRadius: 30,
+                  padding: 18,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Pause size={28} color={themeColors.white} />
+              </TouchableOpacity>
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontSize: 12,
+                  fontWeight: "bold",
+                  marginTop: 4,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                Pause
+              </Text>
+            </View>
+            <View style={{ alignItems: "center", marginHorizontal: 8 }}>
+              <TouchableOpacity
+                onPress={onStop}
+                style={{
+                  backgroundColor: themeColors.red,
+                  borderRadius: 30,
+                  padding: 18,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                accessibilityLabel="Quit"
+              >
+                <Stop size={28} color={themeColors.white} />
+              </TouchableOpacity>
+              <Text
+                style={{
+                  color: themeColors.red,
+                  fontSize: 12,
+                  fontWeight: "bold",
+                  marginTop: 4,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                Quit
+              </Text>
+            </View>
+          </>
+        )}
+        {!isRunning && (
+          <View style={{ alignItems: "center", marginHorizontal: 8 }}>
             <TouchableOpacity
               onPress={onStop}
               style={{
                 backgroundColor: themeColors.red,
                 borderRadius: 30,
                 padding: 18,
-                marginHorizontal: 8,
+                alignItems: "center",
+                justifyContent: "center",
               }}
+              accessibilityLabel="Quit and end timer"
             >
               <Stop size={28} color={themeColors.white} />
             </TouchableOpacity>
-          </>
-        )}
-        {!isRunning && (
-          <TouchableOpacity
-            onPress={onStop}
-            style={{
-              backgroundColor: themeColors.red,
-              borderRadius: 30,
-              padding: 18,
-              marginHorizontal: 8,
-            }}
-          >
-            <Stop size={28} color={themeColors.white} />
-          </TouchableOpacity>
+            <Text
+              style={{
+                color: themeColors.red,
+                fontSize: 12,
+                fontWeight: "bold",
+                marginTop: 4,
+                fontFamily: "CarosSoft",
+              }}
+            >
+              Quit
+            </Text>
+          </View>
         )}
       </View>
     </>
