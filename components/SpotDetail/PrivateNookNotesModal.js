@@ -99,7 +99,7 @@ export default function PrivateNookNotesModal({
               fontFamily: "CarosSoft",
             }}
           >
-            Personal Notes
+            Notes
           </Text>
           <TextInput
             style={{
