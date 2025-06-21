@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Modal,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -23,13 +24,31 @@ export default function SpotGallery({
   imageStyle, // <-- add imageStyle prop
 }) {
   const [isUploading, setIsUploading] = useState(false);
+  // Store images as array of objects: { url, author, createdAt }
   const [images, setImages] = useState(
-    Array.isArray(galleryImages) ? galleryImages : []
+    Array.isArray(galleryImages)
+      ? galleryImages.map((img) =>
+          typeof img === "string"
+            ? { url: img, author: null, createdAt: null }
+            : img
+        )
+      : []
   );
+  // Modal state for image details
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   // Update images if prop changes
   React.useEffect(() => {
-    setImages(Array.isArray(galleryImages) ? galleryImages : []);
+    setImages(
+      Array.isArray(galleryImages)
+        ? galleryImages.map((img) =>
+            typeof img === "string"
+              ? { url: img, author: null, createdAt: null }
+              : img
+          )
+        : []
+    );
   }, [galleryImages]);
 
   const handleAddGalleryImage = async () => {
@@ -67,16 +86,25 @@ export default function SpotGallery({
       const storageRef = ref(storage, `spot_galleries/${spotId}/${filename}`);
       await uploadBytes(storageRef, blob, { contentType: "image/jpeg" });
       const downloadUrl = await getDownloadURL(storageRef);
+      // Prepare gallery image object
+      const galleryImageObj = {
+        url: downloadUrl,
+        author: {
+          uid: user.uid,
+          name: user.displayName || user.email || "Unknown",
+        },
+        createdAt: Date.now(),
+      };
       // Update Firestore
       const spotRef = doc(db, "studySpots", spotId);
       await updateDoc(spotRef, {
-        galleryImages: arrayUnion(downloadUrl),
+        galleryImages: arrayUnion(galleryImageObj),
       });
-      setImages((prev) => [...prev, downloadUrl]);
+      setImages((prev) => [...prev, galleryImageObj]);
       if (setSpot) {
         setSpot((prev) => ({
           ...prev,
-          galleryImages: [...(prev.galleryImages || []), downloadUrl],
+          galleryImages: [...(prev.galleryImages || []), galleryImageObj],
         }));
       }
       setIsUploading(false);
@@ -89,8 +117,103 @@ export default function SpotGallery({
 
   if (!spotId) return null;
 
+  // Helper to format timestamp
+  function formatTimestamp(ts) {
+    if (!ts) return "";
+    const d = new Date(ts);
+    return d.toLocaleString([], {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
   return (
     <View style={{ marginTop: 8 }}>
+      {/* Modal for image details */}
+      <Modal
+        visible={showModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowModal(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: themeColors.white,
+              borderRadius: 12,
+              padding: 20,
+              alignItems: "center",
+              maxWidth: 420, // increased from 320
+              width: "90%", // increased from 90%
+            }}
+          >
+            {selectedImage && (
+              <>
+                <Image
+                  source={{ uri: selectedImage.url }}
+                  style={{
+                    width: 300, // increased from 220
+                    height: 180, // increased from 110
+                    borderRadius: 8,
+                    marginBottom: 16,
+                  }}
+                  resizeMode="cover"
+                />
+                <Text
+                  style={{
+                    color: themeColors.black,
+                    fontWeight: "bold",
+                    fontSize: 16,
+                    fontFamily: "CarosSoft",
+                  }}
+                >
+                  Added by: {selectedImage.author?.name || "Unknown"}
+                </Text>
+                <Text
+                  style={{
+                    color: themeColors.darkGray,
+                    fontSize: 13,
+                    marginTop: 4,
+                    fontFamily: "CarosSoft",
+                  }}
+                >
+                  {formatTimestamp(selectedImage.createdAt)}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setShowModal(false)}
+                  style={{
+                    marginTop: 18,
+                    backgroundColor: themeColors.purple,
+                    borderRadius: 8,
+                    paddingVertical: 8,
+                    paddingHorizontal: 18,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: themeColors.white,
+                      fontWeight: "bold",
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    Close
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
       <View
         style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}
       >
@@ -133,52 +256,46 @@ export default function SpotGallery({
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{
-            minHeight: imageStyle?.height || 120,
+            minHeight: 120, // match preview height
             alignItems: "center",
           }}
+          paddingVertical={8}
         >
           {images.map((img, idx) => (
-            <View
+            <TouchableOpacity
               key={idx}
-              style={{
-                width:
-                  typeof imageStyle?.width === "number"
-                    ? imageStyle.width
-                    : 180,
-                height:
-                  typeof imageStyle?.height === "number"
-                    ? imageStyle.height
-                    : 120,
-                borderRadius:
-                  typeof imageStyle?.borderRadius === "number"
-                    ? imageStyle.borderRadius
-                    : 8,
-                overflow: "hidden",
-                marginRight: 10,
-                borderWidth: 0.5,
-                borderColor: themeColors.black,
-                backgroundColor: "#EEE",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom:
-                  typeof imageStyle?.marginBottom === "number"
-                    ? imageStyle.marginBottom
-                    : 0,
+              onPress={() => {
+                setSelectedImage(img);
+                setShowModal(true);
               }}
+              activeOpacity={0.85}
             >
-              <Image
-                source={{ uri: img }}
+              <View
                 style={{
-                  width: "100%",
-                  height: "100%",
-                  borderRadius:
-                    typeof imageStyle?.borderRadius === "number"
-                      ? imageStyle.borderRadius
-                      : 8,
+                  width: 200, // match preview width
+                  height: 120, // match preview height
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  marginRight: 10,
+                  borderWidth: 0.5,
+                  borderColor: themeColors.black,
+                  backgroundColor: "#EEE",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 0,
                 }}
-                resizeMode="cover"
-              />
-            </View>
+              >
+                <Image
+                  source={{ uri: img.url || img }}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    borderRadius: 8,
+                  }}
+                  resizeMode="cover"
+                />
+              </View>
+            </TouchableOpacity>
           ))}
         </ScrollView>
       ) : (
