@@ -106,6 +106,37 @@ export function FocusTimerView({ navigation }) {
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [showCustomGoalModal, setShowCustomGoalModal] = useState(false); // new
 
+  // --- Live: Show congrats when time goal is achieved ---
+  const [goalCongratsShown, setGoalCongratsShown] = useState(false);
+  useEffect(() => {
+    if (
+      goal.type === "time" &&
+      goal.target > 0 &&
+      goal.progress >= goal.target &&
+      !goal.achieved
+    ) {
+      setGoal((prev) => ({ ...prev, achieved: true }));
+    }
+    // Show congrats message only once per achievement
+    if (
+      goal.achieved &&
+      !goalCongratsShown &&
+      ((goal.type === "time" && goal.target > 0) || goal.type === "custom")
+    ) {
+      setGoalCongratsShown(true);
+      setTimeout(() => {
+        Alert.alert(
+          "Goal Achieved!",
+          "Congratulations, you've reached your focus goal! 🎉"
+        );
+      }, 300);
+    }
+    // Reset flag if goal is deleted/reset
+    if (!goal.achieved && goalCongratsShown) {
+      setGoalCongratsShown(false);
+    }
+  }, [goal.achieved, goal.progress, goal.type, goal.target, goalCongratsShown]);
+
   // Persist goal to AsyncStorage whenever it changes
   useEffect(() => {
     if (goalLoaded && goal && typeof goal === "object") {
@@ -298,25 +329,11 @@ export function FocusTimerView({ navigation }) {
   ]);
 
   // --- Recalculate goal progress on app resume/quit ---
-  const recalculateGoalProgressOnBack = async () => {
-    if (
-      isRunning &&
-      !isBreak &&
-      goal.type === "time" &&
-      !goal.achieved &&
-      sessionStart &&
-      timerStartRef.current &&
-      goal.target > 0
-    ) {
-      const now = Date.now();
-      const elapsed = Math.floor((now - timerStartRef.current.start) / 1000);
-      setGoal((prev) => {
-        let progress = prev.progress + elapsed;
-        if (progress > prev.target) progress = prev.target;
-        return { ...prev, progress };
-      });
-    }
-  };
+  // Remove recalculateGoalProgressOnBack from backgrounding logic
+  // Instead, only update goal progress on resume, using lastBackgroundTimeRef
+
+  // Remove this function if not used elsewhere
+  // const recalculateGoalProgressOnBack = async () => { ... }
 
   // AppState effect to handle background/foreground
   useEffect(() => {
@@ -343,7 +360,8 @@ export function FocusTimerView({ navigation }) {
           );
         }
         lastBackgroundTimeRef.current = Date.now();
-        await recalculateTimerOnBack();
+        // DO NOT update goal progress here (removes double count)
+        // await recalculateTimerOnBack(); // Remove any goal progress update here
       }
       if (
         appState.current.match(/inactive|background/) &&
@@ -397,6 +415,26 @@ export function FocusTimerView({ navigation }) {
                 timerStartRef.current = null;
                 handleSessionEnd();
               }
+              // --- Only update goal progress here, once, based on elapsed time ---
+              if (
+                !isBreak &&
+                goal.type === "time" &&
+                !goal.achieved &&
+                sessionStart &&
+                goal.target > 0 &&
+                typeof lastBackgroundTime === "number"
+              ) {
+                const elapsedGoal = Math.floor(
+                  (now - lastBackgroundTime) / 1000
+                );
+                if (elapsedGoal > 0) {
+                  setGoal((prev) => {
+                    let progress = prev.progress + elapsedGoal;
+                    if (progress > prev.target) progress = prev.target;
+                    return { ...prev, progress };
+                  });
+                }
+              }
             }
           } else {
             // Paused state restore
@@ -418,7 +456,15 @@ export function FocusTimerView({ navigation }) {
       subscription.remove();
     };
     // eslint-disable-next-line
-  }, [isRunning, timer]);
+  }, [
+    isRunning,
+    timer,
+    isBreak,
+    goal.type,
+    goal.achieved,
+    sessionStart,
+    goal.target,
+  ]);
 
   // Timer logic (fix double decrement and off-by-one)
   useEffect(() => {
@@ -1015,69 +1061,30 @@ export function FocusTimerView({ navigation }) {
     };
     setGoal(updatedGoal);
     try {
-      await AsyncStorage.setItem(GOAL_STATE_KEY, JSON.stringify(updatedGoal));
-    } catch (e) {
-      // optional: log or handle error
-    }
-    if (achieved) {
-      Alert.alert(
-        "Goal Achieved!",
-        "Congratulations, you've reached your focus goal!",
-        [
-          {
-            text: "OK",
-            onPress: async () => {
-              setGoal({
-                title: "",
-                target: 0,
-                progress: 0,
-                sessionIds: [],
-                achieved: false,
-                type: "time",
-                customDescription: "",
-              });
-              try {
-                await AsyncStorage.setItem(
-                  GOAL_STATE_KEY,
-                  JSON.stringify({
-                    title: "",
-                    target: 0,
-                    progress: 0,
-                    sessionIds: [],
-                    achieved: false,
-                    type: "time",
-                    customDescription: "",
-                  })
-                );
-              } catch (e) {
-                // optional: log or handle error
-              }
-            },
-          },
-        ]
-      );
-    }
-  };
-
-  // --- Remove session from goal progress ---
-  const removeSessionFromGoal = async (sessionId, duration) => {
-    if (!goal.sessionIds.includes(sessionId)) return;
-    const durSec = Math.floor((duration || 0) / 1000);
-    const newIds = goal.sessionIds.filter((id) => id !== sessionId);
-    let newProgress = goal.progress - durSec;
-    if (newProgress < 0) newProgress = 0;
-    const updatedGoal = {
-      ...goal,
-      progress: newProgress,
-      sessionIds: newIds,
-      achieved: newProgress >= goal.target && goal.target > 0,
-    };
-    setGoal(updatedGoal);
-    try {
-      await AsyncStorage.setItem(GOAL_STATE_KEY, JSON.stringify(updatedGoal));
-    } catch (e) {
-      // optional: log or handle error
-    }
+      if (achieved) {
+        // Archive the achieved goal
+        const archiveEntry = {
+          ...updatedGoal,
+          achievedAt: Date.now(),
+          spotId: selectedSpot?.id || null,
+          spotName:
+            selectedSpot?.buildingName || selectedSpot?.name || "Unknown",
+        };
+        // Save to AsyncStorage archive
+        const prevArchiveRaw = await AsyncStorage.getItem("focusGoalArchive");
+        let prevArchive = [];
+        if (prevArchiveRaw) {
+          try {
+            prevArchive = JSON.parse(prevArchiveRaw);
+          } catch {}
+        }
+        prevArchive.push(archiveEntry);
+        await AsyncStorage.setItem(
+          "focusGoalArchive",
+          JSON.stringify(prevArchive)
+        );
+      }
+    } catch (e) {}
   };
 
   // --- Goal Modal Handlers ---
@@ -1130,42 +1137,45 @@ export function FocusTimerView({ navigation }) {
   };
 
   // --- Custom Goal Achieve Handler ---
-  const handleCustomGoalAchieve = () => {
-    Alert.alert(
-      "Goal Achieved!",
-      "Congratulations, you've reached your focus goal!",
-      [
-        {
-          text: "OK",
-          onPress: async () => {
-            setGoal({
-              title: "",
-              target: 0,
-              progress: 0,
-              sessionIds: [],
-              achieved: false,
-              type: "time",
-              customDescription: "",
-            });
-            try {
-              await AsyncStorage.setItem(
-                GOAL_STATE_KEY,
-                JSON.stringify({
-                  title: "",
-                  target: 0,
-                  progress: 0,
-                  sessionIds: [],
-                  achieved: false,
-                  type: "time",
-                  customDescription: "",
-                })
-              );
-            } catch (e) {}
-            setShowCustomGoalModal(false);
-          },
-        },
-      ]
-    );
+  const handleCustomGoalAchieve = async () => {
+    // Archive custom goal
+    const archiveEntry = {
+      ...goal,
+      achieved: true,
+      achievedAt: Date.now(),
+      spotId: selectedSpot?.id || null,
+      spotName: selectedSpot?.buildingName || selectedSpot?.name || "Unknown",
+    };
+    try {
+      const prevArchiveRaw = await AsyncStorage.getItem("focusGoalArchive");
+      let prevArchive = [];
+      if (prevArchiveRaw) {
+        try {
+          prevArchive = JSON.parse(prevArchiveRaw);
+        } catch {}
+      }
+      prevArchive.push(archiveEntry);
+      await AsyncStorage.setItem(
+        "focusGoalArchive",
+        JSON.stringify(prevArchive)
+      );
+    } catch (e) {}
+    setGoal({
+      title: "",
+      target: 0,
+      progress: 0,
+      sessionIds: [],
+      achieved: false,
+      type: "time",
+      customDescription: "",
+    });
+    setGoalCongratsShown(false);
+    setTimeout(() => {
+      Alert.alert(
+        "Goal Achieved!",
+        "Congratulations, you've reached your focus goal! 🎉"
+      );
+    }, 300);
   };
 
   // Add a ref to track if timer was running before leaving screen
@@ -2025,30 +2035,9 @@ export function FocusTimerView({ navigation }) {
                       </Text>
                     </TouchableOpacity>
                   </View>
-                  {goal.target > 0 && (
-                    <TouchableOpacity
-                      onPress={handleGoalDelete}
-                      style={{
-                        marginTop: 10,
-                        alignSelf: "center",
-                        padding: 6,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: themeColors.red,
-                          fontFamily: "CarosSoft",
-                        }}
-                      >
-                        Delete Goal
-                      </Text>
-                    </TouchableOpacity>
-                  )}
                 </View>
               </View>
             </Modal>
-            {/* Custom Goal Modal */}
-            {/* Remove the auto-showing custom goal modal here, as it's now handled in the card */}
           </View>
         </ScrollView>
       </View>
