@@ -6,7 +6,6 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
-  KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { ThemeContext } from "../../App";
@@ -51,120 +50,117 @@ export default function GeneralReportModal({
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
       onRequestClose={onClose}
+      animationType="slide"
     >
       <View
         style={{
           flex: 1,
-          backgroundColor: "rgba(0,0,0,0.3)",
           justifyContent: "center",
           alignItems: "center",
         }}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        <View
           style={{
-            width: "100%",
+            backgroundColor: themeColors.white,
+            borderRadius: 8,
+            width: "85%",
             alignItems: "center",
-            justifyContent: "center",
-            flex: 1,
+            position: "absolute",
+            left: "7.5%",
+            right: "7.5%",
+            bottom: "50%",
+            padding: 16,
+            maxWidth: 400,
+            borderWidth: 1,
+            borderColor: themeColors.black,
+            shadowColor: themeColors.black,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 5,
           }}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
         >
-          <View
+          <Text
             style={{
-              backgroundColor: themeColors.white,
-              margin: 32,
-              padding: 16,
-              borderRadius: 8,
-              width: "90%",
-              maxWidth: 400,
+              fontSize: 18,
+              fontWeight: "bold",
+              color: themeColors.black,
+              marginBottom: 8,
+              fontFamily: "CarosSoft",
             }}
           >
-            <Text
+            Suggestion / Report an Issue
+          </Text>
+          <TextInput
+            style={{
+              borderWidth: 0.5,
+              borderColor: themeColors.purple,
+              borderRadius: 8,
+              padding: 12,
+              minHeight: 80,
+              color: themeColors.black,
+              backgroundColor: themeColors.white,
+              marginBottom: 12,
+              textAlignVertical: "top",
+              fontFamily: "CarosSoft",
+            }}
+            placeholder="Describe your suggestion or issue..."
+            placeholderTextColor={themeColors.darkGray}
+            multiline
+            value={reportText}
+            onChangeText={setReportText}
+            editable={!submitting}
+          />
+          <View
+            style={{ flexDirection: "row", justifyContent: "space-between" }}
+          >
+            <TouchableOpacity
+              onPress={handleSubmit}
+              disabled={submitting}
               style={{
-                fontSize: 18,
-                fontWeight: "bold",
-                color: themeColors.black,
-                marginBottom: 8,
-                fontFamily: "CarosSoft",
-              }}
-            >
-              Suggestion / Report an Issue
-            </Text>
-            <TextInput
-              style={{
-                borderWidth: 0.5,
-                borderColor: themeColors.purple,
-                borderRadius: 8,
                 padding: 12,
-                minHeight: 80,
-                color: themeColors.black,
-                backgroundColor: themeColors.white,
-                marginBottom: 12,
-                textAlignVertical: "top",
-                fontFamily: "CarosSoft",
+                backgroundColor: themeColors.purple,
+                borderRadius: 8,
+                alignItems: "center",
+                marginRight: 8,
+                opacity: submitting ? 0.7 : 1,
               }}
-              placeholder="Describe your suggestion or issue..."
-              placeholderTextColor={themeColors.darkGray}
-              multiline
-              value={reportText}
-              onChangeText={setReportText}
-              editable={!submitting}
-            />
-            <View
-              style={{ flexDirection: "row", justifyContent: "space-between" }}
             >
-              <TouchableOpacity
-                onPress={handleSubmit}
-                disabled={submitting}
+              <Text
                 style={{
-                  flex: 1,
-                  padding: 12,
-                  backgroundColor: themeColors.purple,
-                  borderRadius: 8,
-                  alignItems: "center",
-                  marginRight: 8,
-                  opacity: submitting ? 0.7 : 1,
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
                 }}
               >
-                <Text
-                  style={{
-                    color: themeColors.white,
-                    fontWeight: "bold",
-                    fontFamily: "CarosSoft",
-                  }}
-                >
-                  {submitting ? "Submitting..." : "Submit"}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={onClose}
-                disabled={submitting}
+                {submitting ? "Submitting..." : "Submit"}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={onClose}
+              disabled={submitting}
+              style={{
+                padding: 12,
+                backgroundColor: themeColors.white,
+                borderRadius: 8,
+                alignItems: "center",
+                borderColor: themeColors.black,
+                borderWidth: 0.5,
+              }}
+            >
+              <Text
                 style={{
-                  flex: 1,
-                  padding: 12,
-                  backgroundColor: themeColors.white,
-                  borderRadius: 8,
-                  alignItems: "center",
-                  borderColor: themeColors.black,
-                  borderWidth: 0.5,
+                  color: themeColors.purple,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
                 }}
               >
-                <Text
-                  style={{
-                    color: themeColors.purple,
-                    fontWeight: "bold",
-                    fontFamily: "CarosSoft",
-                  }}
-                >
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-            </View>
+                Cancel
+              </Text>
+            </TouchableOpacity>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       </View>
     </Modal>
   );

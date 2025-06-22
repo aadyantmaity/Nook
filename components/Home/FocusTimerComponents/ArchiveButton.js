@@ -279,6 +279,13 @@ export function ArchiveButton({
               padding: 18,
               width: "92%",
               maxHeight: "90%",
+              borderWidth: 1,
+              borderColor: themeColors.black,
+              shadowColor: themeColors.black,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+              elevation: 5,
             }}
           >
             <Text
@@ -779,8 +786,7 @@ export function ArchiveButton({
                                               marginLeft: 8,
                                               padding: 4,
                                               borderRadius: 6,
-                                              backgroundColor:
-                                                themeColors.red,
+                                              backgroundColor: themeColors.red,
                                               alignItems: "center",
                                               justifyContent: "center",
                                             }}

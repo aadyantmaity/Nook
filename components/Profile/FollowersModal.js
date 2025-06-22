@@ -24,24 +24,28 @@ export default function FollowersModal({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <Pressable
+      <View
         style={{
           flex: 1,
-          backgroundColor: "rgba(0,0,0,0.3)",
           justifyContent: "center",
           alignItems: "center",
         }}
-        onPress={onClose}
       >
-        <Pressable
+        <View
           style={{
             backgroundColor: themeColors.white,
             borderRadius: 12,
             padding: 18,
             width: "85%",
             maxHeight: "70%",
+            borderWidth: 1,
+            borderColor: themeColors.black,
+            shadowColor: themeColors.black,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 5,
           }}
-          onPress={(e) => e.stopPropagation()}
         >
           <Text
             style={{
@@ -101,8 +105,8 @@ export default function FollowersModal({
               Close
             </Text>
           </TouchableOpacity>
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
     </Modal>
   );
 }

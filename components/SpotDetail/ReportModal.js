@@ -23,7 +23,6 @@ export default function ReportModal({
         activeOpacity={1}
         style={{
           flex: 1,
-          backgroundColor: "rgba(0,0,0,0.3)",
           justifyContent: "center",
           alignItems: "center",
         }}
@@ -36,6 +35,13 @@ export default function ReportModal({
             padding: 24,
             width: "85%",
             alignItems: "center",
+            borderWidth: 1,
+            borderColor: themeColors.black,
+            shadowColor: themeColors.black,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 5,
           }}
           onStartShouldSetResponder={() => true}
         >
