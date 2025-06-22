@@ -135,16 +135,15 @@ export default function SpotGallery({
       <Modal
         visible={showModal}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setShowModal(false)}
       >
         <View
           style={{
             flex: 1,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            alignItems: "center",
+            backgroundColor: "rgba(0,0,0,0.3)",
             justifyContent: "center",
-            padding: 16,
+            alignItems: "center",
           }}
         >
           <View

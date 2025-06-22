@@ -11,15 +11,15 @@ export default function UnfollowConfirmModal({
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="slide"
       onRequestClose={onClose}
     >
       <View
         style={{
           flex: 1,
+          backgroundColor: "rgba(0,0,0,0.3)",
           justifyContent: "center",
           alignItems: "center",
-          padding: 16,
         }}
       >
         <View

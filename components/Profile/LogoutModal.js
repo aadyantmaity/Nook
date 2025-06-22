@@ -11,12 +11,13 @@ export default function LogoutModal({
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="slide"
       onRequestClose={onCancel}
     >
       <View
         style={{
           flex: 1,
+          backgroundColor: "rgba(0,0,0,0.3)",
           justifyContent: "center",
           alignItems: "center",
         }}
