@@ -14,15 +14,13 @@ export default function UnfollowConfirmModal({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <Pressable
+      <View
         style={{
           flex: 1,
-          backgroundColor: "rgba(0,0,0,0.3)",
           justifyContent: "center",
           alignItems: "center",
           padding: 16,
         }}
-        onPress={onClose}
       >
         <View
           style={{
@@ -33,6 +31,13 @@ export default function UnfollowConfirmModal({
             minWidth: 240,
             width: "100%",
             maxWidth: 400,
+            borderWidth: 1,
+            borderColor: themeColors.black,
+            shadowColor: themeColors.black,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 5,
           }}
         >
           <Text
@@ -107,7 +112,7 @@ export default function UnfollowConfirmModal({
             </TouchableOpacity>
           </View>
         </View>
-      </Pressable>
+      </View>
     </Modal>
   );
 }

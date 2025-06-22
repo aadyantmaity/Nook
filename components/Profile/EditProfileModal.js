@@ -33,24 +33,28 @@ export default function EditProfileModal({
       transparent={true}
       onRequestClose={onClose}
     >
-      <Pressable
+      <View
         style={{
           flex: 1,
-          backgroundColor: "rgba(0,0,0,0.3)",
           justifyContent: "center",
           alignItems: "center",
         }}
-        onPress={onClose}
       >
-        <Pressable
+        <View
           style={{
             width: "80%",
             backgroundColor: themeColors.white,
             borderRadius: 8,
             padding: 16,
             alignItems: "center",
+            borderWidth: 1,
+            borderColor: themeColors.black,
+            shadowColor: themeColors.black,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 5,
           }}
-          onPress={(e) => e.stopPropagation()}
         >
           <TouchableOpacity
             style={{
@@ -289,8 +293,8 @@ export default function EditProfileModal({
               </Text>
             </TouchableOpacity>
           </View>
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
     </Modal>
   );
 }

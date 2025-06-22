@@ -71,15 +71,12 @@ export default function AlertsModal({ visible, onClose, alerts, themeColors }) {
       animationType="slide"
       onRequestClose={onClose}
     >
-      <TouchableOpacity
-        activeOpacity={1}
+      <View
         style={{
           flex: 1,
-          backgroundColor: "rgba(0,0,0,0.5)",
           justifyContent: "center",
           alignItems: "center",
         }}
-        onPressOut={onClose}
       >
         <View
           style={{
@@ -89,8 +86,14 @@ export default function AlertsModal({ visible, onClose, alerts, themeColors }) {
             borderRadius: 12,
             padding: 18,
             alignItems: "center",
+            borderWidth: 1,
+            borderColor: themeColors.black,
+            shadowColor: themeColors.black,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 5,
           }}
-          onStartShouldSetResponder={() => true}
         >
           <Text
             style={{
@@ -230,7 +233,7 @@ export default function AlertsModal({ visible, onClose, alerts, themeColors }) {
             </Text>
           </TouchableOpacity>
         </View>
-      </TouchableOpacity>
+      </View>
     </Modal>
   );
 }

@@ -14,14 +14,12 @@ export default function LogoutModal({
       animationType="fade"
       onRequestClose={onCancel}
     >
-      <Pressable
+      <View
         style={{
           flex: 1,
-          backgroundColor: "rgba(0,0,0,0.3)",
           justifyContent: "center",
           alignItems: "center",
         }}
-        onPress={onCancel}
       >
         <View
           style={{
@@ -30,6 +28,13 @@ export default function LogoutModal({
             padding: 24,
             alignItems: "center",
             minWidth: 240,
+            borderWidth: 1,
+            borderColor: themeColors.black,
+            shadowColor: themeColors.black,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 5,
           }}
         >
           <Text
@@ -103,7 +108,7 @@ export default function LogoutModal({
             </TouchableOpacity>
           </View>
         </View>
-      </Pressable>
+      </View>
     </Modal>
   );
 }
