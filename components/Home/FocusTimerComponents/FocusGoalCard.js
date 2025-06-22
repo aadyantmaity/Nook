@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,12 +8,16 @@ import {
   Alert,
 } from "react-native";
 import { Trophy, PencilSimple, Trash } from "phosphor-react-native";
+import { db, auth } from "../../../firebaseConfig";
+import { doc, setDoc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
 
 export function FocusGoalCard({
   goal,
   setShowGoalModal,
   themeColors,
   onDelete,
+  onMarkCustomGoalAchieved,
+  setGoal, // <-- add this prop
 }) {
   const progress = goal.progress || 0;
   const target = goal.target || 0;
@@ -26,6 +30,46 @@ export function FocusGoalCard({
     const m = Math.floor((secs % 3600) / 60);
     const s = secs % 60;
     return `${h}h ${m}m ${s}s`;
+  };
+
+  const [archiving, setArchiving] = useState(false);
+  const [archived, setArchived] = useState(false);
+
+  // Reset archived state when goal changes
+  useEffect(() => {
+    setArchived(false);
+  }, [goal]);
+
+  // Helper to archive goal to Firestore
+  const handleArchiveGoal = async () => {
+    if (!auth.currentUser || !goal.achieved) return;
+    setArchiving(true);
+    try {
+      const userId = auth.currentUser.uid;
+      const archiveRef = doc(db, "goalArchives", userId);
+      const archiveDoc = await getDoc(archiveRef);
+      const now = Date.now();
+      const archiveObj = {
+        title: goal.title,
+        target: goal.target,
+        achievedAt: now,
+        location: goal.location || "",
+        type: goal.type,
+        customDescription: goal.customDescription || "",
+      };
+      if (archiveDoc.exists()) {
+        await updateDoc(archiveRef, {
+          goals: arrayUnion(archiveObj),
+        });
+      } else {
+        await setDoc(archiveRef, { goals: [archiveObj] });
+      }
+      setArchived(true);
+      onDelete && onDelete(); // Call delete callback if provided
+    } catch (e) {
+      // Optionally show error
+    }
+    setArchiving(false);
   };
 
   return (
@@ -167,17 +211,58 @@ export function FocusGoalCard({
         </View>
       )}
       {goal.achieved && (
-        <Text
-          style={{
-            color: themeColors.green,
-            fontWeight: "bold",
-            fontSize: 14,
-            marginTop: 2,
-            fontFamily: "CarosSoft",
-          }}
-        >
-          🎉 Goal Achieved!
-        </Text>
+        <View style={{ alignItems: "center" }}>
+          <Text
+            style={{
+              color: themeColors.green,
+              fontWeight: "bold",
+              fontSize: 14,
+              marginTop: 2,
+              fontFamily: "CarosSoft",
+            }}
+          >
+            🎉 Goal Achieved!
+          </Text>
+          {!archived && (
+            <TouchableOpacity
+              onPress={handleArchiveGoal}
+              disabled={archiving}
+              style={{
+                marginTop: 8,
+                backgroundColor: themeColors.purple,
+                borderRadius: 8,
+                paddingVertical: 8,
+                paddingHorizontal: 18,
+                alignItems: "center",
+                opacity: archiving ? 0.6 : 1,
+              }}
+            >
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontSize: 15,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                {archiving ? "Archiving..." : "Add to Archive"}
+              </Text>
+            </TouchableOpacity>
+          )}
+          {archived && (
+            <Text
+              style={{
+                color: themeColors.purple,
+                fontWeight: "bold",
+                fontSize: 13,
+                marginTop: 6,
+                fontFamily: "CarosSoft",
+              }}
+            >
+              Goal archived!
+            </Text>
+          )}
+        </View>
       )}
     </View>
   );

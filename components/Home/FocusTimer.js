@@ -1527,6 +1527,7 @@ export function FocusTimerView({ navigation }) {
             auth={auth}
             db={db}
             handleDeleteSession={handleDeleteSession}
+            setGoal={setGoal} // <-- pass setGoal here
           />
           <View
             style={{
