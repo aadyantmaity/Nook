@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { TouchableOpacity, Text, View, Modal, ScrollView } from "react-native";
 import { Archive, CaretRight, Trash } from "phosphor-react-native";
 import {
@@ -8,6 +8,7 @@ import {
   where,
   deleteDoc,
   doc,
+  getDoc,
 } from "firebase/firestore";
 
 export function ArchiveButton({
@@ -16,12 +17,15 @@ export function ArchiveButton({
   auth,
   db,
   handleDeleteSession,
+  setGoal, // <-- add this prop
 }) {
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [archiveData, setArchiveData] = useState({});
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [openArchiveMonths, setOpenArchiveMonths] = useState({});
   const [openArchiveLocations, setOpenArchiveLocations] = useState({});
+  const [archivedGoals, setArchivedGoals] = useState([]);
+  const [archivedGoalsLoading, setArchivedGoalsLoading] = useState(false);
 
   // --- Fetch all-time sessions for archive ---
   const fetchArchiveData = async () => {
@@ -62,6 +66,28 @@ export function ArchiveButton({
     setArchiveLoading(false);
   };
 
+  // --- Fetch archived goals from Firestore ---
+  const fetchArchivedGoals = async () => {
+    setArchivedGoalsLoading(true);
+    try {
+      if (!auth.currentUser) {
+        setArchivedGoals([]);
+        setArchivedGoalsLoading(false);
+        return;
+      }
+      const archiveRef = doc(db, "goalArchives", auth.currentUser.uid);
+      const archiveDoc = await getDoc(archiveRef);
+      if (archiveDoc.exists()) {
+        setArchivedGoals(archiveDoc.data().goals || []);
+      } else {
+        setArchivedGoals([]);
+      }
+    } catch {
+      setArchivedGoals([]);
+    }
+    setArchivedGoalsLoading(false);
+  };
+
   // --- Open/close month dropdown in archive ---
   const toggleArchiveMonth = (year, month) => {
     const key = `${year}_${month}`;
@@ -82,7 +108,19 @@ export function ArchiveButton({
 
   // --- Open Archive Modal Handler ---
   const handleOpenArchive = async () => {
+    // Clear the goal state when archive is opened
+    setGoal &&
+      setGoal({
+        title: "",
+        target: 0,
+        progress: 0,
+        sessionIds: [],
+        achieved: false,
+        type: "time",
+        customDescription: "",
+      });
     await fetchArchiveData();
+    await fetchArchivedGoals();
     setShowArchiveModal(true);
   };
 
@@ -124,6 +162,53 @@ export function ArchiveButton({
       }
     }
   };
+
+  // --- Local delete handler for archived goals ---
+  const handleDeleteArchivedGoal = async (goal, year, month) => {
+    // Remove from Firestore and local state
+    try {
+      const archiveRef = doc(db, "goalArchives", auth.currentUser.uid);
+      // Remove from Firestore
+      const archiveDoc = await getDoc(archiveRef);
+      if (archiveDoc.exists()) {
+        const currentGoals = archiveDoc.data().goals || [];
+        const updatedGoals = currentGoals.filter(
+          (g) =>
+            !(
+              g.achievedAt === goal.achievedAt &&
+              g.title === goal.title &&
+              g.target === goal.target
+            )
+        );
+        await archiveRef.update({ goals: updatedGoals });
+      }
+    } catch {}
+    // Remove from local state
+    setArchivedGoals((prev) =>
+      prev.filter(
+        (g) =>
+          !(
+            g.achievedAt === goal.achievedAt &&
+            g.title === goal.title &&
+            g.target === goal.target
+          )
+      )
+    );
+  };
+
+  // --- Archived Goals Section ---
+  // Group archived goals by year and month
+  const groupedArchivedGoals = {};
+  archivedGoals.forEach((goal) => {
+    if (!goal.achievedAt) return;
+    const date = new Date(goal.achievedAt);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    if (!groupedArchivedGoals[year]) groupedArchivedGoals[year] = {};
+    if (!groupedArchivedGoals[year][month])
+      groupedArchivedGoals[year][month] = [];
+    groupedArchivedGoals[year][month].push(goal);
+  });
 
   return (
     <>
@@ -233,6 +318,17 @@ export function ArchiveButton({
                 style={{ maxHeight: 420 }}
                 showsVerticalScrollIndicator={false}
               >
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "bold",
+                    color: themeColors.purple,
+                    marginBottom: 6,
+                    fontFamily: "CarosSoft",
+                  }}
+                >
+                  Sessions
+                </Text>
                 {Object.entries(archiveData)
                   .sort((a, b) => b[0] - a[0])
                   .map(([year, months]) => (
@@ -469,6 +565,236 @@ export function ArchiveButton({
                                       );
                                     }
                                   )}
+                                </View>
+                              )}
+                            </View>
+                          );
+                        })}
+                    </View>
+                  ))}
+              </ScrollView>
+            )}
+            {/* --- Archived Goals Section --- */}
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "bold",
+                color: themeColors.purple,
+                marginTop: 18,
+                marginBottom: 6,
+                fontFamily: "CarosSoft",
+              }}
+            >
+              Goals
+            </Text>
+            {archivedGoalsLoading ? (
+              <Text
+                style={{
+                  color: themeColors.darkGray,
+                  textAlign: "center",
+                  fontFamily: "CarosSoft",
+                  marginBottom: 8,
+                }}
+              >
+                Loading...
+              </Text>
+            ) : Object.keys(groupedArchivedGoals).length === 0 ? (
+              <Text
+                style={{
+                  color: themeColors.darkGray,
+                  textAlign: "center",
+                  fontFamily: "CarosSoft",
+                  marginBottom: 8,
+                }}
+              >
+                No archived goals yet.
+              </Text>
+            ) : (
+              <ScrollView
+                style={{ maxHeight: 180, marginBottom: 8 }}
+                contentContainerStyle={{ paddingBottom: 8 }}
+                showsVerticalScrollIndicator={false}
+              >
+                {Object.entries(groupedArchivedGoals)
+                  .sort((a, b) => b[0] - a[0])
+                  .map(([year, months]) => (
+                    <View key={year} style={{ marginBottom: 8 }}>
+                      <Text
+                        style={{
+                          color: themeColors.black,
+                          fontWeight: "bold",
+                          fontSize: 15,
+                          marginBottom: 2,
+                          fontFamily: "CarosSoft",
+                        }}
+                      >
+                        {year}
+                      </Text>
+                      {Object.entries(months)
+                        .sort((a, b) => b[0] - a[0])
+                        .map(([month, goals]) => {
+                          const monthKey = `goal_${year}_${month}`;
+                          const isMonthOpen =
+                            openArchiveMonths[monthKey] || false;
+                          return (
+                            <View key={month} style={{ marginLeft: 8 }}>
+                              <TouchableOpacity
+                                onPress={() =>
+                                  setOpenArchiveMonths((prev) => ({
+                                    ...prev,
+                                    [monthKey]: !prev[monthKey],
+                                  }))
+                                }
+                                style={{
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                  paddingVertical: 6,
+                                }}
+                              >
+                                <Text
+                                  style={{
+                                    color: themeColors.purple,
+                                    fontSize: 14,
+                                    fontWeight: "bold",
+                                    flex: 1,
+                                    fontFamily: "CarosSoft",
+                                  }}
+                                >
+                                  {new Date(
+                                    2000,
+                                    parseInt(month) - 1
+                                  ).toLocaleString("default", {
+                                    month: "long",
+                                  })}
+                                </Text>
+                                <CaretRight
+                                  size={16}
+                                  color={themeColors.purple}
+                                  weight="bold"
+                                  style={{
+                                    transform: [
+                                      {
+                                        rotate: isMonthOpen ? "90deg" : "0deg",
+                                      },
+                                    ],
+                                  }}
+                                />
+                              </TouchableOpacity>
+                              {isMonthOpen && (
+                                <View>
+                                  {goals
+                                    .sort(
+                                      (a, b) =>
+                                        (b.achievedAt || 0) -
+                                        (a.achievedAt || 0)
+                                    )
+                                    .map((goal, idx) => {
+                                      // --- Use session UI style for goals ---
+                                      return (
+                                        <View
+                                          key={idx}
+                                          style={{
+                                            backgroundColor:
+                                              themeColors.gray + "10",
+                                            borderRadius: 8,
+                                            padding: 8,
+                                            marginVertical: 2,
+                                            marginLeft: 8,
+                                            borderWidth: 1,
+                                            borderColor:
+                                              themeColors.gray + "44",
+                                            flexDirection: "row",
+                                            alignItems: "center",
+                                          }}
+                                        >
+                                          <View style={{ flex: 1 }}>
+                                            <Text
+                                              style={{
+                                                color: themeColors.purple,
+                                                fontWeight: "bold",
+                                                fontSize: 13,
+                                                fontFamily: "CarosSoft",
+                                              }}
+                                            >
+                                              {goal.title || "Goal"}
+                                            </Text>
+                                            <Text
+                                              style={{
+                                                color: themeColors.black,
+                                                fontSize: 13,
+                                                fontFamily: "CarosSoft",
+                                              }}
+                                            >
+                                              Target:{" "}
+                                              {goal.target
+                                                ? (() => {
+                                                    const secs = goal.target;
+                                                    const h = Math.floor(
+                                                      secs / 3600
+                                                    );
+                                                    const m = Math.floor(
+                                                      (secs % 3600) / 60
+                                                    );
+                                                    const s = secs % 60;
+                                                    return `${h}h ${m}m ${s}s`;
+                                                  })()
+                                                : goal.customDescription ||
+                                                  "Custom Goal"}
+                                            </Text>
+                                            <Text
+                                              style={{
+                                                color: themeColors.darkGray,
+                                                fontSize: 13,
+                                                fontFamily: "CarosSoft",
+                                              }}
+                                            >
+                                              Achieved:{" "}
+                                              {goal.achievedAt
+                                                ? new Date(
+                                                    goal.achievedAt
+                                                  ).toLocaleString()
+                                                : ""}
+                                            </Text>
+                                            {goal.location && (
+                                              <Text
+                                                style={{
+                                                  color: themeColors.darkGray,
+                                                  fontSize: 13,
+                                                  fontFamily: "CarosSoft",
+                                                }}
+                                              >
+                                                Location: {goal.location}
+                                              </Text>
+                                            )}
+                                          </View>
+                                          <TouchableOpacity
+                                            onPress={() =>
+                                              handleDeleteArchivedGoal(
+                                                goal,
+                                                year,
+                                                month
+                                              )
+                                            }
+                                            style={{
+                                              marginLeft: 8,
+                                              padding: 4,
+                                              borderRadius: 6,
+                                              backgroundColor:
+                                                themeColors.red,
+                                              alignItems: "center",
+                                              justifyContent: "center",
+                                            }}
+                                            accessibilityLabel="Delete goal"
+                                          >
+                                            <Trash
+                                              size={18}
+                                              color={themeColors.white}
+                                              weight="bold"
+                                            />
+                                          </TouchableOpacity>
+                                        </View>
+                                      );
+                                    })}
                                 </View>
                               )}
                             </View>

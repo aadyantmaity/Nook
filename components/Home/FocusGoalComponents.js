@@ -211,12 +211,6 @@ export const useGoal = () => {
     });
 
     setGoalCongratsShown(false);
-    setTimeout(() => {
-      Alert.alert(
-        "Goal Achieved!",
-        "Congratulations, you've reached your focus goal! 🎉"
-      );
-    }, 300);
   };
 
   return {
