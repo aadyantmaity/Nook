@@ -273,10 +273,11 @@ export const GoalModal = ({ visible, onClose, themeColors, goal, setGoal }) => {
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
+    <Modal visible={visible} transparent animationType="slide">
       <View
         style={{
           flex: 1,
+          backgroundColor: "rgba(0,0,0,0.3)",
           justifyContent: "center",
           alignItems: "center",
         }}

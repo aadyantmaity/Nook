@@ -123,197 +123,213 @@ export default function MapLocationPicker({
   };
 
   return (
-    <Modal visible={visible} transparent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
       <View
         style={{
-          width: "92%",
+          flex: 1,
+          backgroundColor: "rgba(0,0,0,0.3)",
+          justifyContent: "center",
           alignItems: "center",
-          position: "absolute",
-          left: "4%",
-          right: "4%",
-          bottom: "50%",
-          backgroundColor: "#fff",
-          borderRadius: 14,
-          padding: 12,
-          borderWidth: 1,
-          borderColor: themeColors.black,
-          shadowColor: themeColors.black,
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.25,
-          shadowRadius: 4,
-          elevation: 5,
-          zIndex: 101,
-          overflow: "visible",
         }}
       >
-        <Text
-          style={[
-            styles.title,
-            { color: themeColors.purple, fontFamily: "CarosSoft" },
-          ]}
+        <View
+          style={{
+            width: "92%",
+            alignItems: "center",
+            position: "absolute",
+            left: "4%",
+            right: "4%",
+            bottom: "50%",
+            backgroundColor: "#fff",
+            borderRadius: 14,
+            padding: 12,
+            borderWidth: 1,
+            borderColor: themeColors.black,
+            shadowColor: themeColors.black,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 5,
+            zIndex: 101,
+            overflow: "visible",
+          }}
         >
-          Search Location
-        </Text>
-        <View style={styles.searchContainer}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search for a place..."
-            value={search}
-            onChangeText={fetchSuggestions}
-            placeholderTextColor="#888"
-            autoCorrect={false}
-            autoCapitalize="none"
-            clearButtonMode="while-editing"
-          />
-          {loading && <Text style={styles.loadingText}>...</Text>}
-        </View>
-        {/* Suggestions box always shown if search has 3+ chars */}
-        {search.trim().length >= 3 && !selectedLocation && (
-          <View style={styles.suggestionsBox}>
-            {loading ? (
-              <View style={styles.suggestionsLoadingBox}>
-                <Text
-                  style={{
-                    color: "#888",
-                    textAlign: "center",
-                    marginTop: 8,
-                    fontFamily: "CarosSoft",
-                  }}
-                >
-                  Loading...
-                </Text>
-              </View>
-            ) : suggestions.length > 0 ? (
-              <FlatList
-                keyboardShouldPersistTaps="handled"
-                data={suggestions}
-                keyExtractor={(item) =>
-                  item.place_id?.toString() ||
-                  item.osm_id?.toString() ||
-                  Math.random().toString()
-                }
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.suggestionItem}
-                    onPress={() => handleSuggestionPick(item)}
-                  >
-                    <Text
-                      style={[
-                        styles.suggestionText,
-                        { fontFamily: "CarosSoft" },
-                      ]}
-                      numberOfLines={2}
-                    >
-                      {item.display_name}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-                style={{ flex: 1 }}
-              />
-            ) : (
-              // Only show "No results found" if no location is selected
-              <View style={styles.suggestionsLoadingBox}>
-                <Text
-                  style={{
-                    color: "#888",
-                    textAlign: "center",
-                    marginTop: 8,
-                    fontFamily: "CarosSoft",
-                  }}
-                >
-                  No results found
-                </Text>
-              </View>
-            )}
+          <Text
+            style={[
+              styles.title,
+              { color: themeColors.purple, fontFamily: "CarosSoft" },
+            ]}
+          >
+            Search Location
+          </Text>
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search for a place..."
+              value={search}
+              onChangeText={fetchSuggestions}
+              placeholderTextColor="#888"
+              autoCorrect={false}
+              autoCapitalize="none"
+              clearButtonMode="while-editing"
+            />
+            {loading && <Text style={styles.loadingText}>...</Text>}
           </View>
-        )}
-        {/* Map preview for selected location */}
-        {selectedLocation && (
-          <View style={styles.mapPreviewContainer}>
-            <MapView
-              style={styles.mapPreview}
-              region={{
-                latitude: selectedLocation.latitude,
-                longitude: selectedLocation.longitude,
-                latitudeDelta: 0.01,
-                longitudeDelta: 0.01,
-              }}
-              pointerEvents="none"
-              mapType="satellite"
-            >
-              <Marker
-                coordinate={{
+          {/* Suggestions box always shown if search has 3+ chars */}
+          {search.trim().length >= 3 && !selectedLocation && (
+            <View style={styles.suggestionsBox}>
+              {loading ? (
+                <View style={styles.suggestionsLoadingBox}>
+                  <Text
+                    style={{
+                      color: "#888",
+                      textAlign: "center",
+                      marginTop: 8,
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    Loading...
+                  </Text>
+                </View>
+              ) : suggestions.length > 0 ? (
+                <FlatList
+                  keyboardShouldPersistTaps="handled"
+                  data={suggestions}
+                  keyExtractor={(item) =>
+                    item.place_id?.toString() ||
+                    item.osm_id?.toString() ||
+                    Math.random().toString()
+                  }
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.suggestionItem}
+                      onPress={() => handleSuggestionPick(item)}
+                    >
+                      <Text
+                        style={[
+                          styles.suggestionText,
+                          { fontFamily: "CarosSoft" },
+                        ]}
+                        numberOfLines={2}
+                      >
+                        {item.display_name}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                  style={{ flex: 1 }}
+                />
+              ) : (
+                // Only show "No results found" if no location is selected
+                <View style={styles.suggestionsLoadingBox}>
+                  <Text
+                    style={{
+                      color: "#888",
+                      textAlign: "center",
+                      marginTop: 8,
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    No results found
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+          {/* Map preview for selected location */}
+          {selectedLocation && (
+            <View style={styles.mapPreviewContainer}>
+              <MapView
+                style={styles.mapPreview}
+                region={{
                   latitude: selectedLocation.latitude,
                   longitude: selectedLocation.longitude,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
                 }}
-              />
-            </MapView>
+                pointerEvents="none"
+                mapType="satellite"
+              >
+                <Marker
+                  coordinate={{
+                    latitude: selectedLocation.latitude,
+                    longitude: selectedLocation.longitude,
+                  }}
+                />
+              </MapView>
+              <Text
+                style={[styles.mapPreviewLabel, { fontFamily: "CarosSoft" }]}
+                numberOfLines={2}
+              >
+                {selectedLocation.name}
+              </Text>
+            </View>
+          )}
+          {/* Show error if coordinates are invalid */}
+          {coordError && (
             <Text
-              style={[styles.mapPreviewLabel, { fontFamily: "CarosSoft" }]}
-              numberOfLines={2}
+              style={{
+                color: "red",
+                marginVertical: 8,
+                textAlign: "center",
+                fontFamily: "CarosSoft",
+              }}
             >
-              {selectedLocation.name}
+              Could not find a valid location for this address.
             </Text>
+          )}
+          {/* Pick Location button */}
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              onPress={onClose}
+              style={[
+                styles.button,
+                {
+                  backgroundColor: themeColors.white,
+                  borderColor: themeColors.purple,
+                  borderWidth: 1,
+                },
+              ]}
+            >
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                Cancel
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                if (selectedLocation && onPick) onPick(selectedLocation);
+              }}
+              style={[
+                styles.button,
+                {
+                  backgroundColor: selectedLocation
+                    ? themeColors.purple
+                    : "#ccc",
+                },
+              ]}
+              disabled={!selectedLocation}
+            >
+              <Text
+                style={{
+                  color: selectedLocation ? themeColors.white : "#888",
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                Pick Location
+              </Text>
+            </TouchableOpacity>
           </View>
-        )}
-        {/* Show error if coordinates are invalid */}
-        {coordError && (
-          <Text
-            style={{
-              color: "red",
-              marginVertical: 8,
-              textAlign: "center",
-              fontFamily: "CarosSoft",
-            }}
-          >
-            Could not find a valid location for this address.
-          </Text>
-        )}
-        {/* Pick Location button */}
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            onPress={onClose}
-            style={[
-              styles.button,
-              {
-                backgroundColor: themeColors.white,
-                borderColor: themeColors.purple,
-                borderWidth: 1,
-              },
-            ]}
-          >
-            <Text
-              style={{
-                color: themeColors.purple,
-                fontWeight: "bold",
-                fontFamily: "CarosSoft",
-              }}
-            >
-              Cancel
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              if (selectedLocation && onPick) onPick(selectedLocation);
-            }}
-            style={[
-              styles.button,
-              {
-                backgroundColor: selectedLocation ? themeColors.purple : "#ccc",
-              },
-            ]}
-            disabled={!selectedLocation}
-          >
-            <Text
-              style={{
-                color: selectedLocation ? themeColors.white : "#888",
-                fontWeight: "bold",
-                fontFamily: "CarosSoft",
-              }}
-            >
-              Pick Location
-            </Text>
-          </TouchableOpacity>
         </View>
       </View>
     </Modal>
