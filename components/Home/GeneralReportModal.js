@@ -100,6 +100,7 @@ export default function GeneralReportModal({
               borderRadius: 8,
               padding: 12,
               minHeight: 80,
+              width: "100%",
               color: themeColors.black,
               backgroundColor: themeColors.white,
               marginBottom: 12,

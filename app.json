@@ -7,7 +7,7 @@
     "scheme": "nook",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/NookLogo.png",
+      "image": "./assets/NewNook.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },

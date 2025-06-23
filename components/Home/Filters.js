@@ -267,15 +267,16 @@ export default function Filters({
                           ? themeColors.purple
                           : themeColors.white,
                       borderRadius: 18,
-                      paddingVertical: 7,
-                      paddingHorizontal: 14,
                       marginRight: 8,
                       marginBottom: 8,
+                      paddingVertical: 10,
+                      paddingHorizontal: 18,
                       borderWidth: 1,
-                      borderColor:
-                        localSortBy === opt.value
-                          ? themeColors.purple
-                          : themeColors.gray,
+                      shadowColor: themeColors.purple,
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 4,
+                      borderColor: themeColors.purple,
                     }}
                   >
                     <Text

@@ -1,6 +1,6 @@
 import React from "react";
 import { TouchableOpacity, View, Text, Image } from "react-native";
-import { MapPin } from "phosphor-react-native";
+import { MapPin, Star } from "phosphor-react-native";
 
 export default function FavoriteSpotCard({
   spot,

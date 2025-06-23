@@ -177,6 +177,7 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
             keyExtractor={(item) => item.id}
             style={{ width: "100%" }}
             contentContainerStyle={{ paddingBottom: 8 }}
+            showsVerticalScrollIndicator={false}
             renderItem={({ item }) => (
               <View
                 style={{
@@ -191,25 +192,52 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
                 }}
               >
                 <View style={{ flex: 1 }}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      if (item.uid) {
-                        navigation.navigate("Profile", { uid: item.uid });
-                      }
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={{
-                        color: themeColors.purple,
-                        fontWeight: "bold",
-                        fontSize: 15,
-                        fontFamily: "CarosSoft",
+                  {/* Top row: username left, trash right */}
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        if (item.uid) {
+                          navigation.navigate("Profile", { uid: item.uid });
+                        }
                       }}
+                      activeOpacity={0.7}
+                      style={{ flex: 1 }}
                     >
-                      {item.userName || "Unknown"}
-                    </Text>
-                  </TouchableOpacity>
+                      <Text
+                        style={{
+                          color: themeColors.purple,
+                          fontWeight: "bold",
+                          fontSize: 15,
+                          fontFamily: "CarosSoft",
+                        }}
+                      >
+                        {item.userName || "Unknown"}
+                      </Text>
+                    </TouchableOpacity>
+                    {/* Only show delete button if the post belongs to the current user */}
+                    {user && item.uid === user.uid ? (
+                      <TouchableOpacity
+                        onPress={() => handleDeletePost(item.id)}
+                        style={{
+                          marginLeft: 10,
+                          backgroundColor: themeColors.red,
+                          borderRadius: 6,
+                          padding: 6,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          height: 32,
+                          width: 32,
+                        }}
+                        accessibilityLabel="Delete post"
+                      >
+                        <Trash
+                          size={18}
+                          color={themeColors.white}
+                          weight="bold"
+                        />
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
                   <Text
                     style={{
                       color: themeColors.black,
@@ -220,40 +248,31 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
                   >
                     {item.message}
                   </Text>
-                  <Text
+                  {/* Bottom row: timestamp right */}
+                  <View
                     style={{
-                      color: themeColors.darkGray,
-                      fontSize: 12,
-                      marginTop: 6,
-                      textAlign: "right",
-                      fontFamily: "CarosSoft",
-                    }}
-                  >
-                    {item.createdAt && item.createdAt.seconds
-                      ? new Date(item.createdAt.seconds * 1000).toLocaleString()
-                      : ""}
-                  </Text>
-                </View>
-                {/* Only show delete button if the post belongs to the current user */}
-                {user && item.uid === user.uid ? (
-                  <TouchableOpacity
-                    onPress={() => handleDeletePost(item.id)}
-                    style={{
-                      marginLeft: 10,
-                      marginTop: 2,
-                      backgroundColor: themeColors.red,
-                      borderRadius: 6,
-                      padding: 6,
+                      flexDirection: "row",
                       alignItems: "center",
-                      justifyContent: "center",
-                      height: 32,
-                      width: 32,
+                      marginTop: 6,
                     }}
-                    accessibilityLabel="Delete post"
                   >
-                    <Trash size={18} color={themeColors.white} weight="bold" />
-                  </TouchableOpacity>
-                ) : null}
+                    <Text
+                      style={{
+                        color: themeColors.darkGray,
+                        fontSize: 12,
+                        flex: 1,
+                        textAlign: "right",
+                        fontFamily: "CarosSoft",
+                      }}
+                    >
+                      {item.createdAt && item.createdAt.seconds
+                        ? new Date(
+                            item.createdAt.seconds * 1000
+                          ).toLocaleString()
+                        : ""}
+                    </Text>
+                  </View>
+                </View>
               </View>
             )}
           />

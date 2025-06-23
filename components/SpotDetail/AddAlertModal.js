@@ -60,7 +60,7 @@ export default function AddAlertModal({
             position: "absolute",
             left: "7.5%",
             right: "7.5%",
-            bottom: "55%",
+            bottom: "45%",
             borderWidth: 1,
             borderColor: themeColors.black,
             shadowColor: themeColors.black,
