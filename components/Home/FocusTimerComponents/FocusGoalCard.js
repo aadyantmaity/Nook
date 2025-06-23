@@ -92,10 +92,19 @@ export function FocusGoalCard({
         style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}
       >
         <Trophy
-          size={22}
+          size={26}
           color={themeColors.orange}
           weight="fill"
-          style={{ marginRight: 8 }}
+          style={{
+            marginRight: 8,
+            textShadowColor: "#fff8dc", // Light highlight
+            textShadowOffset: { width: 0, height: 1 },
+            textShadowRadius: 2,
+            shadowColor: "#bfa14a",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.6,
+            shadowRadius: 4,
+          }}
         />
         <Text
           style={{
@@ -122,79 +131,21 @@ export function FocusGoalCard({
         >
           <Trash size={22} color={themeColors.red} />
         </TouchableOpacity>
-        {/* Custom goal: show check button if not achieved */}
-        {goal.type === "custom" && !goal.achieved && (
-          <TouchableOpacity
-            onPress={() => {
-              // Show confirmation alert and archive custom goal on OK
-              Alert.alert(
-                "Goal Achieved!",
-                "Congratulations, you've reached your focus goal!",
-                [
-                  {
-                    text: "OK",
-                    onPress: async () => {
-                      // Archive custom goal to Firestore (like timer goals)
-                      if (auth.currentUser) {
-                        try {
-                          const userId = auth.currentUser.uid;
-                          const archiveRef = doc(db, "goalArchives", userId);
-                          const archiveDoc = await getDoc(archiveRef);
-                          const now = Date.now();
-                          const archiveObj = {
-                            title: goal.title,
-                            target: goal.target,
-                            achievedAt: now,
-                            location: goal.location || "",
-                            type: goal.type,
-                          };
-                          if (archiveDoc.exists()) {
-                            await updateDoc(archiveRef, {
-                              goals: arrayUnion(archiveObj),
-                            });
-                          } else {
-                            await setDoc(archiveRef, { goals: [archiveObj] });
-                          }
-                        } catch (e) {
-                          // Optionally show error
-                        }
-                      }
-                      onDelete && onDelete();
-                    },
-                  },
-                ]
-              );
-            }}
-            style={{
-              marginLeft: 2,
-              backgroundColor: themeColors.green,
-              borderRadius: 6,
-              padding: 4,
-            }}
-            accessibilityLabel="Mark as Achieved"
-          >
-            <Text
-              style={{
-                color: themeColors.white,
-                fontWeight: "bold",
-                fontSize: 16,
-              }}
-            >
-              ✓
-            </Text>
-          </TouchableOpacity>
-        )}
       </View>
       {/* Custom goal description or time progress */}
       <Text
         style={{
           color: themeColors.black,
-          fontSize: 15,
+          fontSize: 14,
           marginBottom: 8,
+          marginTop: 4,
           fontFamily: "CarosSoft",
+          textAlign: "center",
         }}
       >
-        {target > 0
+        {!goal || !goal.title
+          ? "Tap the pencil to set a goal!"
+          : target > 0
           ? `Progress: ${formatHMS(progress)} / ${formatHMS(target)}`
           : ""}
       </Text>
@@ -221,31 +172,21 @@ export function FocusGoalCard({
           />
         </View>
       )}
-      {goal.achieved && (
+      {((goal.achieved && goal.type === "time") || goal.type === "custom") && (
         <View style={{ alignItems: "center" }}>
-          <Text
-            style={{
-              color: themeColors.green,
-              fontWeight: "bold",
-              fontSize: 14,
-              marginTop: 2,
-              fontFamily: "CarosSoft",
-            }}
-          >
-            🎉 Goal Achieved!
-          </Text>
+          {/* Show Add to Archive button for both time and custom goals */}
           {!archived && (
             <TouchableOpacity
               onPress={handleArchiveGoal}
               disabled={archiving}
               style={{
-                marginTop: 8,
                 backgroundColor: themeColors.purple,
                 borderRadius: 8,
                 paddingVertical: 8,
                 paddingHorizontal: 18,
                 alignItems: "center",
                 opacity: archiving ? 0.6 : 1,
+                marginTop: goal.type === "custom" ? -8 : 8, // reduce margin for custom
               }}
             >
               <Text
