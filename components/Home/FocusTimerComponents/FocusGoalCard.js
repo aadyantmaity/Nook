@@ -144,7 +144,7 @@ export function FocusGoalCard({
         }}
       >
         {!goal || !goal.title
-          ? "Tap the pencil to set a goal!"
+          ? "Tap the pencil to set a goal"
           : target > 0
           ? `Progress: ${formatHMS(progress)} / ${formatHMS(target)}`
           : ""}

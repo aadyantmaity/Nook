@@ -44,7 +44,6 @@ export default function TabBar({
               borderBottomColor:
                 currentIndex === i ? themeColors.purple : "transparent",
               backgroundColor: themeColors.white,
-              minWidth: 0,
             }}
           >
             <Text
@@ -52,7 +51,7 @@ export default function TabBar({
                 color:
                   currentIndex === i ? themeColors.black : themeColors.darkGray,
                 fontWeight: currentIndex === i ? "bold" : "normal",
-                fontSize: 16,
+                fontSize: 14,
                 fontFamily: "CarosSoft",
               }}
             >
