@@ -74,7 +74,7 @@ export default function FindPeopleView({
               fontFamily: "CarosSoft",
             }}
           >
-            Social Feed
+            Feed
           </Text>
         </TouchableOpacity>
       </View>

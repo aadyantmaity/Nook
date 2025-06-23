@@ -154,7 +154,7 @@ export default function StudySpotsMapView({
           {
             alignSelf: "center",
             width: mapSize,
-            height: mapSize,
+            height: mapSize + 90,
             borderRadius: 16,
             overflow: "hidden",
             backgroundColor: themeColors.gray,

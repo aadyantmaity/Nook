@@ -452,7 +452,7 @@ export default function HomeScreen({ navigation, route }) {
   const [routes] = useState([
     { key: "focus", title: "Focus" },
     { key: "home", title: "Home" },
-    { key: "social", title: "Social" },
+    { key: "social", title: "Community" },
   ]);
 
   // Tab scenes

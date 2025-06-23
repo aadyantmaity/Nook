@@ -53,7 +53,6 @@ import AddAlertModal from "../components/SpotDetail/AddAlertModal";
 import ReportModal from "../components/SpotDetail/ReportModal";
 import LiveUpdateSliders from "../components/SpotDetail/LiveUpdateSliders";
 import SpotFeedback from "../components/SpotDetail/SpotFeedback";
-import PrivateNookNotesModal from "../components/SpotDetail/PrivateNookNotesModal";
 import PrivateNookStats from "../components/SpotDetail/PrivateNookStats";
 import SpotGallery from "../components/SpotDetail/SpotGallery";
 import CheckInButton from "../components/SpotDetail/CheckInButton";
@@ -494,6 +493,50 @@ export default function SpotDetailScreen({ route, navigation }) {
                         </Text>
                       </TouchableOpacity>
                     )}
+                    {/* --- Edit Nook (only for owner, not private nooks) --- */}
+                    {isOwner && !isPrivateNook && (
+                      <TouchableOpacity
+                        onPress={() => {
+                          setShowMenu(false);
+                          setTimeout(
+                            () =>
+                              navigation.navigate("EditSpot", { spotId, spot }),
+                            150
+                          );
+                        }}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          paddingVertical: 14,
+                          paddingHorizontal: 18,
+                        }}
+                      >
+                        <PencilSimple
+                          size={18}
+                          color={themeColors.purple}
+                          weight="bold"
+                          style={{ marginRight: 10 }}
+                        />
+                        <Text
+                          style={{
+                            color: themeColors.purple,
+                            fontWeight: "bold",
+                            fontSize: 15,
+                            fontFamily: "CarosSoft",
+                          }}
+                        >
+                          Edit Nook
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                    {/* Divider */}
+                    <View
+                      style={{
+                        height: 1,
+                        backgroundColor: themeColors.gray,
+                        marginHorizontal: 10,
+                      }}
+                    />
                     {/* Delete Nook (only for owner) */}
                     {user && spot.addedBy === user.uid && (
                       <TouchableOpacity
@@ -532,13 +575,6 @@ export default function SpotDetailScreen({ route, navigation }) {
               )}
             </View>
           </View>
-
-          {/* Spot Image */}
-          {/* <SpotImage
-            photoUrl={spot.photoUrl}
-            cachedPhotoUri={cachedPhotoUri}
-            themeColors={themeColors}
-          /> */}
 
           {/* Spot Gallery (replaces SpotImage, matches image size) */}
           <SpotGallery
@@ -780,7 +816,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                   <ScrollView
                     style={{ width: "100%" }}
                     contentContainerStyle={{ paddingBottom: 4 }}
-                    showsVerticalScrollIndicator={true}
+                    showsVerticalScrollIndicator={false}
                   >
                     {notes && notes.length > 0 ? (
                       [...notes]
@@ -795,41 +831,56 @@ export default function SpotDetailScreen({ route, navigation }) {
                               padding: 10,
                             }}
                           >
-                            <Text
+                            <View
                               style={{
-                                color: themeColors.black,
-                                fontSize: 15,
-                                marginBottom: 2,
-                                fontFamily: "CarosSoft",
+                                flexDirection: "row",
+                                justifyContent: "space-between",
+                                alignItems: "flex-start",
                               }}
                             >
-                              {item.text}
-                            </Text>
+                              <Text
+                                style={{
+                                  color: themeColors.black,
+                                  fontSize: 13,
+                                  marginBottom: 2,
+                                  fontFamily: "CarosSoft",
+                                  flex: 1,
+                                  flexWrap: "wrap",
+                                }}
+                              >
+                                {item.text}
+                              </Text>
+                              <Text
+                                style={{
+                                  color: themeColors.darkGray,
+                                  fontSize: 12,
+                                  marginLeft: 10,
+                                  fontFamily: "CarosSoft",
+                                  textAlign: "right",
+                                  minWidth: 80,
+                                }}
+                              >
+                                {item.createdAt
+                                  ? new Date(item.createdAt).toLocaleString(
+                                      [],
+                                      {
+                                        month: "short",
+                                        day: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      }
+                                    )
+                                  : ""}
+                              </Text>
+                            </View>
                             <Text
                               style={{
-                                color: themeColors.darkGray,
                                 fontSize: 12,
-                                textAlign: "right",
-                                fontFamily: "CarosSoft",
-                              }}
-                            >
-                              {item.createdAt
-                                ? new Date(item.createdAt).toLocaleString([], {
-                                    month: "short",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })
-                                : ""}
-                            </Text>
-                            <Text
-                              style={{
-                                fontSize: 12,
                                 color: themeColors.darkGray,
-                                marginTop: 2,
+                                marginTop: 4,
                               }}
                             >
-                              {item.author ? `By: ${item.author}` : ""}
+                              {item.author ? `${item.author}` : ""}
                             </Text>
                           </View>
                         ))
@@ -847,13 +898,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                   </ScrollView>
                 </View>
               </View>
-              {/* --- End Notes Section --- */}
-              <PrivateNookNotesModal
-                visible={showPrivateNotesModal}
-                onClose={() => setShowPrivateNotesModal(false)}
-                spotId={spotId}
-                themeColors={themeColors}
-              />
               <AddPrivateNookNoteModal
                 visible={showAddNoteModal}
                 onClose={() => setShowAddNoteModal(false)}
@@ -865,41 +909,6 @@ export default function SpotDetailScreen({ route, navigation }) {
           )}
         </ScrollView>
       </View>
-
-      {/* Floating Action Button for Edit Nook (only for owner, not private nooks) */}
-      {isOwner && (
-        <View
-          style={{
-            position: "absolute",
-            bottom: 25,
-            left: 16,
-            zIndex: 20,
-          }}
-        >
-          <TouchableOpacity
-            onPress={() => navigation.navigate("EditSpot", { spotId, spot })}
-            style={{
-              padding: 10,
-              flexDirection: "row",
-              alignItems: "center",
-              backgroundColor: themeColors.purple,
-              borderRadius: 8,
-            }}
-          >
-            <PencilSimple size={20} color={themeColors.white} />
-            <Text
-              style={{
-                color: themeColors.white,
-                marginLeft: 8,
-                fontWeight: "bold",
-                fontFamily: "CarosSoft",
-              }}
-            >
-              Edit Nook
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
 
       {/* Floating Action Button for Add Alert */}
       {!isPrivateNook && (

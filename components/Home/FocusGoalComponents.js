@@ -378,8 +378,8 @@ export const GoalModal = ({ visible, onClose, themeColors, goal, setGoal }) => {
             }}
             placeholder={
               goalTypeInput === "time"
-                ? "Eg. Study for 2 hours"
-                : "Complete 3 ALEKS topics"
+                ? "E.g. Study for 2 hours"
+                : "E.g. Complete 3 ALEKS topics"
             }
             placeholderTextColor={themeColors.darkGray}
             value={goalTitleInput}
