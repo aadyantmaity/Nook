@@ -73,10 +73,7 @@ export const useGoal = () => {
     ) {
       setGoalCongratsShown(true);
       setTimeout(() => {
-        Alert.alert(
-          "Goal Achieved!",
-          "Congratulations, you've reached your focus goal! 🎉"
-        );
+        Alert.alert("Goal Achieved!");
       }, 300);
     }
 
@@ -90,6 +87,7 @@ export const useGoal = () => {
     if (!sessionObj || !sessionObj.sessionId || sessionObj.isBreak) return;
     if (goal.type !== "time") return;
     if (goal.sessionIds.includes(sessionObj.sessionId)) return;
+    if (goal.achieved) return; // Prevent adding progress if already achieved
 
     const newProgress =
       goal.progress + Math.floor((sessionObj.duration || 0) / 1000);
@@ -335,7 +333,7 @@ export const GoalModal = ({ visible, onClose, themeColors, goal, setGoal }) => {
                   fontFamily: "CarosSoft",
                 }}
               >
-                Time Goal
+                Time
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -361,7 +359,7 @@ export const GoalModal = ({ visible, onClose, themeColors, goal, setGoal }) => {
                   fontFamily: "CarosSoft",
                 }}
               >
-                Custom Goal
+                Task
               </Text>
             </TouchableOpacity>
           </View>
@@ -378,7 +376,11 @@ export const GoalModal = ({ visible, onClose, themeColors, goal, setGoal }) => {
               marginBottom: 12,
               width: "100%",
             }}
-            placeholder="Goal Title (optional)"
+            placeholder={
+              goalTypeInput === "time"
+                ? "Eg. Study for 2 hours"
+                : "Complete 3 ALEKS topics"
+            }
             placeholderTextColor={themeColors.darkGray}
             value={goalTitleInput}
             onChangeText={setGoalTitleInput}
