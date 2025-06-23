@@ -117,7 +117,6 @@ export function ArchiveButton({
         sessionIds: [],
         achieved: false,
         type: "time",
-        customDescription: "",
       });
     await fetchArchiveData();
     await fetchArchivedGoals();
@@ -725,29 +724,29 @@ export function ArchiveButton({
                                             >
                                               {goal.title || "Goal"}
                                             </Text>
-                                            <Text
-                                              style={{
-                                                color: themeColors.black,
-                                                fontSize: 13,
-                                                fontFamily: "CarosSoft",
-                                              }}
-                                            >
-                                              Target:{" "}
-                                              {goal.target
-                                                ? (() => {
-                                                    const secs = goal.target;
-                                                    const h = Math.floor(
-                                                      secs / 3600
-                                                    );
-                                                    const m = Math.floor(
-                                                      (secs % 3600) / 60
-                                                    );
-                                                    const s = secs % 60;
-                                                    return `${h}h ${m}m ${s}s`;
-                                                  })()
-                                                : goal.customDescription ||
-                                                  "Custom Goal"}
-                                            </Text>
+                                            {/* Only show Target for time goals */}
+                                            {goal.type !== "custom" && (
+                                              <Text
+                                                style={{
+                                                  color: themeColors.black,
+                                                  fontSize: 13,
+                                                  fontFamily: "CarosSoft",
+                                                }}
+                                              >
+                                                Target:{" "}
+                                                {(() => {
+                                                  const secs = goal.target;
+                                                  const h = Math.floor(
+                                                    secs / 3600
+                                                  );
+                                                  const m = Math.floor(
+                                                    (secs % 3600) / 60
+                                                  );
+                                                  const s = secs % 60;
+                                                  return `${h}h ${m}m ${s}s`;
+                                                })()}
+                                              </Text>
+                                            )}
                                             <Text
                                               style={{
                                                 color: themeColors.darkGray,

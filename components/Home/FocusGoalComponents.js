@@ -25,7 +25,6 @@ export const useGoal = () => {
     sessionIds: [],
     achieved: false,
     type: "time",
-    customDescription: "",
   });
   const [goalLoaded, setGoalLoaded] = useState(false);
   const [goalCongratsShown, setGoalCongratsShown] = useState(false);
@@ -158,7 +157,6 @@ export const useGoal = () => {
       sessionIds: [],
       achieved: false,
       type: "time",
-      customDescription: "",
     });
 
     try {
@@ -171,7 +169,6 @@ export const useGoal = () => {
           sessionIds: [],
           achieved: false,
           type: "time",
-          customDescription: "",
         })
       );
     } catch (e) {}
@@ -209,7 +206,6 @@ export const useGoal = () => {
       sessionIds: [],
       achieved: false,
       type: "time",
-      customDescription: "",
     });
 
     setGoalCongratsShown(false);
@@ -242,7 +238,6 @@ export const GoalModal = ({ visible, onClose, themeColors, goal, setGoal }) => {
         sessionIds: [],
         achieved: false,
         type: "custom",
-        customDescription: goalCustomInput.trim(),
       });
       onClose();
       setGoalTitleInput("");
@@ -264,7 +259,6 @@ export const GoalModal = ({ visible, onClose, themeColors, goal, setGoal }) => {
       sessionIds: [],
       achieved: false,
       type: "time",
-      customDescription: "",
     });
 
     onClose();
@@ -475,25 +469,7 @@ export const GoalModal = ({ visible, onClose, themeColors, goal, setGoal }) => {
               />
             </View>
           ) : (
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: themeColors.purple,
-                borderRadius: 8,
-                padding: 10,
-                color: themeColors.black,
-                backgroundColor: themeColors.white,
-                fontSize: 16,
-                fontFamily: "CarosSoft",
-                marginBottom: 12,
-                width: "100%",
-              }}
-              placeholder="Describe your custom goal (e.g. 'Finish reading chapter 5')"
-              placeholderTextColor={themeColors.darkGray}
-              value={goalCustomInput}
-              onChangeText={setGoalCustomInput}
-              maxLength={100}
-            />
+            <View></View>
           )}
           <View style={{ flexDirection: "row", width: "100%" }}>
             <TouchableOpacity

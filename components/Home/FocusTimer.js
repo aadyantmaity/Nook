@@ -1021,7 +1021,6 @@ export function FocusTimerView({ navigation }) {
         sessionIds: [],
         achieved: false,
         type: "custom",
-        customDescription: goalCustomInput.trim(),
       });
       setShowGoalModal(false);
       // Do NOT show the custom goal modal immediately after creation
@@ -1042,7 +1041,6 @@ export function FocusTimerView({ navigation }) {
       sessionIds: [],
       achieved: false,
       type: "time",
-      customDescription: "",
     });
     setShowGoalModal(false);
     setGoalTitleInput("");
@@ -1394,7 +1392,7 @@ export function FocusTimerView({ navigation }) {
               position: "absolute",
               left: "4%",
               right: "4%",
-              bottom: "50%",
+              bottom: "45%",
               shadowColor: themeColors.black,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.13,

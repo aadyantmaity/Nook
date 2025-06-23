@@ -55,7 +55,6 @@ export function FocusGoalCard({
         achievedAt: now,
         location: goal.location || "",
         type: goal.type,
-        customDescription: goal.customDescription || "",
       };
       if (archiveDoc.exists()) {
         await updateDoc(archiveRef, {
@@ -127,7 +126,7 @@ export function FocusGoalCard({
         {goal.type === "custom" && !goal.achieved && (
           <TouchableOpacity
             onPress={() => {
-              // Show confirmation alert and clear goal on OK
+              // Show confirmation alert and archive custom goal on OK
               Alert.alert(
                 "Goal Achieved!",
                 "Congratulations, you've reached your focus goal!",
@@ -135,6 +134,31 @@ export function FocusGoalCard({
                   {
                     text: "OK",
                     onPress: async () => {
+                      // Archive custom goal to Firestore (like timer goals)
+                      if (auth.currentUser) {
+                        try {
+                          const userId = auth.currentUser.uid;
+                          const archiveRef = doc(db, "goalArchives", userId);
+                          const archiveDoc = await getDoc(archiveRef);
+                          const now = Date.now();
+                          const archiveObj = {
+                            title: goal.title,
+                            target: goal.target,
+                            achievedAt: now,
+                            location: goal.location || "",
+                            type: goal.type,
+                          };
+                          if (archiveDoc.exists()) {
+                            await updateDoc(archiveRef, {
+                              goals: arrayUnion(archiveObj),
+                            });
+                          } else {
+                            await setDoc(archiveRef, { goals: [archiveObj] });
+                          }
+                        } catch (e) {
+                          // Optionally show error
+                        }
+                      }
                       onDelete && onDelete();
                     },
                   },
@@ -162,31 +186,18 @@ export function FocusGoalCard({
         )}
       </View>
       {/* Custom goal description or time progress */}
-      {goal.type === "custom" ? (
-        <Text
-          style={{
-            color: themeColors.black,
-            fontSize: 15,
-            marginBottom: 8,
-            fontFamily: "CarosSoft",
-          }}
-        >
-          {goal.customDescription}
-        </Text>
-      ) : (
-        <Text
-          style={{
-            color: themeColors.black,
-            fontSize: 15,
-            marginBottom: 8,
-            fontFamily: "CarosSoft",
-          }}
-        >
-          {target > 0
-            ? `Progress: ${formatHMS(progress)} / ${formatHMS(target)}`
-            : "No goal set"}
-        </Text>
-      )}
+      <Text
+        style={{
+          color: themeColors.black,
+          fontSize: 15,
+          marginBottom: 8,
+          fontFamily: "CarosSoft",
+        }}
+      >
+        {target > 0
+          ? `Progress: ${formatHMS(progress)} / ${formatHMS(target)}`
+          : ""}
+      </Text>
       {/* Progress bar for time goals only */}
       {goal.type === "time" && target > 0 && (
         <View
