@@ -7,6 +7,8 @@ import {
   Modal,
   TextInput,
   Alert,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import { Trophy, PencilSimple, Trash } from "phosphor-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -287,8 +289,12 @@ export const GoalModal = ({ visible, onClose, themeColors, goal, setGoal }) => {
             backgroundColor: themeColors.white,
             borderRadius: 16,
             padding: 24,
-            width: "85%",
+            width: "92%",
             alignItems: "center",
+            position: "absolute",
+            left: "4%",
+            right: "4%",
+            bottom: "45%",
             borderWidth: 1,
             borderColor: themeColors.black,
             shadowColor: themeColors.black,

@@ -73,7 +73,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
       const { db } = await import("../../firebaseConfig");
       await addDoc(collection(db, "posts"), {
         uid: user.uid,
-        message: `📍 checked in at ${spot.buildingName}${
+        message: `Checked in at ${spot.buildingName}${
           spot.roomNumber ? " - Floor " + spot.roomNumber : ""
         }!`,
         createdAt: serverTimestamp(),
