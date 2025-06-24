@@ -42,7 +42,9 @@ export function FocusGoalCard({
 
   // Helper to archive goal to Firestore
   const handleArchiveGoal = async () => {
-    if (!auth.currentUser || !goal.achieved) return;
+    if (!auth.currentUser) return;
+    // For time goals, only allow if achieved; for custom, allow always
+    if (goal.type === "time" && !goal.achieved) return;
     setArchiving(true);
     try {
       const userId = auth.currentUser.uid;
