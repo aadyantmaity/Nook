@@ -7,7 +7,7 @@ import {
   TextInput,
   Alert,
 } from "react-native";
-import { Trophy, PencilSimple, Trash } from "phosphor-react-native";
+import { Trophy, Trash } from "phosphor-react-native";
 import { db, auth } from "../../../firebaseConfig";
 import { doc, setDoc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
 
@@ -18,6 +18,7 @@ export function FocusGoalCard({
   onDelete,
   onMarkCustomGoalAchieved,
   setGoal, // <-- add this prop
+  isRunning, // <-- pass this prop from parent
 }) {
   const progress = goal.progress || 0;
   const target = goal.target || 0;
@@ -73,8 +74,14 @@ export function FocusGoalCard({
     setArchiving(false);
   };
 
+  // Remove edit button, make card tappable
   return (
-    <View
+    <TouchableOpacity
+      activeOpacity={0.85}
+      onPress={() => {
+        if (!isRunning) setShowGoalModal(true);
+      }}
+      disabled={isRunning}
       style={{
         backgroundColor: themeColors.white,
         borderRadius: 14,
@@ -89,6 +96,11 @@ export function FocusGoalCard({
         shadowRadius: 4,
         elevation: 2,
       }}
+      accessibilityLabel={
+        !goal || !goal.title
+          ? "Tap to set a focus goal"
+          : "Tap to edit focus goal"
+      }
     >
       <View
         style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}
@@ -99,7 +111,7 @@ export function FocusGoalCard({
           weight="fill"
           style={{
             marginRight: 8,
-            textShadowColor: "#fff8dc", // Light highlight
+            textShadowColor: "#fff8dc",
             textShadowOffset: { width: 0, height: 1 },
             textShadowRadius: 2,
             shadowColor: "#bfa14a",
@@ -115,18 +127,13 @@ export function FocusGoalCard({
             color: themeColors.purple,
             flex: 1,
             fontFamily: "CarosSoft",
+            textAlign: "left",
           }}
         >
           {goal.title ||
             (goal.type === "custom" ? "Custom Goal" : "Focus Goal")}
         </Text>
-        {/* Edit and Delete buttons */}
-        <TouchableOpacity
-          onPress={() => setShowGoalModal(true)}
-          style={{ marginRight: 8 }}
-        >
-          <PencilSimple size={22} color={themeColors.purple} />
-        </TouchableOpacity>
+        {/* Remove edit button */}
         <TouchableOpacity
           onPress={onDelete}
           style={{ marginRight: goal.type === "custom" ? 8 : 0 }}
@@ -142,11 +149,14 @@ export function FocusGoalCard({
           marginBottom: 8,
           marginTop: 4,
           fontFamily: "CarosSoft",
-          textAlign: "center",
+          textAlign: "left", // left align
         }}
       >
         {!goal || !goal.title
-          ? "Tap the pencil to set a goal"
+          ? "Tap to set a goal"
+          : // If running, show timer left-aligned
+          isRunning && goal.target > 0
+          ? `Progress: ${formatHMS(progress)} / ${formatHMS(target)}`
           : target > 0
           ? `Progress: ${formatHMS(progress)} / ${formatHMS(target)}`
           : ""}
@@ -188,7 +198,7 @@ export function FocusGoalCard({
                 paddingHorizontal: 18,
                 alignItems: "center",
                 opacity: archiving ? 0.6 : 1,
-                marginTop: goal.type === "custom" ? -8 : 8, // reduce margin for custom
+                marginTop: goal.type === "custom" ? -8 : 8,
               }}
             >
               <Text
@@ -218,6 +228,6 @@ export function FocusGoalCard({
           )}
         </View>
       )}
-    </View>
+    </TouchableOpacity>
   );
 }
