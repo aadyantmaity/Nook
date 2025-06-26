@@ -12,10 +12,10 @@ import { Check } from "phosphor-react-native";
 export default function PomodoroSettingsModal({
   visible,
   onClose,
-  pomodoroMinutes,
-  setPomodoroMinutes,
-  breakMinutes,
-  setBreakMinutes,
+  workTimeSetting,
+  setWorkTimeSetting,
+  breakTimeSetting,
+  setBreakTimeSetting,
   isRunning,
   isBreak,
   setTimer,
@@ -23,21 +23,21 @@ export default function PomodoroSettingsModal({
   reflectionsEnabled = true,
   setReflectionsEnabled,
 }) {
-  const [workInput, setWorkInput] = useState(String(pomodoroMinutes));
-  const [breakInput, setBreakInput] = useState(String(breakMinutes));
+  const [workInput, setWorkInput] = useState(String(workTimeSetting));
+  const [breakInput, setBreakInput] = useState(String(breakTimeSetting));
 
   useEffect(() => {
-    setWorkInput(String(pomodoroMinutes));
-    setBreakInput(String(breakMinutes));
-  }, [pomodoroMinutes, breakMinutes, visible]);
+    setWorkInput(String(workTimeSetting));
+    setBreakInput(String(breakTimeSetting));
+  }, [workTimeSetting, breakTimeSetting, visible]);
 
   const handleDone = () => {
     const work = parseInt(workInput, 10);
     const brk = parseInt(breakInput, 10);
     if (!work || work < 1 || work > 180) return;
     if (!brk || brk < 1 || brk > 60) return;
-    setPomodoroMinutes(work);
-    setBreakMinutes(brk);
+    setWorkTimeSetting(work); // parent will update Firestore
+    setBreakTimeSetting(brk); // parent will update Firestore
     if (!isRunning && !isBreak) setTimer(work * 60);
     if (!isRunning && isBreak) setTimer(brk * 60);
     onClose();

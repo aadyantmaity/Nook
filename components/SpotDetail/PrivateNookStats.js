@@ -10,8 +10,7 @@ export default function PrivateNookStats({ spotId, themeColors }) {
     const fetchStats = async () => {
       if (!auth.currentUser) return;
       const q = query(
-        collection(db, "focusSessions"),
-        where("userId", "==", auth.currentUser.uid),
+        collection(db, "users", auth.currentUser.uid, "focusSessions"),
         where("spotId", "==", spotId)
       );
       const snapshot = await getDocs(q);

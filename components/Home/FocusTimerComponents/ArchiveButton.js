@@ -32,10 +32,8 @@ export function ArchiveButton({
     if (!auth.currentUser) return;
     setArchiveLoading(true);
     try {
-      const q = query(
-        collection(db, "focusSessions"),
-        where("userId", "==", auth.currentUser.uid)
-      );
+      // Use new per-user focusSessions subcollection
+      const q = collection(db, "users", auth.currentUser.uid, "focusSessions");
       const snapshot = await getDocs(q);
       // Group by year -> month -> spotId, EXCLUDE breaks
       const data = {};
