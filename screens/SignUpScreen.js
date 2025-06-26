@@ -8,7 +8,10 @@ import {
   StyleSheet,
   Image,
 } from "react-native";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+} from "firebase/auth";
 import { db } from "../firebaseConfig"; // Import Firestore
 import { doc, setDoc } from "firebase/firestore"; // Import Firestore functions
 import { colors } from "../constants/colors";
@@ -23,18 +26,20 @@ export default function SignUpScreen({ navigation }) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [gradYear, setGradYear] = useState("");
+  const [error, setError] = useState(""); // Add error state
+  const [info, setInfo] = useState(""); // Info message (for verification)
 
   const handleSignUp = async () => {
+    setError("");
+    setInfo("");
     if (!email.endsWith("@uw.edu")) {
-      console.error("Only uw.edu emails are allowed");
+      setError("Only uw.edu emails are allowed");
       return;
     }
-
     if (password !== confirmPassword) {
-      console.error("Passwords do not match");
+      setError("Passwords do not match");
       return;
     }
-
     try {
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -54,10 +59,13 @@ export default function SignUpScreen({ navigation }) {
         following: [],
       });
 
-      // Navigate to Home on successful sign-up
-      // navigation.navigate("Home"); // REMOVE this line
+      // Send email verification
+      await sendEmailVerification(user);
+      setInfo("Verification email sent. Please check your inbox.");
+      // Optionally, sign out user here to force verification before login
+      // await auth.signOut();
     } catch (error) {
-      console.error(error.message);
+      setError(error.message);
     }
   };
 
@@ -66,6 +74,28 @@ export default function SignUpScreen({ navigation }) {
       style={[styles.container, { backgroundColor: themeColors.white }]}
     >
       {/* Remove dark mode toggle button */}
+      {error ? (
+        <Text
+          style={{
+            color: themeColors.red,
+            marginBottom: 8,
+            textAlign: "center",
+          }}
+        >
+          {error}
+        </Text>
+      ) : null}
+      {info ? (
+        <Text
+          style={{
+            color: themeColors.green,
+            marginBottom: 8,
+            textAlign: "center",
+          }}
+        >
+          {info}
+        </Text>
+      ) : null}
       <Text style={[styles.title, { color: themeColors.black }]}>Sign Up</Text>
       <View style={styles.formContainer}>
         <TextInput

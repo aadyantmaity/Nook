@@ -1,5 +1,18 @@
 import React from "react";
 import { View, TouchableOpacity, Text, Dimensions } from "react-native";
+import { Timer, House, Chats } from "phosphor-react-native"; // Changed icons
+
+const TAB_ICONS = {
+  focus: Timer,
+  home: House, // Changed from Rows to House
+  social: Chats, // Changed from Users to Chats
+};
+
+const TAB_LABELS = {
+  focus: "Focus",
+  home: "Home",
+  social: "Community",
+};
 
 export default function TabBar({
   navigationState,
@@ -32,33 +45,47 @@ export default function TabBar({
           maxWidth: 420,
         }}
       >
-        {navigationState.routes.map((route, i) => (
-          <TouchableOpacity
-            key={route.key}
-            onPress={() => jumpTo(route.key)}
-            style={{
-              flex: 1,
-              paddingVertical: 12,
-              alignItems: "center",
-              borderBottomWidth: 3,
-              borderBottomColor:
-                currentIndex === i ? themeColors.purple : "transparent",
-              backgroundColor: themeColors.white,
-            }}
-          >
-            <Text
+        {navigationState.routes.map((route, i) => {
+          const Icon = TAB_ICONS[route.key] || Rows;
+          return (
+            <TouchableOpacity
+              key={route.key}
+              onPress={() => jumpTo(route.key)}
               style={{
-                color:
-                  currentIndex === i ? themeColors.black : themeColors.darkGray,
-                fontWeight: currentIndex === i ? "bold" : "normal",
-                fontSize: 14,
-                fontFamily: "CarosSoft",
+                flex: 1,
+                paddingVertical: 12,
+                alignItems: "center",
+                borderBottomWidth: 3,
+                borderBottomColor:
+                  currentIndex === i ? themeColors.purple : "transparent",
+                backgroundColor: themeColors.white,
               }}
+              accessibilityLabel={TAB_LABELS[route.key]}
+              accessible={true}
             >
-              {route.title}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Icon
+                size={24}
+                color={
+                  currentIndex === i ? themeColors.purple : themeColors.darkGray
+                }
+                weight={currentIndex === i ? "fill" : "regular"}
+              />
+              <Text
+                style={{
+                  color:
+                    currentIndex === i
+                      ? themeColors.purple
+                      : themeColors.darkGray,
+                  fontSize: 11.5,
+                  fontFamily: "CarosSoft",
+                  marginTop: 2,
+                }}
+              >
+                {TAB_LABELS[route.key]}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </View>
   );
