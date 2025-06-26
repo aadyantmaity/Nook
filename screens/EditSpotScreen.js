@@ -114,6 +114,9 @@ export default function EditSpotScreen({ navigation, route }) {
   );
   const [isLoading, setIsLoading] = useState(false);
 
+  // Determine if we are editing (spotId exists)
+  const isEditing = !!spotId;
+
   const toggleTag = (tag) => {
     setSelectedTags((tags) =>
       tags.includes(tag) ? tags.filter((t) => t !== tag) : [...tags, tag]
@@ -338,9 +341,12 @@ export default function EditSpotScreen({ navigation, route }) {
     }
   };
 
+  // Remove handleUWBuildingToggle for editing
   const handleUWBuildingToggle = (isUW) => {
-    setIsUWBuilding(isUW);
-    setCustomImage(null);
+    if (!isEditing) {
+      setIsUWBuilding(isUW);
+      setCustomImage(null);
+    }
   };
 
   return (
@@ -380,89 +386,125 @@ export default function EditSpotScreen({ navigation, route }) {
             </TouchableOpacity>
           </View>
 
-          {/* UW Building Toggle */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 12,
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => handleUWBuildingToggle(true)}
+          {/* UW Building Toggle - hide for editing */}
+          {!isEditing && (
+            <View
               style={{
-                flex: 1,
+                flexDirection: "row",
                 alignItems: "center",
-                padding: 12,
-                marginRight: 8,
-                backgroundColor: isUWBuilding
-                  ? themeColors.purple
-                  : themeColors.white,
-                borderRadius: 8,
-                borderColor: themeColors.black,
-                borderWidth: 0.5,
+                marginBottom: 12,
               }}
             >
-              <Text
+              <TouchableOpacity
+                onPress={() => handleUWBuildingToggle(true)}
                 style={{
-                  color: isUWBuilding ? themeColors.white : themeColors.purple,
-                  fontWeight: "bold",
+                  flex: 1,
+                  alignItems: "center",
+                  padding: 12,
+                  marginRight: 8,
+                  backgroundColor: isUWBuilding
+                    ? themeColors.purple
+                    : themeColors.white,
+                  borderRadius: 8,
+                  borderColor: themeColors.black,
+                  borderWidth: 0.5,
                 }}
+                disabled={isEditing}
               >
-                UW Building
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => handleUWBuildingToggle(false)}
-              style={{
-                flex: 1,
-                alignItems: "center",
-                padding: 12,
-                marginLeft: 8,
-                backgroundColor: !isUWBuilding
-                  ? themeColors.purple
-                  : themeColors.white,
-                borderRadius: 8,
-                borderColor: themeColors.black,
-                borderWidth: 0.5,
-              }}
-            >
-              <Text
+                <Text
+                  style={{
+                    color: isUWBuilding
+                      ? themeColors.white
+                      : themeColors.purple,
+                    fontWeight: "bold",
+                  }}
+                >
+                  UW Building
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleUWBuildingToggle(false)}
                 style={{
-                  color: !isUWBuilding ? themeColors.white : themeColors.purple,
-                  fontWeight: "bold",
+                  flex: 1,
+                  alignItems: "center",
+                  padding: 12,
+                  marginLeft: 8,
+                  backgroundColor: !isUWBuilding
+                    ? themeColors.purple
+                    : themeColors.white,
+                  borderRadius: 8,
+                  borderColor: themeColors.black,
+                  borderWidth: 0.5,
                 }}
+                disabled={isEditing}
               >
-                Custom Location
-              </Text>
-            </TouchableOpacity>
-          </View>
+                <Text
+                  style={{
+                    color: !isUWBuilding
+                      ? themeColors.white
+                      : themeColors.purple,
+                    fontWeight: "bold",
+                  }}
+                >
+                  Custom Location
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           <Text
             style={{
               fontSize: 20,
               marginBottom: 8,
               color: themeColors.black,
+              fontFamily: "CarosSoft",
             }}
           >
-            {isUWBuilding ? "Select Building:" : "Enter Location Name:"}
+            {isUWBuilding ? "Building:" : "Location Name:"}
           </Text>
-
           {/* Building/Floor/Map Row */}
           {isUWBuilding ? (
-            <BuildingPicker
-              isUWBuilding={isUWBuilding}
-              selectedBuilding={selectedBuilding}
-              setSelectedBuilding={setSelectedBuilding}
-              customBuilding={customBuilding}
-              setCustomBuilding={setCustomBuilding}
-              roomNumber={roomNumber}
-              setRoomNumber={setRoomNumber}
-              BUILDINGS={BUILDINGS}
-              themeColors={themeColors}
-            />
+            <>
+              {isEditing && (
+                <Text
+                  style={{
+                    color: themeColors.darkGray,
+                    fontSize: 13,
+                    marginBottom: 4,
+                    fontFamily: "CarosSoft",
+                  }}
+                >
+                  Building and floor/room cannot be changed.
+                </Text>
+              )}
+              <BuildingPicker
+                isUWBuilding={isUWBuilding}
+                selectedBuilding={selectedBuilding}
+                setSelectedBuilding={isEditing ? () => {} : setSelectedBuilding}
+                customBuilding={customBuilding}
+                setCustomBuilding={isEditing ? () => {} : setCustomBuilding}
+                roomNumber={roomNumber}
+                setRoomNumber={isEditing ? () => {} : setRoomNumber}
+                BUILDINGS={BUILDINGS}
+                themeColors={themeColors}
+                editable={!isEditing}
+                disabled={isEditing}
+              />
+            </>
           ) : (
             <>
+              {isEditing && (
+                <Text
+                  style={{
+                    color: themeColors.darkGray,
+                    fontSize: 13,
+                    marginBottom: 4,
+                    fontFamily: "CarosSoft",
+                  }}
+                >
+                  Location name and floor cannot be changed.
+                </Text>
+              )}
               <View
                 style={{
                   flexDirection: "row",
@@ -474,68 +516,44 @@ export default function EditSpotScreen({ navigation, route }) {
                   placeholder="Location Name"
                   placeholderTextColor={themeColors.darkGray}
                   value={customBuilding}
-                  onChangeText={setCustomBuilding}
+                  onChangeText={isEditing ? () => {} : setCustomBuilding}
                   style={{
-                    flex: 1,
                     borderWidth: 0.5,
                     borderColor: themeColors.black,
                     borderRadius: 8,
                     padding: 12,
-                    marginRight: 8,
-                    backgroundColor: themeColors.white,
-                    color: themeColors.purple,
+                    marginRight: 0,
+                    backgroundColor: isEditing
+                      ? themeColors.gray
+                      : themeColors.white,
+                    color: isEditing
+                      ? themeColors.darkGray
+                      : themeColors.purple,
+                    width: "100%",
+                    fontFamily: "CarosSoft",
                   }}
+                  editable={!isEditing}
                 />
-                <TouchableOpacity
-                  onPress={() => setShowMapPicker(true)}
-                  style={{
-                    backgroundColor: themeColors.purple,
-                    borderRadius: 8,
-                    paddingVertical: 10,
-                    paddingHorizontal: 12,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    minWidth: 44,
-                    minHeight: 44,
-                    flexDirection: "row",
-                  }}
-                  accessibilityLabel={
-                    customCoords
-                      ? "Change Location on Map"
-                      : "Pick Location on Map"
-                  }
-                  accessible={true}
-                >
-                  <MapPin size={20} color={themeColors.white} weight="bold" />
-                  <Text
-                    style={{
-                      color: themeColors.white,
-                      marginLeft: 6,
-                      fontSize: 13,
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Pick on Map
-                  </Text>
-                </TouchableOpacity>
               </View>
               <TextInput
-                placeholder="Floor/Room number (if applicable)"
+                placeholder="N/A"
                 placeholderTextColor={themeColors.darkGray}
                 value={roomNumber}
-                onChangeText={setRoomNumber}
+                onChangeText={isEditing ? () => {} : setRoomNumber}
                 style={{
-                  // Make width match the name input above
                   borderWidth: 0.5,
                   borderColor: themeColors.black,
                   borderRadius: 8,
                   padding: 12,
                   marginBottom: 8,
-                  backgroundColor: themeColors.white,
-                  color: themeColors.purple,
-                  // Match width to name input
+                  backgroundColor: isEditing
+                    ? themeColors.gray
+                    : themeColors.white,
+                  color: isEditing ? themeColors.darkGray : themeColors.purple,
                   width: "100%",
+                  fontFamily: "CarosSoft",
                 }}
+                editable={!isEditing}
               />
             </>
           )}
@@ -555,7 +573,6 @@ export default function EditSpotScreen({ navigation, route }) {
             onClose={() => setShowMapPicker(false)}
             onPick={(coords) => {
               setCustomCoords(coords);
-              // Autofill custom building name if available
               if (coords.name) {
                 setCustomBuilding(coords.name);
               } else if (coords.display_name) {
@@ -574,6 +591,7 @@ export default function EditSpotScreen({ navigation, route }) {
                 fontSize: 19,
                 marginBottom: 8,
                 color: themeColors.black,
+                fontFamily: "CarosSoft",
               }}
             >
               Husky Card Needed:
@@ -601,6 +619,7 @@ export default function EditSpotScreen({ navigation, route }) {
                     color: !huskyCardNeeded
                       ? themeColors.white
                       : themeColors.purple,
+                    fontFamily: "CarosSoft",
                   }}
                 >
                   No
@@ -626,6 +645,7 @@ export default function EditSpotScreen({ navigation, route }) {
                     color: huskyCardNeeded
                       ? themeColors.white
                       : themeColors.purple,
+                    fontFamily: "CarosSoft",
                   }}
                 >
                   Yes
@@ -653,7 +673,12 @@ export default function EditSpotScreen({ navigation, route }) {
 
           {/* Tags */}
           <Text
-            style={{ fontSize: 19, marginBottom: 8, color: themeColors.black }}
+            style={{
+              fontSize: 19,
+              marginBottom: 8,
+              color: themeColors.black,
+              fontFamily: "CarosSoft",
+            }}
           >
             Tags:
           </Text>
@@ -683,13 +708,14 @@ export default function EditSpotScreen({ navigation, route }) {
               marginBottom: 16,
               backgroundColor: themeColors.white,
               color: themeColors.purple,
+              fontFamily: "CarosSoft",
             }}
             accessibilityLabel="Open or Quiet Hours"
             accessible={true}
           />
 
-          {/* Only show private toggle for custom locations */}
-          {!isUWBuilding && (
+          {/* Private Nook toggle - hide for editing */}
+          {!isUWBuilding && !isEditing && (
             <View
               style={{
                 flexDirection: "row",
@@ -782,6 +808,7 @@ export default function EditSpotScreen({ navigation, route }) {
                   fontSize: 13,
                   textAlign: "center",
                   flex: 1,
+                  fontFamily: "CarosSoft",
                 }}
               >
                 Reset
@@ -820,6 +847,7 @@ export default function EditSpotScreen({ navigation, route }) {
                   fontSize: 13,
                   textAlign: "center",
                   flex: 1,
+                  fontFamily: "CarosSoft",
                 }}
               >
                 Finish
