@@ -34,7 +34,7 @@
         {
           "backgroundColor": "#ffffff",
           "resizeMode": "contain",
-          "image": "./assets/NookLogo.png"
+          "image": "./assets/NewNook.png"
         }
       ],
       "expo-font"

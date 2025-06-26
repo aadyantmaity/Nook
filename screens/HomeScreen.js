@@ -332,6 +332,7 @@ export default function HomeScreen({ navigation, route }) {
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingBottom: 72 }}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           {/* Toggle row (List/Map/Filters) */}
           <View style={{ paddingHorizontal: 16 }}>

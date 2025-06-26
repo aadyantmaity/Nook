@@ -27,16 +27,19 @@ export default function FindPeopleView({
           backgroundColor: themeColors.gray + "33",
           borderRadius: 10,
           overflow: "hidden",
+          paddingHorizontal: 16,
         }}
       >
         <TouchableOpacity
           onPress={() => setSelectedTab("findPeople")}
           style={{
+            flex: 1,
             paddingVertical: 10,
-            paddingHorizontal: 28,
             backgroundColor:
               selectedTab === "findPeople" ? themeColors.purple : "transparent",
             borderRadius: 10,
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
           <Text
@@ -56,11 +59,13 @@ export default function FindPeopleView({
         <TouchableOpacity
           onPress={() => setSelectedTab("socialFeed")}
           style={{
+            flex: 1,
             paddingVertical: 10,
-            paddingHorizontal: 28,
             backgroundColor:
               selectedTab === "socialFeed" ? themeColors.purple : "transparent",
             borderRadius: 10,
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
           <Text

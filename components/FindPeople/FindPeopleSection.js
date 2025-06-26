@@ -143,9 +143,9 @@ export default function FindPeopleSection({ navigation }) {
         backgroundColor: themeColors.white,
         borderRadius: 16,
         padding: 24,
-        marginHorizontal: 16,
-        width: "92%",
-        maxWidth: 600,
+        marginHorizontal: 0, // match SocialFeedSection
+        width: "100%", // match SocialFeedSection
+        // maxWidth: 600,     // remove maxWidth
         marginTop: -8,
         alignItems: "center",
       }}

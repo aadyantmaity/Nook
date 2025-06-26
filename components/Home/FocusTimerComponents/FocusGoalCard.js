@@ -209,7 +209,7 @@ export function FocusGoalCard({
                   fontFamily: "CarosSoft",
                 }}
               >
-                {archiving ? "Archiving..." : "Add to Archive"}
+                {archiving ? "Archiving..." : "Save to Archive"}
               </Text>
             </TouchableOpacity>
           )}
