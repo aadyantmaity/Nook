@@ -81,7 +81,7 @@ export function FocusGoalCard({
       onPress={() => {
         if (!isRunning) setShowGoalModal(true);
       }}
-      disabled={isRunning}
+      disabled={isRunning} // <-- disable touch when running
       style={{
         backgroundColor: themeColors.white,
         borderRadius: 14,
@@ -136,7 +136,9 @@ export function FocusGoalCard({
         {/* Remove edit button */}
         <TouchableOpacity
           onPress={onDelete}
-          style={{ marginRight: goal.type === "custom" ? 8 : 0 }}
+          style={{
+            marginRight: goal.type === "custom" ? 8 : 0,
+          }}
         >
           <Trash size={22} color={themeColors.red} />
         </TouchableOpacity>

@@ -58,6 +58,7 @@ const POMODORO_SETTINGS_KEY = "focusPomodoroSettings";
 export function FocusTimerView({ navigation }) {
   const themeCtx = useContext(ThemeContext);
   const themeColors = themeCtx?.themeColors ?? colors;
+  const pausedTimeRef = useRef(null); // To track when the app was paused
 
   // --- Pomodoro settings from Firestore ---
   const {
@@ -100,6 +101,7 @@ export function FocusTimerView({ navigation }) {
     removeSessionFromGoal,
     deleteGoal,
     markCustomGoalAchieved,
+    handleGoalSave, // <-- import handleGoalSave from useGoal
   } = useGoal();
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [showCustomGoalModal, setShowCustomGoalModal] = useState(false); // new
@@ -769,241 +771,6 @@ export function FocusTimerView({ navigation }) {
   const [showStatModal, setShowStatModal] = useState(false);
   const [deletingStat, setDeletingStat] = useState(false);
 
-  // --- Archive Modal State ---
-  const [showArchiveModal, setShowArchiveModal] = useState(false);
-  const [archiveData, setArchiveData] = useState({});
-  const [archiveLoading, setArchiveLoading] = useState(false);
-  const [openArchiveMonths, setOpenArchiveMonths] = useState({}); // {year_month: true/false}
-  const [openArchiveLocations, setOpenArchiveLocations] = useState({}); // {year_month_spotId: true/false}
-
-  // --- Fetch all-time sessions for archive ---
-  const fetchArchiveData = async () => {
-    if (!auth.currentUser) return;
-    setArchiveLoading(true);
-    try {
-      // Use new per-user focusSessions subcollection
-      const q = collection(db, "users", auth.currentUser.uid, "focusSessions");
-      const snapshot = await getDocs(q);
-      // Group by year -> month -> spotId, EXCLUDE breaks
-      const data = {};
-      snapshot.forEach((docSnap) => {
-        const d = docSnap.data();
-        if (!d.spotId || !d.start || !d.end || d.isBreak) return;
-        const spotId = d.spotId;
-        const startMillis = d.start.seconds
-          ? d.start.seconds * 1000
-          : d.start.toMillis();
-        const date = new Date(startMillis);
-        const year = date.getFullYear();
-        const month = date.getMonth() + 1; // 1-based
-        if (!data[year]) data[year] = {};
-        if (!data[year][month]) data[year][month] = {};
-        if (!data[year][month][spotId]) data[year][month][spotId] = [];
-        data[year][month][spotId].push({
-          ...d,
-          start: startMillis,
-          end: d.end.seconds ? d.end.seconds * 1000 : d.end.toMillis(),
-          duration: d.duration,
-        });
-      });
-      setArchiveData(data);
-    } catch (e) {
-      // Optionally handle error
-    }
-    setArchiveLoading(false);
-  };
-
-  // --- Open/close month dropdown in archive ---
-  const toggleArchiveMonth = (year, month) => {
-    const key = `${year}_${month}`;
-    setOpenArchiveMonths((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-  };
-
-  // --- Open/close location dropdown in archive ---
-  const toggleArchiveLocation = (year, month, spotId) => {
-    const key = `${year}_${month}_${spotId}`;
-    setOpenArchiveLocations((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-  };
-
-  // --- Open Archive Modal Handler ---
-  const handleOpenArchive = async () => {
-    await fetchArchiveData();
-    setShowArchiveModal(true);
-  };
-
-  // Show stats for the week (grouped by spot, show each session's tags)
-  const renderStats = () => {
-    // Only consider non-break sessions for stats
-    const nonBreakStats = Object.entries(focusStats)
-      .map(([spotId, sessions]) => [
-        spotId,
-        Array.isArray(sessions) ? sessions.filter((b) => !b.isBreak) : [],
-      ])
-      .filter(([, sessions]) => sessions.length > 0);
-
-    if (nonBreakStats.length === 0) {
-      return (
-        <Text
-          style={{
-            color: themeColors.darkGray,
-            marginTop: 8,
-            fontFamily: "CarosSoft",
-          }}
-        >
-          No focus sessions this week.
-        </Text>
-      );
-    }
-
-    // Calculate total focus time (only Pomodoro, not break)
-    const totalMs = nonBreakStats
-      .flatMap(([, sessions]) => sessions)
-      .reduce((a, b) => a + (b.duration || 0), 0);
-    const totalSeconds = Math.floor(totalMs / 1000);
-    const totalHours = Math.floor(totalSeconds / 3600);
-    const totalMinutes = Math.floor((totalSeconds % 3600) / 60);
-    const totalSecs = totalSeconds % 60;
-
-    return (
-      <View style={{ marginTop: 12 }}>
-        <View
-          style={{
-            backgroundColor: themeColors.purple,
-            borderRadius: 10,
-            padding: 12,
-            marginBottom: 12,
-            alignItems: "center",
-            shadowColor: themeColors.black,
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.08,
-            shadowRadius: 4,
-            elevation: 2,
-          }}
-        >
-          <Text
-            style={{
-              color: themeColors.white,
-              fontWeight: "bold",
-              fontSize: 16,
-              fontFamily: "CarosSoft",
-            }}
-          >
-            Total Focus Time
-          </Text>
-          <Text
-            style={{
-              color: themeColors.white,
-              fontSize: 18,
-              marginTop: 2,
-              fontFamily: "CarosSoft",
-            }}
-          >
-            {totalHours}h {totalMinutes}m {totalSecs}s
-          </Text>
-        </View>
-        <ScrollView
-          style={{ maxHeight: 220 }}
-          contentContainerStyle={{ paddingBottom: 8 }}
-          showsVerticalScrollIndicator={false}
-        >
-          {nonBreakStats.map(([spotId, sessions]) => {
-            const spot = studySpots.find((s) => s.id === spotId);
-            const ms = sessions.reduce((a, b) => a + (b.duration || 0), 0);
-            const totalSeconds = Math.floor(ms / 1000);
-            const hours = Math.floor(totalSeconds / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
-            const seconds = totalSeconds % 60;
-            return (
-              <TouchableOpacity
-                key={spotId}
-                onPress={() => {
-                  setSelectedStatSpot({
-                    spotId,
-                    spot,
-                    ms,
-                    hours,
-                    minutes,
-                    seconds,
-                    sessions,
-                  });
-                  setShowStatModal(true);
-                }}
-                style={{
-                  backgroundColor: themeColors.white,
-                  borderRadius: 8,
-                  padding: 10,
-                  marginBottom: 8,
-                  borderWidth: 1,
-                  borderColor: themeColors.purple,
-                  shadowColor: themeColors.black,
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.04,
-                  shadowRadius: 2,
-                  elevation: 1,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  width: "94%",
-                  alignSelf: "center",
-                }}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      color: themeColors.purple,
-                      fontWeight: "bold",
-                      fontSize: 15,
-                      fontFamily: "CarosSoft",
-                    }}
-                  >
-                    {spot?.buildingName || "Unknown"}
-                    {spot?.roomNumber ? ` - Floor ${spot.roomNumber}` : ""}
-                  </Text>
-                  <Text
-                    style={{
-                      color: themeColors.black,
-                      fontSize: 14,
-                      marginTop: 2,
-                      fontFamily: "CarosSoft",
-                    }}
-                  >
-                    {hours}h {minutes}m {seconds}s
-                  </Text>
-                </View>
-                <View
-                  style={{
-                    borderRadius: 8,
-                    paddingHorizontal: 8,
-                    paddingVertical: 2,
-                    marginLeft: 4,
-                    borderWidth: 1,
-                    borderColor: themeColors.purple,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: themeColors.purple,
-                      fontSize: 13,
-                      fontWeight: "bold",
-                      fontFamily: "CarosSoft",
-                    }}
-                  >
-                    {`${totalHours}h ${totalMinutes}m ${totalSecs}s`}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
-    );
-  };
-
   // Format seconds to mm:ss
   const formatTime = (secs) => {
     const m = Math.floor(secs / 60)
@@ -1022,49 +789,33 @@ export function FocusTimerView({ navigation }) {
   };
 
   // --- Goal Modal Handlers ---
-  const handleGoalSave = () => {
-    if (goalTypeInput === "custom") {
-      setGoal({
-        title: goalTitleInput.trim() || "Custom Goal",
-        target: 0,
-        progress: 0,
-        sessionIds: [],
-        achieved: false,
-        type: "custom",
-      });
-      setShowGoalModal(false);
-      // Do NOT show the custom goal modal immediately after creation
+  // Remove the handleGoalSave function here, use the one from useGoal instead
+
+  // When opening the goal modal, prepopulate all fields with current goal
+  const openGoalModal = () => {
+    if (goal) {
+      setGoalTitleInput(goal.title || "");
+      setGoalTypeInput(goal.type || "time");
+      if (goal.type === "time") {
+        const h = Math.floor((goal.target || 0) / 3600);
+        const m = Math.floor(((goal.target || 0) % 3600) / 60);
+        const s = (goal.target || 0) % 60;
+        setGoalInput({
+          h: h ? String(h) : "",
+          m: m ? String(m) : "",
+          s: s ? String(s) : "",
+        });
+        setGoalCustomInput("");
+      } else {
+        setGoalInput({ h: "", m: "", s: "" });
+        setGoalCustomInput(goal.title || "");
+      }
+    } else {
       setGoalTitleInput("");
+      setGoalTypeInput("time");
       setGoalInput({ h: "", m: "", s: "" });
       setGoalCustomInput("");
-      setGoalTypeInput("time");
-      return;
     }
-    const h = parseInt(goalInput.h) || 0;
-    const m = parseInt(goalInput.m) || 0;
-    const s = parseInt(goalInput.s) || 0;
-    const total = h * 3600 + m * 60 + s;
-    setGoal({
-      title: goalTitleInput.trim() || "Focus Goal",
-      target: total,
-      progress: 0,
-      sessionIds: [],
-      achieved: false,
-      type: "time",
-    });
-    setShowGoalModal(false);
-    setGoalTitleInput("");
-    setGoalInput({ h: "", m: "", s: "" });
-    setGoalCustomInput("");
-    setGoalTypeInput("time");
-  };
-
-  // When opening the goal modal, reset all fields
-  const openGoalModal = () => {
-    setGoalTitleInput("");
-    setGoalInput({ h: "", m: "", s: "" });
-    setGoalCustomInput("");
-    setGoalTypeInput("time");
     setShowGoalModal(true);
   };
 
@@ -1099,11 +850,17 @@ export function FocusTimerView({ navigation }) {
     }
     setIsRunning(true);
     setSessionStart(Timestamp.now());
+    // Use pausedTimeRef if resuming, otherwise use workTimeSetting
+    const duration =
+      pausedTimeRef.current && typeof pausedTimeRef.current === "number"
+        ? pausedTimeRef.current
+        : workTimeSetting * 60;
     timerStartRef.current = {
       start: Date.now(),
-      duration: workTimeSetting * 60, // always use current state
+      duration,
     };
-    setTimer(workTimeSetting * 60);
+    setTimer(duration);
+    pausedTimeRef.current = null; // Clear after starting
   };
 
   // Pause handler: recalculate remaining time and persist
@@ -1114,6 +871,7 @@ export function FocusTimerView({ navigation }) {
       );
       const remaining = Math.max(timerStartRef.current.duration - elapsed, 0);
       setTimer(remaining);
+      pausedTimeRef.current = remaining; // Store remaining time for resume
     }
     timerStartRef.current = null;
     setIsRunning(false);
@@ -1553,6 +1311,7 @@ export function FocusTimerView({ navigation }) {
               themeColors={themeColors}
               onDelete={deleteGoal}
               onMarkCustomGoalAchieved={markCustomGoalAchieved}
+              isRunning={isRunning} // <-- add this line
             />
             {/* --- Location Picker Button --- */}
             <TouchableOpacity
@@ -1658,7 +1417,20 @@ export function FocusTimerView({ navigation }) {
               setGoalInput={setGoalInput}
               goalCustomInput={goalCustomInput}
               setGoalCustomInput={setGoalCustomInput}
-              onSave={handleGoalSave}
+              // Use the shared handleGoalSave from useGoal
+              onSave={() =>
+                handleGoalSave({
+                  goalTypeInput,
+                  goalTitleInput,
+                  goalInput,
+                  goalCustomInput,
+                  setGoalTitleInput,
+                  setGoalInput,
+                  setGoalCustomInput,
+                  setGoalTypeInput,
+                  onClose: () => setShowGoalModal(false),
+                })
+              }
               themeColors={themeColors}
             />
           </View>
