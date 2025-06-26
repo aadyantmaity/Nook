@@ -58,10 +58,27 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
             }
           } catch {}
         }
+        // --- New: resolve tagged user names if taggedUids exists ---
+        let taggedNames = [];
+        if (Array.isArray(post.taggedUids) && post.taggedUids.length > 0) {
+          try {
+            const userDoc = await getDocs(query(collection(db, "users")));
+            for (const uid of post.taggedUids) {
+              const u = userDoc.docs.find((d) => d.id === uid);
+              if (u) {
+                const d = u.data();
+                taggedNames.push(
+                  `${d.firstName || ""} ${d.lastName || ""}`.trim() || d.email
+                );
+              }
+            }
+          } catch {}
+        }
         posts.push({
           id: docSnap.id,
           ...post,
           userName,
+          taggedNames, // add this for rendering
         });
       }
       setFeed(posts);
@@ -266,6 +283,20 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
                     }}
                   >
                     {item.message}
+                    {/* --- New: show tagged friends if present and not already in message --- */}
+                    {item.taggedNames &&
+                      item.taggedNames.length > 0 &&
+                      !item.message.includes("with " + item.taggedNames[0]) && (
+                        <Text
+                          style={{
+                            color: themeColors.purple,
+                            fontFamily: "CarosSoft",
+                          }}
+                        >
+                          {" with "}
+                          {item.taggedNames.join(", ")}
+                        </Text>
+                      )}
                   </Text>
                   {/* Bottom row: timestamp right */}
                   <View
