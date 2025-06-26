@@ -459,7 +459,7 @@ export const GoalModal = ({
                   marginRight: 6,
                 }}
                 keyboardType="numeric"
-                value={goalInput.h === "" ? "0" : goalInput.h}
+                value={goalInput.h}
                 onChangeText={(v) =>
                   setGoalInput((prev) => ({
                     ...prev,
@@ -484,7 +484,7 @@ export const GoalModal = ({
                   marginRight: 6,
                 }}
                 keyboardType="numeric"
-                value={goalInput.m === "" ? "0" : goalInput.m}
+                value={goalInput.m}
                 onChangeText={(v) =>
                   setGoalInput((prev) => ({
                     ...prev,
