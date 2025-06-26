@@ -6,6 +6,7 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
+  Alert, // <-- add Alert import
 } from "react-native";
 import { db, auth } from "../../firebaseConfig";
 import {
@@ -91,17 +92,35 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
     } catch {}
   };
 
+  // Add confirm wrapper
+  const confirmDeletePost = (postId) => {
+    Alert.alert(
+      "Delete Post",
+      "Are you sure you want to delete this post?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => handleDeletePost(postId),
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   return (
     <View
       style={{
         backgroundColor: themeColors.white,
         borderRadius: 16,
         padding: 24,
-        marginHorizontal: 16,
-        width: "92%",
-        maxWidth: 600,
+        marginHorizontal: 0, // remove side margin for full width
+        width: "100%", // extend to full width
+        // maxWidth: 600,     // remove maxWidth
         marginTop: -8,
         alignItems: "center",
+        flex: 1,
       }}
     >
       <View
@@ -171,11 +190,11 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
           No posts yet.
         </Text>
       ) : (
-        <View style={{ width: "100%", maxHeight: 400 }}>
+        <View style={{ width: "100%", flex: 1 }}>
           <FlatList
             data={feed}
             keyExtractor={(item) => item.id}
-            style={{ width: "100%" }}
+            style={{ width: "100%", flex: 1 }}
             contentContainerStyle={{ paddingBottom: 8 }}
             showsVerticalScrollIndicator={false}
             renderItem={({ item }) => (
@@ -217,7 +236,7 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
                     {/* Only show delete button if the post belongs to the current user */}
                     {user && item.uid === user.uid ? (
                       <TouchableOpacity
-                        onPress={() => handleDeletePost(item.id)}
+                        onPress={() => confirmDeletePost(item.id)}
                         style={{
                           marginLeft: 10,
                           backgroundColor: themeColors.red,

@@ -286,13 +286,13 @@ export default function StudySpotsMapView({
       {/* --- Nook summary panel below the map --- */}
       <View
         style={{
-          marginTop: 12,
           marginBottom: 8,
           alignSelf: "center",
           width: mapSize,
           backgroundColor: themeColors.white,
           borderRadius: 12,
-          padding: 14,
+          paddingHorizontal: 14,
+          paddingVertical: 10,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.08,
