@@ -28,7 +28,7 @@ import * as ImagePicker from "expo-image-picker";
 import { getLastUpdatedLabel } from "../utils/lastUpdatedLabel";
 
 // Hooks and components
-import useProfileData from "../hooks/useProfileData";
+import { useProfileData } from "../hooks/useProfileData";
 import useFavoriteSpots from "../hooks/useFavoriteSpots";
 import useStudyStats from "../hooks/useStudyStats";
 import ProfilePicture from "../components/Profile/ProfilePicture";

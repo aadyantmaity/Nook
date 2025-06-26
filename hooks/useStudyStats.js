@@ -23,10 +23,7 @@ export default function useStudyStats(targetUid = null) {
     const uid = targetUid || user?.uid;
     if (!uid) return;
     try {
-      const q = query(
-        collection(db, "focusSessions"),
-        where("userId", "==", uid)
-      );
+      const q = collection(db, "users", uid, "focusSessions");
       const snapshot = await getDocs(q);
       let total = 0;
       let totalTimeStudied = 0;
