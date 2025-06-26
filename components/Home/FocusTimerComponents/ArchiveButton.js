@@ -17,7 +17,6 @@ export function ArchiveButton({
   auth,
   db,
   handleDeleteSession,
-  setGoal, // <-- add this prop
 }) {
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [archiveData, setArchiveData] = useState({});
@@ -106,16 +105,6 @@ export function ArchiveButton({
 
   // --- Open Archive Modal Handler ---
   const handleOpenArchive = async () => {
-    // Clear the goal state when archive is opened
-    setGoal &&
-      setGoal({
-        title: "",
-        target: 0,
-        progress: 0,
-        sessionIds: [],
-        achieved: false,
-        type: "time",
-      });
     await fetchArchiveData();
     await fetchArchivedGoals();
     setShowArchiveModal(true);

@@ -209,25 +209,18 @@ export const useGoal = () => {
     setGoalCongratsShown(false);
   };
 
-  return {
-    goal,
-    setGoal,
-    goalLoaded,
-    addSessionToGoal,
-    removeSessionFromGoal,
-    deleteGoal,
-    markCustomGoalAchieved,
-  };
-};
-
-// Goal Modal Component
-export const GoalModal = ({ visible, onClose, themeColors, goal, setGoal }) => {
-  const [goalInput, setGoalInput] = useState({ h: "", m: "", s: "" });
-  const [goalTitleInput, setGoalTitleInput] = useState("");
-  const [goalTypeInput, setGoalTypeInput] = useState("time");
-  const [goalCustomInput, setGoalCustomInput] = useState("");
-
-  const handleSave = () => {
+  // Save goal handler (preserves progress/sessionIds when editing)
+  const handleGoalSave = ({
+    goalTypeInput,
+    goalTitleInput,
+    goalInput,
+    goalCustomInput,
+    setGoalTitleInput,
+    setGoalInput,
+    setGoalCustomInput,
+    setGoalTypeInput,
+    onClose,
+  }) => {
     if (goalTypeInput === "custom") {
       setGoal({
         title: goalTitleInput.trim() || "Custom Goal",
@@ -237,7 +230,7 @@ export const GoalModal = ({ visible, onClose, themeColors, goal, setGoal }) => {
         achieved: false,
         type: "custom",
       });
-      onClose();
+      if (onClose) onClose();
       setGoalTitleInput("");
       setGoalInput({ h: "", m: "", s: "" });
       setGoalCustomInput("");
@@ -250,20 +243,78 @@ export const GoalModal = ({ visible, onClose, themeColors, goal, setGoal }) => {
     const s = parseInt(goalInput.s) || 0;
     const total = h * 3600 + m * 60 + s;
 
+    // Prevent setting a new goal target less than current progress
+    if (
+      goal &&
+      goal.type === "time" &&
+      typeof goal.progress === "number" &&
+      total < goal.progress
+    ) {
+      Alert.alert(
+        "Invalid Goal",
+        `Goal time cannot be less than your current progress (${Math.floor(
+          goal.progress / 3600
+        )}h ${Math.floor((goal.progress % 3600) / 60)}m ${
+          goal.progress % 60
+        }s).`
+      );
+      return;
+    }
+
+    // Preserve progress and sessionIds if editing an existing goal
     setGoal({
       title: goalTitleInput.trim() || "Focus Goal",
       target: total,
-      progress: 0,
-      sessionIds: [],
-      achieved: false,
+      progress: goal && goal.type === "time" ? goal.progress : 0,
+      sessionIds: goal && goal.type === "time" ? goal.sessionIds : [],
+      achieved:
+        goal && goal.type === "time"
+          ? total > 0 && goal.progress >= total
+          : false,
       type: "time",
     });
 
-    onClose();
+    if (onClose) onClose();
     setGoalTitleInput("");
     setGoalInput({ h: "", m: "", s: "" });
     setGoalCustomInput("");
     setGoalTypeInput("time");
+  };
+
+  return {
+    goal,
+    setGoal,
+    goalLoaded,
+    addSessionToGoal,
+    removeSessionFromGoal,
+    deleteGoal,
+    markCustomGoalAchieved,
+    handleGoalSave, // <-- export this
+  };
+};
+
+// Goal Modal Component
+export const GoalModal = ({
+  visible,
+  onClose,
+  themeColors,
+  goal,
+  setGoal,
+  goalTypeInput,
+  setGoalTypeInput,
+  goalTitleInput,
+  setGoalTitleInput,
+  goalInput,
+  setGoalInput,
+  goalCustomInput,
+  setGoalCustomInput,
+  onSave,
+}) => {
+  // Only use onSave if provided, otherwise use nothing (no fallback)
+  const handleSave = () => {
+    if (onSave) {
+      onSave();
+    }
   };
 
   return (
@@ -408,7 +459,7 @@ export const GoalModal = ({ visible, onClose, themeColors, goal, setGoal }) => {
                   marginRight: 6,
                 }}
                 keyboardType="numeric"
-                value={goalInput.h}
+                value={goalInput.h === "" ? "0" : goalInput.h}
                 onChangeText={(v) =>
                   setGoalInput((prev) => ({
                     ...prev,
@@ -433,7 +484,7 @@ export const GoalModal = ({ visible, onClose, themeColors, goal, setGoal }) => {
                   marginRight: 6,
                 }}
                 keyboardType="numeric"
-                value={goalInput.m}
+                value={goalInput.m === "" ? "0" : goalInput.m}
                 onChangeText={(v) =>
                   setGoalInput((prev) => ({
                     ...prev,
