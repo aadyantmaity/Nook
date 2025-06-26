@@ -12,7 +12,7 @@ import {
 import { updateProfile } from "firebase/auth";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
-export default function useProfileData(targetUid = null) {
+export function useProfileData(targetUid = null) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [userEmail, setUserEmail] = useState("");
@@ -22,6 +22,8 @@ export default function useProfileData(targetUid = null) {
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [workTimeSetting, setWorkTimeSetting] = useState(null); // add
+  const [breakTimeSetting, setBreakTimeSetting] = useState(null); // add
 
   // --- Live Firestore subscription for user data ---
   useEffect(() => {
@@ -39,6 +41,8 @@ export default function useProfileData(targetUid = null) {
         setProfilePic(data.profilePic);
         setFollowers(data.followers || []);
         setFollowing(data.following || []);
+        setWorkTimeSetting(data.workTimeSetting || null);
+        setBreakTimeSetting(data.breakTimeSetting || null);
       }
       setIsLoading(false);
     });
@@ -140,6 +144,20 @@ export default function useProfileData(targetUid = null) {
     } catch {}
   };
 
+  // --- Add setters for Pomodoro settings (only for current user) ---
+  const setWorkTimeSettingFirestore = async (val) => {
+    const user = auth.currentUser;
+    if (user && (!targetUid || targetUid === user.uid)) {
+      await updateDoc(doc(db, "users", user.uid), { workTimeSetting: val });
+    }
+  };
+  const setBreakTimeSettingFirestore = async (val) => {
+    const user = auth.currentUser;
+    if (user && (!targetUid || targetUid === user.uid)) {
+      await updateDoc(doc(db, "users", user.uid), { breakTimeSetting: val });
+    }
+  };
+
   return {
     firstName,
     lastName,
@@ -158,5 +176,9 @@ export default function useProfileData(targetUid = null) {
     isFollowing,
     followUser,
     unfollowUser,
+    workTimeSetting,
+    setWorkTimeSetting: setWorkTimeSettingFirestore,
+    breakTimeSetting,
+    setBreakTimeSetting: setBreakTimeSettingFirestore,
   };
 }
