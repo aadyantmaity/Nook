@@ -44,19 +44,16 @@ export default function RatingsDisplay({
         style={{
           flexDirection: "row",
           justifyContent: "space-between",
-          marginTop: 4,
         }}
       >
         <View
           style={{
             alignItems: "center",
-            padding: 16,
+            paddingHorizontal: 16,
             backgroundColor: themeColors.white,
             borderRadius: 8,
             flex: 1,
             marginRight: 8,
-            borderColor: themeColors.black,
-            borderWidth: 0.5,
           }}
         >
           <SpeakerHigh size={24} color={themeColors.purple} />
@@ -86,12 +83,10 @@ export default function RatingsDisplay({
         <View
           style={{
             alignItems: "center",
-            padding: 16,
+            paddingHorizontal: 16,
             backgroundColor: themeColors.white,
             borderRadius: 8,
             flex: 1,
-            borderColor: themeColors.black,
-            borderWidth: 0.5,
           }}
         >
           <UsersThree size={24} color={themeColors.purple} />
