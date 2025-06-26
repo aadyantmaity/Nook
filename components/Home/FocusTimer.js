@@ -34,6 +34,8 @@ import {
   where,
   deleteDoc,
   doc,
+  getDoc,
+  updateDoc,
 } from "firebase/firestore";
 import { ThemeContext } from "../../App";
 import { colors } from "../../constants/colors";
@@ -48,27 +50,29 @@ import { PauseStopButtons } from "./FocusTimerComponents/PauseStopButtons";
 import { TimerControls } from "./FocusTimerComponents/TimerControls";
 import { FocusGoalCard } from "./FocusTimerComponents/FocusGoalCard";
 import { useGoal, GoalModal, GOAL_STATE_KEY } from "./FocusGoalComponents";
+import { useProfileData } from "../../hooks/useProfileData"; // <-- add this import
 
 // Add these constants at the top (after imports)
 const POMODORO_SETTINGS_KEY = "focusPomodoroSettings";
-
-// --- Timer Feature State ---
-const DEFAULT_POMODORO_MINUTES = 25;
-const DEFAULT_BREAK_MINUTES = 5;
 
 export function FocusTimerView({ navigation }) {
   const themeCtx = useContext(ThemeContext);
   const themeColors = themeCtx?.themeColors ?? colors;
 
-  // Add these lines to fix the missing state for pomodoroMinutes and breakMinutes
-  const [pomodoroMinutes, setPomodoroMinutes] = useState(
-    DEFAULT_POMODORO_MINUTES
-  );
-  const [breakMinutes, setBreakMinutes] = useState(DEFAULT_BREAK_MINUTES);
+  // --- Pomodoro settings from Firestore ---
+  const {
+    workTimeSetting,
+    setWorkTimeSetting,
+    breakTimeSetting,
+    setBreakTimeSetting,
+    isLoading: profileLoading,
+  } = useProfileData();
 
   const [studySpots, setStudySpots] = useState([]);
   const [selectedSpot, setSelectedSpot] = useState(null);
-  const [timer, setTimer] = useState(DEFAULT_POMODORO_MINUTES * 60);
+
+  // --- Timer state, initialized after settings are loaded ---
+  const [timer, setTimer] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
   const [intervalId, setIntervalId] = useState(null);
@@ -572,15 +576,15 @@ export function FocusTimerView({ navigation }) {
         // Always use the custom Pomodoro duration for work session
         const sessionEnd = new Timestamp(
           sessionStart.seconds !== undefined
-            ? sessionStart.seconds + pomodoroMinutes * 60
-            : Math.floor(sessionStart / 1000) + pomodoroMinutes * 60,
+            ? sessionStart.seconds + workTimeSetting * 60
+            : Math.floor(sessionStart / 1000) + workTimeSetting * 60,
           sessionStart.nanoseconds !== undefined ? sessionStart.nanoseconds : 0
         );
         setPendingSession({
           start: sessionStart,
           end: sessionEnd,
           isBreak: isBreak,
-          sessionDuration: pomodoroMinutes * 60,
+          sessionDuration: workTimeSetting * 60,
         });
         if (reflectionsEnabled) {
           setShowNoteModal(true);
@@ -591,11 +595,11 @@ export function FocusTimerView({ navigation }) {
           setPendingSession(null);
           setTimeout(() => {
             setIsBreak(true);
-            setTimer(breakMinutes * 60);
+            setTimer(breakTimeSetting * 60);
             setSessionStart(Timestamp.now());
             timerStartRef.current = {
               start: Date.now(),
-              duration: breakMinutes * 60,
+              duration: breakTimeSetting * 60,
             };
             setIsRunning(true);
           }, 500);
@@ -605,7 +609,7 @@ export function FocusTimerView({ navigation }) {
         // If break ends, just transition to Pomodoro, no reflection
         setSessionStart(null);
         setIsBreak(false);
-        setTimer(pomodoroMinutes * 60);
+        setTimer(workTimeSetting * 60);
         Alert.alert("Break over!", "Ready for another Pomodoro?");
         if (autoStartNext) {
           setTimeout(() => {
@@ -614,7 +618,7 @@ export function FocusTimerView({ navigation }) {
               setSessionStart(Timestamp.now());
               timerStartRef.current = {
                 start: Date.now(),
-                duration: pomodoroMinutes * 60,
+                duration: workTimeSetting * 60,
               };
             }
           }, 1200);
@@ -626,7 +630,7 @@ export function FocusTimerView({ navigation }) {
     setSessionStart(null);
     if (!isBreak) {
       setIsBreak(true);
-      setTimer(breakMinutes * 60);
+      setTimer(breakTimeSetting * 60);
       Alert.alert(
         "Pomodoro complete!",
         "Go to the Focus mode to start another Pomodoro."
@@ -638,14 +642,14 @@ export function FocusTimerView({ navigation }) {
             setSessionStart(Timestamp.now());
             timerStartRef.current = {
               start: Date.now(),
-              duration: breakMinutes * 60,
+              duration: breakTimeSetting * 60,
             };
           }
         }, 1200);
       }
     } else {
       setIsBreak(false);
-      setTimer(pomodoroMinutes * 60);
+      setTimer(workTimeSetting * 60);
       Alert.alert("Break over!", "Ready for another Pomodoro?");
       if (autoStartNext) {
         setTimeout(() => {
@@ -654,7 +658,7 @@ export function FocusTimerView({ navigation }) {
             setSessionStart(Timestamp.now());
             timerStartRef.current = {
               start: Date.now(),
-              duration: pomodoroMinutes * 60,
+              duration: workTimeSetting * 60,
             };
           }
         }, 1200);
@@ -681,7 +685,7 @@ export function FocusTimerView({ navigation }) {
           start: sessionStart,
           end: end,
           isBreak: isBreak,
-          sessionDuration: pomodoroMinutes * 60,
+          sessionDuration: workTimeSetting * 60,
         });
         if (reflectionsEnabled) {
           setShowNoteModal(true);
@@ -692,11 +696,11 @@ export function FocusTimerView({ navigation }) {
           setPendingSession(null);
           setTimeout(() => {
             setIsBreak(true);
-            setTimer(breakMinutes * 60);
+            setTimer(breakTimeSetting * 60);
             setSessionStart(Timestamp.now());
             timerStartRef.current = {
               start: Date.now(),
-              duration: breakMinutes * 60,
+              duration: breakTimeSetting * 60,
             };
             setIsRunning(true);
           }, 500);
@@ -710,12 +714,12 @@ export function FocusTimerView({ navigation }) {
           true
         );
         setSessionStart(null);
-        setTimer(pomodoroMinutes * 60);
+        setTimer(workTimeSetting * 60);
         setIsBreak(false);
       }
     } else {
       setSessionStart(null);
-      setTimer(pomodoroMinutes * 60);
+      setTimer(workTimeSetting * 60);
       setIsBreak(false);
     }
   };
@@ -741,11 +745,11 @@ export function FocusTimerView({ navigation }) {
       // After saving note, start break timer
       setTimeout(() => {
         setIsBreak(true);
-        setTimer(breakMinutes * 60);
+        setTimer(breakTimeSetting * 60);
         setSessionStart(Timestamp.now());
         timerStartRef.current = {
           start: Date.now(),
-          duration: breakMinutes * 60,
+          duration: breakTimeSetting * 60,
         };
         setIsRunning(true);
       }, 500);
@@ -1081,7 +1085,7 @@ export function FocusTimerView({ navigation }) {
     }));
   };
 
-  // Start handler
+  // Start handler: always use Firestore/user state values
   const handleStart = () => {
     if (!selectedSpot) {
       Alert.alert("Select a location to start Focus Mode.");
@@ -1091,8 +1095,9 @@ export function FocusTimerView({ navigation }) {
     setSessionStart(Timestamp.now());
     timerStartRef.current = {
       start: Date.now(),
-      duration: timer,
+      duration: workTimeSetting * 60, // always use current state
     };
+    setTimer(workTimeSetting * 60);
   };
 
   // Pause handler: recalculate remaining time and persist
@@ -1616,10 +1621,10 @@ export function FocusTimerView({ navigation }) {
             <PomodoroSettingsModal
               visible={showSettingsModal}
               onClose={() => setShowSettingsModal(false)}
-              pomodoroMinutes={pomodoroMinutes}
-              setPomodoroMinutes={setPomodoroMinutes}
-              breakMinutes={breakMinutes}
-              setBreakMinutes={setBreakMinutes}
+              workTimeSetting={workTimeSetting}
+              setWorkTimeSetting={setWorkTimeSetting}
+              breakTimeSetting={breakTimeSetting}
+              setBreakTimeSetting={setBreakTimeSetting}
               isRunning={isRunning}
               isBreak={isBreak}
               setTimer={setTimer}
