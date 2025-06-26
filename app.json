@@ -3,7 +3,7 @@
     "name": "Nook",
     "slug": "nook",
     "version": "1.0.0",
-    "icon": "./assets/NookLogo.png",
+    "icon": "./assets/NewNook.png",
     "scheme": "nook",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -23,7 +23,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/NookLogo.png",
+        "foregroundImage": "./assets/NewNook.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.aadyant.nook"
