@@ -170,36 +170,39 @@ export function FocusTimerView({ navigation }) {
     if (!auth.currentUser) return;
     const stats = {};
     const weekAgo = Timestamp.now().toMillis() - 7 * 24 * 60 * 60 * 1000;
-    // OLD:
-    // const q = query(
-    //   collection(db, "focusSessions"),
-    //   where("userId", "==", auth.currentUser.uid)
-    // );
-    // NEW:
     const q = collection(db, "users", auth.currentUser.uid, "focusSessions");
     const snapshot = await getDocs(q);
     snapshot.forEach((doc) => {
       const data = doc.data();
       if (data.spotId && data.start && data.end) {
-        const start = data.start
-          ? data.start.seconds
-            ? data.start.seconds * 1000
-            : data.start.toMillis()
-          : null;
-        const end = data.end
-          ? data.end.seconds
-            ? data.end.seconds * 1000
-            : data.end.toMillis()
-          : null;
-        if (end !== null && start !== null && end > weekAgo) {
-          if (!stats[data.spotId]) stats[data.spotId] = [];
-          stats[data.spotId].push({
-            ...data,
-            duration: end - start,
-            start,
-            end,
-            tags: data.tags || [],
-          });
+        // Only use stored duration, do NOT recalculate as end - start
+        if (data.end.toMillis) {
+          // Firestore Timestamp
+          if (data.end.toMillis() > weekAgo) {
+            if (!stats[data.spotId]) stats[data.spotId] = [];
+            stats[data.spotId].push({
+              ...data,
+              // duration: end - start, // REMOVE this
+              // Only use stored duration
+              duration: data.duration,
+              start: data.start.toMillis(),
+              end: data.end.toMillis(),
+              tags: data.tags || [],
+            });
+          }
+        } else if (data.end.seconds) {
+          // Legacy: Timestamp object
+          const endMillis = data.end.seconds * 1000;
+          if (endMillis > weekAgo) {
+            if (!stats[data.spotId]) stats[data.spotId] = [];
+            stats[data.spotId].push({
+              ...data,
+              duration: data.duration,
+              start: data.start.seconds * 1000,
+              end: endMillis,
+              tags: data.tags || [],
+            });
+          }
         }
       }
     });
@@ -505,10 +508,16 @@ export function FocusTimerView({ navigation }) {
     end,
     isBreakSession,
     note,
-    skipGoal
+    skipGoal,
+    actualDuration // <-- add this param
   ) => {
     if (start && end && auth.currentUser && selectedSpot) {
-      const duration = end.toMillis() - start.toMillis();
+      // Always use actualDuration (from workTimeSetting * 60 - timer), never wall-clock
+      const duration =
+        typeof actualDuration === "number"
+          ? actualDuration * 1000 // store in ms for consistency
+          : workTimeSetting * 60 * 1000; // fallback, but should always be provided
+
       const sessionId = `${
         auth.currentUser.uid
       }_${start.toMillis()}_${Math.floor(Math.random() * 1000000)}`;
@@ -517,7 +526,7 @@ export function FocusTimerView({ navigation }) {
         spotId: selectedSpot.id,
         start,
         end,
-        duration,
+        duration, // Only use timer-based duration
         isBreak: isBreakSession,
         note: note || "",
         sessionId,
@@ -583,24 +592,32 @@ export function FocusTimerView({ navigation }) {
 
     if (sessionStart) {
       if (!isBreak) {
-        // Always use the custom Pomodoro duration for work session
+        // Always use workTimeSetting * 60 - timer for elapsedSeconds
+        const elapsedSeconds = workTimeSetting * 60 - timer;
         const sessionEnd = new Timestamp(
           sessionStart.seconds !== undefined
-            ? sessionStart.seconds + workTimeSetting * 60
-            : Math.floor(sessionStart / 1000) + workTimeSetting * 60,
+            ? sessionStart.seconds + elapsedSeconds
+            : Math.floor(sessionStart / 1000) + elapsedSeconds,
           sessionStart.nanoseconds !== undefined ? sessionStart.nanoseconds : 0
         );
         setPendingSession({
           start: sessionStart,
           end: sessionEnd,
           isBreak: isBreak,
-          sessionDuration: workTimeSetting * 60,
+          sessionDuration: elapsedSeconds,
         });
         if (reflectionsEnabled) {
           setShowNoteModal(true);
         } else {
-          // Save session without note and start break
-          await addSessionAndUpdateStats(sessionStart, sessionEnd, isBreak, "");
+          // Save session with accurate duration
+          await addSessionAndUpdateStats(
+            sessionStart,
+            sessionEnd,
+            isBreak,
+            "",
+            false,
+            elapsedSeconds
+          );
           setSessionNote("");
           setPendingSession(null);
           setTimeout(() => {
@@ -683,7 +700,6 @@ export function FocusTimerView({ navigation }) {
     await clearTimerState();
 
     if (sessionStart) {
-      // Subtract 1 second from end time
       const now = Timestamp.now();
       const endMillis = now.toMillis();
       const end = new Timestamp(
@@ -691,17 +707,26 @@ export function FocusTimerView({ navigation }) {
         (endMillis % 1000) * 1000000
       );
       if (!isBreak) {
+        // Always use workTimeSetting * 60 - timer for elapsedSeconds
+        const elapsedSeconds = workTimeSetting * 60 - timer;
         setPendingSession({
           start: sessionStart,
           end: end,
           isBreak: isBreak,
-          sessionDuration: workTimeSetting * 60,
+          sessionDuration: elapsedSeconds,
         });
         if (reflectionsEnabled) {
           setShowNoteModal(true);
         } else {
-          // Save session without note and start break, but skip goal update to avoid double-counting
-          await addSessionAndUpdateStats(sessionStart, end, isBreak, "", true);
+          // Save session with accurate duration, skipGoal true to avoid double-counting
+          await addSessionAndUpdateStats(
+            sessionStart,
+            end,
+            isBreak,
+            "",
+            true,
+            elapsedSeconds
+          );
           setSessionNote("");
           setPendingSession(null);
           setTimeout(() => {
@@ -747,7 +772,8 @@ export function FocusTimerView({ navigation }) {
         end,
         pendingSession.isBreak,
         sessionNote,
-        false
+        false,
+        pendingSession.sessionDuration // pass accurate duration
       );
       setSessionNote("");
       setPendingSession(null);
