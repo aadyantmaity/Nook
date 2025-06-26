@@ -168,10 +168,13 @@ export function FocusTimerView({ navigation }) {
     if (!auth.currentUser) return;
     const stats = {};
     const weekAgo = Timestamp.now().toMillis() - 7 * 24 * 60 * 60 * 1000;
-    const q = query(
-      collection(db, "focusSessions"),
-      where("userId", "==", auth.currentUser.uid)
-    );
+    // OLD:
+    // const q = query(
+    //   collection(db, "focusSessions"),
+    //   where("userId", "==", auth.currentUser.uid)
+    // );
+    // NEW:
+    const q = collection(db, "users", auth.currentUser.uid, "focusSessions");
     const snapshot = await getDocs(q);
     snapshot.forEach((doc) => {
       const data = doc.data();
@@ -517,8 +520,13 @@ export function FocusTimerView({ navigation }) {
         note: note || "",
         sessionId,
       };
-      // Use setDoc with sessionId as the document ID
-      await setDoc(doc(db, "focusSessions", sessionId), sessionObj);
+      // Only add non-break sessions to Firestore
+      if (!isBreakSession) {
+        await setDoc(
+          doc(db, "users", auth.currentUser.uid, "focusSessions", sessionId),
+          sessionObj
+        );
+      }
       // Update stats locally for immediate feedback
       const weekAgo = Timestamp.now().toMillis() - 7 * 24 * 60 * 60 * 1000;
       if (end.toMillis() > weekAgo) {
@@ -773,10 +781,8 @@ export function FocusTimerView({ navigation }) {
     if (!auth.currentUser) return;
     setArchiveLoading(true);
     try {
-      const q = query(
-        collection(db, "focusSessions"),
-        where("userId", "==", auth.currentUser.uid)
-      );
+      // Use new per-user focusSessions subcollection
+      const q = collection(db, "users", auth.currentUser.uid, "focusSessions");
       const snapshot = await getDocs(q);
       // Group by year -> month -> spotId, EXCLUDE breaks
       const data = {};
@@ -1274,7 +1280,15 @@ export function FocusTimerView({ navigation }) {
                 return;
               }
 
-              await deleteDoc(doc(db, "focusSessions", session.sessionId));
+              await deleteDoc(
+                doc(
+                  db,
+                  "users",
+                  auth.currentUser.uid,
+                  "focusSessions",
+                  session.sessionId
+                )
+              );
 
               setFocusStats((prev) => {
                 const updated = { ...prev };
