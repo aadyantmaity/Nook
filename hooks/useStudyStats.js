@@ -33,23 +33,30 @@ export default function useStudyStats(targetUid = null) {
         if (!d.isBreak && d.spotId && d.start && d.end) {
           total++;
           spotCounts[d.spotId] = (spotCounts[d.spotId] || 0) + 1;
-          const start = d.start
-            ? d.start.seconds
-              ? d.start.seconds * 1000
-              : d.start.toMillis()
-            : null;
-          const end = d.end
-            ? d.end.seconds
-              ? d.end.seconds * 1000
-              : d.end.toMillis()
-            : null;
-          if (
-            typeof start === "number" &&
-            typeof end === "number" &&
-            end > start
-          ) {
-            totalTimeStudied += end - start;
+          // Use duration if present, else fallback to end - start
+          let sessionDuration = 0;
+          if (typeof d.duration === "number") {
+            sessionDuration = d.duration;
+          } else {
+            const start = d.start
+              ? d.start.seconds
+                ? d.start.seconds * 1000
+                : d.start.toMillis()
+              : null;
+            const end = d.end
+              ? d.end.seconds
+                ? d.end.seconds * 1000
+                : d.end.toMillis()
+              : null;
+            if (
+              typeof start === "number" &&
+              typeof end === "number" &&
+              end > start
+            ) {
+              sessionDuration = end - start;
+            }
           }
+          totalTimeStudied += sessionDuration;
         }
       });
       let favoriteSpotId = null;

@@ -91,6 +91,19 @@ function HomeLoadingScreen({ themeColors, loadingMessage }) {
       >
         Nook
       </Text>
+      <Text
+        style={{
+          marginTop: 18,
+          fontSize: 18,
+          color: themeColors.darkGray,
+          fontFamily: "CarosSoft",
+          fontWeight: "bold",
+          textAlign: "center",
+          letterSpacing: 0.1,
+        }}
+      >
+        Loading your content...
+      </Text>
     </View>
   );
 }

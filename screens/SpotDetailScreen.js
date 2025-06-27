@@ -1229,24 +1229,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                     borderRadius: 10,
                   }}
                 >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontWeight: "bold",
-                        fontSize: 22,
-                        color: themeColors.purple,
-                        fontFamily: "CarosSoft",
-                      }}
-                    >
-                      Notes
-                    </Text>
-                  </View>
                   {/* Add note input directly above notes list */}
                   <AddPrivateNookNoteInput
                     spotId={spotId}
