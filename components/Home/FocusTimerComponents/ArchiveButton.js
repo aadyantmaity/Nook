@@ -286,6 +286,19 @@ export function ArchiveButton({
             >
               Focus Archive
             </Text>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "bold",
+                color: themeColors.purple,
+                marginTop: 18,
+                marginBottom: 6,
+                fontFamily: "CarosSoft",
+              }}
+            >
+              Sessions
+            </Text>
+
             {archiveLoading ? (
               <Text
                 style={{
@@ -304,24 +317,13 @@ export function ArchiveButton({
                   fontFamily: "CarosSoft",
                 }}
               >
-                No focus sessions found.
+                No focus sessions yet.
               </Text>
             ) : (
               <ScrollView
                 style={{ maxHeight: 420 }}
                 showsVerticalScrollIndicator={false}
               >
-                <Text
-                  style={{
-                    fontSize: 18,
-                    fontWeight: "bold",
-                    color: themeColors.purple,
-                    marginBottom: 6,
-                    fontFamily: "CarosSoft",
-                  }}
-                >
-                  Sessions
-                </Text>
                 {Object.entries(archiveData)
                   .sort((a, b) => b[0] - a[0])
                   .map(([year, months]) => (

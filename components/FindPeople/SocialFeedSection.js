@@ -25,6 +25,7 @@ import { colors } from "../../constants/colors";
 import { ThemeContext } from "../../App";
 import { PaperPlaneRight, Trash } from "phosphor-react-native";
 import { useNavigation } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient"; // <-- add this import
 
 export default function SocialFeedSection({ navigation: propNavigation }) {
   const [postText, setPostText] = React.useState("");
@@ -48,28 +49,48 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
       for (const docSnap of snap.docs) {
         const post = docSnap.data();
         let userName = "Unknown";
+        let isOwnPost = false;
         if (post.uid) {
           try {
             const userDoc = await getDocs(query(collection(db, "users")));
-            const user = userDoc.docs.find((d) => d.id === post.uid);
-            if (user) {
-              const d = user.data();
+            const userDocSnap = userDoc.docs.find((d) => d.id === post.uid);
+            if (userDocSnap) {
+              const d = userDocSnap.data();
               userName = `${d.firstName || ""} ${d.lastName || ""}`.trim();
+              if (auth.currentUser && post.uid === auth.currentUser.uid) {
+                userName = "You";
+                isOwnPost = true;
+              }
+            } else if (auth.currentUser && post.uid === auth.currentUser.uid) {
+              userName = "You";
+              isOwnPost = true;
             }
-          } catch {}
+          } catch {
+            if (auth.currentUser && post.uid === auth.currentUser.uid) {
+              userName = "You";
+              isOwnPost = true;
+            }
+          }
         }
         // --- New: resolve tagged user names if taggedUids exists ---
         let taggedNames = [];
+        let youTaggedIndex = -1;
         if (Array.isArray(post.taggedUids) && post.taggedUids.length > 0) {
           try {
             const userDoc = await getDocs(query(collection(db, "users")));
-            for (const uid of post.taggedUids) {
-              const u = userDoc.docs.find((d) => d.id === uid);
-              if (u) {
-                const d = u.data();
-                taggedNames.push(
-                  `${d.firstName || ""} ${d.lastName || ""}`.trim() || d.email
-                );
+            for (let i = 0; i < post.taggedUids.length; i++) {
+              const uid = post.taggedUids[i];
+              if (auth.currentUser && uid === auth.currentUser.uid) {
+                taggedNames.push("you");
+                youTaggedIndex = taggedNames.length - 1;
+              } else {
+                const u = userDoc.docs.find((d) => d.id === uid);
+                if (u) {
+                  const d = u.data();
+                  taggedNames.push(
+                    `${d.firstName || ""} ${d.lastName || ""}`.trim() || d.email
+                  );
+                }
               }
             }
           } catch {}
@@ -78,7 +99,8 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
           id: docSnap.id,
           ...post,
           userName,
-          taggedNames, // add this for rendering
+          taggedNames,
+          isOwnPost,
         });
       }
       setFeed(posts);
@@ -208,124 +230,208 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
         </Text>
       ) : (
         <View style={{ width: "100%", flex: 1 }}>
-          <FlatList
-            data={feed}
-            keyExtractor={(item) => item.id}
-            style={{ width: "100%", flex: 1 }}
-            contentContainerStyle={{ paddingBottom: 8 }}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => (
-              <View
+          {/* Gradient scrollview wrapper */}
+          <View style={{ flex: 1, position: "relative" }}>
+            {/* Top gradient */}
+            {feed.length > 0 && (
+              <LinearGradient
+                colors={[themeColors.white + "FF", themeColors.white + "00"]}
                 style={{
-                  backgroundColor: themeColors.lightGray,
-                  borderRadius: 10,
-                  padding: 14,
-                  marginBottom: 10,
-                  borderWidth: 0.5,
-                  borderColor: themeColors.gray,
-                  flexDirection: "row",
-                  alignItems: "flex-start",
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 24,
+                  zIndex: 2,
+                  pointerEvents: "none",
                 }}
-              >
-                <View style={{ flex: 1 }}>
-                  {/* Top row: username left, trash right */}
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <TouchableOpacity
-                      onPress={() => {
-                        if (item.uid) {
-                          navigation.navigate("Profile", { uid: item.uid });
-                        }
-                      }}
-                      activeOpacity={0.7}
-                      style={{ flex: 1 }}
+                pointerEvents="none"
+              />
+            )}
+            <FlatList
+              data={feed}
+              keyExtractor={(item) => item.id}
+              style={{ width: "100%", flex: 1 }}
+              contentContainerStyle={{ paddingBottom: 8 }}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item }) => (
+                <View
+                  style={{
+                    backgroundColor: themeColors.lightGray,
+                    borderRadius: 10,
+                    padding: 14,
+                    marginBottom: 10,
+                    borderWidth: 0.5,
+                    borderColor: themeColors.gray,
+                    flexDirection: "row",
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <View style={{ flex: 1 }}>
+                    {/* Top row: username left, trash right */}
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}
                     >
-                      <Text
-                        style={{
-                          color: themeColors.purple,
-                          fontWeight: "bold",
-                          fontSize: 15,
-                          fontFamily: "CarosSoft",
-                        }}
-                      >
-                        {item.userName || "Unknown"}
-                      </Text>
-                    </TouchableOpacity>
-                    {/* Only show delete button if the post belongs to the current user */}
-                    {user && item.uid === user.uid ? (
                       <TouchableOpacity
-                        onPress={() => confirmDeletePost(item.id)}
-                        style={{
-                          marginLeft: 10,
-                          backgroundColor: themeColors.red,
-                          borderRadius: 6,
-                          padding: 6,
-                          alignItems: "center",
-                          justifyContent: "center",
-                          height: 32,
-                          width: 32,
+                        onPress={() => {
+                          if (item.uid) {
+                            navigation.navigate("Profile", { uid: item.uid });
+                          }
                         }}
-                        accessibilityLabel="Delete post"
+                        activeOpacity={0.7}
+                        style={{ flex: 1 }}
                       >
-                        <Trash
-                          size={18}
-                          color={themeColors.white}
-                          weight="bold"
-                        />
-                      </TouchableOpacity>
-                    ) : null}
-                  </View>
-                  <Text
-                    style={{
-                      color: themeColors.black,
-                      fontSize: 15,
-                      marginTop: 2,
-                      fontFamily: "CarosSoft",
-                    }}
-                  >
-                    {item.message}
-                    {/* --- New: show tagged friends if present and not already in message --- */}
-                    {item.taggedNames &&
-                      item.taggedNames.length > 0 &&
-                      !item.message.includes("with " + item.taggedNames[0]) && (
                         <Text
                           style={{
                             color: themeColors.purple,
+                            fontWeight: "bold",
+                            fontSize: 15,
                             fontFamily: "CarosSoft",
                           }}
                         >
-                          {" with "}
-                          {item.taggedNames.join(", ")}
+                          {item.userName || "Unknown"}
                         </Text>
-                      )}
-                  </Text>
-                  {/* Bottom row: timestamp right */}
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginTop: 6,
-                    }}
-                  >
+                      </TouchableOpacity>
+                      {/* Only show delete button if the post belongs to the current user */}
+                      {user && item.uid === user.uid ? (
+                        <TouchableOpacity
+                          onPress={() => confirmDeletePost(item.id)}
+                          style={{
+                            marginLeft: 10,
+                            backgroundColor: themeColors.red,
+                            borderRadius: 6,
+                            padding: 6,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            height: 32,
+                            width: 32,
+                          }}
+                          accessibilityLabel="Delete post"
+                        >
+                          <Trash
+                            size={18}
+                            color={themeColors.white}
+                            weight="bold"
+                          />
+                        </TouchableOpacity>
+                      ) : null}
+                    </View>
                     <Text
                       style={{
-                        color: themeColors.darkGray,
-                        fontSize: 12,
-                        flex: 1,
-                        textAlign: "right",
+                        color: themeColors.black,
+                        fontSize: 15,
+                        marginTop: 2,
                         fontFamily: "CarosSoft",
                       }}
                     >
-                      {item.createdAt && item.createdAt.seconds
-                        ? new Date(
-                            item.createdAt.seconds * 1000
-                          ).toLocaleString()
-                        : ""}
+                      {/* --- Message rendering with "you" for check-ins --- */}
+                      {(() => {
+                        // If this is a check-in post and the author is the current user, remove "you" from taggedNames for display
+                        if (
+                          item.type === "checkin" &&
+                          item.isOwnPost &&
+                          item.message &&
+                          item.message.startsWith("Checked in at")
+                        ) {
+                          // Remove any "with ..." from message
+                          let baseMsg = item.message.replace(/ with .*!$/, "!");
+                          // Only show tagged friends (excluding "you")
+                          if (item.taggedNames && item.taggedNames.length > 0) {
+                            const others = item.taggedNames.filter(
+                              (n) => n !== "you"
+                            );
+                            let tagString = "";
+                            if (others.length === 1) {
+                              tagString = " with " + others[0];
+                            } else if (others.length === 2) {
+                              tagString =
+                                " with " + others[0] + " and " + others[1];
+                            } else if (others.length > 2) {
+                              tagString =
+                                " with " +
+                                others.slice(0, -1).join(", ") +
+                                ", and " +
+                                others[others.length - 1];
+                            }
+                            return (
+                              <>
+                                {baseMsg.replace(/!$/, "")}
+                                {others.length > 0 ? tagString : ""}
+                                {"!"}
+                              </>
+                            );
+                          } else {
+                            return item.message;
+                          }
+                        }
+                        // If not a check-in or not own post, show message as is, and show tagged friends if present and not already in message
+                        return (
+                          <>
+                            {item.message}
+                            {item.taggedNames &&
+                              item.taggedNames.length > 0 &&
+                              !item.message.includes(
+                                "with " + item.taggedNames[0]
+                              ) && (
+                                <Text
+                                  style={{
+                                    color: themeColors.black,
+                                    fontFamily: "CarosSoft",
+                                  }}
+                                >
+                                  {" with "}
+                                  {item.taggedNames.join(", ")}
+                                </Text>
+                              )}
+                          </>
+                        );
+                      })()}
                     </Text>
+                    {/* Bottom row: timestamp right */}
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        marginTop: 6,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: themeColors.darkGray,
+                          fontSize: 12,
+                          flex: 1,
+                          textAlign: "right",
+                          fontFamily: "CarosSoft",
+                        }}
+                      >
+                        {item.createdAt && item.createdAt.seconds
+                          ? new Date(
+                              item.createdAt.seconds * 1000
+                            ).toLocaleString()
+                          : ""}
+                      </Text>
+                    </View>
                   </View>
                 </View>
-              </View>
+              )}
+            />
+            {/* Bottom gradient */}
+            {feed.length > 0 && (
+              <LinearGradient
+                colors={[themeColors.white + "00", themeColors.white + "FF"]}
+                style={{
+                  position: "absolute",
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: 24,
+                  zIndex: 2,
+                  pointerEvents: "none",
+                }}
+                pointerEvents="none"
+              />
             )}
-          />
+          </View>
         </View>
       )}
     </View>
