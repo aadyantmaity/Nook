@@ -58,8 +58,8 @@ import SpotGallery from "../components/SpotDetail/SpotGallery";
 import CheckInButton from "../components/SpotDetail/CheckInButton";
 import HomeLoadingScreen from "../components/Home/HomeLoadingScreen"; // Add this import
 import PrivateNookShareModal from "../components/SpotDetail/PrivateNookShareModal";
-import AddPrivateNookNoteModal from "../components/SpotDetail/AddPrivateNookNoteModal";
 import UserFocusStatsDropdown from "../components/SpotDetail/UserFocusStatsDropdown";
+import AddPrivateNookNoteInput from "../components/SpotDetail/AddPrivateNookNoteInput";
 
 // Hooks
 import useSpotDetails from "../hooks/useSpotDetails";
@@ -335,7 +335,6 @@ export default function SpotDetailScreen({ route, navigation }) {
             <View
               style={{
                 width: "100%",
-                marginBottom: 8,
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "space-between",
@@ -599,6 +598,8 @@ export default function SpotDetailScreen({ route, navigation }) {
                 height: 150,
                 borderRadius: 8,
               }}
+              // Add marginTop: 8 if not private nook
+              style={!isPrivateNook ? { marginTop: -4 } : undefined}
             />
 
             {/* Spot Name and Floor */}
@@ -766,13 +767,15 @@ export default function SpotDetailScreen({ route, navigation }) {
             )}
           </ScrollView>
         ) : (
-          <View
-            style={{
+          // Wrap private nook details in ScrollView instead of View
+          <ScrollView
+            contentContainerStyle={{
               flexGrow: 1,
               padding: 16,
               backgroundColor: themeColors.white,
               paddingTop: 0,
             }}
+            showsVerticalScrollIndicator={false}
           >
             {/* Top Bar */}
             <View
@@ -1042,6 +1045,8 @@ export default function SpotDetailScreen({ route, navigation }) {
                 height: 150,
                 borderRadius: 8,
               }}
+              // No extra margin for private nook
+              style={undefined}
             />
 
             {/* Spot Name and Floor */}
@@ -1219,7 +1224,7 @@ export default function SpotDetailScreen({ route, navigation }) {
               <>
                 <View
                   style={{
-                    marginTop: 18,
+                    marginTop: 12,
                     backgroundColor: themeColors.gray + "22",
                     borderRadius: 10,
                   }}
@@ -1241,22 +1246,13 @@ export default function SpotDetailScreen({ route, navigation }) {
                     >
                       Notes
                     </Text>
-                    <TouchableOpacity
-                      onPress={() => setShowAddNoteModal(true)}
-                      style={{
-                        backgroundColor: themeColors.purple,
-                        borderRadius: 8,
-                        paddingVertical: 6,
-                        paddingHorizontal: 6,
-                        alignItems: "center",
-                        marginLeft: 10,
-                        flexDirection: "row",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Plus size={18} color={themeColors.white} weight="bold" />
-                    </TouchableOpacity>
                   </View>
+                  {/* Add note input directly above notes list */}
+                  <AddPrivateNookNoteInput
+                    spotId={spotId}
+                    themeColors={themeColors}
+                    onNoteAdded={setNotes}
+                  />
                   {/* Notes List - always show scrollable list below Notes title */}
                   <View
                     style={{
@@ -1264,7 +1260,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                       maxHeight: 320,
                       width: "100%",
                       borderRadius: 8,
-                      marginTop: 10,
+                      marginTop: 0,
                       backgroundColor: themeColors.white,
                       position: "relative", // for gradient overlay
                       overflow: "hidden", // clip gradient
@@ -1384,16 +1380,9 @@ export default function SpotDetailScreen({ route, navigation }) {
                     )}
                   </View>
                 </View>
-                <AddPrivateNookNoteModal
-                  visible={showAddNoteModal}
-                  onClose={() => setShowAddNoteModal(false)}
-                  spotId={spotId}
-                  themeColors={themeColors}
-                  onNoteAdded={setNotes}
-                />
               </>
             )}
-          </View>
+          </ScrollView>
         )}
       </View>
 
