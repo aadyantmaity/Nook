@@ -332,7 +332,6 @@ export default function ProfileScreen({ navigation, route }) {
           <View
             style={{
               width: "100%",
-              backgroundColor: themeColors.gray + "22",
               borderRadius: 12,
               padding: 14,
               marginTop: 18,

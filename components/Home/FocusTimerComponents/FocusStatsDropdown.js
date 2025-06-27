@@ -183,7 +183,6 @@ export function FocusStatsDropdown({
                                 style={{
                                   marginLeft: 8,
                                   marginBottom: 4,
-                                  backgroundColor: themeColors.gray + "10",
                                   borderRadius: 8,
                                   padding: 8,
                                   flexDirection: "row",

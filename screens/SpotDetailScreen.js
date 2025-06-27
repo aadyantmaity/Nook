@@ -733,6 +733,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                   showTableAvailability={isOdegaard}
                   tableAvailability={tableAvailability}
                   setTableAvailability={setTableAvailability}
+                  spot={spot} // <-- Pass spot for geofence
                 />
               </View>
             )}
@@ -1180,6 +1181,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                   showTableAvailability={isOdegaard}
                   tableAvailability={tableAvailability}
                   setTableAvailability={setTableAvailability}
+                  spot={spot} // <-- Pass spot for geofence
                 />
               </View>
             )}
