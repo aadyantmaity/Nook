@@ -408,7 +408,7 @@ export default function HomeScreen({ navigation, route }) {
       <View
         style={{
           position: "absolute",
-          bottom: 30,
+          bottom: 25,
           right: 16,
           zIndex: 20,
         }}

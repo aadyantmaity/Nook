@@ -64,7 +64,10 @@ export default function StudySpotsMapView({
   const [region, setRegion] = useState(null);
   const [regionPickerVisible, setRegionPickerVisible] = useState(false);
   const [userHasPickedRegion, setUserHasPickedRegion] = useState(false);
-  const [gettingLocation, setGettingLocation] = useState(false); // NEW: loading state for location
+  const [gettingLocation, setGettingLocation] = useState(false);
+  // --- NEW: Map type state ---
+  const [mapType, setMapType] = useState("satellite");
+  const [mapTypeLoading, setMapTypeLoading] = useState(false);
 
   // Calculate square size (full width minus 32px)
   const screenWidth = Dimensions.get("window").width;
@@ -78,7 +81,7 @@ export default function StudySpotsMapView({
     longitudeDelta: 0.01,
   };
 
-  // --- Load persisted region from Firestore on mount ---
+  // --- Load persisted region and mapType from Firestore on mount ---
   useEffect(() => {
     let unsub = false;
     async function loadRegion() {
@@ -86,8 +89,12 @@ export default function StudySpotsMapView({
       try {
         const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
         const mapRegion = userDoc.exists() && userDoc.data().mapRegion;
+        const userMapType = userDoc.exists() && userDoc.data().mapType;
         if (mapRegion && !unsub) {
           setRegion(mapRegion);
+        }
+        if (userMapType && !unsub) {
+          setMapType(userMapType);
         }
       } catch {}
     }
@@ -97,17 +104,33 @@ export default function StudySpotsMapView({
     };
   }, []);
 
-  // --- Persist region to Firestore whenever it changes (and user is logged in) ---
+  // --- Persist region and mapType to Firestore whenever they change ---
   useEffect(() => {
     if (!auth.currentUser || !region) return;
     const saveRegion = async () => {
       try {
         const userRef = doc(db, "users", auth.currentUser.uid);
-        await setDoc(userRef, { mapRegion: region }, { merge: true });
+        await setDoc(userRef, { mapRegion: region, mapType }, { merge: true });
       } catch {}
     };
     saveRegion();
-  }, [region]);
+  }, [region, mapType]);
+
+  // --- Map type options and preview images ---
+  const MAP_TYPE_OPTIONS = [
+    {
+      key: "standard",
+      label: "Regular",
+    },
+    {
+      key: "hybrid",
+      label: "Satellite",
+    },
+    {
+      key: "terrain",
+      label: "Terrain",
+    },
+  ];
 
   // Filter spots with coordinates
   const spotsWithCoords = Array.isArray(spots)
@@ -257,7 +280,7 @@ export default function StudySpotsMapView({
         <View
           style={{
             flex: 1,
-            backgroundColor: "rgba(0,0,0,0.3)",
+            backgroundColor: "rgba(0,0,0,0.25)",
             justifyContent: "center",
             alignItems: "center",
           }}
@@ -265,78 +288,218 @@ export default function StudySpotsMapView({
           <View
             style={{
               backgroundColor: themeColors.white,
-              borderRadius: 12,
-              padding: 24,
-              width: 280,
+              borderRadius: 16,
+              paddingVertical: 28,
+              paddingHorizontal: 28,
+              width: 340,
               alignItems: "center",
+              borderWidth: 1,
+              borderColor: themeColors.black,
+              shadowColor: themeColors.black,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+              elevation: 5,
             }}
           >
             <Text
               style={{
                 fontWeight: "bold",
-                fontSize: 18,
-                marginBottom: 18,
+                fontSize: 24,
+                marginBottom: 16,
                 color: themeColors.purple,
                 fontFamily: "CarosSoft",
+                letterSpacing: 0.2,
               }}
             >
-              Edit Map Region
+              Edit Map
             </Text>
-            <Pressable
+            {/* --- Map Type Picker --- */}
+            <Text
               style={{
-                padding: 12,
-                borderRadius: 8,
-                marginBottom: 12,
-                width: "100%",
-                alignItems: "center",
-              }}
-              onPress={() => {
-                setRegion(UW_REGION);
-                setUserHasPickedRegion(true);
-                if (mapRef.current) mapRef.current.animateToRegion(UW_REGION);
-                setRegionPickerVisible(false);
+                color: themeColors.black,
+                fontWeight: "bold",
+                fontSize: 15,
+                marginBottom: 8,
+                fontFamily: "CarosSoft",
+                alignSelf: "flex-start",
+                marginLeft: 2,
+                marginTop: 12,
               }}
             >
-              <Text
-                style={{
-                  color: themeColors.purple,
-                  fontWeight: "bold",
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                UW Campus
-              </Text>
-            </Pressable>
+              Map View Style
+            </Text>
+            <View
+              style={{
+                flexDirection: "row",
+                marginBottom: 18,
+                alignSelf: "stretch",
+                justifyContent: "space-between",
+                borderRadius: 8,
+                padding: 6,
+                gap: 8, // ensures equal spacing between options (supported in RN 0.71+)
+              }}
+            >
+              {MAP_TYPE_OPTIONS.map((opt, idx) => (
+                <View key={opt.key} style={{ flex: 1, marginHorizontal: 2 }}>
+                  <TouchableOpacity
+                    onPress={() => setMapType(opt.key)}
+                    style={{
+                      alignItems: "center",
+                      paddingVertical: 10,
+                      backgroundColor:
+                        mapType === opt.key
+                          ? themeColors.purple
+                          : themeColors.white,
+                      borderRadius: 6,
+                    }}
+                    accessibilityLabel={`Select ${opt.label} map type`}
+                  >
+                    <Text
+                      style={{
+                        color:
+                          mapType === opt.key
+                            ? themeColors.white
+                            : themeColors.purple,
+                        fontWeight: "bold",
+                        fontSize: 13,
+                        fontFamily: "CarosSoft",
+                        letterSpacing: 0.1,
+                      }}
+                    >
+                      {opt.label}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+            {/* --- End Map Type Picker --- */}
+            <Text
+              style={{
+                color: themeColors.black,
+                fontWeight: "bold",
+                fontSize: 15,
+                marginBottom: 8,
+                fontFamily: "CarosSoft",
+                alignSelf: "flex-start",
+                marginLeft: 2,
+                marginTop: 12,
+              }}
+            >
+              Map Region
+            </Text>
+            <View
+              style={{
+                flexDirection: "row",
+                marginBottom: 16,
+                alignSelf: "stretch",
+                justifyContent: "space-between",
+                borderRadius: 8,
+                padding: 6,
+                gap: 8,
+              }}
+            >
+              <View style={{ flex: 1, marginHorizontal: 2 }}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setRegion(UW_REGION);
+                    setUserHasPickedRegion(true);
+                    if (mapRef.current)
+                      mapRef.current.animateToRegion(UW_REGION);
+                    setRegionPickerVisible(false);
+                  }}
+                  style={{
+                    alignItems: "center",
+                    paddingVertical: 10,
+                    backgroundColor:
+                      region &&
+                      Math.abs(region.latitude - UW_REGION.latitude) < 0.0001 &&
+                      Math.abs(region.longitude - UW_REGION.longitude) < 0.0001
+                        ? themeColors.purple
+                        : themeColors.white,
+                    borderRadius: 6,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color:
+                        region &&
+                        Math.abs(region.latitude - UW_REGION.latitude) <
+                          0.0001 &&
+                        Math.abs(region.longitude - UW_REGION.longitude) <
+                          0.0001
+                          ? themeColors.white
+                          : themeColors.purple,
+                      fontWeight: "bold",
+                      fontFamily: "CarosSoft",
+                      fontSize: 13,
+                    }}
+                  >
+                    UW Campus
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <View style={{ flex: 1, marginHorizontal: 2 }}>
+                <TouchableOpacity
+                  onPress={goToUserLocation}
+                  disabled={gettingLocation}
+                  style={{
+                    alignItems: "center",
+                    paddingVertical: 10,
+                    backgroundColor:
+                      region &&
+                      region.latitude &&
+                      region.longitude &&
+                      // crude check: not UW, so treat as "selected" if not UW
+                      (Math.abs(region.latitude - UW_REGION.latitude) >=
+                        0.0001 ||
+                        Math.abs(region.longitude - UW_REGION.longitude) >=
+                          0.0001)
+                        ? themeColors.purple
+                        : themeColors.white,
+                    borderRadius: 6,
+                    opacity: gettingLocation ? 0.6 : 1,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color:
+                        region &&
+                        region.latitude &&
+                        region.longitude &&
+                        (Math.abs(region.latitude - UW_REGION.latitude) >=
+                          0.0001 ||
+                          Math.abs(region.longitude - UW_REGION.longitude) >=
+                            0.0001)
+                          ? themeColors.white
+                          : themeColors.purple,
+                      fontWeight: "bold",
+                      fontFamily: "CarosSoft",
+                      fontSize: 13,
+                    }}
+                  >
+                    Your Location
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            {/* --- End Map Region Picker --- */}
             <Pressable
               style={{
-                padding: 12,
-                borderRadius: 8,
-                marginBottom: 12,
-                width: "100%",
+                marginTop: 16,
                 alignItems: "center",
-                backgroundColor: gettingLocation ? themeColors.gray : undefined,
-                opacity: gettingLocation ? 0.6 : 1,
               }}
-              onPress={goToUserLocation}
-              disabled={gettingLocation}
-            >
-              <Text
-                style={{
-                  color: themeColors.purple,
-                  fontWeight: "bold",
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                {gettingLocation
-                  ? "Getting location..."
-                  : "My Current Location"}
-              </Text>
-            </Pressable>
-            <Pressable
-              style={{ marginTop: 16 }}
               onPress={() => setRegionPickerVisible(false)}
             >
-              <Text style={{ color: themeColors.red, fontFamily: "CarosSoft" }}>
+              <Text
+                style={{
+                  color: themeColors.red,
+                  fontFamily: "CarosSoft",
+                  fontSize: 15,
+                  fontWeight: "bold",
+                  letterSpacing: 0.1,
+                }}
+              >
                 Cancel
               </Text>
             </Pressable>
@@ -406,7 +569,7 @@ export default function StudySpotsMapView({
           onRegionChangeComplete={setRegion}
           showsUserLocation={true}
           {...(Platform.OS === "android" ? { provider: PROVIDER_GOOGLE } : {})}
-          mapType="satellite"
+          mapType={mapType}
           showsCompass={true}
           rotateEnabled={true}
         >
