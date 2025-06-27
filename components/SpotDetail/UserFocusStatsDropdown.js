@@ -4,7 +4,11 @@ import { CaretRight } from "phosphor-react-native";
 import { db, auth } from "../../firebaseConfig";
 import { collection, query, where, getDocs } from "firebase/firestore";
 
-export default function UserFocusStatsDropdown({ spotId, themeColors }) {
+export default function UserFocusStatsDropdown({
+  spotId,
+  themeColors,
+  isPrivateNook,
+}) {
   const [stats, setStats] = useState({
     totalSessions: 0,
     totalTime: 0,
@@ -15,6 +19,17 @@ export default function UserFocusStatsDropdown({ spotId, themeColors }) {
   useEffect(() => {
     const fetchStats = async () => {
       if (!auth.currentUser) return;
+      // --- Calculate start of current week (Monday 00:00) ---
+      const now = new Date();
+      const day = now.getDay();
+      const diffToMonday = (day + 6) % 7;
+      const monday = new Date(now);
+      monday.setHours(0, 0, 0, 0);
+      monday.setDate(now.getDate() - diffToMonday);
+      const weekStartMillis = monday.getTime();
+      const nextMonday = new Date(monday);
+      nextMonday.setDate(monday.getDate() + 7);
+      const weekEndMillis = nextMonday.getTime();
       const q = query(
         collection(db, "users", auth.currentUser.uid, "focusSessions"),
         where("spotId", "==", spotId)
@@ -26,24 +41,33 @@ export default function UserFocusStatsDropdown({ spotId, themeColors }) {
       snapshot.forEach((doc) => {
         const d = doc.data();
         if (!d.isBreak && d.start && d.end) {
-          totalSessions++;
-          const start = d.start.seconds
-            ? d.start.seconds * 1000
-            : d.start.toMillis();
-          const end = d.end.seconds ? d.end.seconds * 1000 : d.end.toMillis();
-          if (
-            typeof start === "number" &&
-            typeof end === "number" &&
-            end > start
-          ) {
-            totalTime += end - start;
+          // --- Only include sessions ending within this week ---
+          let endMillis;
+          if (d.end.toMillis) {
+            endMillis = d.end.toMillis();
+          } else if (d.end.seconds) {
+            endMillis = d.end.seconds * 1000;
           }
-          sessions.push({
-            ...d,
-            start,
-            end,
-            duration: d.duration || end - start,
-          });
+          if (endMillis >= weekStartMillis && endMillis < weekEndMillis) {
+            totalSessions++;
+            const start = d.start.seconds
+              ? d.start.seconds * 1000
+              : d.start.toMillis();
+            const end = endMillis;
+            if (
+              typeof start === "number" &&
+              typeof end === "number" &&
+              end > start
+            ) {
+              totalTime += end - start;
+            }
+            sessions.push({
+              ...d,
+              start,
+              end,
+              duration: d.duration || end - start,
+            });
+          }
         }
       });
       // Sort sessions by most recent
@@ -72,7 +96,7 @@ export default function UserFocusStatsDropdown({ spotId, themeColors }) {
         width: "100%",
         backgroundColor: themeColors.gray + "22",
         borderRadius: 12,
-        padding: 14,
+        paddingTop: 8,
       }}
     >
       <TouchableOpacity
@@ -91,6 +115,7 @@ export default function UserFocusStatsDropdown({ spotId, themeColors }) {
             color: themeColors.purple,
             flex: 1,
             fontFamily: "CarosSoft",
+            marginBottom: !isPrivateNook ? 8 : 0,
           }}
         >
           Focus Stats for this Nook
@@ -129,8 +154,8 @@ export default function UserFocusStatsDropdown({ spotId, themeColors }) {
             style={{
               color: themeColors.black,
               fontSize: 15,
-              marginBottom: 8,
               fontFamily: "CarosSoft",
+              marginBottom: !isPrivateNook ? 8 : 0,
             }}
           >
             Time focused:{" "}

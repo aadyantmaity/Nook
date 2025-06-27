@@ -169,40 +169,41 @@ export function FocusTimerView({ navigation }) {
   const fetchStats = async () => {
     if (!auth.currentUser) return;
     const stats = {};
-    const weekAgo = Timestamp.now().toMillis() - 7 * 24 * 60 * 60 * 1000;
+    // --- Calculate start of current week (Monday 00:00) ---
+    const now = new Date();
+    const day = now.getDay(); // 0 (Sun) - 6 (Sat)
+    const diffToMonday = (day + 6) % 7; // 0 if Monday, 1 if Tuesday, ..., 6 if Sunday
+    const monday = new Date(now);
+    monday.setHours(0, 0, 0, 0);
+    monday.setDate(now.getDate() - diffToMonday);
+    const weekStartMillis = monday.getTime();
+    const nextMonday = new Date(monday);
+    nextMonday.setDate(monday.getDate() + 7);
+    const weekEndMillis = nextMonday.getTime();
     const q = collection(db, "users", auth.currentUser.uid, "focusSessions");
     const snapshot = await getDocs(q);
     snapshot.forEach((doc) => {
       const data = doc.data();
       if (data.spotId && data.start && data.end) {
         // Only use stored duration, do NOT recalculate as end - start
+        let endMillis;
         if (data.end.toMillis) {
-          // Firestore Timestamp
-          if (data.end.toMillis() > weekAgo) {
-            if (!stats[data.spotId]) stats[data.spotId] = [];
-            stats[data.spotId].push({
-              ...data,
-              // duration: end - start, // REMOVE this
-              // Only use stored duration
-              duration: data.duration,
-              start: data.start.toMillis(),
-              end: data.end.toMillis(),
-              tags: data.tags || [],
-            });
-          }
+          endMillis = data.end.toMillis();
         } else if (data.end.seconds) {
-          // Legacy: Timestamp object
-          const endMillis = data.end.seconds * 1000;
-          if (endMillis > weekAgo) {
-            if (!stats[data.spotId]) stats[data.spotId] = [];
-            stats[data.spotId].push({
-              ...data,
-              duration: data.duration,
-              start: data.start.seconds * 1000,
-              end: endMillis,
-              tags: data.tags || [],
-            });
-          }
+          endMillis = data.end.seconds * 1000;
+        }
+        // --- Only include sessions ending within this week (Monday 00:00 to next Monday 00:00) ---
+        if (endMillis >= weekStartMillis && endMillis < weekEndMillis) {
+          if (!stats[data.spotId]) stats[data.spotId] = [];
+          stats[data.spotId].push({
+            ...data,
+            duration: data.duration,
+            start: data.start.toMillis
+              ? data.start.toMillis()
+              : data.start.seconds * 1000,
+            end: endMillis,
+            tags: data.tags || [],
+          });
         }
       }
     });

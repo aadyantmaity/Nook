@@ -28,6 +28,7 @@ import { ThemeContext } from "../App";
 import SpotQRModal from "../components/SpotDetail/SpotQRModal";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { LinearGradient } from "expo-linear-gradient";
 
 // Firebase imports
 import {
@@ -311,162 +312,132 @@ export default function SpotDetailScreen({ route, navigation }) {
 
   return (
     <View
-      style={{ flex: 1, backgroundColor: themeColors.white, paddingTop: 48 }}
+      style={{
+        flex: 1,
+        backgroundColor: themeColors.white,
+        paddingTop: 48,
+      }}
     >
-      <View style={{ flex: 1 }}>
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            padding: 16,
-            backgroundColor: themeColors.white,
-            paddingTop: 0, // already handled by outer View
-            paddingBottom: 80, // add extra bottom padding to avoid FAB overlap
-          }}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Top Bar */}
-          <View
-            style={{
-              width: "100%",
-              marginBottom: 8,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
+      <View style={{}}>
+        {/* Only use ScrollView for public nooks, plain View for private nooks */}
+        {!isPrivateNook ? (
+          <ScrollView
+            contentContainerStyle={{
+              flexGrow: 1,
+              padding: 16,
+              backgroundColor: themeColors.white,
+              paddingTop: 0, // already handled by outer View
+              paddingBottom: 80, // add extra bottom padding to avoid FAB overlap
             }}
+            showsVerticalScrollIndicator={false}
           >
-            <TouchableOpacity
-              onPress={() => navigation.navigate("Home", { homeLoading: true })}
-              style={{
-                alignSelf: "flex-start",
-                flexDirection: "row",
-                alignItems: "center",
-                padding: 10,
-                shadowColor: themeColors.black,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 4,
-                marginBottom: 8,
-                marginLeft: -8,
-              }}
-            >
-              <House size={24} color={themeColors.purple} />
-            </TouchableOpacity>
-            {/* Add Alert button and More Info Dropdown Menu */}
+            {/* Top Bar */}
             <View
               style={{
+                width: "100%",
+                marginBottom: 8,
                 flexDirection: "row",
                 alignItems: "center",
-                position: "relative",
+                justifyContent: "space-between",
               }}
             >
-              {/* More Info Dropdown Menu */}
               <TouchableOpacity
-                onPress={() => setShowMenu((v) => !v)}
+                onPress={() =>
+                  navigation.navigate("Home", { homeLoading: true })
+                }
                 style={{
-                  padding: 8,
-                  borderRadius: 20,
-                  backgroundColor: themeColors.white,
+                  alignSelf: "flex-start",
+                  flexDirection: "row",
                   alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: -16,
+                  padding: 10,
+                  shadowColor: themeColors.black,
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 4,
+                  marginBottom: 8,
+                  marginLeft: -8,
                 }}
               >
-                <DotsThreeVertical
-                  size={27}
-                  color={themeColors.purple}
-                  weight="bold"
-                />
+                <House size={24} color={themeColors.purple} />
               </TouchableOpacity>
-              {/* Add Alert Button with Text */}
-
-              {showMenu && (
-                <>
-                  {/* Overlay to close menu when clicking outside */}
-                  <TouchableOpacity
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: -1000,
-                      right: -1000,
-                      bottom: -1000,
-                      width: 3000,
-                      height: 3000,
-                      zIndex: 99,
-                    }}
-                    activeOpacity={1}
-                    onPress={() => setShowMenu(false)}
+              {/* Add Alert button and More Info Dropdown Menu */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  position: "relative",
+                }}
+              >
+                {/* More Info Dropdown Menu */}
+                <TouchableOpacity
+                  onPress={() => setShowMenu((v) => !v)}
+                  style={{
+                    padding: 8,
+                    borderRadius: 20,
+                    backgroundColor: themeColors.white,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: -16,
+                  }}
+                >
+                  <DotsThreeVertical
+                    size={27}
+                    color={themeColors.purple}
+                    weight="bold"
                   />
-                  <View
-                    style={{
-                      position: "absolute",
-                      top: 36,
-                      right: 0,
-                      backgroundColor: themeColors.white,
-                      borderRadius: 10,
-                      borderWidth: 1,
-                      borderColor: themeColors.gray,
-                      minWidth: 180,
-                      shadowColor: "#000",
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.18,
-                      shadowRadius: 8,
-                      elevation: 10,
-                      zIndex: 100,
-                    }}
-                  >
-                    {/* Show QR Code */}
-                    {/* Removed QR Code option */}
-                    {/* Divider */}
+                </TouchableOpacity>
+                {/* Add Alert Button with Text */}
+
+                {showMenu && (
+                  <>
+                    {/* Overlay to close menu when clicking outside */}
+                    <TouchableOpacity
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: -1000,
+                        right: -1000,
+                        bottom: -1000,
+                        width: 3000,
+                        height: 3000,
+                        zIndex: 99,
+                      }}
+                      activeOpacity={1}
+                      onPress={() => setShowMenu(false)}
+                    />
                     <View
                       style={{
-                        height: 1,
-                        backgroundColor: themeColors.gray,
-                        marginHorizontal: 10,
-                      }}
-                    />
-                    {/* Report Incorrect Info */}
-                    <TouchableOpacity
-                      onPress={() => {
-                        setShowMenu(false);
-                        setTimeout(() => setShowReportModal(true), 200);
-                      }}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        paddingVertical: 14,
-                        paddingHorizontal: 18,
+                        position: "absolute",
+                        top: 36,
+                        right: 0,
+                        backgroundColor: themeColors.white,
+                        borderRadius: 10,
+                        borderWidth: 1,
+                        borderColor: themeColors.gray,
+                        minWidth: 180,
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.18,
+                        shadowRadius: 8,
+                        elevation: 10,
+                        zIndex: 100,
                       }}
                     >
-                      <Flag
-                        size={18}
-                        color={themeColors.purple}
-                        weight="bold"
-                        style={{ marginRight: 10 }}
+                      {/* Show QR Code */}
+                      {/* Removed QR Code option */}
+                      {/* Divider */}
+                      <View
+                        style={{
+                          height: 1,
+                          backgroundColor: themeColors.gray,
+                          marginHorizontal: 10,
+                        }}
                       />
-                      <Text
-                        style={{
-                          color: themeColors.purple,
-                          fontWeight: "bold",
-                          fontSize: 15,
-                          fontFamily: "CarosSoft",
-                        }}
-                      >
-                        Report
-                      </Text>
-                    </TouchableOpacity>
-                    {/* Divider */}
-                    <View
-                      style={{
-                        height: 1,
-                        backgroundColor: themeColors.gray,
-                        marginHorizontal: 10,
-                      }}
-                    />
-                    {isOwner && isPrivateNook && (
+                      {/* Report Incorrect Info */}
                       <TouchableOpacity
                         onPress={() => {
                           setShowMenu(false);
-                          setTimeout(() => setShowShareModal(true), 150);
+                          setTimeout(() => setShowReportModal(true), 200);
                         }}
                         style={{
                           flexDirection: "row",
@@ -475,7 +446,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                           paddingHorizontal: 18,
                         }}
                       >
-                        <UsersThree
+                        <Flag
                           size={18}
                           color={themeColors.purple}
                           weight="bold"
@@ -489,427 +460,941 @@ export default function SpotDetailScreen({ route, navigation }) {
                             fontFamily: "CarosSoft",
                           }}
                         >
-                          Manage Sharing
+                          Report
                         </Text>
                       </TouchableOpacity>
-                    )}
-                    {/* --- Edit Nook (only for owner, not private nooks) --- */}
-                    {isOwner && !isPrivateNook && (
-                      <TouchableOpacity
-                        onPress={() => {
-                          setShowMenu(false);
-                          setTimeout(
-                            () =>
-                              navigation.navigate("EditSpot", { spotId, spot }),
-                            150
-                          );
-                        }}
+                      {/* Divider */}
+                      <View
                         style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          paddingVertical: 14,
-                          paddingHorizontal: 18,
+                          height: 1,
+                          backgroundColor: themeColors.gray,
+                          marginHorizontal: 10,
                         }}
-                      >
-                        <PencilSimple
-                          size={18}
-                          color={themeColors.purple}
-                          weight="bold"
-                          style={{ marginRight: 10 }}
-                        />
-                        <Text
+                      />
+                      {isOwner && isPrivateNook && (
+                        <TouchableOpacity
+                          onPress={() => {
+                            setShowMenu(false);
+                            setTimeout(() => setShowShareModal(true), 150);
+                          }}
                           style={{
-                            color: themeColors.purple,
-                            fontWeight: "bold",
-                            fontSize: 15,
-                            fontFamily: "CarosSoft",
+                            flexDirection: "row",
+                            alignItems: "center",
+                            paddingVertical: 14,
+                            paddingHorizontal: 18,
                           }}
                         >
-                          Edit Nook
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                    {/* Divider */}
-                    <View
-                      style={{
-                        height: 1,
-                        backgroundColor: themeColors.gray,
-                        marginHorizontal: 10,
-                      }}
-                    />
-                    {/* Delete Nook (only for owner) */}
-                    {user && spot.addedBy === user.uid && (
-                      <TouchableOpacity
-                        onPress={() => {
-                          setShowMenu(false);
-                          setTimeout(handleDeleteNook, 200);
-                        }}
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          paddingVertical: 14,
-                          paddingHorizontal: 18,
-                        }}
-                      >
-                        <Trash
-                          size={18}
-                          color={themeColors.red}
-                          weight="bold"
-                          style={{ marginRight: 10 }}
-                        />
-                        <Text
+                          <UsersThree
+                            size={18}
+                            color={themeColors.purple}
+                            weight="bold"
+                            style={{ marginRight: 10 }}
+                          />
+                          <Text
+                            style={{
+                              color: themeColors.purple,
+                              fontWeight: "bold",
+                              fontSize: 15,
+                              fontFamily: "CarosSoft",
+                            }}
+                          >
+                            Manage Sharing
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                      {/* --- Edit Nook (only for owner, not private nooks) --- */}
+                      {isOwner && !isPrivateNook && (
+                        <TouchableOpacity
+                          onPress={() => {
+                            setShowMenu(false);
+                            setTimeout(
+                              () =>
+                                navigation.navigate("EditSpot", {
+                                  spotId,
+                                  spot,
+                                }),
+                              150
+                            );
+                          }}
                           style={{
-                            color: themeColors.red,
-                            fontWeight: "bold",
-                            fontSize: 15,
-                            fontFamily: "CarosSoft",
+                            flexDirection: "row",
+                            alignItems: "center",
+                            paddingVertical: 14,
+                            paddingHorizontal: 18,
                           }}
                         >
-                          Delete Nook
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                    {/* --- Add menu option for private nook sharing management --- */}
-                  </View>
-                </>
-              )}
+                          <PencilSimple
+                            size={18}
+                            color={themeColors.purple}
+                            weight="bold"
+                            style={{ marginRight: 10 }}
+                          />
+                          <Text
+                            style={{
+                              color: themeColors.purple,
+                              fontWeight: "bold",
+                              fontSize: 15,
+                              fontFamily: "CarosSoft",
+                            }}
+                          >
+                            Edit Nook
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                      {/* Divider */}
+                      <View
+                        style={{
+                          height: 1,
+                          backgroundColor: themeColors.gray,
+                          marginHorizontal: 10,
+                        }}
+                      />
+                      {/* Delete Nook (only for owner) */}
+                      {user && spot.addedBy === user.uid && (
+                        <TouchableOpacity
+                          onPress={() => {
+                            setShowMenu(false);
+                            setTimeout(handleDeleteNook, 200);
+                          }}
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            paddingVertical: 14,
+                            paddingHorizontal: 18,
+                          }}
+                        >
+                          <Trash
+                            size={18}
+                            color={themeColors.red}
+                            weight="bold"
+                            style={{ marginRight: 10 }}
+                          />
+                          <Text
+                            style={{
+                              color: themeColors.red,
+                              fontWeight: "bold",
+                              fontSize: 15,
+                              fontFamily: "CarosSoft",
+                            }}
+                          >
+                            Delete Nook
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                      {/* --- Add menu option for private nook sharing management --- */}
+                    </View>
+                  </>
+                )}
+              </View>
             </View>
-          </View>
 
-          {/* Spot Gallery (replaces SpotImage, matches image size) */}
-          <SpotGallery
-            spotId={spotId}
-            galleryImages={spot.galleryImages}
-            setSpot={setSpot}
-            themeColors={themeColors}
-            imageStyle={{
-              width: "100%",
-              height: 150,
-              borderRadius: 8,
-            }}
-          />
+            {/* Spot Gallery (replaces SpotImage, matches image size) */}
+            <SpotGallery
+              spotId={spotId}
+              galleryImages={spot.galleryImages}
+              setSpot={setSpot}
+              themeColors={themeColors}
+              imageStyle={{
+                width: "100%",
+                height: 150,
+                borderRadius: 8,
+              }}
+            />
 
-          {/* Spot Name and Floor */}
-          <Text
-            style={{
-              fontSize: 24,
-              fontWeight: "bold",
-              color: themeColors.black,
-              marginBottom: 6,
-              marginTop: 8,
-              flexDirection: "row",
-              alignItems: "center",
-              fontFamily: "CarosSoft",
-            }}
-          >
-            {spot.buildingName}
-            {spot.roomNumber && (
-              <Text
-                style={{
-                  fontSize: 24,
-                  color: themeColors.black,
-                  fontWeight: "bold",
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                {" - Floor "}
-                {spot.roomNumber}
-              </Text>
-            )}
-          </Text>
-          {/* Husky Card/Department info */}
-          {!isPrivateNook && (spot.huskyCardNeeded || spot.department) && (
+            {/* Spot Name and Floor */}
             <Text
               style={{
-                fontSize: 15,
-                color: spot.huskyCardNeeded
-                  ? themeColors.red
-                  : themeColors.darkGray,
-                marginBottom: 8,
-                marginTop: 2,
-                fontWeight: spot.huskyCardNeeded ? "bold" : "normal",
+                fontSize: 24,
+                fontWeight: "bold",
+                color: themeColors.black,
+                marginBottom: 6,
+                marginTop: 8,
+                flexDirection: "row",
+                alignItems: "center",
                 fontFamily: "CarosSoft",
               }}
             >
-              {spot.huskyCardNeeded && "Husky Card Required"}
-              {spot.huskyCardNeeded && spot.department && (
+              {spot.buildingName}
+              {spot.roomNumber && (
                 <Text
                   style={{
-                    color: themeColors.darkGray,
-                    fontWeight: "normal",
+                    fontSize: 24,
+                    color: themeColors.black,
+                    fontWeight: "bold",
                     fontFamily: "CarosSoft",
                   }}
                 >
-                  {" "}
-                  •{" "}
-                </Text>
-              )}
-              {spot.department && (
-                <Text
-                  style={{
-                    color: themeColors.darkGray,
-                    fontWeight: "normal",
-                    fontFamily: "CarosSoft",
-                  }}
-                >
-                  Department: {spot.department}
+                  {" - Floor "}
+                  {spot.roomNumber}
                 </Text>
               )}
             </Text>
-          )}
+            {/* Husky Card/Department info */}
+            {!isPrivateNook && (spot.huskyCardNeeded || spot.department) && (
+              <Text
+                style={{
+                  fontSize: 15,
+                  color: spot.huskyCardNeeded
+                    ? themeColors.red
+                    : themeColors.darkGray,
+                  marginBottom: 8,
+                  marginTop: 2,
+                  fontWeight: spot.huskyCardNeeded ? "bold" : "normal",
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                {spot.huskyCardNeeded && "Husky Card Required"}
+                {spot.huskyCardNeeded && spot.department && (
+                  <Text
+                    style={{
+                      color: themeColors.darkGray,
+                      fontWeight: "normal",
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    {" "}
+                    •{" "}
+                  </Text>
+                )}
+                {spot.department && (
+                  <Text
+                    style={{
+                      color: themeColors.darkGray,
+                      fontWeight: "normal",
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    Department: {spot.department}
+                  </Text>
+                )}
+              </Text>
+            )}
 
-          {/* Hide ratings/alerts UI for private nooks */}
-          {!isPrivateNook && (
-            <>
-              <OverallRating
-                userOverallRating={userOverallRating}
-                averageOverallRating={averageOverallRating}
-                overallRatingsCount={overallRatingsCount}
-                pendingOverallRating={pendingOverallRating}
-                setPendingOverallRating={setPendingOverallRating}
-                isSubmittingOverall={isSubmittingOverall}
-                onSubmit={submitOverallRating}
+            {/* Hide ratings/alerts UI for private nooks */}
+            {!isPrivateNook && (
+              <>
+                <OverallRating
+                  userOverallRating={userOverallRating}
+                  averageOverallRating={averageOverallRating}
+                  overallRatingsCount={overallRatingsCount}
+                  pendingOverallRating={pendingOverallRating}
+                  setPendingOverallRating={setPendingOverallRating}
+                  isSubmittingOverall={isSubmittingOverall}
+                  onSubmit={submitOverallRating}
+                  themeColors={themeColors}
+                />
+              </>
+            )}
+
+            {/* Tags */}
+            <TagList tags={tags} themeColors={themeColors} />
+
+            {/* User Focus Stats Dropdown (public and private nooks) */}
+            <UserFocusStatsDropdown
+              spotId={spotId}
+              themeColors={themeColors}
+              isPrivateNook={isPrivateNook}
+            />
+
+            {/* Ratings */}
+            {!isPrivateNook && (
+              <View style={{ marginTop: 16 }}>
+                <RatingsDisplay
+                  ratings={spot.ratings}
+                  themeColors={themeColors}
+                  getLastUpdatedLabel={getLastUpdatedLabel}
+                />
+                <View style={{ marginTop: 8, alignItems: "flex-end" }}>
+                  <Text
+                    style={{
+                      color: themeColors.darkGray,
+                      fontSize: 13,
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    {getLastUpdatedLabel(spot.ratings)}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Live Update Sliders (compact, extracted component) */}
+            {!isPrivateNook && (
+              <View style={{ marginTop: 14 }}>
+                <LiveUpdateSliders
+                  liveNoise={liveNoise}
+                  setLiveNoise={setLiveNoise}
+                  liveCrowd={liveCrowd}
+                  setLiveCrowd={setLiveCrowd}
+                  isSubmittingLive={isSubmittingLive}
+                  onSubmit={handleLiveUpdate}
+                  themeColors={themeColors}
+                  showTableAvailability={isOdegaard}
+                  tableAvailability={tableAvailability}
+                  setTableAvailability={setTableAvailability}
+                />
+              </View>
+            )}
+
+            {/* --- Check In Button --- */}
+            {!isPrivateNook && (
+              <CheckInButton
+                spot={spot}
+                spotId={spotId}
                 themeColors={themeColors}
               />
-            </>
-          )}
+            )}
+            {/* --- End Check In Button --- */}
 
-          {/* Tags */}
-          <TagList tags={tags} themeColors={themeColors} />
+            {/* Modals */}
+            {!isPrivateNook && (
+              <>
+                <AddAlertModal
+                  visible={showAddAlertModal}
+                  onClose={() => setShowAddAlertModal(false)}
+                  onAddAlert={handleAddAlert}
+                  themeColors={themeColors}
+                />
+                <ReportModal
+                  visible={showReportModal}
+                  onClose={() => setShowReportModal(false)}
+                  spotId={spotId}
+                  spotName={spot?.buildingName || ""}
+                  themeColors={themeColors}
+                />
+              </>
+            )}
+          </ScrollView>
+        ) : (
+          <View
+            style={{
+              flexGrow: 1,
+              padding: 16,
+              backgroundColor: themeColors.white,
+              paddingTop: 0,
+            }}
+          >
+            {/* Top Bar */}
+            <View
+              style={{
+                width: "100%",
+                marginBottom: 8,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <TouchableOpacity
+                onPress={() =>
+                  navigation.navigate("Home", { homeLoading: true })
+                }
+                style={{
+                  alignSelf: "flex-start",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  padding: 10,
+                  shadowColor: themeColors.black,
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 4,
+                  marginBottom: 8,
+                  marginLeft: -8,
+                }}
+              >
+                <House size={24} color={themeColors.purple} />
+              </TouchableOpacity>
+              {/* Add Alert button and More Info Dropdown Menu */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  position: "relative",
+                }}
+              >
+                {/* More Info Dropdown Menu */}
+                <TouchableOpacity
+                  onPress={() => setShowMenu((v) => !v)}
+                  style={{
+                    padding: 8,
+                    borderRadius: 20,
+                    backgroundColor: themeColors.white,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: -16,
+                  }}
+                >
+                  <DotsThreeVertical
+                    size={27}
+                    color={themeColors.purple}
+                    weight="bold"
+                  />
+                </TouchableOpacity>
+                {/* Add Alert Button with Text */}
 
-          {/* User Focus Stats Dropdown (public and private nooks) */}
-          <UserFocusStatsDropdown spotId={spotId} themeColors={themeColors} />
+                {showMenu && (
+                  <>
+                    {/* Overlay to close menu when clicking outside */}
+                    <TouchableOpacity
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: -1000,
+                        right: -1000,
+                        bottom: -1000,
+                        width: 3000,
+                        height: 3000,
+                        zIndex: 99,
+                      }}
+                      activeOpacity={1}
+                      onPress={() => setShowMenu(false)}
+                    />
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: 36,
+                        right: 0,
+                        backgroundColor: themeColors.white,
+                        borderRadius: 10,
+                        borderWidth: 1,
+                        borderColor: themeColors.gray,
+                        minWidth: 180,
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.18,
+                        shadowRadius: 8,
+                        elevation: 10,
+                        zIndex: 100,
+                      }}
+                    >
+                      {/* Show QR Code */}
+                      {/* Removed QR Code option */}
+                      {/* Divider */}
+                      <View
+                        style={{
+                          height: 1,
+                          backgroundColor: themeColors.gray,
+                          marginHorizontal: 10,
+                        }}
+                      />
+                      {/* Report Incorrect Info */}
+                      <TouchableOpacity
+                        onPress={() => {
+                          setShowMenu(false);
+                          setTimeout(() => setShowReportModal(true), 200);
+                        }}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          paddingVertical: 14,
+                          paddingHorizontal: 18,
+                        }}
+                      >
+                        <Flag
+                          size={18}
+                          color={themeColors.purple}
+                          weight="bold"
+                          style={{ marginRight: 10 }}
+                        />
+                        <Text
+                          style={{
+                            color: themeColors.purple,
+                            fontWeight: "bold",
+                            fontSize: 15,
+                            fontFamily: "CarosSoft",
+                          }}
+                        >
+                          Report
+                        </Text>
+                      </TouchableOpacity>
+                      {/* Divider */}
+                      <View
+                        style={{
+                          height: 1,
+                          backgroundColor: themeColors.gray,
+                          marginHorizontal: 10,
+                        }}
+                      />
+                      {isOwner && isPrivateNook && (
+                        <TouchableOpacity
+                          onPress={() => {
+                            setShowMenu(false);
+                            setTimeout(() => setShowShareModal(true), 150);
+                          }}
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            paddingVertical: 14,
+                            paddingHorizontal: 18,
+                          }}
+                        >
+                          <UsersThree
+                            size={18}
+                            color={themeColors.purple}
+                            weight="bold"
+                            style={{ marginRight: 10 }}
+                          />
+                          <Text
+                            style={{
+                              color: themeColors.purple,
+                              fontWeight: "bold",
+                              fontSize: 15,
+                              fontFamily: "CarosSoft",
+                            }}
+                          >
+                            Manage Sharing
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                      {/* --- Edit Nook (only for owner, not private nooks) --- */}
+                      {isOwner && !isPrivateNook && (
+                        <TouchableOpacity
+                          onPress={() => {
+                            setShowMenu(false);
+                            setTimeout(
+                              () =>
+                                navigation.navigate("EditSpot", {
+                                  spotId,
+                                  spot,
+                                }),
+                              150
+                            );
+                          }}
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            paddingVertical: 14,
+                            paddingHorizontal: 18,
+                          }}
+                        >
+                          <PencilSimple
+                            size={18}
+                            color={themeColors.purple}
+                            weight="bold"
+                            style={{ marginRight: 10 }}
+                          />
+                          <Text
+                            style={{
+                              color: themeColors.purple,
+                              fontWeight: "bold",
+                              fontSize: 15,
+                              fontFamily: "CarosSoft",
+                            }}
+                          >
+                            Edit Nook
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                      {/* Divider */}
+                      <View
+                        style={{
+                          height: 1,
+                          backgroundColor: themeColors.gray,
+                          marginHorizontal: 10,
+                        }}
+                      />
+                      {/* Delete Nook (only for owner) */}
+                      {user && spot.addedBy === user.uid && (
+                        <TouchableOpacity
+                          onPress={() => {
+                            setShowMenu(false);
+                            setTimeout(handleDeleteNook, 200);
+                          }}
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            paddingVertical: 14,
+                            paddingHorizontal: 18,
+                          }}
+                        >
+                          <Trash
+                            size={18}
+                            color={themeColors.red}
+                            weight="bold"
+                            style={{ marginRight: 10 }}
+                          />
+                          <Text
+                            style={{
+                              color: themeColors.red,
+                              fontWeight: "bold",
+                              fontSize: 15,
+                              fontFamily: "CarosSoft",
+                            }}
+                          >
+                            Delete Nook
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                      {/* --- Add menu option for private nook sharing management --- */}
+                    </View>
+                  </>
+                )}
+              </View>
+            </View>
 
-          {/* Ratings */}
-          {!isPrivateNook && (
-            <View style={{ marginTop: 16 }}>
-              <RatingsDisplay
-                ratings={spot.ratings}
-                themeColors={themeColors}
-                getLastUpdatedLabel={getLastUpdatedLabel}
-              />
-              <View style={{ marginTop: 8, alignItems: "flex-end" }}>
+            {/* Spot Gallery (replaces SpotImage, matches image size) */}
+            <SpotGallery
+              spotId={spotId}
+              galleryImages={spot.galleryImages}
+              setSpot={setSpot}
+              themeColors={themeColors}
+              imageStyle={{
+                width: "100%",
+                height: 150,
+                borderRadius: 8,
+              }}
+            />
+
+            {/* Spot Name and Floor */}
+            <Text
+              style={{
+                fontSize: 24,
+                fontWeight: "bold",
+                color: themeColors.black,
+                marginBottom: 6,
+                marginTop: 8,
+                flexDirection: "row",
+                alignItems: "center",
+                fontFamily: "CarosSoft",
+              }}
+            >
+              {spot.buildingName}
+              {spot.roomNumber && (
                 <Text
                   style={{
-                    color: themeColors.darkGray,
-                    fontSize: 13,
+                    fontSize: 24,
+                    color: themeColors.black,
+                    fontWeight: "bold",
                     fontFamily: "CarosSoft",
                   }}
                 >
-                  {getLastUpdatedLabel(spot.ratings)}
+                  {" - Floor "}
+                  {spot.roomNumber}
                 </Text>
-              </View>
-            </View>
-          )}
+              )}
+            </Text>
+            {/* Husky Card/Department info */}
+            {!isPrivateNook && (spot.huskyCardNeeded || spot.department) && (
+              <Text
+                style={{
+                  fontSize: 15,
+                  color: spot.huskyCardNeeded
+                    ? themeColors.red
+                    : themeColors.darkGray,
+                  marginBottom: 8,
+                  marginTop: 2,
+                  fontWeight: spot.huskyCardNeeded ? "bold" : "normal",
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                {spot.huskyCardNeeded && "Husky Card Required"}
+                {spot.huskyCardNeeded && spot.department && (
+                  <Text
+                    style={{
+                      color: themeColors.darkGray,
+                      fontWeight: "normal",
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    {" "}
+                    •{" "}
+                  </Text>
+                )}
+                {spot.department && (
+                  <Text
+                    style={{
+                      color: themeColors.darkGray,
+                      fontWeight: "normal",
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    Department: {spot.department}
+                  </Text>
+                )}
+              </Text>
+            )}
 
-          {/* Live Update Sliders (compact, extracted component) */}
-          {!isPrivateNook && (
-            <View style={{ marginTop: 14 }}>
-              <LiveUpdateSliders
-                liveNoise={liveNoise}
-                setLiveNoise={setLiveNoise}
-                liveCrowd={liveCrowd}
-                setLiveCrowd={setLiveCrowd}
-                isSubmittingLive={isSubmittingLive}
-                onSubmit={handleLiveUpdate}
-                themeColors={themeColors}
-                showTableAvailability={isOdegaard}
-                tableAvailability={tableAvailability}
-                setTableAvailability={setTableAvailability}
-              />
-            </View>
-          )}
+            {/* Hide ratings/alerts UI for private nooks */}
+            {!isPrivateNook && (
+              <>
+                <OverallRating
+                  userOverallRating={userOverallRating}
+                  averageOverallRating={averageOverallRating}
+                  overallRatingsCount={overallRatingsCount}
+                  pendingOverallRating={pendingOverallRating}
+                  setPendingOverallRating={setPendingOverallRating}
+                  isSubmittingOverall={isSubmittingOverall}
+                  onSubmit={submitOverallRating}
+                  themeColors={themeColors}
+                />
+              </>
+            )}
 
-          {/* --- Check In Button --- */}
-          {!isPrivateNook && (
-            <CheckInButton
-              spot={spot}
+            {/* Tags */}
+            <TagList tags={tags} themeColors={themeColors} />
+
+            {/* User Focus Stats Dropdown (public and private nooks) */}
+            <UserFocusStatsDropdown
               spotId={spotId}
               themeColors={themeColors}
+              isPrivateNook={isPrivateNook}
             />
-          )}
-          {/* --- End Check In Button --- */}
 
-          {/* Spot Feedback (Thumbs up/down) */}
-          {/* {!isPrivateNook && (
-            <SpotFeedback spotId={spotId} themeColors={themeColors} />
-          )} */}
+            {/* Ratings */}
+            {!isPrivateNook && (
+              <View style={{ marginTop: 16 }}>
+                <RatingsDisplay
+                  ratings={spot.ratings}
+                  themeColors={themeColors}
+                  getLastUpdatedLabel={getLastUpdatedLabel}
+                />
+                <View style={{ marginTop: 8, alignItems: "flex-end" }}>
+                  <Text
+                    style={{
+                      color: themeColors.darkGray,
+                      fontSize: 13,
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    {getLastUpdatedLabel(spot.ratings)}
+                  </Text>
+                </View>
+              </View>
+            )}
 
-          {/* Modals */}
-          {!isPrivateNook && (
-            <>
-              <AddAlertModal
-                visible={showAddAlertModal}
-                onClose={() => setShowAddAlertModal(false)}
-                onAddAlert={handleAddAlert}
-                themeColors={themeColors}
-              />
-              <ReportModal
-                visible={showReportModal}
-                onClose={() => setShowReportModal(false)}
+            {/* Live Update Sliders (compact, extracted component) */}
+            {!isPrivateNook && (
+              <View style={{ marginTop: 14 }}>
+                <LiveUpdateSliders
+                  liveNoise={liveNoise}
+                  setLiveNoise={setLiveNoise}
+                  liveCrowd={liveCrowd}
+                  setLiveCrowd={setLiveCrowd}
+                  isSubmittingLive={isSubmittingLive}
+                  onSubmit={handleLiveUpdate}
+                  themeColors={themeColors}
+                  showTableAvailability={isOdegaard}
+                  tableAvailability={tableAvailability}
+                  setTableAvailability={setTableAvailability}
+                />
+              </View>
+            )}
+
+            {/* --- Check In Button --- */}
+            {!isPrivateNook && (
+              <CheckInButton
+                spot={spot}
                 spotId={spotId}
-                spotName={spot?.buildingName || ""}
                 themeColors={themeColors}
               />
-              {/* QR Code Modal */}
-              {/* <SpotQRModal
+            )}
+            {/* --- End Check In Button --- */}
+
+            {/* Modals */}
+            {!isPrivateNook && (
+              <>
+                <AddAlertModal
+                  visible={showAddAlertModal}
+                  onClose={() => setShowAddAlertModal(false)}
+                  onAddAlert={handleAddAlert}
+                  themeColors={themeColors}
+                />
+                <ReportModal
+                  visible={showReportModal}
+                  onClose={() => setShowReportModal(false)}
+                  spotId={spotId}
+                  spotName={spot?.buildingName || ""}
+                  themeColors={themeColors}
+                />
+                {/* QR Code Modal */}
+                {/* <SpotQRModal
                 visible={showQRModal}
                 onClose={() => setShowQRModal(false)}
                 spotId={spotId}
                 themeColors={themeColors}
               /> */}
-            </>
-          )}
-          {/* Private Nook: Personal Notes and Stats */}
-          {spot?.privateNook && (
-            <>
-              {/* --- Notes Section --- */}
-              <View
-                style={{
-                  marginTop: 18,
-                  marginBottom: 8,
-                  backgroundColor: themeColors.gray + "22",
-                  borderRadius: 10,
-                  padding: 14,
-                }}
-              >
+              </>
+            )}
+            {/* --- Notes Section ONLY for private nooks --- */}
+            {spot?.privateNook && (
+              <>
                 <View
                   style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginBottom: 6,
+                    marginTop: 18,
+                    backgroundColor: themeColors.gray + "22",
+                    borderRadius: 10,
                   }}
                 >
-                  <Text
+                  <View
                     style={{
-                      fontWeight: "bold",
-                      fontSize: 22,
-                      color: themeColors.purple,
-                      fontFamily: "CarosSoft",
-                    }}
-                  >
-                    Notes
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => setShowAddNoteModal(true)}
-                    style={{
-                      backgroundColor: themeColors.purple,
-                      borderRadius: 8,
-                      paddingVertical: 6,
-                      paddingHorizontal: 12,
-                      alignItems: "center",
-                      marginLeft: 10,
                       flexDirection: "row",
-                      justifyContent: "center",
+                      alignItems: "center",
+                      justifyContent: "space-between",
                     }}
                   >
-                    <Plus size={18} color={themeColors.white} weight="bold" />
-                  </TouchableOpacity>
-                </View>
-                {/* Notes List - always show scrollable list below Notes title */}
-                <View
-                  style={{
-                    maxHeight: 220,
-                    minHeight: 40,
-                    width: "100%",
-                  }}
-                >
-                  <ScrollView
-                    style={{ width: "100%" }}
-                    contentContainerStyle={{ paddingBottom: 4 }}
-                    showsVerticalScrollIndicator={false}
+                    <Text
+                      style={{
+                        fontWeight: "bold",
+                        fontSize: 22,
+                        color: themeColors.purple,
+                        fontFamily: "CarosSoft",
+                      }}
+                    >
+                      Notes
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => setShowAddNoteModal(true)}
+                      style={{
+                        backgroundColor: themeColors.purple,
+                        borderRadius: 8,
+                        paddingVertical: 6,
+                        paddingHorizontal: 6,
+                        alignItems: "center",
+                        marginLeft: 10,
+                        flexDirection: "row",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Plus size={18} color={themeColors.white} weight="bold" />
+                    </TouchableOpacity>
+                  </View>
+                  {/* Notes List - always show scrollable list below Notes title */}
+                  <View
+                    style={{
+                      minHeight: 40,
+                      maxHeight: 320,
+                      width: "100%",
+                      borderRadius: 8,
+                      marginTop: 10,
+                      backgroundColor: themeColors.white,
+                      position: "relative", // for gradient overlay
+                      overflow: "hidden", // clip gradient
+                    }}
                   >
-                    {notes && notes.length > 0 ? (
-                      [...notes]
-                        .sort((a, b) => b.createdAt - a.createdAt)
-                        .map((item, idx) => (
-                          <View
-                            key={idx}
-                            style={{
-                              marginBottom: 10,
-                              backgroundColor: themeColors.gray + "18",
-                              borderRadius: 10,
-                              padding: 10,
-                            }}
-                          >
+                    {/* Top fade gradient */}
+                    {notes && notes.length > 0 && notes.length * 60 > 300 && (
+                      <LinearGradient
+                        colors={[themeColors.white, "rgba(255,255,255,0)"]}
+                        style={{
+                          position: "absolute",
+                          left: 0,
+                          right: 0,
+                          top: 0,
+                          height: 24,
+                          zIndex: 2,
+                        }}
+                        pointerEvents="none"
+                      />
+                    )}
+                    <ScrollView
+                      style={{ width: "100%", flexGrow: 1 }}
+                      contentContainerStyle={{ flexGrow: 1 }}
+                      showsVerticalScrollIndicator={false}
+                    >
+                      {notes && notes.length > 0 ? (
+                        [...notes]
+                          .sort((a, b) => b.createdAt - a.createdAt)
+                          .map((item, idx) => (
                             <View
+                              key={idx}
                               style={{
-                                flexDirection: "row",
-                                justifyContent: "space-between",
-                                alignItems: "flex-start",
+                                backgroundColor: themeColors.gray + "18",
+                                borderRadius: 10,
+                                paddingVertical: 10,
                               }}
                             >
-                              <Text
+                              <View
                                 style={{
-                                  color: themeColors.black,
-                                  fontSize: 13,
-                                  marginBottom: 2,
-                                  fontFamily: "CarosSoft",
-                                  flex: 1,
-                                  flexWrap: "wrap",
+                                  flexDirection: "row",
+                                  justifyContent: "space-between",
+                                  alignItems: "flex-start",
                                 }}
                               >
-                                {item.text}
-                              </Text>
+                                <Text
+                                  style={{
+                                    color: themeColors.black,
+                                    fontSize: 13,
+                                    marginBottom: 2,
+                                    fontFamily: "CarosSoft",
+                                    flex: 1,
+                                    flexWrap: "wrap",
+                                  }}
+                                >
+                                  {item.text}
+                                </Text>
+                                <Text
+                                  style={{
+                                    color: themeColors.darkGray,
+                                    fontSize: 12,
+                                    marginLeft: 10,
+                                    fontFamily: "CarosSoft",
+                                    textAlign: "right",
+                                    minWidth: 80,
+                                  }}
+                                >
+                                  {item.createdAt
+                                    ? new Date(item.createdAt).toLocaleString(
+                                        [],
+                                        {
+                                          month: "short",
+                                          day: "numeric",
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        }
+                                      )
+                                    : ""}
+                                </Text>
+                              </View>
                               <Text
                                 style={{
-                                  color: themeColors.darkGray,
                                   fontSize: 12,
-                                  marginLeft: 10,
-                                  fontFamily: "CarosSoft",
-                                  textAlign: "right",
-                                  minWidth: 80,
+                                  color: themeColors.darkGray,
+                                  marginTop: 4,
                                 }}
                               >
-                                {item.createdAt
-                                  ? new Date(item.createdAt).toLocaleString(
-                                      [],
-                                      {
-                                        month: "short",
-                                        day: "numeric",
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                      }
-                                    )
-                                  : ""}
+                                {item.author ? `${item.author}` : ""}
                               </Text>
                             </View>
-                            <Text
-                              style={{
-                                fontSize: 12,
-                                color: themeColors.darkGray,
-                                marginTop: 4,
-                              }}
-                            >
-                              {item.author ? `${item.author}` : ""}
-                            </Text>
-                          </View>
-                        ))
-                    ) : (
-                      <Text
+                          ))
+                      ) : (
+                        <Text
+                          style={{
+                            color: themeColors.darkGray,
+                            fontSize: 15,
+                            fontFamily: "CarosSoft",
+                          }}
+                        >
+                          No notes yet.
+                        </Text>
+                      )}
+                    </ScrollView>
+                    {/* Bottom fade gradient */}
+                    {notes && notes.length > 0 && notes.length * 60 > 300 && (
+                      <LinearGradient
+                        colors={["rgba(255,255,255,0)", themeColors.white]}
                         style={{
-                          color: themeColors.darkGray,
-                          fontSize: 15,
-                          fontFamily: "CarosSoft",
+                          position: "absolute",
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          height: 32,
+                          zIndex: 2,
                         }}
-                      >
-                        No notes yet.
-                      </Text>
+                        pointerEvents="none"
+                      />
                     )}
-                  </ScrollView>
+                  </View>
                 </View>
-              </View>
-              <AddPrivateNookNoteModal
-                visible={showAddNoteModal}
-                onClose={() => setShowAddNoteModal(false)}
-                spotId={spotId}
-                themeColors={themeColors}
-                onNoteAdded={setNotes}
-              />
-            </>
-          )}
-        </ScrollView>
+                <AddPrivateNookNoteModal
+                  visible={showAddNoteModal}
+                  onClose={() => setShowAddNoteModal(false)}
+                  spotId={spotId}
+                  themeColors={themeColors}
+                  onNoteAdded={setNotes}
+                />
+              </>
+            )}
+          </View>
+        )}
       </View>
 
       {/* Floating Action Button for Add Alert */}
