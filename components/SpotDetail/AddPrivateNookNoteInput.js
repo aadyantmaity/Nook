@@ -65,7 +65,6 @@ export default function AddPrivateNookNoteInput({
           borderColor: themeColors.purple,
           borderRadius: 8,
           padding: 10,
-          backgroundColor: themeColors.white,
           color: themeColors.black,
           fontFamily: "CarosSoft",
           minHeight: 40,

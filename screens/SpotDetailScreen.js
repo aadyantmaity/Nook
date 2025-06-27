@@ -1225,7 +1225,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                 <View
                   style={{
                     marginTop: 12,
-                    backgroundColor: themeColors.gray + "22",
                     borderRadius: 10,
                   }}
                 >
@@ -1251,7 +1250,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                     {/* Top fade gradient */}
                     {notes && notes.length > 0 && notes.length * 60 > 300 && (
                       <LinearGradient
-                        colors={[themeColors.white, "rgba(255,255,255,0)"]}
+                        colors={[themeColors.white, themeColors.white + "00"]}
                         style={{
                           position: "absolute",
                           left: 0,
@@ -1275,7 +1274,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                             <View
                               key={idx}
                               style={{
-                                backgroundColor: themeColors.gray + "18",
                                 borderRadius: 10,
                                 paddingVertical: 10,
                               }}
@@ -1326,6 +1324,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                                 style={{
                                   fontSize: 12,
                                   color: themeColors.darkGray,
+                                  fontFamily: "CarosSoft",
                                   marginTop: 4,
                                 }}
                               >
@@ -1348,7 +1347,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                     {/* Bottom fade gradient */}
                     {notes && notes.length > 0 && notes.length * 60 > 300 && (
                       <LinearGradient
-                        colors={["rgba(255,255,255,0)", themeColors.white]}
+                        colors={[themeColors.white + "00", themeColors.white]}
                         style={{
                           position: "absolute",
                           left: 0,

@@ -11,10 +11,11 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { Plus } from "phosphor-react-native";
 import { getAuth } from "firebase/auth"; // Add this import
+import { Timestamp } from "firebase/firestore";
 
 export default function SpotGallery({
   spotId,
@@ -38,6 +39,8 @@ export default function SpotGallery({
   // Modal state for image details
   const [selectedImage, setSelectedImage] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const auth = getAuth();
+  const user = auth.currentUser;
 
   // Update images if prop changes
   React.useEffect(() => {
@@ -94,7 +97,7 @@ export default function SpotGallery({
           uid: user.uid,
           name: user.displayName || user.email || "Unknown",
         },
-        createdAt: Date.now(),
+        createdAt: Timestamp.now(), // Use Firestore Timestamp
       };
       // Update Firestore
       const spotRef = doc(db, "studySpots", spotId);
@@ -113,6 +116,40 @@ export default function SpotGallery({
       setIsUploading(false);
       console.error("Gallery image upload error:", e); // Add error logging
       Alert.alert("Error", "Failed to upload image.");
+    }
+  };
+
+  // Delete gallery image
+  const handleDeleteGalleryImage = async (imgObj) => {
+    if (!user || !spotId) return;
+    try {
+      setIsUploading(true);
+      // Ensure createdAt is a Firestore Timestamp for comparison
+      const deleteObj = {
+        ...imgObj,
+        createdAt:
+          typeof imgObj.createdAt === "object" && imgObj.createdAt.seconds
+            ? new Timestamp(imgObj.createdAt.seconds, imgObj.createdAt.nanoseconds)
+            : Timestamp.fromDate(new Date(imgObj.createdAt)),
+      };
+      const spotRef = doc(db, "studySpots", spotId);
+      await updateDoc(spotRef, {
+        galleryImages: arrayRemove(deleteObj),
+      });
+      setImages((prev) => prev.filter((img) => img.url !== imgObj.url));
+      if (setSpot) {
+        setSpot((prev) => ({
+          ...prev,
+          galleryImages: (prev.galleryImages || []).filter(
+            (img) => (img.url || img) !== imgObj.url
+          ),
+        }));
+      }
+      setShowModal(false);
+      setIsUploading(false);
+    } catch (e) {
+      setIsUploading(false);
+      Alert.alert("Error", "Failed to delete image.");
     }
   };
 
@@ -189,6 +226,44 @@ export default function SpotGallery({
                 >
                   {formatTimestamp(selectedImage.createdAt)}
                 </Text>
+                {/* Show delete button only if current user is the author */}
+                {user &&
+                  selectedImage.author?.uid === user.uid && (
+                    <TouchableOpacity
+                      onPress={() =>
+                        Alert.alert(
+                          "Delete Image",
+                          "Are you sure you want to delete this image?",
+                          [
+                            { text: "Cancel", style: "cancel" },
+                            {
+                              text: "Delete",
+                              style: "destructive",
+                              onPress: () => handleDeleteGalleryImage(selectedImage),
+                            },
+                          ]
+                        )
+                      }
+                      style={{
+                        marginTop: 14,
+                        backgroundColor: themeColors.red || "#e74c3c",
+                        borderRadius: 8,
+                        paddingVertical: 8,
+                        paddingHorizontal: 18,
+                      }}
+                      disabled={isUploading}
+                    >
+                      <Text
+                        style={{
+                          color: themeColors.white,
+                          fontWeight: "bold",
+                          fontFamily: "CarosSoft",
+                        }}
+                      >
+                        Delete
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 <TouchableOpacity
                   onPress={() => setShowModal(false)}
                   style={{
