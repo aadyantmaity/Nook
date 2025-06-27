@@ -65,9 +65,12 @@ export default function StudySpotsMapView({
   const [regionPickerVisible, setRegionPickerVisible] = useState(false);
   const [userHasPickedRegion, setUserHasPickedRegion] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
-  // --- NEW: Map type state ---
   const [mapType, setMapType] = useState("satellite");
   const [mapTypeLoading, setMapTypeLoading] = useState(false);
+
+  // --- NEW: Temporary state for modal edits ---
+  const [modalRegion, setModalRegion] = useState(null);
+  const [modalMapType, setModalMapType] = useState(mapType);
 
   // Calculate square size (full width minus 32px)
   const screenWidth = Dimensions.get("window").width;
@@ -104,6 +107,15 @@ export default function StudySpotsMapView({
     };
   }, []);
 
+  // --- Sync modal state with main state when modal opens ---
+  useEffect(() => {
+    if (regionPickerVisible) {
+      setModalRegion(region || UW_REGION);
+      setModalMapType(mapType);
+    }
+    // eslint-disable-next-line
+  }, [regionPickerVisible]);
+
   // --- Persist region and mapType to Firestore whenever they change ---
   useEffect(() => {
     if (!auth.currentUser || !region) return;
@@ -125,10 +137,6 @@ export default function StudySpotsMapView({
     {
       key: "hybrid",
       label: "Satellite",
-    },
-    {
-      key: "terrain",
-      label: "Terrain",
     },
   ];
 
@@ -207,7 +215,7 @@ export default function StudySpotsMapView({
     });
   };
 
-  // Helper to get user's current location and set region
+  // --- Helper to get user's current location and set modalRegion ---
   const goToUserLocation = async () => {
     setGettingLocation(true);
     try {
@@ -224,10 +232,10 @@ export default function StudySpotsMapView({
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       };
-      setRegion(userRegion);
+      setModalRegion(userRegion);
       setUserHasPickedRegion(true);
-      if (mapRef.current) mapRef.current.animateToRegion(userRegion);
-      setRegionPickerVisible(false);
+      // Don't animate map here, only after submit
+      setRegionPickerVisible(true); // keep modal open
     } catch (e) {
       alert("Could not get your location.");
     }
@@ -337,18 +345,18 @@ export default function StudySpotsMapView({
                 justifyContent: "space-between",
                 borderRadius: 8,
                 padding: 6,
-                gap: 8, // ensures equal spacing between options (supported in RN 0.71+)
+                gap: 8,
               }}
             >
               {MAP_TYPE_OPTIONS.map((opt, idx) => (
                 <View key={opt.key} style={{ flex: 1, marginHorizontal: 2 }}>
                   <TouchableOpacity
-                    onPress={() => setMapType(opt.key)}
+                    onPress={() => setModalMapType(opt.key)}
                     style={{
                       alignItems: "center",
                       paddingVertical: 10,
                       backgroundColor:
-                        mapType === opt.key
+                        modalMapType === opt.key
                           ? themeColors.purple
                           : themeColors.white,
                       borderRadius: 6,
@@ -358,7 +366,7 @@ export default function StudySpotsMapView({
                     <Text
                       style={{
                         color:
-                          mapType === opt.key
+                          modalMapType === opt.key
                             ? themeColors.white
                             : themeColors.purple,
                         fontWeight: "bold",
@@ -402,19 +410,18 @@ export default function StudySpotsMapView({
               <View style={{ flex: 1, marginHorizontal: 2 }}>
                 <TouchableOpacity
                   onPress={() => {
-                    setRegion(UW_REGION);
+                    setModalRegion(UW_REGION);
                     setUserHasPickedRegion(true);
-                    if (mapRef.current)
-                      mapRef.current.animateToRegion(UW_REGION);
-                    setRegionPickerVisible(false);
                   }}
                   style={{
                     alignItems: "center",
                     paddingVertical: 10,
                     backgroundColor:
-                      region &&
-                      Math.abs(region.latitude - UW_REGION.latitude) < 0.0001 &&
-                      Math.abs(region.longitude - UW_REGION.longitude) < 0.0001
+                      modalRegion &&
+                      Math.abs(modalRegion.latitude - UW_REGION.latitude) <
+                        0.0001 &&
+                      Math.abs(modalRegion.longitude - UW_REGION.longitude) <
+                        0.0001
                         ? themeColors.purple
                         : themeColors.white,
                     borderRadius: 6,
@@ -423,10 +430,10 @@ export default function StudySpotsMapView({
                   <Text
                     style={{
                       color:
-                        region &&
-                        Math.abs(region.latitude - UW_REGION.latitude) <
+                        modalRegion &&
+                        Math.abs(modalRegion.latitude - UW_REGION.latitude) <
                           0.0001 &&
-                        Math.abs(region.longitude - UW_REGION.longitude) <
+                        Math.abs(modalRegion.longitude - UW_REGION.longitude) <
                           0.0001
                           ? themeColors.white
                           : themeColors.purple,
@@ -447,13 +454,12 @@ export default function StudySpotsMapView({
                     alignItems: "center",
                     paddingVertical: 10,
                     backgroundColor:
-                      region &&
-                      region.latitude &&
-                      region.longitude &&
-                      // crude check: not UW, so treat as "selected" if not UW
-                      (Math.abs(region.latitude - UW_REGION.latitude) >=
+                      modalRegion &&
+                      modalRegion.latitude &&
+                      modalRegion.longitude &&
+                      (Math.abs(modalRegion.latitude - UW_REGION.latitude) >=
                         0.0001 ||
-                        Math.abs(region.longitude - UW_REGION.longitude) >=
+                        Math.abs(modalRegion.longitude - UW_REGION.longitude) >=
                           0.0001)
                         ? themeColors.purple
                         : themeColors.white,
@@ -464,13 +470,14 @@ export default function StudySpotsMapView({
                   <Text
                     style={{
                       color:
-                        region &&
-                        region.latitude &&
-                        region.longitude &&
-                        (Math.abs(region.latitude - UW_REGION.latitude) >=
+                        modalRegion &&
+                        modalRegion.latitude &&
+                        modalRegion.longitude &&
+                        (Math.abs(modalRegion.latitude - UW_REGION.latitude) >=
                           0.0001 ||
-                          Math.abs(region.longitude - UW_REGION.longitude) >=
-                            0.0001)
+                          Math.abs(
+                            modalRegion.longitude - UW_REGION.longitude
+                          ) >= 0.0001)
                           ? themeColors.white
                           : themeColors.purple,
                       fontWeight: "bold",
@@ -489,18 +496,26 @@ export default function StudySpotsMapView({
                 marginTop: 16,
                 alignItems: "center",
               }}
-              onPress={() => setRegionPickerVisible(false)}
+              onPress={() => {
+                // Only commit changes on submit
+                setRegion(modalRegion);
+                setMapType(modalMapType);
+                setRegionPickerVisible(false);
+                if (mapRef.current && modalRegion) {
+                  mapRef.current.animateToRegion(modalRegion);
+                }
+              }}
             >
               <Text
                 style={{
-                  color: themeColors.red,
+                  color: themeColors.green,
                   fontFamily: "CarosSoft",
-                  fontSize: 15,
+                  fontSize: 16,
                   fontWeight: "bold",
                   letterSpacing: 0.1,
                 }}
               >
-                Cancel
+                Submit
               </Text>
             </Pressable>
           </View>

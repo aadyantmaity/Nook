@@ -52,11 +52,11 @@ export default function AddPrivateNookNoteInput({
         flexDirection: "row",
         alignItems: "center", // changed from "flex-end" to "center"
         marginBottom: 10,
-        marginTop: 4,
+        marginTop: 8,
       }}
     >
       <TextInput
-        placeholder="Write a note about this nook..."
+        placeholder="Add a note..."
         placeholderTextColor={themeColors.darkGray}
         value={noteInput}
         onChangeText={setNoteInput}

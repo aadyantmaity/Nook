@@ -31,23 +31,34 @@ export default function UserFocusStatsDropdown({
         const d = doc.data();
         if (!d.isBreak && d.start && d.end) {
           totalSessions++;
+          // Use duration if present, else fallback to end - start
+          let sessionDuration = 0;
           const start = d.start.seconds
             ? d.start.seconds * 1000
             : d.start.toMillis();
           const end = d.end.seconds ? d.end.seconds * 1000 : d.end.toMillis();
+          if (typeof d.duration === "number") {
+            sessionDuration = d.duration;
+          } else if (
+            typeof start === "number" &&
+            typeof end === "number" &&
+            end > start
+          ) {
+            sessionDuration = end - start;
+          }
           if (
             typeof start === "number" &&
             typeof end === "number" &&
             end > start
           ) {
-            totalTime += end - start;
+            totalTime += sessionDuration;
+            sessions.push({
+              ...d,
+              start,
+              end,
+              duration: d.duration || end - start,
+            });
           }
-          sessions.push({
-            ...d,
-            start,
-            end,
-            duration: d.duration || end - start,
-          });
         }
       });
       // Sort sessions by most recent
