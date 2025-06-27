@@ -36,7 +36,9 @@ export default function FindPeopleView({
             flex: 1,
             paddingVertical: 10,
             backgroundColor:
-              selectedTab === "findPeople" ? themeColors.purple : "transparent",
+              selectedTab === "findPeople"
+                ? themeColors.purple
+                : themeColors.white,
             borderRadius: 10,
             alignItems: "center",
             justifyContent: "center",
@@ -62,7 +64,9 @@ export default function FindPeopleView({
             flex: 1,
             paddingVertical: 10,
             backgroundColor:
-              selectedTab === "socialFeed" ? themeColors.purple : "transparent",
+              selectedTab === "socialFeed"
+                ? themeColors.purple
+                : themeColors.white,
             borderRadius: 10,
             alignItems: "center",
             justifyContent: "center",
