@@ -11,37 +11,24 @@ import {
 import { MapPin } from "phosphor-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { auth } from "../../firebaseConfig";
-import {
-  doc,
-  updateDoc,
-  arrayUnion,
-  Timestamp,
-  getDoc,
-  getDocs,
-  collection,
-} from "firebase/firestore";
+import { doc, updateDoc, getDoc } from "firebase/firestore";
 
 export default function CheckInButton({ spot, spotId, themeColors }) {
   const user = auth.currentUser;
   const [isCheckingIn, setIsCheckingIn] = useState(false);
-  const [lastCheckIn, setLastCheckIn] = useState(null);
-
-  // --- New: Track if user was tagged in last 60 min at this spot ---
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [checkedIn, setCheckedIn] = useState(null); // { spotId, checkedInAt, taggedSpotId, taggedAt }
+  const [loadingCheckedIn, setLoadingCheckedIn] = useState(true);
   const [taggedCooldown, setTaggedCooldown] = useState(false);
-  // --- Track timestamp of most recent tag ---
   const [taggedAt, setTaggedAt] = useState(null);
-
-  // --- Track users who checked in or were tagged in last hour ---
   const [recentlyCheckedInUids, setRecentlyCheckedInUids] = useState([]);
-
-  // --- Tag friends modal state ---
   const [tagModalVisible, setTagModalVisible] = useState(false);
   const [followingList, setFollowingList] = useState([]);
   const [taggedUids, setTaggedUids] = useState([]);
   const [taggingLoading, setTaggingLoading] = useState(false);
-
-  // --- New: Track global check-in/tag cooldown ---
   const [globalCooldown, setGlobalCooldown] = useState({}); // { spotId, type: "checkin"|"tag", expiresAt }
+  const [isCheckedInHere, setIsCheckedInHere] = useState(false);
+  const [userCheckInDocId, setUserCheckInDocId] = useState(null);
 
   // Fetch following list for tagging
   useEffect(() => {
@@ -120,7 +107,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
           const userPosts = snap.docs.filter((d) => d.data().uid === user.uid);
           if (userPosts.length === 0) {
             await AsyncStorage.removeItem(key);
-            setLastCheckIn(0);
+            // setLastCheckIn(0); // <-- Remove this line
           }
         });
       } catch {}
@@ -128,19 +115,6 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
     return () => {
       if (unsub) unsub();
     };
-  }, [spotId, user]);
-
-  useEffect(() => {
-    if (!spotId || !user) return;
-    const key = `nook_checkin_${spotId}_${user.uid}`;
-    (async () => {
-      try {
-        const last = Number((await AsyncStorage.getItem(key)) || 0);
-        setLastCheckIn(last);
-      } catch {
-        setLastCheckIn(0);
-      }
-    })();
   }, [spotId, user]);
 
   // New: check if user was tagged in a check-in at this spot in last 60 min
@@ -257,48 +231,34 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
   }, [spotId, user]);
 
   // --- Determine if check-in is allowed globally ---
-  let canCheckIn = true;
-  if (globalCooldown) {
-    // If checked in anywhere, disable everywhere
-    if (
-      globalCooldown.type === "checkin" &&
-      globalCooldown.spotId &&
-      globalCooldown.spotId !== spotId
-    ) {
-      canCheckIn = false;
-    }
-    // If tagged anywhere, only allow check-in at that spot if not already checked in
-    if (
-      globalCooldown.type === "tag" &&
-      globalCooldown.spotId &&
-      globalCooldown.spotId !== spotId
-    ) {
-      canCheckIn = false;
-    }
-    // If tagged at this spot, allow check-in here if not already checked in
-    if (
-      globalCooldown.type === "tag" &&
-      globalCooldown.spotId === spotId &&
-      (!lastCheckIn || Date.now() - lastCheckIn > 60 * 60 * 1000)
-    ) {
-      canCheckIn = true;
-    }
-    // If checked in at this spot, disable everywhere
-    if (
-      globalCooldown.type === "checkin" &&
-      globalCooldown.spotId === spotId &&
-      (!lastCheckIn || Date.now() - lastCheckIn > 60 * 60 * 1000)
-    ) {
-      canCheckIn = false;
-    }
-  } else {
-    // Fallback to local cooldown
-    canCheckIn = !lastCheckIn || Date.now() - lastCheckIn > 60 * 60 * 1000;
-  }
+  let canCheckIn = false;
+  let canCheckOut = false;
+  let checkInDisabledReason = "";
 
-  // --- Fix: If lastCheckIn is within cooldown, always disable ---
-  if (lastCheckIn && Date.now() - lastCheckIn < 60 * 60 * 1000) {
+  if (loadingCheckedIn) {
     canCheckIn = false;
+    canCheckOut = false;
+  } else if (!checkedIn || (!checkedIn.spotId && !checkedIn.taggedSpotId)) {
+    canCheckIn = true;
+    canCheckOut = false;
+  } else if (checkedIn.spotId) {
+    if (checkedIn.spotId === spotId) {
+      canCheckIn = false;
+      canCheckOut = true;
+    } else {
+      canCheckIn = false;
+      canCheckOut = false;
+      checkInDisabledReason = "You are already checked in at another nook.";
+    }
+  } else if (checkedIn.taggedSpotId) {
+    if (checkedIn.taggedSpotId === spotId) {
+      canCheckIn = true;
+      canCheckOut = false;
+    } else {
+      canCheckIn = false;
+      canCheckOut = false;
+      checkInDisabledReason = "You were tagged at another nook.";
+    }
   }
 
   // --- New: handle check-in with tagging ---
@@ -350,19 +310,146 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
         type: "checkin",
         taggedUids: taggedUids, // store tagged UIDs for feed display
       });
+      // Update checkedIn field in user doc
+      await updateDoc(doc(db, "users", user.uid), {
+        checkedIn: {
+          spotId,
+          checkedInAt: Date.now(),
+          taggedSpotId: null,
+          taggedAt: null,
+        },
+      });
       const key = `nook_checkin_${spotId}_${user.uid}`;
       try {
         await AsyncStorage.setItem(key, Date.now().toString());
       } catch {}
-      setLastCheckIn(Date.now());
+      // setLastCheckIn(Date.now()); // <-- Remove this line
       setTagModalVisible(false);
       setTaggedUids([]);
       Alert.alert("Checked In!", "Your check-in has been posted to the feed.");
     } catch (e) {
+      console.error("Check-in error:", e);
       Alert.alert("Error", "Failed to check in.");
     }
     setIsCheckingIn(false);
   };
+
+  // --- Update: Clear checkedIn state after check-out ---
+  // --- Update: Confirm before check-out ---
+  const handleCheckOut = async () => {
+    if (!user || !spotId) return;
+    Alert.alert(
+      "Confirm Check Out",
+      "Are you sure you want to check out?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Check Out",
+          style: "destructive",
+          onPress: async () => {
+            setIsCheckingOut(true);
+            try {
+              const { db } = await import("../../firebaseConfig");
+              const { doc, updateDoc } = await import("firebase/firestore");
+              // Clear checkedIn field in user doc
+              await updateDoc(doc(db, "users", user.uid), {
+                checkedIn: {},
+              });
+              setCheckedIn(null);
+              // ...existing code for marking post as checked out if needed...
+            } catch (e) {
+              Alert.alert("Error", "Failed to check out.");
+            }
+            setIsCheckingOut(false);
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  // --- Add: Fetch checkedIn state from Firestore on mount/user change ---
+  useEffect(() => {
+    if (!user) {
+      setCheckedIn(null);
+      setLoadingCheckedIn(false);
+      return;
+    }
+    let unsub = null;
+    (async () => {
+      try {
+        setLoadingCheckedIn(true);
+        const { db } = await import("../../firebaseConfig");
+        const { doc, onSnapshot } = await import("firebase/firestore");
+        unsub = onSnapshot(doc(db, "users", user.uid), (docSnap) => {
+          if (docSnap.exists()) {
+            setCheckedIn(docSnap.data().checkedIn || null);
+          } else {
+            setCheckedIn(null);
+          }
+          setLoadingCheckedIn(false);
+        });
+      } catch {
+        setCheckedIn(null);
+        setLoadingCheckedIn(false);
+      }
+    })();
+    return () => {
+      if (unsub) unsub();
+    };
+  }, [user]);
+
+  // Listen for user's check-in post at this spot to enable "Check Out"
+  useEffect(() => {
+    if (!spotId || !user) return;
+    let unsub = null;
+    (async () => {
+      try {
+        const { db } = await import("../../firebaseConfig");
+        const { collection, query, where, onSnapshot } = await import(
+          "firebase/firestore"
+        );
+        const since = Date.now() - 60 * 60 * 1000;
+        const q = query(
+          collection(db, "posts"),
+          where("spotId", "==", spotId),
+          where("type", "==", "checkin"),
+          where("uid", "==", user.uid)
+        );
+        unsub = onSnapshot(q, (snap) => {
+          let found = false;
+          let docId = null;
+          snap.forEach((doc) => {
+            const data = doc.data();
+            let createdAtMs =
+              data.createdAt &&
+              typeof data.createdAt === "object" &&
+              data.createdAt.seconds
+                ? data.createdAt.seconds * 1000
+                : typeof data.createdAt === "number"
+                ? data.createdAt
+                : 0;
+            // Only consider posts that are NOT checked out
+            if (
+              createdAtMs > since &&
+              (!data.checkedOut || data.checkedOut === false)
+            ) {
+              found = true;
+              docId = doc.id;
+            }
+          });
+          setIsCheckedInHere(found);
+          setUserCheckInDocId(docId);
+        });
+      } catch {}
+    })();
+    return () => {
+      if (unsub) unsub();
+    };
+  }, [spotId, user]);
 
   return (
     <View style={{ marginTop: 16, marginBottom: 8, alignItems: "center" }}>
@@ -581,45 +668,81 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
           </View>
         </TouchableOpacity>
       </Modal>
-      <TouchableOpacity
-        onPress={handleCheckIn}
-        disabled={isCheckingIn || !canCheckIn}
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          backgroundColor: canCheckIn ? themeColors.green : themeColors.gray,
-          borderRadius: 24,
-          paddingVertical: 10,
-          paddingHorizontal: 24,
-          opacity: isCheckingIn || !canCheckIn ? 0.7 : 1,
-        }}
-        accessibilityLabel="Check In"
-      >
-        {isCheckingIn ? (
-          <ActivityIndicator color={themeColors.white} />
-        ) : (
-          <>
-            <MapPin size={20} color={themeColors.white} weight="bold" />
-            <Text
-              style={{
-                color: themeColors.white,
-                fontWeight: "bold",
-                fontSize: 15,
-                marginLeft: 8,
-                fontFamily: "CarosSoft",
-              }}
-            >
-              {isCheckingIn
-                ? "Checking In..."
-                : canCheckIn
-                ? "Check In"
-                : "Check In"}
-            </Text>
-          </>
-        )}
-      </TouchableOpacity>
+      {canCheckOut ? (
+        <TouchableOpacity
+          onPress={handleCheckOut}
+          disabled={isCheckingOut}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: themeColors.red,
+            borderRadius: 24,
+            paddingVertical: 10,
+            paddingHorizontal: 24,
+            opacity: isCheckingOut ? 0.7 : 1,
+          }}
+          accessibilityLabel="Check Out"
+        >
+          {isCheckingOut ? (
+            <ActivityIndicator color={themeColors.white} />
+          ) : (
+            <>
+              <MapPin size={20} color={themeColors.white} weight="bold" />
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontSize: 15,
+                  marginLeft: 8,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                Check Out
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          onPress={handleCheckIn}
+          disabled={isCheckingIn || !canCheckIn}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: canCheckIn ? themeColors.green : themeColors.gray,
+            borderRadius: 24,
+            paddingVertical: 10,
+            paddingHorizontal: 24,
+            opacity: isCheckingIn || !canCheckIn ? 0.7 : 1,
+          }}
+          accessibilityLabel="Check In"
+        >
+          {isCheckingIn ? (
+            <ActivityIndicator color={themeColors.white} />
+          ) : (
+            <>
+              <MapPin size={20} color={themeColors.white} weight="bold" />
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontSize: 15,
+                  marginLeft: 8,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                {isCheckingIn
+                  ? "Checking In..."
+                  : canCheckIn
+                  ? "Check In"
+                  : "Check In"}
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
+      )}
       {/* Show cooldown message if tagged */}
-      {!canCheckIn && globalCooldown && (
+      {!canCheckIn && checkInDisabledReason && (
         <Text
           style={{
             color: themeColors.darkGray,
@@ -628,15 +751,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
             fontFamily: "CarosSoft",
           }}
         >
-          {globalCooldown.type === "checkin"
-            ? "You can check in again in " +
-              Math.ceil((globalCooldown.expiresAt - Date.now()) / 60000) +
-              " min"
-            : globalCooldown.type === "tag" && globalCooldown.spotId === spotId
-            ? "You were tagged here. You can check in here if you haven't already."
-            : "You were tagged at another location. You can check in after " +
-              Math.ceil((globalCooldown.expiresAt - Date.now()) / 60000) +
-              " min"}
+          {checkInDisabledReason}
         </Text>
       )}
     </View>

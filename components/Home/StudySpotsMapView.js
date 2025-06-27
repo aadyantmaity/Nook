@@ -1,13 +1,20 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   View,
   Text,
   Dimensions,
   TouchableOpacity,
   Platform,
+  Modal,
+  Pressable,
+  ScrollView,
 } from "react-native";
 import MapView, { Marker, Callout, PROVIDER_GOOGLE } from "react-native-maps";
-import { auth } from "../../firebaseConfig";
+import { auth, db } from "../../firebaseConfig";
+import * as Location from "expo-location";
+import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
+// Remove MaterialCommunityIcons import and use Phosphor instead:
+import { PencilSimple } from "phosphor-react-native";
 
 // Helper: Haversine distance in meters
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -55,6 +62,52 @@ export default function StudySpotsMapView({
 }) {
   const mapRef = useRef();
   const [region, setRegion] = useState(null);
+  const [regionPickerVisible, setRegionPickerVisible] = useState(false);
+  const [userHasPickedRegion, setUserHasPickedRegion] = useState(false);
+  const [gettingLocation, setGettingLocation] = useState(false); // NEW: loading state for location
+
+  // Calculate square size (full width minus 32px)
+  const screenWidth = Dimensions.get("window").width;
+  const mapSize = Math.floor(screenWidth - 32);
+
+  // UW campus region (centered on Red Square)
+  const UW_REGION = {
+    latitude: 47.654548,
+    longitude: -122.3085,
+    latitudeDelta: 0.01,
+    longitudeDelta: 0.01,
+  };
+
+  // --- Load persisted region from Firestore on mount ---
+  useEffect(() => {
+    let unsub = false;
+    async function loadRegion() {
+      if (!auth.currentUser) return;
+      try {
+        const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+        const mapRegion = userDoc.exists() && userDoc.data().mapRegion;
+        if (mapRegion && !unsub) {
+          setRegion(mapRegion);
+        }
+      } catch {}
+    }
+    loadRegion();
+    return () => {
+      unsub = true;
+    };
+  }, []);
+
+  // --- Persist region to Firestore whenever it changes (and user is logged in) ---
+  useEffect(() => {
+    if (!auth.currentUser || !region) return;
+    const saveRegion = async () => {
+      try {
+        const userRef = doc(db, "users", auth.currentUser.uid);
+        await setDoc(userRef, { mapRegion: region }, { merge: true });
+      } catch {}
+    };
+    saveRegion();
+  }, [region]);
 
   // Filter spots with coordinates
   const spotsWithCoords = Array.isArray(spots)
@@ -66,29 +119,13 @@ export default function StudySpotsMapView({
       )
     : [];
 
-  // Default region: center on first spot or UW campus
-  const defaultRegion =
-    spotsWithCoords.length > 0
-      ? {
-          latitude: spotsWithCoords[0].coordinates.latitude,
-          longitude: spotsWithCoords[0].coordinates.longitude,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        }
-      : {
-          latitude: 47.655548, // UW Seattle
-          longitude: -122.3032,
-          latitudeDelta: 0.03,
-          longitudeDelta: 0.03,
-        };
-
-  // Calculate square size (90% of screen width)
-  const screenWidth = Dimensions.get("window").width;
-  // Instead of 90%, use full width minus 32px (16px padding on each side)
-  const mapSize = Math.floor(screenWidth - 32);
-
-  // --- Cluster spots ---
-  const clusters = clusterSpots(spotsWithCoords);
+  // --- Default region logic: only set to UW if not set and not picked ---
+  useEffect(() => {
+    if (!region && !userHasPickedRegion) {
+      setRegion(UW_REGION);
+    }
+    // eslint-disable-next-line
+  }, []);
 
   // --- Favorite spot IDs ---
   const favoriteIds = Array.isArray(spots)
@@ -147,8 +184,165 @@ export default function StudySpotsMapView({
     });
   };
 
+  // Helper to get user's current location and set region
+  const goToUserLocation = async () => {
+    setGettingLocation(true);
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setGettingLocation(false);
+        alert("Permission to access location was denied.");
+        return;
+      }
+      let loc = await Location.getCurrentPositionAsync({});
+      const userRegion = {
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      };
+      setRegion(userRegion);
+      setUserHasPickedRegion(true);
+      if (mapRef.current) mapRef.current.animateToRegion(userRegion);
+      setRegionPickerVisible(false);
+    } catch (e) {
+      alert("Could not get your location.");
+    }
+    setGettingLocation(false);
+  };
+
+  // --- Group spots by building name ---
+  const buildingGroups = {};
+  spotsWithCoords.forEach((spot) => {
+    const buildingKey = (spot.buildingName || spot.name || "Unknown").trim();
+    if (!buildingGroups[buildingKey]) buildingGroups[buildingKey] = [];
+    buildingGroups[buildingKey].push(spot);
+  });
+
+  // --- Compute representative pin for each building (average coordinates) ---
+  const buildingPins = Object.entries(buildingGroups).map(
+    ([buildingName, spots]) => {
+      // Average coordinates for the building pin
+      const lat =
+        spots.reduce((sum, s) => sum + s.coordinates.latitude, 0) /
+        spots.length;
+      const lon =
+        spots.reduce((sum, s) => sum + s.coordinates.longitude, 0) /
+        spots.length;
+      return {
+        buildingName,
+        spots,
+        latitude: lat,
+        longitude: lon,
+      };
+    }
+  );
+
+  // --- Modal state for showing floors/spots in a building ---
+  const [buildingModal, setBuildingModal] = useState({
+    visible: false,
+    buildingName: "",
+    spots: [],
+  });
+
   return (
     <>
+      {/* Region Picker Modal */}
+      <Modal
+        visible={regionPickerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setRegionPickerVisible(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.3)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: themeColors.white,
+              borderRadius: 12,
+              padding: 24,
+              width: 280,
+              alignItems: "center",
+            }}
+          >
+            <Text
+              style={{
+                fontWeight: "bold",
+                fontSize: 18,
+                marginBottom: 18,
+                color: themeColors.purple,
+                fontFamily: "CarosSoft",
+              }}
+            >
+              Edit Map Region
+            </Text>
+            <Pressable
+              style={{
+                padding: 12,
+                borderRadius: 8,
+                marginBottom: 12,
+                width: "100%",
+                alignItems: "center",
+              }}
+              onPress={() => {
+                setRegion(UW_REGION);
+                setUserHasPickedRegion(true);
+                if (mapRef.current) mapRef.current.animateToRegion(UW_REGION);
+                setRegionPickerVisible(false);
+              }}
+            >
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                UW Campus
+              </Text>
+            </Pressable>
+            <Pressable
+              style={{
+                padding: 12,
+                borderRadius: 8,
+                marginBottom: 12,
+                width: "100%",
+                alignItems: "center",
+                backgroundColor: gettingLocation ? themeColors.gray : undefined,
+                opacity: gettingLocation ? 0.6 : 1,
+              }}
+              onPress={goToUserLocation}
+              disabled={gettingLocation}
+            >
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                {gettingLocation
+                  ? "Getting location..."
+                  : "My Current Location"}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={{ marginTop: 16 }}
+              onPress={() => setRegionPickerVisible(false)}
+            >
+              <Text style={{ color: themeColors.red, fontFamily: "CarosSoft" }}>
+                Cancel
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
       <View
         style={[
           {
@@ -162,11 +356,53 @@ export default function StudySpotsMapView({
           containerStyle,
         ]}
       >
+        {/* Map Region Button overlayed in top right */}
+        <View
+          style={{
+            position: "absolute",
+            top: 16,
+            right: 16,
+            zIndex: 10,
+          }}
+        >
+          <TouchableOpacity
+            style={{
+              backgroundColor: themeColors.purple,
+              paddingVertical: 8,
+              paddingHorizontal: 14,
+              borderRadius: 8,
+              alignItems: "center",
+              flexDirection: "row",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.12,
+              shadowRadius: 2,
+              elevation: 2,
+            }}
+            onPress={() => setRegionPickerVisible(true)}
+          >
+            <PencilSimple
+              size={18}
+              color={themeColors.white}
+              weight="bold"
+              style={{ marginRight: 6 }}
+            />
+            <Text
+              style={{
+                color: themeColors.white,
+                fontWeight: "bold",
+                fontFamily: "CarosSoft",
+                fontSize: 14,
+              }}
+            >
+              Edit Map
+            </Text>
+          </TouchableOpacity>
+        </View>
         <MapView
           ref={mapRef}
           style={{ flex: 1 }}
-          initialRegion={defaultRegion}
-          region={region || undefined}
+          region={region}
           onRegionChangeComplete={setRegion}
           showsUserLocation={true}
           {...(Platform.OS === "android" ? { provider: PROVIDER_GOOGLE } : {})}
@@ -174,26 +410,27 @@ export default function StudySpotsMapView({
           showsCompass={true}
           rotateEnabled={true}
         >
-          {clusters.map((cluster, idx) =>
-            cluster.length === 1 ? (
-              <Marker
-                key={cluster[0].id}
-                coordinate={{
-                  latitude: cluster[0].coordinates.latitude,
-                  longitude: cluster[0].coordinates.longitude,
-                }}
-                pinColor={themeColors.orange}
-              >
+          {/* --- Render one marker per building --- */}
+          {buildingPins.map((pin) => (
+            <Marker
+              key={pin.buildingName}
+              coordinate={{
+                latitude: pin.latitude,
+                longitude: pin.longitude,
+              }}
+              pinColor={themeColors.orange}
+            >
+              {pin.spots.length === 1 ? (
                 <Callout
+                  tooltip={false}
                   onPress={() =>
                     navigation({
-                      spotId: cluster[0].id,
+                      spotId: pin.spots[0].id,
                       view: "map",
                     })
                   }
-                  style={{ minWidth: 120 }}
                 >
-                  <View>
+                  <View style={{ alignItems: "center" }}>
                     <Text
                       style={{
                         fontWeight: "bold",
@@ -201,10 +438,41 @@ export default function StudySpotsMapView({
                         fontFamily: "CarosSoft",
                       }}
                     >
-                      {cluster[0].buildingName}
-                      {cluster[0].roomNumber
-                        ? ` - Floor ${cluster[0].roomNumber}`
-                        : ""}
+                      {pin.buildingName}
+                    </Text>
+                    <Text
+                      style={{
+                        color: themeColors.orange,
+                        fontSize: 12,
+                        marginTop: 2,
+                        fontFamily: "CarosSoft",
+                        alignSelf: "center",
+                      }}
+                    >
+                      Tap for more details
+                    </Text>
+                  </View>
+                </Callout>
+              ) : (
+                <Callout
+                  tooltip={false}
+                  onPress={() =>
+                    setBuildingModal({
+                      visible: true,
+                      buildingName: pin.buildingName,
+                      spots: pin.spots,
+                    })
+                  }
+                >
+                  <View style={{ alignItems: "center" }}>
+                    <Text
+                      style={{
+                        fontWeight: "bold",
+                        color: themeColors.purple,
+                        fontFamily: "CarosSoft",
+                      }}
+                    >
+                      {pin.buildingName}
                     </Text>
                     <Text
                       style={{
@@ -214,57 +482,13 @@ export default function StudySpotsMapView({
                         fontFamily: "CarosSoft",
                       }}
                     >
-                      Tap for details
+                      Tap for floors
                     </Text>
                   </View>
                 </Callout>
-              </Marker>
-            ) : (
-              <Marker
-                key={"cluster_" + idx}
-                coordinate={{
-                  latitude:
-                    cluster.reduce(
-                      (sum, s) => sum + s.coordinates.latitude,
-                      0
-                    ) / cluster.length,
-                  longitude:
-                    cluster.reduce(
-                      (sum, s) => sum + s.coordinates.longitude,
-                      0
-                    ) / cluster.length,
-                }}
-                tracksViewChanges={false}
-                pinColor={themeColors.orange}
-                onPress={() => zoomToCluster(cluster)}
-              >
-                <View
-                  style={{
-                    backgroundColor: themeColors.purple,
-                    borderRadius: 30,
-                    padding: 8,
-                    borderWidth: 2,
-                    borderColor: themeColors.white,
-                    minWidth: 44,
-                    minHeight: 44,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: themeColors.white,
-                      fontWeight: "bold",
-                      fontSize: 18,
-                      fontFamily: "CarosSoft",
-                    }}
-                  >
-                    {cluster.length}
-                  </Text>
-                </View>
-              </Marker>
-            )
-          )}
+              )}
+            </Marker>
+          ))}
         </MapView>
         {spotsWithCoords.length === 0 && (
           <View
@@ -366,6 +590,134 @@ export default function StudySpotsMapView({
           </Text>
         </View>
       </View>
+      {/* --- Building Modal: List all floors/spots for selected building --- */}
+      <Modal
+        visible={buildingModal.visible}
+        transparent
+        animationType="slide"
+        onRequestClose={() =>
+          setBuildingModal((prev) => ({ ...prev, visible: false }))
+        }
+      >
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.3)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          activeOpacity={1}
+          onPressOut={() =>
+            setBuildingModal((prev) => ({ ...prev, visible: false }))
+          }
+        >
+          <View
+            style={{
+              backgroundColor: themeColors.white,
+              borderRadius: 16,
+              padding: 24,
+              width: "85%",
+              alignItems: "center",
+              maxHeight: "70%",
+              borderWidth: 1,
+              borderColor: themeColors.black,
+              shadowColor: themeColors.black,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+              elevation: 5,
+            }}
+            onStartShouldSetResponder={() => true}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "bold",
+                color: themeColors.purple,
+                marginBottom: 10,
+                textAlign: "center",
+                fontFamily: "CarosSoft",
+              }}
+            >
+              {buildingModal.buildingName}
+            </Text>
+            <ScrollView style={{ width: "100%" }}>
+              {buildingModal.spots
+                .sort((a, b) =>
+                  String(a.roomNumber || "").localeCompare(
+                    String(b.roomNumber || "")
+                  )
+                )
+                .map((spot) => (
+                  <TouchableOpacity
+                    key={spot.id}
+                    onPress={() => {
+                      setBuildingModal((prev) => ({ ...prev, visible: false }));
+                      navigation({
+                        spotId: spot.id,
+                        view: "map",
+                      });
+                    }}
+                    style={{
+                      paddingVertical: 12,
+                      borderBottomWidth: 1,
+                      borderBottomColor: themeColors.gray,
+                      flexDirection: "row",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: themeColors.purple,
+                        fontWeight: "bold",
+                        fontFamily: "CarosSoft",
+                        fontSize: 16,
+                        flex: 1,
+                      }}
+                    >
+                      {spot.roomNumber
+                        ? `Floor ${spot.roomNumber}`
+                        : spot.name || "Nook"}
+                    </Text>
+                    <Text
+                      style={{
+                        color: themeColors.darkGray,
+                        fontSize: 13,
+                        fontFamily: "CarosSoft",
+                      }}
+                    >
+                      {spot.privateNook ? "Private" : ""}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+            </ScrollView>
+            <TouchableOpacity
+              onPress={() =>
+                setBuildingModal((prev) => ({ ...prev, visible: false }))
+              }
+              style={{
+                marginTop: 14,
+                backgroundColor: themeColors.purple,
+                borderRadius: 8,
+                paddingVertical: 10,
+                paddingHorizontal: 24,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontSize: 16,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                Close
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </>
   );
 }

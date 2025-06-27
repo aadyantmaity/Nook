@@ -74,7 +74,6 @@ export default function UserFocusStatsDropdown({
     <View
       style={{
         width: "100%",
-        backgroundColor: themeColors.gray + "22",
         borderRadius: 12,
         paddingTop: 8,
       }}
