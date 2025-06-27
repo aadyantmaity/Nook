@@ -471,17 +471,10 @@ export function ArchiveButton({
                                                     <View
                                                       key={s.sessionId || idx}
                                                       style={{
-                                                        backgroundColor:
-                                                          themeColors.gray +
-                                                          "10",
                                                         borderRadius: 8,
                                                         padding: 8,
                                                         marginVertical: 2,
                                                         marginLeft: 8,
-                                                        borderWidth: 1,
-                                                        borderColor:
-                                                          themeColors.gray +
-                                                          "44",
                                                         flexDirection: "row",
                                                         alignItems: "center",
                                                       }}
@@ -689,15 +682,10 @@ export function ArchiveButton({
                                         <View
                                           key={idx}
                                           style={{
-                                            backgroundColor:
-                                              themeColors.gray + "10",
                                             borderRadius: 8,
                                             padding: 8,
                                             marginVertical: 2,
                                             marginLeft: 8,
-                                            borderWidth: 1,
-                                            borderColor:
-                                              themeColors.gray + "44",
                                             flexDirection: "row",
                                             alignItems: "center",
                                           }}

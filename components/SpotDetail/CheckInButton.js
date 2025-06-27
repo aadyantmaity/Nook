@@ -12,6 +12,7 @@ import { MapPin } from "phosphor-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { auth } from "../../firebaseConfig";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
+import * as Location from "expo-location"; // Add this import
 
 export default function CheckInButton({ spot, spotId, themeColors }) {
   const user = auth.currentUser;
@@ -261,11 +262,54 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
     }
   }
 
-  // --- New: handle check-in with tagging ---
+  // --- New: handle check-in with geofence ---
   const handleCheckIn = async () => {
     if (!user || !spotId || !spot) return;
+    // --- Geofence logic ---
+    if (
+      spot.coordinates &&
+      typeof spot.coordinates.latitude === "number" &&
+      typeof spot.coordinates.longitude === "number"
+    ) {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Location Required", "You must allow location access to check in at this nook.");
+        return;
+      }
+      let loc;
+      try {
+        loc = await Location.getCurrentPositionAsync({});
+      } catch (e) {
+        Alert.alert("Location Error", "Could not get your current location.");
+        return;
+      }
+      const userLat = loc.coords.latitude;
+      const userLon = loc.coords.longitude;
+      const spotLat = spot.coordinates.latitude;
+      const spotLon = spot.coordinates.longitude;
+      const distance = getDistanceMeters(userLat, userLon, spotLat, spotLon);
+      if (distance > 30.48) {
+        Alert.alert(
+          "Too Far",
+          "You must be within 100 feet of this nook to check in."
+        );
+        return;
+      }
+    }
     setTagModalVisible(true);
   };
+
+  // Helper: Haversine distance in meters
+  function getDistanceMeters(lat1, lon1, lat2, lon2) {
+    const toRad = (v) => (v * Math.PI) / 180;
+    const R = 6371000;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
 
   // --- New: confirm check-in after selecting tags ---
   const confirmCheckIn = async () => {

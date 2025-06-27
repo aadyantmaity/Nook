@@ -1240,10 +1240,10 @@ export function FocusTimerView({ navigation }) {
                 maxHeight: 120,
                 marginBottom: 10,
                 padding: 12,
-                fontSize: 16,
+                fontSize: 14,
                 color: themeColors.black,
                 textAlignVertical: "top",
-                backgroundColor: themeColors.gray + "18",
+                fontFamily: "CarosSoft",
               }}
               placeholder="E.g. Stayed focused, got distracted, what did you work on, etc."
               placeholderTextColor={themeColors.darkGray}

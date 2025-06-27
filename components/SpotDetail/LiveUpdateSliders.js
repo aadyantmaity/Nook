@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Alert } from "react-native";
 import {
   SpeakerSimpleNone,
   SpeakerSimpleLow,
@@ -9,6 +9,7 @@ import {
   UsersThree,
   Check,
 } from "phosphor-react-native";
+import * as Location from "expo-location";
 
 const NOISE_OPTIONS = [
   { label: "Silent", value: 0, icon: <SpeakerSimpleNone size={23} /> },
@@ -35,10 +36,64 @@ export default function LiveUpdateSliders({
   isSubmittingLive,
   onSubmit,
   themeColors,
-  showTableAvailability, // new prop
+  showTableAvailability,
   tableAvailability,
   setTableAvailability,
+  spot,
 }) {
+  // Helper: Haversine distance in meters
+  function getDistanceMeters(lat1, lon1, lat2, lon2) {
+    const toRad = (v) => (v * Math.PI) / 180;
+    const R = 6371000;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  // Handler with geofence logic
+  const handleGeofencedSubmit = async () => {
+    // If spot has coordinates, require user to be within 100ft
+    if (
+      spot &&
+      spot.coordinates &&
+      typeof spot.coordinates.latitude === "number" &&
+      typeof spot.coordinates.longitude === "number"
+    ) {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Location Required",
+          "You must allow location access to submit a live update for this nook."
+        );
+        return;
+      }
+      let loc;
+      try {
+        loc = await Location.getCurrentPositionAsync({});
+      } catch (e) {
+        Alert.alert("Location Error", "Could not get your current location.");
+        return;
+      }
+      const userLat = loc.coords.latitude;
+      const userLon = loc.coords.longitude;
+      const spotLat = spot.coordinates.latitude;
+      const spotLon = spot.coordinates.longitude;
+      const distance = getDistanceMeters(userLat, userLon, spotLat, spotLon);
+      if (distance > 30.48) {
+        Alert.alert(
+          "Too Far",
+          "You must be within 100 feet of this nook to submit a live update."
+        );
+        return;
+      }
+    }
+    // Call original submit handler
+    onSubmit && onSubmit();
+  };
+
   return (
     <View
       style={{
@@ -269,7 +324,7 @@ export default function LiveUpdateSliders({
         }}
       >
         <TouchableOpacity
-          onPress={onSubmit}
+          onPress={handleGeofencedSubmit}
           style={{
             backgroundColor: themeColors.purple,
             borderRadius: 8,
