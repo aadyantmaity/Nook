@@ -22,6 +22,7 @@ export default function SpotGallery({
   setSpot,
   themeColors,
   imageStyle, // <-- add imageStyle prop
+  style, // <-- add style prop
 }) {
   const [isUploading, setIsUploading] = useState(false);
   // Store images as array of objects: { url, author, createdAt }
@@ -130,7 +131,7 @@ export default function SpotGallery({
   }
 
   return (
-    <View style={{ marginTop: 8 }}>
+    <View style={[{ marginTop: -16 }, style]}>
       {/* Modal for image details */}
       <Modal
         visible={showModal}
