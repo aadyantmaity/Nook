@@ -710,18 +710,12 @@ export function ArchiveButton({
                                                   fontFamily: "CarosSoft",
                                                 }}
                                               >
-                                                Target:{" "}
-                                                {(() => {
-                                                  const secs = goal.target;
-                                                  const h = Math.floor(
-                                                    secs / 3600
-                                                  );
-                                                  const m = Math.floor(
-                                                    (secs % 3600) / 60
-                                                  );
-                                                  const s = secs % 60;
-                                                  return `${h}h ${m}m ${s}s`;
-                                                })()}
+                                                Achieved:{" "}
+                                                {goal.achievedAt
+                                                  ? new Date(
+                                                      goal.achievedAt
+                                                    ).toLocaleString()
+                                                  : ""}
                                               </Text>
                                             )}
                                             <Text
@@ -731,24 +725,19 @@ export function ArchiveButton({
                                                 fontFamily: "CarosSoft",
                                               }}
                                             >
-                                              Achieved:{" "}
-                                              {goal.achievedAt
-                                                ? new Date(
-                                                    goal.achievedAt
-                                                  ).toLocaleString()
-                                                : ""}
+                                              Target:{" "}
+                                              {(() => {
+                                                const secs = goal.target;
+                                                const h = Math.floor(
+                                                  secs / 3600
+                                                );
+                                                const m = Math.floor(
+                                                  (secs % 3600) / 60
+                                                );
+                                                const s = secs % 60;
+                                                return `${h}h ${m}m ${s}s`;
+                                              })()}
                                             </Text>
-                                            {goal.location && (
-                                              <Text
-                                                style={{
-                                                  color: themeColors.darkGray,
-                                                  fontSize: 13,
-                                                  fontFamily: "CarosSoft",
-                                                }}
-                                              >
-                                                Location: {goal.location}
-                                              </Text>
-                                            )}
                                           </View>
                                           <TouchableOpacity
                                             onPress={() =>

@@ -424,14 +424,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                     >
                       {/* Show QR Code */}
                       {/* Removed QR Code option */}
-                      {/* Divider */}
-                      <View
-                        style={{
-                          height: 1,
-                          backgroundColor: themeColors.gray,
-                          marginHorizontal: 10,
-                        }}
-                      />
+
                       {/* Report Incorrect Info */}
                       <TouchableOpacity
                         onPress={() => {
@@ -463,13 +456,15 @@ export default function SpotDetailScreen({ route, navigation }) {
                         </Text>
                       </TouchableOpacity>
                       {/* Divider */}
-                      <View
-                        style={{
-                          height: 1,
-                          backgroundColor: themeColors.gray,
-                          marginHorizontal: 10,
-                        }}
-                      />
+                      {isOwner && (
+                        <View
+                          style={{
+                            height: 1,
+                            backgroundColor: themeColors.gray,
+                            marginHorizontal: 10,
+                          }}
+                        />
+                      )}
                       {isOwner && isPrivateNook && (
                         <TouchableOpacity
                           onPress={() => {
@@ -540,14 +535,15 @@ export default function SpotDetailScreen({ route, navigation }) {
                           </Text>
                         </TouchableOpacity>
                       )}
-                      {/* Divider */}
-                      <View
-                        style={{
-                          height: 1,
-                          backgroundColor: themeColors.gray,
-                          marginHorizontal: 10,
-                        }}
-                      />
+                      {isOwner && (
+                        <View
+                          style={{
+                            height: 1,
+                            backgroundColor: themeColors.gray,
+                            marginHorizontal: 10,
+                          }}
+                        />
+                      )}
                       {/* Delete Nook (only for owner) */}
                       {user && spot.addedBy === user.uid && (
                         <TouchableOpacity
@@ -870,17 +866,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                         zIndex: 100,
                       }}
                     >
-                      {/* Show QR Code */}
-                      {/* Removed QR Code option */}
-                      {/* Divider */}
-                      <View
-                        style={{
-                          height: 1,
-                          backgroundColor: themeColors.gray,
-                          marginHorizontal: 10,
-                        }}
-                      />
-                      {/* Report Incorrect Info */}
                       <TouchableOpacity
                         onPress={() => {
                           setShowMenu(false);
@@ -910,14 +895,16 @@ export default function SpotDetailScreen({ route, navigation }) {
                           Report
                         </Text>
                       </TouchableOpacity>
-                      {/* Divider */}
-                      <View
-                        style={{
-                          height: 1,
-                          backgroundColor: themeColors.gray,
-                          marginHorizontal: 10,
-                        }}
-                      />
+                      {/* Only show divider if user is the owner of the private nook */}
+                      {isOwner && isPrivateNook && (
+                        <View
+                          style={{
+                            height: 1,
+                            backgroundColor: themeColors.gray,
+                            marginHorizontal: 10,
+                          }}
+                        />
+                      )}
                       {isOwner && isPrivateNook && (
                         <TouchableOpacity
                           onPress={() => {
@@ -988,14 +975,15 @@ export default function SpotDetailScreen({ route, navigation }) {
                           </Text>
                         </TouchableOpacity>
                       )}
-                      {/* Divider */}
-                      <View
-                        style={{
-                          height: 1,
-                          backgroundColor: themeColors.gray,
-                          marginHorizontal: 10,
-                        }}
-                      />
+                      {isOwner && isPrivateNook && (
+                        <View
+                          style={{
+                            height: 1,
+                            backgroundColor: themeColors.gray,
+                            marginHorizontal: 10,
+                          }}
+                        />
+                      )}
                       {/* Delete Nook (only for owner) */}
                       {user && spot.addedBy === user.uid && (
                         <TouchableOpacity

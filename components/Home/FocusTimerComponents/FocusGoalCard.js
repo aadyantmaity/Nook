@@ -130,8 +130,7 @@ export function FocusGoalCard({
             textAlign: "left",
           }}
         >
-          {goal.title ||
-            (goal.type === "custom" ? "Custom Goal" : "Focus Goal")}
+          {goal.title || (goal.type === "custom" ? "Task Goal" : "Time Goal")}
         </Text>
         {/* Remove edit button */}
         <TouchableOpacity
