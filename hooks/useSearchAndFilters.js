@@ -1,9 +1,37 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import * as Location from "expo-location"; // Add this import
 import { auth } from "../firebaseConfig"; // Adjust the import based on your project structure
 
 export default function useSearchAndFilters(studySpots, favorites) {
   const [filters, setFilters] = useState([]);
   const [sortBy, setSortBy] = useState("default");
+  // Add user location state:
+  const [userLocation, setUserLocation] = useState(null);
+
+  // Helper to get user location (like CheckInButton)
+  const fetchUserLocation = useCallback(async () => {
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setUserLocation(null);
+        return;
+      }
+      let loc = await Location.getCurrentPositionAsync({});
+      setUserLocation({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      });
+    } catch {
+      setUserLocation(null);
+    }
+  }, []);
+
+  // Optionally, fetch location automatically if sortBy is distance
+  useEffect(() => {
+    if (sortBy === "distance-asc" || sortBy === "distance-desc") {
+      fetchUserLocation();
+    }
+  }, [sortBy, fetchUserLocation]);
 
   const matchFilters = (spot) => {
     if (!filters.length) return true;
@@ -24,42 +52,47 @@ export default function useSearchAndFilters(studySpots, favorites) {
     });
   };
 
-  // --- Sorting logic ---
-  function sortSpots(spots) {
-    switch (sortBy) {
-      case "name-asc":
-        return [...spots].sort((a, b) =>
-          (a.name || "").localeCompare(b.name || "")
-        );
-      case "name-desc":
-        return [...spots].sort((a, b) =>
-          (b.name || "").localeCompare(a.name || "")
-        );
-      case "noise-asc":
-        return [...spots].sort(
-          (a, b) =>
-            (typeof a.ratings?.noise === "number" ? a.ratings.noise : 99) -
-            (typeof b.ratings?.noise === "number" ? b.ratings.noise : 99)
-        );
-      case "crowd-asc":
-        return [...spots].sort(
-          (a, b) =>
-            (typeof a.ratings?.crowd === "number" ? a.ratings.crowd : 99) -
-            (typeof b.ratings?.crowd === "number" ? b.ratings.crowd : 99)
-        );
-      case "overall-desc":
-        return [...spots].sort(
-          (a, b) =>
-            (b.averageOverallRating || 0) - (a.averageOverallRating || 0)
-        );
-      default:
-        return spots;
-    }
+  // Helper: Haversine distance in meters
+  function getDistance(lat1, lon1, lat2, lon2) {
+    const toRad = (v) => (v * Math.PI) / 180;
+    const R = 6371000;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
-  const filteredSpots = sortSpots(
-    studySpots.filter((spot) => matchFilters(spot))
-  );
+  // Sorting logic (add distance sort)
+  let sortedSpots = [...(studySpots || [])];
+  if (
+    (sortBy === "distance-asc" || sortBy === "distance-desc") &&
+    userLocation
+  ) {
+    sortedSpots = sortedSpots
+      .map((spot) => {
+        if (
+          spot.coordinates &&
+          typeof spot.coordinates.latitude === "number" &&
+          typeof spot.coordinates.longitude === "number"
+        ) {
+          return {
+            ...spot,
+            _distance: getDistance(
+              userLocation.latitude,
+              userLocation.longitude,
+              spot.coordinates.latitude,
+              spot.coordinates.longitude
+            ),
+          };
+        }
+        return { ...spot, _distance: Infinity };
+      })
+      .sort((a, b) => a._distance - b._distance);
+  }
+
+  const filteredSpots = sortedSpots.filter((spot) => matchFilters(spot));
 
   // Expose matchFilters and sortBy for use in map/list view
   return {
@@ -69,5 +102,7 @@ export default function useSearchAndFilters(studySpots, favorites) {
     matchFilters,
     sortBy,
     setSortBy,
+    userLocation,
+    fetchUserLocation,
   };
 }

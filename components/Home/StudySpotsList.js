@@ -36,6 +36,8 @@ export default function StudySpotsList({
   ListHeaderComponent, // <-- add this prop
   sortBy, // <-- add
   setSortBy, // <-- add
+  userLocation, // <-- add
+  ...props
 }) {
   // Add helper functions:
   function getNoiseLabel(avg) {
@@ -53,6 +55,18 @@ export default function StudySpotsList({
     if (avg < 0.5) return "Empty";
     if (avg < 1.5) return "Light";
     return "Busy";
+  }
+
+  // Helper: Haversine distance in meters
+  function getDistance(lat1, lon1, lat2, lon2) {
+    const toRad = (v) => (v * Math.PI) / 180;
+    const R = 6371000;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
   return (
@@ -101,6 +115,25 @@ export default function StudySpotsList({
         const isOdegaard = (item.buildingName || item.name || "")
           .toLowerCase()
           .includes("odegaard");
+
+        // Calculate distance if needed
+        let distanceLabel = "";
+        if (
+          (sortBy === "distance-asc" || sortBy === "distance-desc") &&
+          userLocation &&
+          item.coordinates &&
+          typeof item.coordinates.latitude === "number" &&
+          typeof item.coordinates.longitude === "number"
+        ) {
+          const dist = getDistance(
+            userLocation.latitude,
+            userLocation.longitude,
+            item.coordinates.latitude,
+            item.coordinates.longitude
+          );
+          if (dist < 1000) distanceLabel = `${Math.round(dist)} m`;
+          else distanceLabel = `${(dist / 1000).toFixed(2)} km`;
+        }
 
         return (
           <TouchableOpacity
@@ -383,23 +416,62 @@ export default function StudySpotsList({
                     marginBottom: 8,
                   }}
                 >
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      size={18}
-                      color={
-                        star <= (item.averageOverallRating || 0)
-                          ? themeColors.purple
-                          : themeColors.darkGray
+                  {/* Render stars with support for fractional fill */}
+                  {(() => {
+                    const avg = item.averageOverallRating || 0;
+                    const stars = [];
+                    for (let i = 1; i <= 5; i++) {
+                      let fill = 0;
+                      if (avg >= i) {
+                        fill = 1;
+                      } else if (avg + 0.01 >= i - 1 && avg < i) {
+                        fill = Math.max(0, Math.min(1, avg - (i - 1)));
                       }
-                      weight={
-                        star <= (item.averageOverallRating || 0)
-                          ? "fill"
-                          : "regular"
-                      }
-                      style={{ marginRight: 2 }}
-                    />
-                  ))}
+                      stars.push(
+                        <View
+                          key={i}
+                          style={{
+                            width: 18,
+                            height: 18,
+                            marginRight: 2,
+                            position: "relative",
+                          }}
+                        >
+                          {/* Background (empty) star */}
+                          <Star
+                            size={18}
+                            color={themeColors.darkGray}
+                            weight="regular"
+                            style={{
+                              position: "absolute",
+                              left: 0,
+                              top: 0,
+                            }}
+                          />
+                          {/* Foreground (filled) star, clipped to fill percentage */}
+                          {fill > 0 && (
+                            <View
+                              style={{
+                                position: "absolute",
+                                left: 0,
+                                top: 0,
+                                width: 18 * fill,
+                                height: 18,
+                                overflow: "hidden",
+                              }}
+                            >
+                              <Star
+                                size={18}
+                                color={themeColors.purple}
+                                weight="fill"
+                              />
+                            </View>
+                          )}
+                        </View>
+                      );
+                    }
+                    return stars;
+                  })()}
                   <Text
                     style={{
                       marginLeft: 8,
@@ -601,6 +673,20 @@ export default function StudySpotsList({
                     : ""}
                 </Text>
               </>
+            )}
+            {/* Show distance if sorting by distance */}
+            {distanceLabel && (
+              <Text
+                style={{
+                  fontSize: 13,
+                  color: "#888",
+                  marginBottom: 4,
+                  fontFamily: "CarosSoft",
+                  textAlign: "right",
+                }}
+              >
+                Distance: {distanceLabel}
+              </Text>
             )}
           </TouchableOpacity>
         );

@@ -80,8 +80,8 @@ export default function StudySpotsMapView({
   const UW_REGION = {
     latitude: 47.654548,
     longitude: -122.3085,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
+    latitudeDelta: 0.015,
+    longitudeDelta: 0.015,
   };
 
   // --- Load persisted region and mapType from Firestore on mount ---
@@ -546,8 +546,7 @@ export default function StudySpotsMapView({
           <TouchableOpacity
             style={{
               backgroundColor: themeColors.purple,
-              paddingVertical: 8,
-              paddingHorizontal: 14,
+              padding: 8,
               borderRadius: 8,
               alignItems: "center",
               flexDirection: "row",
@@ -555,26 +554,13 @@ export default function StudySpotsMapView({
               shadowOffset: { width: 0, height: 1 },
               shadowOpacity: 0.12,
               shadowRadius: 2,
+              borderWidth: 0.5,
+              borderColor: themeColors.black,
               elevation: 2,
             }}
             onPress={() => setRegionPickerVisible(true)}
           >
-            <PencilSimple
-              size={18}
-              color={themeColors.white}
-              weight="bold"
-              style={{ marginRight: 6 }}
-            />
-            <Text
-              style={{
-                color: themeColors.white,
-                fontWeight: "bold",
-                fontFamily: "CarosSoft",
-                fontSize: 14,
-              }}
-            >
-              Edit Map
-            </Text>
+            <PencilSimple size={18} color={themeColors.white} weight="bold" />
           </TouchableOpacity>
         </View>
         <MapView
