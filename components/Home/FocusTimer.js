@@ -39,7 +39,6 @@ import {
 } from "firebase/firestore";
 import { ThemeContext } from "../../App";
 import { colors } from "../../constants/colors";
-import * as Notifications from "expo-notifications";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
 import PomodoroSettingsModal from "./PomodoroSettingsModal";
@@ -572,20 +571,20 @@ export function FocusTimerView({ navigation }) {
 
   // When timer ends (Pomodoro or break complete)
   const handleSessionEnd = async () => {
-    // Send a local notification
-    try {
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: isBreak
-            ? "Break Over!"
-            : "Pomodoro Complete! Go to the Focus mode to start another Pomodoro.",
-          body: isBreak ? "Ready for another Pomodoro?" : "Time for a break.",
-        },
-        trigger: null, // Send immediately
-      });
-    } catch (e) {
-      // Ignore notification errors
-    }
+    // REMOVE: Send a local notification
+    // try {
+    //   await Notifications.scheduleNotificationAsync({
+    //     content: {
+    //       title: isBreak
+    //         ? "Break Over!"
+    //         : "Pomodoro Complete! Go to the Focus mode to start another Pomodoro.",
+    //       body: isBreak ? "Ready for another Pomodoro?" : "Time for a break.",
+    //     },
+    //     trigger: null, // Send immediately
+    //   });
+    // } catch (e) {
+    //   // Ignore notification errors
+    // }
 
     setIsRunning(false);
     timerStartRef.current = null;
@@ -854,11 +853,6 @@ export function FocusTimerView({ navigation }) {
 
   // Track when timer was last backgrounded for progress bar calculation
   const lastBackgroundTimeRef = useRef(null);
-
-  // Request notification permissions on mount
-  useEffect(() => {
-    Notifications.requestPermissionsAsync();
-  }, []);
 
   // Add this state and function for the week's dropdown open/close
   const [openWeekLocations, setOpenWeekLocations] = useState({});

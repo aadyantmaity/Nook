@@ -16,6 +16,7 @@ import { db } from "../../firebaseConfig";
 import { Plus } from "phosphor-react-native";
 import { getAuth } from "firebase/auth"; // Add this import
 import { Timestamp } from "firebase/firestore";
+import { Trash } from "phosphor-react-native"; // Import Trash icon
 
 export default function SpotGallery({
   spotId,
@@ -129,7 +130,10 @@ export default function SpotGallery({
         ...imgObj,
         createdAt:
           typeof imgObj.createdAt === "object" && imgObj.createdAt.seconds
-            ? new Timestamp(imgObj.createdAt.seconds, imgObj.createdAt.nanoseconds)
+            ? new Timestamp(
+                imgObj.createdAt.seconds,
+                imgObj.createdAt.nanoseconds
+              )
             : Timestamp.fromDate(new Date(imgObj.createdAt)),
       };
       const spotRef = doc(db, "studySpots", spotId);
@@ -158,9 +162,34 @@ export default function SpotGallery({
   // Helper to format timestamp
   function formatTimestamp(ts) {
     if (!ts) return "";
+    // Firestore Timestamp object
+    if (typeof ts === "object" && ts !== null) {
+      if (typeof ts.toDate === "function") {
+        return ts.toDate().toLocaleString([], {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+      // Plain object with seconds/nanoseconds
+      if (typeof ts.seconds === "number") {
+        return new Date(ts.seconds * 1000).toLocaleString([], {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+    }
+    // String or number
     const d = new Date(ts);
+    if (isNaN(d.getTime())) return "";
     return d.toLocaleString([], {
-      month: "short",
+      year: "numeric",
+      month: "long",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
@@ -190,17 +219,56 @@ export default function SpotGallery({
               borderRadius: 12,
               padding: 20,
               alignItems: "center",
-              maxWidth: 420, // increased from 320
-              width: "90%", // increased from 90%
+              maxWidth: 420,
+              width: "90%",
+              position: "relative",
             }}
           >
+            {/* Trash can button in top right */}
+            {selectedImage &&
+              user &&
+              selectedImage.author?.uid === user.uid && (
+                <TouchableOpacity
+                  onPress={() =>
+                    Alert.alert(
+                      "Delete Image",
+                      "Are you sure you want to delete this image?",
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Delete",
+                          style: "destructive",
+                          onPress: () =>
+                            handleDeleteGalleryImage(selectedImage),
+                        },
+                      ]
+                    )
+                  }
+                  style={{
+                    position: "absolute",
+                    top: 12,
+                    right: 12,
+                    zIndex: 10,
+                    backgroundColor: themeColors.red || "#e74c3c",
+                    borderRadius: 12,
+                    padding: 8,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: isUploading ? 0.6 : 1,
+                  }}
+                  disabled={isUploading}
+                  accessibilityLabel="Delete image"
+                >
+                  <Trash size={22} color={themeColors.white} weight="bold" />
+                </TouchableOpacity>
+              )}
             {selectedImage && (
               <>
                 <Image
                   source={{ uri: selectedImage.url }}
                   style={{
-                    width: 300, // increased from 220
-                    height: 180, // increased from 110
+                    width: 300,
+                    height: 180,
                     borderRadius: 8,
                     marginBottom: 16,
                   }}
@@ -226,44 +294,6 @@ export default function SpotGallery({
                 >
                   {formatTimestamp(selectedImage.createdAt)}
                 </Text>
-                {/* Show delete button only if current user is the author */}
-                {user &&
-                  selectedImage.author?.uid === user.uid && (
-                    <TouchableOpacity
-                      onPress={() =>
-                        Alert.alert(
-                          "Delete Image",
-                          "Are you sure you want to delete this image?",
-                          [
-                            { text: "Cancel", style: "cancel" },
-                            {
-                              text: "Delete",
-                              style: "destructive",
-                              onPress: () => handleDeleteGalleryImage(selectedImage),
-                            },
-                          ]
-                        )
-                      }
-                      style={{
-                        marginTop: 14,
-                        backgroundColor: themeColors.red || "#e74c3c",
-                        borderRadius: 8,
-                        paddingVertical: 8,
-                        paddingHorizontal: 18,
-                      }}
-                      disabled={isUploading}
-                    >
-                      <Text
-                        style={{
-                          color: themeColors.white,
-                          fontWeight: "bold",
-                          fontFamily: "CarosSoft",
-                        }}
-                      >
-                        Delete
-                      </Text>
-                    </TouchableOpacity>
-                  )}
                 <TouchableOpacity
                   onPress={() => setShowModal(false)}
                   style={{

@@ -273,7 +273,10 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
     ) {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("Location Required", "You must allow location access to check in at this nook.");
+        Alert.alert(
+          "Location Required",
+          "You must allow location access to check in at this nook."
+        );
         return;
       }
       let loc;
