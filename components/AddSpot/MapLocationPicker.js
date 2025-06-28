@@ -145,7 +145,7 @@ export default function MapLocationPicker({
             left: "4%",
             right: "4%",
             bottom: "50%",
-            backgroundColor: "#fff",
+            backgroundColor: themeColors.white,
             borderRadius: 14,
             padding: 12,
             borderWidth: 1,
@@ -169,7 +169,10 @@ export default function MapLocationPicker({
           </Text>
           <View style={styles.searchContainer}>
             <TextInput
-              style={styles.searchInput}
+              style={
+                (styles.searchInput,
+                { backgroundColor: themeColors.white, fontFamily: "CarosSoft" })
+              }
               placeholder="Search for a place..."
               value={search}
               onChangeText={fetchSuggestions}
@@ -353,7 +356,6 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    backgroundColor: "#f2f2f2",
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
