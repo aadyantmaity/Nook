@@ -577,8 +577,8 @@ export function FocusTimerView({ navigation }) {
 
     if (sessionStart) {
       if (!isBreak) {
-        // Always use workTimeSetting * 60 - timer for elapsedSeconds
-        const elapsedSeconds = workTimeSetting * 60 - timer;
+        // Always use full Pomodoro duration for completed sessions
+        const elapsedSeconds = workTimeSetting * 60;
         const sessionEnd = new Timestamp(
           sessionStart.seconds !== undefined
             ? sessionStart.seconds + elapsedSeconds
@@ -601,7 +601,7 @@ export function FocusTimerView({ navigation }) {
             isBreak,
             "",
             false,
-            elapsedSeconds
+            elapsedSeconds // <-- always use full duration here
           );
           setSessionNote("");
           setPendingSession(null);
