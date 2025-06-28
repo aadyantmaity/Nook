@@ -8,7 +8,7 @@ import {
   Platform,
   UIManager,
 } from "react-native";
-import { FadersHorizontal } from "phosphor-react-native";
+import { FadersHorizontal, ArrowUp, ArrowDown } from "phosphor-react-native";
 
 const TAGS = [
   "All",
@@ -25,12 +25,13 @@ const TAGS = [
 ];
 
 const SORT_OPTIONS = [
-  { label: "Default", value: "default" },
-  { label: "Name (A-Z)", value: "name-asc" },
-  { label: "Name (Z-A)", value: "name-desc" },
-  { label: "Noise (Low to High)", value: "noise-asc" },
-  { label: "Crowd (Low to High)", value: "crowd-asc" },
-  { label: "Overall Rating", value: "overall-desc" },
+  { label: "Default", value: "default", icon: null },
+  { label: "Name (A-Z)", value: "name-asc", icon: ArrowUp },
+  { label: "Name (Z-A)", value: "name-desc", icon: ArrowDown },
+  { label: "Noise (Asc.)", value: "noise-asc", icon: ArrowUp },
+  { label: "Crowd (Asc.)", value: "crowd-asc", icon: ArrowUp },
+  { label: "Overall Rating", value: "overall-desc", icon: ArrowDown },
+  { label: "Distance (Asc.)", value: "distance-asc", icon: ArrowUp },
 ];
 
 // Enable LayoutAnimation on Android
@@ -257,43 +258,60 @@ export default function Filters({
                   justifyContent: "center",
                 }}
               >
-                {SORT_OPTIONS.map((opt) => (
-                  <TouchableOpacity
-                    key={opt.value}
-                    onPress={() => setLocalSortBy(opt.value)}
-                    style={{
-                      backgroundColor:
-                        localSortBy === opt.value
-                          ? themeColors.purple
-                          : themeColors.white,
-                      borderRadius: 18,
-                      marginRight: 8,
-                      marginBottom: 8,
-                      paddingVertical: 10,
-                      paddingHorizontal: 18,
-                      borderWidth: 1,
-                      shadowColor: themeColors.purple,
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.1,
-                      shadowRadius: 4,
-                      borderColor: themeColors.purple,
-                    }}
-                  >
-                    <Text
+                {SORT_OPTIONS.map((opt) => {
+                  const Icon = opt.icon;
+                  return (
+                    <TouchableOpacity
+                      key={opt.value}
+                      onPress={() => setLocalSortBy(opt.value)}
                       style={{
-                        color:
+                        backgroundColor:
                           localSortBy === opt.value
-                            ? themeColors.white
-                            : themeColors.purple,
-                        fontWeight: "bold",
-                        fontSize: 12.5,
-                        fontFamily: "CarosSoft",
+                            ? themeColors.purple
+                            : themeColors.white,
+                        borderRadius: 18,
+                        marginRight: 8,
+                        marginBottom: 8,
+                        paddingVertical: 10,
+                        paddingHorizontal: 18,
+                        borderWidth: 1,
+                        shadowColor: themeColors.purple,
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 4,
+                        borderColor: themeColors.purple,
+                        flexDirection: "row",
+                        alignItems: "center",
                       }}
                     >
-                      {opt.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                      {Icon && (
+                        <Icon
+                          size={16}
+                          color={
+                            localSortBy === opt.value
+                              ? themeColors.white
+                              : themeColors.purple
+                          }
+                          weight="bold"
+                          style={{ marginRight: 6 }}
+                        />
+                      )}
+                      <Text
+                        style={{
+                          color:
+                            localSortBy === opt.value
+                              ? themeColors.white
+                              : themeColors.purple,
+                          fontWeight: "bold",
+                          fontSize: 12.5,
+                          fontFamily: "CarosSoft",
+                        }}
+                      >
+                        {opt.label.replace(/\s*\(.*\)/, "")}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
             {/* --- End Sort By Section --- */}

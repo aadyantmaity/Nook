@@ -315,44 +315,59 @@ export default function StudySpotCard({
               marginBottom: 8,
             }}
           >
-            {/* Render stars with support for half stars */}
+            {/* Render stars with support for fractional fill */}
             {(() => {
               const avg = spot.averageOverallRating || 0;
-              const fullStars = Math.floor(avg);
-              const hasHalf = avg - fullStars >= 0.25 && avg - fullStars < 0.75;
               const stars = [];
               for (let i = 1; i <= 5; i++) {
-                if (i <= fullStars) {
-                  stars.push(
+                let fill = 0;
+                if (avg >= i) {
+                  fill = 1;
+                } else if (avg + 0.01 >= i - 1 && avg < i) {
+                  fill = Math.max(0, Math.min(1, avg - (i - 1)));
+                }
+                stars.push(
+                  <View
+                    key={i}
+                    style={{
+                      width: 18,
+                      height: 18,
+                      marginRight: 2,
+                      position: "relative",
+                    }}
+                  >
+                    {/* Background (empty) star */}
                     <Star
-                      key={i}
-                      size={18}
-                      color={themeColors.purple}
-                      weight="fill"
-                      style={{ marginRight: 2 }}
-                    />
-                  );
-                } else if (i === fullStars + 1 && hasHalf) {
-                  stars.push(
-                    <Star
-                      key={i}
-                      size={18}
-                      color={themeColors.purple}
-                      weight="duotone"
-                      style={{ marginRight: 2 }}
-                    />
-                  );
-                } else {
-                  stars.push(
-                    <Star
-                      key={i}
                       size={18}
                       color={themeColors.darkGray}
                       weight="regular"
-                      style={{ marginRight: 2 }}
+                      style={{
+                        position: "absolute",
+                        left: 0,
+                        top: 0,
+                      }}
                     />
-                  );
-                }
+                    {/* Foreground (filled) star, clipped to fill percentage */}
+                    {fill > 0 && (
+                      <View
+                        style={{
+                          position: "absolute",
+                          left: 0,
+                          top: 0,
+                          width: 18 * fill,
+                          height: 18,
+                          overflow: "hidden",
+                        }}
+                      >
+                        <Star
+                          size={18}
+                          color={themeColors.purple}
+                          weight="fill"
+                        />
+                      </View>
+                    )}
+                  </View>
+                );
               }
               return stars;
             })()}

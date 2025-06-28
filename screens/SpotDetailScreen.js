@@ -40,6 +40,7 @@ import {
   addDoc,
   collection,
   serverTimestamp,
+  onSnapshot, // <-- add this
 } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -122,18 +123,17 @@ export default function SpotDetailScreen({ route, navigation }) {
   const [showNotesArchive, setShowNotesArchive] = useState(false);
   const [notes, setNotes] = useState([]);
 
-  // Fetch notes for private nook
+  // Fetch notes for private nook (now with onSnapshot)
   React.useEffect(() => {
     if (spot?.privateNook && spotId) {
-      const fetchNotes = async () => {
-        const spotRef = doc(db, "studySpots", spotId);
-        const spotSnap = await getDoc(spotRef);
+      // Use onSnapshot for live updates
+      const spotRef = doc(db, "studySpots", spotId);
+      const unsub = onSnapshot(spotRef, (spotSnap) => {
         if (spotSnap.exists()) {
-          // Notes are now array of objects: {text, createdAt, author}
           setNotes(spotSnap.data().privateNotes || []);
         }
-      };
-      fetchNotes();
+      });
+      return () => unsub();
     }
   }, [spot?.privateNook, spotId, showNotesArchive]);
 

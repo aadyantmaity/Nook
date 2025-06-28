@@ -267,44 +267,59 @@ export default function FavoriteSpotCard({
         <View
           style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}
         >
-          {/* Render stars with support for half stars */}
+          {/* Render stars with support for fractional fill */}
           {(() => {
             const avg = spot.averageOverallRating || 0;
-            const fullStars = Math.floor(avg);
-            const hasHalf = avg - fullStars >= 0.25 && avg - fullStars < 0.75;
             const stars = [];
             for (let i = 1; i <= 5; i++) {
-              if (i <= fullStars) {
-                stars.push(
+              let fill = 0;
+              if (avg >= i) {
+                fill = 1;
+              } else if (avg + 0.01 >= i - 1 && avg < i) {
+                fill = Math.max(0, Math.min(1, avg - (i - 1)));
+              }
+              stars.push(
+                <View
+                  key={i}
+                  style={{
+                    width: 16,
+                    height: 16,
+                    marginRight: 1,
+                    position: "relative",
+                  }}
+                >
+                  {/* Background (empty) star */}
                   <Star
-                    key={i}
-                    size={16}
-                    color={themeColors.purple}
-                    weight="fill"
-                    style={{ marginRight: 1 }}
-                  />
-                );
-              } else if (i === fullStars + 1 && hasHalf) {
-                stars.push(
-                  <Star
-                    key={i}
-                    size={16}
-                    color={themeColors.purple}
-                    weight="duotone"
-                    style={{ marginRight: 1 }}
-                  />
-                );
-              } else {
-                stars.push(
-                  <Star
-                    key={i}
                     size={16}
                     color={themeColors.darkGray}
                     weight="regular"
-                    style={{ marginRight: 1 }}
+                    style={{
+                      position: "absolute",
+                      left: 0,
+                      top: 0,
+                    }}
                   />
-                );
-              }
+                  {/* Foreground (filled) star, clipped to fill percentage */}
+                  {fill > 0 && (
+                    <View
+                      style={{
+                        position: "absolute",
+                        left: 0,
+                        top: 0,
+                        width: 16 * fill,
+                        height: 16,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <Star
+                        size={16}
+                        color={themeColors.purple}
+                        weight="fill"
+                      />
+                    </View>
+                  )}
+                </View>
+              );
             }
             return stars;
           })()}

@@ -571,21 +571,6 @@ export function FocusTimerView({ navigation }) {
 
   // When timer ends (Pomodoro or break complete)
   const handleSessionEnd = async () => {
-    // REMOVE: Send a local notification
-    // try {
-    //   await Notifications.scheduleNotificationAsync({
-    //     content: {
-    //       title: isBreak
-    //         ? "Break Over!"
-    //         : "Pomodoro Complete! Go to the Focus mode to start another Pomodoro.",
-    //       body: isBreak ? "Ready for another Pomodoro?" : "Time for a break.",
-    //     },
-    //     trigger: null, // Send immediately
-    //   });
-    // } catch (e) {
-    //   // Ignore notification errors
-    // }
-
     setIsRunning(false);
     timerStartRef.current = null;
     await clearTimerState();
