@@ -39,6 +39,7 @@ import FollowersModal from "../components/Profile/FollowersModal";
 import FollowingModal from "../components/Profile/FollowingModal";
 import UnfollowConfirmModal from "../components/Profile/UnfollowConfirmModal";
 import { auth } from "../firebaseConfig";
+import { FlatList } from "react-native-gesture-handler";
 
 export default function ProfileScreen({ navigation, route }) {
   const themeCtx = useContext(ThemeContext);
@@ -475,6 +476,8 @@ export default function ProfileScreen({ navigation, route }) {
                         padding: 14,
                         marginBottom: 10,
                         opacity: 0.5,
+                        width: 200,
+                        marginRight: 12,
                       }}
                     >
                       <View
@@ -531,20 +534,25 @@ export default function ProfileScreen({ navigation, route }) {
                   No favorites yet.
                 </Text>
               ) : (
-                <View style={{ width: "100%" }}>
-                  {favoriteSpots.map((spot) => (
+                <FlatList
+                  data={favoriteSpots}
+                  keyExtractor={(item) => item.id}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingHorizontal: 8 }}
+                  renderItem={({ item }) => (
                     <FavoriteSpotCard
-                      key={spot.id}
-                      spot={spot}
-                      cachedImage={cachedFavoriteSpotImages[spot.id]}
+                      spot={item}
+                      cachedImage={cachedFavoriteSpotImages[item.id]}
                       themeColors={themeColors}
                       getLastUpdatedLabel={getLastUpdatedLabel}
                       onPress={() =>
-                        navigation.navigate("SpotDetail", { spotId: spot.id })
+                        navigation.navigate("SpotDetail", {spotId: item.id,})
                       }
+                      style={{ marginRight: 12, width: 200 }}
                     />
-                  ))}
-                </View>
+              )}
+              />
               )}
             </View>
           )}
