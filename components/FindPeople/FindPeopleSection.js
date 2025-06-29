@@ -6,6 +6,7 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { db, auth } from "../../firebaseConfig";
 import {
@@ -19,6 +20,7 @@ import {
 import { colors } from "../../constants/colors";
 import { ThemeContext } from "../../App";
 import { MagnifyingGlass, Plus, Minus } from "phosphor-react-native";
+import ProfilePicture from "../Profile/ProfilePicture";
 
 export default function FindPeopleSection({ navigation }) {
   const [search, setSearch] = React.useState("");
@@ -29,6 +31,8 @@ export default function FindPeopleSection({ navigation }) {
   const [followingIds, setFollowingIds] = React.useState([]);
   const [followLoading, setFollowLoading] = React.useState({});
   const [suggestedExpanded, setSuggestedExpanded] = React.useState(false);
+  const [suggestedPicsLoading, setSuggestedPicsLoading] = React.useState(true);
+  const [suggestedWithPics, setSuggestedWithPics] = React.useState([]);
   const themeCtx = useContext(ThemeContext);
   const themeColors = themeCtx?.themeColors ?? colors;
   const debounceTimer = React.useRef(null);
@@ -50,10 +54,55 @@ export default function FindPeopleSection({ navigation }) {
     // eslint-disable-next-line
   }, [search]);
 
+  // Extracted function to fetch suggested users
+  const refreshSuggested = React.useCallback(async () => {
+    setSuggestedLoading(true);
+    setSuggestedPicsLoading(true);
+    try {
+      const q = query(collection(db, "users"));
+      const snap = await getDocs(q);
+      // Exclude current user and users already followed
+      const users = snap.docs
+        .map((doc) => ({ uid: doc.id, ...doc.data() }))
+        .filter(
+          (u) =>
+            u.uid !== auth.currentUser?.uid &&
+            !(Array.isArray(followingIds) && followingIds.includes(u.uid))
+        );
+      // Shuffle and pick up to 8 users
+      for (let i = users.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [users[i], users[j]] = [users[j], users[i]];
+      }
+      const picked = users.slice(0, 8);
+      // --- Preload profile pictures ---
+      const withPics = await Promise.all(
+        picked.map(async (u) => {
+          if (!u.profilePic) return { ...u, _profilePicLoaded: true };
+          try {
+            await Image.prefetch(u.profilePic);
+            return { ...u, _profilePicLoaded: true };
+          } catch {
+            return { ...u, _profilePicLoaded: false };
+          }
+        })
+      );
+      setSuggestedWithPics(withPics);
+      setSuggested(picked);
+      setSuggestedPicsLoading(false);
+    } catch {
+      setSuggested([]);
+      setSuggestedWithPics([]);
+      setSuggestedPicsLoading(false);
+    }
+    setSuggestedLoading(false);
+  }, [followingIds]);
+
   React.useEffect(() => {
     let isMounted = true;
     async function fetchSuggested() {
       setSuggestedLoading(true);
+      setSuggestedPicsLoading(true);
       try {
         const q = query(collection(db, "users"));
         const snap = await getDocs(q);
@@ -70,9 +119,32 @@ export default function FindPeopleSection({ navigation }) {
           const j = Math.floor(Math.random() * (i + 1));
           [users[i], users[j]] = [users[j], users[i]];
         }
-        if (isMounted) setSuggested(users.slice(0, 8));
+        const picked = users.slice(0, 8);
+        // --- Preload profile pictures ---
+        const withPics = await Promise.all(
+          picked.map(async (u) => {
+            // If no profilePic, just return as is
+            if (!u.profilePic) return { ...u, _profilePicLoaded: true };
+            // Try to prefetch the image
+            try {
+              await Image.prefetch(u.profilePic);
+              return { ...u, _profilePicLoaded: true };
+            } catch {
+              return { ...u, _profilePicLoaded: false };
+            }
+          })
+        );
+        if (isMounted) {
+          setSuggestedWithPics(withPics);
+          setSuggested(picked);
+          setSuggestedPicsLoading(false);
+        }
       } catch {
-        if (isMounted) setSuggested([]);
+        if (isMounted) {
+          setSuggested([]);
+          setSuggestedWithPics([]);
+          setSuggestedPicsLoading(false);
+        }
       }
       if (isMounted) setSuggestedLoading(false);
     }
@@ -158,7 +230,14 @@ export default function FindPeopleSection({ navigation }) {
       {/* Suggested Users Dropdown */}
       <View style={{ width: "100%", marginBottom: 8 }}>
         <TouchableOpacity
-          onPress={() => setSuggestedExpanded((v) => !v)}
+          onPress={() => {
+            if (!suggestedExpanded) {
+              setSuggestedExpanded(true);
+              refreshSuggested();
+            } else {
+              setSuggestedExpanded(false);
+            }
+          }}
           style={{
             flexDirection: "row",
             alignItems: "center",
@@ -193,9 +272,10 @@ export default function FindPeopleSection({ navigation }) {
         </TouchableOpacity>
         {suggestedExpanded && (
           <View style={{ marginTop: 0 }}>
-            {suggestedLoading ? (
+            {/* Only show ActivityIndicator if either loading or profile pics loading */}
+            {suggestedLoading || suggestedPicsLoading ? (
               <ActivityIndicator color={themeColors.purple} />
-            ) : suggested.length === 0 ? (
+            ) : suggestedWithPics.length === 0 ? (
               <Text
                 style={{
                   color: themeColors.darkGray,
@@ -207,7 +287,7 @@ export default function FindPeopleSection({ navigation }) {
               </Text>
             ) : (
               <FlatList
-                data={suggested}
+                data={suggestedWithPics}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 keyExtractor={(item) => item.uid}
@@ -227,6 +307,13 @@ export default function FindPeopleSection({ navigation }) {
                     }}
                     activeOpacity={0.8}
                   >
+                    {/* --- Show profile picture above name --- */}
+                    <ProfilePicture
+                      profilePic={item.profilePic}
+                      themeColors={themeColors}
+                      size={48}
+                      isLoading={!item._profilePicLoaded}
+                    />
                     <Text
                       style={{
                         color: themeColors.black,
@@ -234,6 +321,7 @@ export default function FindPeopleSection({ navigation }) {
                         fontSize: 15,
                         fontFamily: "CarosSoft",
                         textAlign: "center",
+                        marginTop: 8,
                       }}
                       numberOfLines={1}
                     >
