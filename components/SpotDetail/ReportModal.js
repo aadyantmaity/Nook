@@ -101,18 +101,20 @@ export default function ReportModal({
             <TouchableOpacity
               onPress={onClose}
               style={{
-                backgroundColor: themeColors.gray,
+                backgroundColor: themeColors.white,
                 borderRadius: 8,
                 paddingVertical: 10,
                 paddingHorizontal: 18,
                 alignItems: "center",
                 flex: 1,
                 marginRight: 8,
+                borderWidth: 1,
+                borderColor: themeColors.purple,
               }}
             >
               <Text
                 style={{
-                  color: themeColors.black,
+                  color: themeColors.purple,
                   fontWeight: "bold",
                   fontFamily: "CarosSoft",
                 }}

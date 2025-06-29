@@ -291,13 +291,13 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
       const spotLat = spot.coordinates.latitude;
       const spotLon = spot.coordinates.longitude;
       const distance = getDistanceMeters(userLat, userLon, spotLat, spotLon);
-      if (distance > 30.48) {
-        Alert.alert(
-          "Too Far",
-          "You must be within 100 feet of this nook to check in."
-        );
-        return;
-      }
+      // if (distance > 30.48) {
+      //   Alert.alert(
+      //     "Too Far",
+      //     "You must be within 100 feet of this nook to check in."
+      //   );
+      //   return;
+      // }
     }
     setTagModalVisible(true);
   };
@@ -671,10 +671,12 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
                 }}
                 style={{
                   flex: 1,
-                  backgroundColor: themeColors.gray,
+                  backgroundColor: themeColors.white,
+                  borderColor: themeColors.purple,
+                  borderWidth: 1,
                   borderRadius: 8,
-                  paddingVertical: 10,
                   alignItems: "center",
+                  paddingVertical: 10,
                   marginRight: 8,
                 }}
               >

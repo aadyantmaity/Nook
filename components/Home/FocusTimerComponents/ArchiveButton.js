@@ -779,15 +779,17 @@ export function ArchiveButton({
               onPress={() => setShowArchiveModal(false)}
               style={{
                 marginTop: 12,
-                backgroundColor: themeColors.purple,
+                backgroundColor: themeColors.white,
                 borderRadius: 8,
                 paddingVertical: 10,
                 alignItems: "center",
+                borderWidth: 1,
+                borderColor: themeColors.purple,
               }}
             >
               <Text
                 style={{
-                  color: themeColors.white,
+                  color: themeColors.purple,
                   fontWeight: "bold",
                   fontFamily: "CarosSoft",
                 }}

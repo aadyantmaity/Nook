@@ -159,7 +159,9 @@ export default function Filters({
               backgroundColor: themeColors.white,
               borderRadius: 16,
               padding: 24,
-              width: "90%",
+              borderWidth: 1,
+              borderColor: themeColors.black,
+              width: "92%",
               maxWidth: 400,
               alignItems: "center",
             }}
@@ -367,7 +369,7 @@ export default function Filters({
                     fontFamily: "CarosSoft",
                   }}
                 >
-                  Apply
+                  Submit
                 </Text>
               </TouchableOpacity>
             </View>
