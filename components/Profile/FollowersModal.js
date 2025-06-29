@@ -8,6 +8,7 @@ import {
   FlatList,
   ActivityIndicator,
 } from "react-native";
+import ProfilePicture from "../Profile/ProfilePicture";
 
 export default function FollowersModal({
   visible,
@@ -77,6 +78,13 @@ export default function FollowersModal({
                     paddingVertical: 10,
                   }}
                 >
+                  <ProfilePicture
+                    profilePic={item.profilePic}
+                    themeColors={themeColors}
+                    size={29} // if your component supports a size prop
+                    style={{ marginRight: 12 }} // if your component supports style
+                  />
+
                   <TouchableOpacity
                     onPress={() => {
                       onClose();
@@ -89,6 +97,7 @@ export default function FollowersModal({
                         color: themeColors.black,
                         fontSize: 16,
                         fontFamily: "CarosSoft",
+                        marginLeft: 8,
                       }}
                     >
                       {item.name}
