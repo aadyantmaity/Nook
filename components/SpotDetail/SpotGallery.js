@@ -249,7 +249,7 @@ export default function SpotGallery({
                     top: 12,
                     right: 12,
                     zIndex: 10,
-                    backgroundColor: themeColors.red || "#e74c3c",
+                    // backgroundColor: themeColors.red || "#e74c3c", // REMOVE red background
                     borderRadius: 12,
                     padding: 8,
                     alignItems: "center",
@@ -259,7 +259,7 @@ export default function SpotGallery({
                   disabled={isUploading}
                   accessibilityLabel="Delete image"
                 >
-                  <Trash size={22} color={themeColors.white} weight="bold" />
+                  <Trash size={22} color={themeColors.red} weight="bold" />
                 </TouchableOpacity>
               )}
             {selectedImage && (

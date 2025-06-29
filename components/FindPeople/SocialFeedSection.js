@@ -299,7 +299,7 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
                           onPress={() => confirmDeletePost(item.id)}
                           style={{
                             marginLeft: 10,
-                            backgroundColor: themeColors.red,
+                            // backgroundColor: themeColors.red, // REMOVE red background
                             borderRadius: 6,
                             padding: 6,
                             alignItems: "center",
@@ -311,7 +311,7 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
                         >
                           <Trash
                             size={18}
-                            color={themeColors.white}
+                            color={themeColors.red}
                             weight="bold"
                           />
                         </TouchableOpacity>

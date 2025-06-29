@@ -528,8 +528,6 @@ export function ArchiveButton({
                                                           marginLeft: 8,
                                                           padding: 4,
                                                           borderRadius: 6,
-                                                          backgroundColor:
-                                                            themeColors.red,
                                                           alignItems: "center",
                                                           justifyContent:
                                                             "center",
@@ -539,7 +537,7 @@ export function ArchiveButton({
                                                         <Trash
                                                           size={18}
                                                           color={
-                                                            themeColors.white
+                                                            themeColors.red
                                                           }
                                                           weight="bold"
                                                         />
@@ -751,7 +749,6 @@ export function ArchiveButton({
                                               marginLeft: 8,
                                               padding: 4,
                                               borderRadius: 6,
-                                              backgroundColor: themeColors.red,
                                               alignItems: "center",
                                               justifyContent: "center",
                                             }}
@@ -759,7 +756,7 @@ export function ArchiveButton({
                                           >
                                             <Trash
                                               size={18}
-                                              color={themeColors.white}
+                                              color={themeColors.red}
                                               weight="bold"
                                             />
                                           </TouchableOpacity>
