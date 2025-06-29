@@ -155,20 +155,21 @@ export default function FindPeopleSection({ navigation }) {
   }, [followingIds]);
 
   // Fetch current user's following list for suggested users
-  React.useEffect(() => {
-    async function fetchFollowing() {
-      try {
-        const userDoc = await getDocs(query(collection(db, "users")));
-        const me = userDoc.docs.find((d) => d.id === auth.currentUser?.uid);
-        if (me) {
-          setFollowingIds(me.data().following || []);
-        }
-      } catch {
-        setFollowingIds([]);
+  const fetchFollowing = React.useCallback(async () => {
+    try {
+      const userDoc = await getDocs(query(collection(db, "users")));
+      const me = userDoc.docs.find((d) => d.id === auth.currentUser?.uid);
+      if (me) {
+        setFollowingIds(me.data().following || []);
       }
+    } catch {
+      setFollowingIds([]);
     }
-    fetchFollowing();
   }, []);
+
+  React.useEffect(() => {
+    fetchFollowing();
+  }, [fetchFollowing]);
 
   const handleSearch = async () => {
     const s = search.trim().toLowerCase();
@@ -230,8 +231,9 @@ export default function FindPeopleSection({ navigation }) {
       {/* Suggested Users Dropdown */}
       <View style={{ width: "100%", marginBottom: 8 }}>
         <TouchableOpacity
-          onPress={() => {
+          onPress={async () => {
             if (!suggestedExpanded) {
+              await fetchFollowing(); // Always refresh followingIds before refreshing suggestions
               setSuggestedExpanded(true);
               refreshSuggested();
             } else {
@@ -272,10 +274,8 @@ export default function FindPeopleSection({ navigation }) {
         </TouchableOpacity>
         {suggestedExpanded && (
           <View style={{ marginTop: 0 }}>
-            {/* Only show ActivityIndicator if either loading or profile pics loading */}
-            {suggestedLoading || suggestedPicsLoading ? (
-              <ActivityIndicator color={themeColors.purple} />
-            ) : suggestedWithPics.length === 0 ? (
+            {/* Only show suggestions or empty text, no ActivityIndicator */}
+            {suggestedWithPics.length === 0 ? (
               <Text
                 style={{
                   color: themeColors.darkGray,
