@@ -571,6 +571,8 @@ export function FocusTimerView({ navigation }) {
 
   // When timer ends (Pomodoro or break complete)
   const handleSessionEnd = async () => {
+    if (sessionEndedRef.current) return; // Prevent double execution
+    sessionEndedRef.current = true;
     setIsRunning(false);
     timerStartRef.current = null;
     await clearTimerState();
@@ -974,7 +976,7 @@ export function FocusTimerView({ navigation }) {
               } else {
                 setIsRunning(false);
                 timerStartRef.current = null;
-                if (newTime === 0) {
+                if (newTime === 0 && !sessionEndedRef.current) {
                   timerEndedOnFocusRef.current = true; // <-- defer session end
                 }
               }
@@ -1110,11 +1112,13 @@ export function FocusTimerView({ navigation }) {
 
   // Add this ref at the top-level of the component
   const timerEndedOnFocusRef = useRef(false);
+  // Add this ref to track if session end has already been handled
+  const sessionEndedRef = useRef(false);
 
-  // After all state declarations, add this effect:
+  // Add this effect to handle session end on focus
   useEffect(() => {
     if (timerEndedOnFocusRef.current && sessionStart) {
-      timerEndedOnFocusRef.current = false;
+      timerEndedOnFocusRef.current = false; // Clear the flag immediately
       handleSessionEnd();
     }
   }, [sessionStart]);

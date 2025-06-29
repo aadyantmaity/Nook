@@ -375,7 +375,6 @@ export default function EditSpotScreen({ navigation, route }) {
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                padding: 10,
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.2,
