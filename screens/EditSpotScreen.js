@@ -251,7 +251,7 @@ export default function EditSpotScreen({ navigation, route }) {
       setIsLoading(true);
       const user = auth.currentUser;
       if (!user) {
-        alert("You must be signed in to edit a nook.");
+        alert("You must be signed in to edit a Nook.");
         setIsLoading(false);
         return;
       }

@@ -128,12 +128,18 @@ export default function AddSpotScreen({ navigation, route }) {
   const [sharedWith, setSharedWith] = useState([]);
   const [showShareModal, setShowShareModal] = useState(false);
   const [followingList, setFollowingList] = useState([]);
+  const [followingLoading, setFollowingLoading] = useState(false); // <-- add loading state
 
   // Fetch following list for sharing
   useEffect(() => {
     const fetchFollowing = async () => {
+      setFollowingLoading(true); // <-- set loading true
       const user = auth.currentUser;
-      if (!user) return;
+      if (!user) {
+        setFollowingList([]);
+        setFollowingLoading(false);
+        return;
+      }
       const userDoc = await getDoc(doc(db, "users", user.uid));
       if (userDoc.exists()) {
         const following = userDoc.data().following || [];
@@ -153,7 +159,10 @@ export default function AddSpotScreen({ navigation, route }) {
           }
         }
         setFollowingList(users);
+      } else {
+        setFollowingList([]);
       }
+      setFollowingLoading(false); // <-- set loading false
     };
     if (privateNook && !isUWBuilding) fetchFollowing();
   }, [privateNook, isUWBuilding]);
@@ -737,6 +746,7 @@ export default function AddSpotScreen({ navigation, route }) {
               setSharedWith={setSharedWith}
               themeColors={themeColors}
               followingList={followingList}
+              loading={followingLoading} // <-- pass loading prop
             />
           )}
 

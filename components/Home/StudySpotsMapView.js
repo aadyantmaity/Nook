@@ -671,7 +671,7 @@ export default function StudySpotsMapView({
             }}
           >
             <Text style={{ color: themeColors.darkGray }}>
-              No nooks with map locations yet.
+              No Nooks with map locations yet.
             </Text>
           </View>
         )}

@@ -122,7 +122,7 @@ export default function PrivateNookNotesModal({
               textAlignVertical: "top",
               fontFamily: "CarosSoft",
             }}
-            placeholder="Write your notes for this nook..."
+            placeholder="Write your notes for this Nook..."
             placeholderTextColor={themeColors.darkGray}
             multiline
             value={notes}
