@@ -12,6 +12,7 @@ import { ThemeContext } from "../../App";
 import { colors } from "../../constants/colors";
 import { db, auth } from "../../firebaseConfig";
 import { addDoc, collection, Timestamp } from "firebase/firestore";
+import PrimaryActionButton from "../PrimaryActionButton";
 
 export default function GeneralReportModal({
   visible,
@@ -148,30 +149,14 @@ export default function GeneralReportModal({
                 Cancel
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity
+            <PrimaryActionButton
+              label={submitting ? "Submitting..." : "Submit"}
               onPress={handleSubmit}
               disabled={submitting}
-              style={{
-                backgroundColor: themeColors.purple,
-                borderRadius: 8,
-                paddingVertical: 10,
-                paddingHorizontal: 18,
-                alignItems: "center",
-                flex: 1,
-                marginLeft: 8,
-                opacity: submitting ? 0.7 : 1,
-              }}
-            >
-              <Text
-                style={{
-                  color: themeColors.white,
-                  fontWeight: "bold",
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                {submitting ? "Submitting..." : "Submit"}
-              </Text>
-            </TouchableOpacity>
+              loading={submitting}
+              themeColors={themeColors}
+              style={{ marginLeft: 8 }}
+            />
           </View>
         </View>
       </TouchableOpacity>

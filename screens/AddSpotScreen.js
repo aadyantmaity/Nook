@@ -627,7 +627,6 @@ export default function AddSpotScreen({ navigation, route }) {
               </View>
             </View>
           )}
-          {/* Department input only for UW buildings */}
           {isUWBuilding && huskyCardNeeded && (
             <TextInput
               placeholder="Department (if applicable)"
@@ -749,21 +748,21 @@ export default function AddSpotScreen({ navigation, route }) {
             <TouchableOpacity
               onPress={resetForm}
               style={{
-                flex: 1,
-                maxWidth: "35%",
-                flexDirection: "row",
+                flex: 0.25,
+                backgroundColor: themeColors.white,
+                borderColor: themeColors.purple,
+                borderWidth: 1,
+                borderRadius: 8,
+                paddingVertical: 10,
+                paddingHorizontal: 24,
                 alignItems: "center",
                 justifyContent: "center",
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                backgroundColor: colors.red,
-                borderRadius: 25,
-                marginRight: 12,
+                marginRight: 8,
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
+                shadowOpacity: 0.08,
                 shadowRadius: 4,
-                elevation: 3,
+                elevation: 2,
                 minWidth: 90,
               }}
               accessibilityLabel="Reset Form"
@@ -771,12 +770,12 @@ export default function AddSpotScreen({ navigation, route }) {
             >
               <Text
                 style={{
-                  color: "white",
+                  color: themeColors.purple,
                   fontWeight: "bold",
-                  fontSize: 13,
+                  fontSize: 16,
                   textAlign: "center",
-                  flex: 1,
                   fontFamily: "CarosSoft",
+                  letterSpacing: 0.1,
                 }}
               >
                 Reset
@@ -785,37 +784,32 @@ export default function AddSpotScreen({ navigation, route }) {
             <TouchableOpacity
               onPress={handleSubmit}
               style={{
-                flex: 1,
-                maxWidth: "35%",
-                flexDirection: "row",
+                flex: 0.25,
+                backgroundColor: themeColors.purple,
+                borderRadius: 8,
+                paddingVertical: 10,
+                paddingHorizontal: 24,
                 alignItems: "center",
                 justifyContent: "center",
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                backgroundColor: colors.green,
-                borderRadius: 25,
-                marginLeft: 12,
+                marginLeft: 8,
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
+                shadowOpacity: 0.08,
                 shadowRadius: 4,
-                alignSelf: "center",
-                elevation: 3,
+                elevation: 2,
                 minWidth: 90,
               }}
               accessibilityLabel="Add Nook"
               accessible={true}
             >
-              <Check size={20} color="white" />
               <Text
                 style={{
-                  marginLeft: 8,
-                  color: "white",
+                  color: themeColors.white,
                   fontWeight: "bold",
-                  fontSize: 13,
+                  fontSize: 16,
                   textAlign: "center",
-                  flex: 1,
                   fontFamily: "CarosSoft",
+                  letterSpacing: 0.1,
                 }}
               >
                 Add Nook

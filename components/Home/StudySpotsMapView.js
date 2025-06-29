@@ -491,11 +491,17 @@ export default function StudySpotsMapView({
               </View>
             </View>
             {/* --- End Map Region Picker --- */}
-            <Pressable
+            <TouchableOpacity
               style={{
                 marginTop: 16,
+                backgroundColor: themeColors.purple,
+                borderRadius: 8,
+                paddingVertical: 10,
+                paddingHorizontal: 24,
                 alignItems: "center",
+                width: "100%",
               }}
+              activeOpacity={0.8}
               onPress={() => {
                 // Only commit changes on submit
                 setRegion(modalRegion);
@@ -508,7 +514,7 @@ export default function StudySpotsMapView({
             >
               <Text
                 style={{
-                  color: themeColors.green,
+                  color: themeColors.white,
                   fontFamily: "CarosSoft",
                   fontSize: 16,
                   fontWeight: "bold",
@@ -517,7 +523,7 @@ export default function StudySpotsMapView({
               >
                 Submit
               </Text>
-            </Pressable>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
