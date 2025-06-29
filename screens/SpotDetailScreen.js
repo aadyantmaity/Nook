@@ -237,7 +237,7 @@ export default function SpotDetailScreen({ route, navigation }) {
     if (!spotId) return;
     Alert.alert(
       "Delete Nook",
-      "Are you sure you want to delete this nook? This action cannot be undone.",
+      "Are you sure you want to delete this Nook? This action cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -297,7 +297,7 @@ export default function SpotDetailScreen({ route, navigation }) {
     return (
       <HomeLoadingScreen
         themeColors={themeColors}
-        loadingMessage="Loading nook details..."
+        loadingMessage="Loading Nook details..."
       />
     );
   }
@@ -552,28 +552,19 @@ export default function SpotDetailScreen({ route, navigation }) {
                             setTimeout(handleDeleteNook, 200);
                           }}
                           style={{
-                            flexDirection: "row",
+                            // backgroundColor: themeColors.red, // REMOVE red background
+                            borderRadius: 8,
+                            padding: 8,
                             alignItems: "center",
-                            paddingVertical: 14,
-                            paddingHorizontal: 18,
+                            justifyContent: "center",
                           }}
+                          accessibilityLabel="Delete Nook"
                         >
                           <Trash
-                            size={18}
+                            size={22}
                             color={themeColors.red}
                             weight="bold"
-                            style={{ marginRight: 10 }}
                           />
-                          <Text
-                            style={{
-                              color: themeColors.red,
-                              fontWeight: "bold",
-                              fontSize: 15,
-                              fontFamily: "CarosSoft",
-                            }}
-                          >
-                            Delete Nook
-                          </Text>
                         </TouchableOpacity>
                       )}
                       {/* --- Add menu option for private nook sharing management --- */}
@@ -992,28 +983,19 @@ export default function SpotDetailScreen({ route, navigation }) {
                             setTimeout(handleDeleteNook, 200);
                           }}
                           style={{
-                            flexDirection: "row",
+                            // backgroundColor: themeColors.red, // REMOVE red background
+                            borderRadius: 8,
+                            padding: 8,
                             alignItems: "center",
-                            paddingVertical: 14,
-                            paddingHorizontal: 18,
+                            justifyContent: "center",
                           }}
+                          accessibilityLabel="Delete Nook"
                         >
                           <Trash
-                            size={18}
+                            size={22}
                             color={themeColors.red}
                             weight="bold"
-                            style={{ marginRight: 10 }}
                           />
-                          <Text
-                            style={{
-                              color: themeColors.red,
-                              fontWeight: "bold",
-                              fontSize: 15,
-                              fontFamily: "CarosSoft",
-                            }}
-                          >
-                            Delete Nook
-                          </Text>
                         </TouchableOpacity>
                       )}
                       {/* --- Add menu option for private nook sharing management --- */}

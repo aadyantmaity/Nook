@@ -217,15 +217,17 @@ export default function AlertsModal({ visible, onClose, alerts, themeColors }) {
               marginTop: 10,
               paddingVertical: 12,
               paddingHorizontal: 24,
-              backgroundColor: themeColors.orange,
+              backgroundColor: themeColors.white,
               borderRadius: 8,
               alignItems: "center",
               width: "70%",
+              borderWidth: 1,
+              borderColor: themeColors.purple,
             }}
           >
             <Text
               style={{
-                color: themeColors.white,
+                color: themeColors.purple,
                 fontWeight: "bold",
                 fontFamily: "CarosSoft",
               }}

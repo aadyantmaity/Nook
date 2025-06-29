@@ -249,7 +249,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
     } else {
       canCheckIn = false;
       canCheckOut = false;
-      checkInDisabledReason = "You are already checked in at another nook.";
+      checkInDisabledReason = "You are already checked in at another Nook.";
     }
   } else if (checkedIn.taggedSpotId) {
     if (checkedIn.taggedSpotId === spotId) {
@@ -258,7 +258,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
     } else {
       canCheckIn = false;
       canCheckOut = false;
-      checkInDisabledReason = "You were tagged at another nook.";
+      checkInDisabledReason = "You were tagged at another Nook.";
     }
   }
 
@@ -275,7 +275,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
       if (status !== "granted") {
         Alert.alert(
           "Location Required",
-          "You must allow location access to check in at this nook."
+          "You must allow location access to check in at this Nook."
         );
         return;
       }
@@ -291,13 +291,13 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
       const spotLat = spot.coordinates.latitude;
       const spotLon = spot.coordinates.longitude;
       const distance = getDistanceMeters(userLat, userLon, spotLat, spotLon);
-      if (distance > 30.48) {
-        Alert.alert(
-          "Too Far",
-          "You must be within 100 feet of this nook to check in."
-        );
-        return;
-      }
+      // if (distance > 30.48) {
+      //   Alert.alert(
+      //     "Too Far",
+      //     "You must be within 100 feet of this Nook to check in."
+      //   );
+      //   return;
+      // }
     }
     setTagModalVisible(true);
   };
@@ -448,6 +448,23 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
       if (unsub) unsub();
     };
   }, [user]);
+
+  // --- Timer to auto-clear check-in after 60 minutes ---
+  useEffect(() => {
+    if (!checkedIn || !checkedIn.spotId || !checkedIn.checkedInAt) return;
+    const now = Date.now();
+    const elapsed = now - checkedIn.checkedInAt;
+    if (elapsed >= 60 * 60 * 1000) {
+      // Already expired, clear checkedIn state
+      setCheckedIn(null);
+    } else {
+      // Set a timer to clear after remaining time
+      const timeout = setTimeout(() => {
+        setCheckedIn(null);
+      }, 60 * 60 * 1000 - elapsed);
+      return () => clearTimeout(timeout);
+    }
+  }, [checkedIn]);
 
   // Listen for user's check-in post at this spot to enable "Check Out"
   useEffect(() => {
@@ -671,10 +688,12 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
                 }}
                 style={{
                   flex: 1,
-                  backgroundColor: themeColors.gray,
+                  backgroundColor: themeColors.white,
+                  borderColor: themeColors.purple,
+                  borderWidth: 1,
                   borderRadius: 8,
-                  paddingVertical: 10,
                   alignItems: "center",
+                  paddingVertical: 10,
                   marginRight: 8,
                 }}
               >

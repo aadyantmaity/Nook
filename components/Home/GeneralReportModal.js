@@ -12,6 +12,7 @@ import { ThemeContext } from "../../App";
 import { colors } from "../../constants/colors";
 import { db, auth } from "../../firebaseConfig";
 import { addDoc, collection, Timestamp } from "firebase/firestore";
+import PrimaryActionButton from "../PrimaryActionButton";
 
 export default function GeneralReportModal({
   visible,
@@ -53,26 +54,27 @@ export default function GeneralReportModal({
       onRequestClose={onClose}
       animationType="slide"
     >
-      <View
+      <TouchableOpacity
+        activeOpacity={1}
         style={{
           flex: 1,
           backgroundColor: "rgba(0,0,0,0.3)",
           justifyContent: "center",
           alignItems: "center",
         }}
+        onPressOut={onClose}
       >
         <View
           style={{
             backgroundColor: themeColors.white,
-            borderRadius: 8,
+            borderRadius: 16,
+            padding: 24,
             width: "85%",
-            alignItems: "center",
             position: "absolute",
             left: "7.5%",
             right: "7.5%",
-            bottom: "50%",
-            padding: 16,
-            maxWidth: 400,
+            bottom: "45%",
+            alignItems: "center",
             borderWidth: 1,
             borderColor: themeColors.black,
             shadowColor: themeColors.black,
@@ -81,13 +83,14 @@ export default function GeneralReportModal({
             shadowRadius: 4,
             elevation: 5,
           }}
+          onStartShouldSetResponder={() => true}
         >
           <Text
             style={{
               fontSize: 18,
               fontWeight: "bold",
+              marginBottom: 12,
               color: themeColors.black,
-              marginBottom: 8,
               fontFamily: "CarosSoft",
             }}
           >
@@ -95,17 +98,17 @@ export default function GeneralReportModal({
           </Text>
           <TextInput
             style={{
-              borderWidth: 0.5,
-              borderColor: themeColors.purple,
+              borderWidth: 1,
+              borderColor: themeColors.gray,
               borderRadius: 8,
               padding: 12,
-              minHeight: 80,
               width: "100%",
+              marginBottom: 16,
               color: themeColors.black,
               backgroundColor: themeColors.white,
-              marginBottom: 12,
-              textAlignVertical: "top",
               fontFamily: "CarosSoft",
+              minHeight: 80,
+              textAlignVertical: "top",
             }}
             placeholder="Describe your suggestion or issue..."
             placeholderTextColor={themeColors.darkGray}
@@ -115,40 +118,25 @@ export default function GeneralReportModal({
             editable={!submitting}
           />
           <View
-            style={{ flexDirection: "row", justifyContent: "space-between" }}
+            style={{
+              flexDirection: "row",
+              width: "100%",
+              justifyContent: "space-between",
+            }}
           >
-            <TouchableOpacity
-              onPress={handleSubmit}
-              disabled={submitting}
-              style={{
-                padding: 12,
-                backgroundColor: themeColors.purple,
-                borderRadius: 8,
-                alignItems: "center",
-                marginRight: 8,
-                opacity: submitting ? 0.7 : 1,
-              }}
-            >
-              <Text
-                style={{
-                  color: themeColors.white,
-                  fontWeight: "bold",
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                {submitting ? "Submitting..." : "Submit"}
-              </Text>
-            </TouchableOpacity>
             <TouchableOpacity
               onPress={onClose}
               disabled={submitting}
               style={{
-                padding: 12,
                 backgroundColor: themeColors.white,
                 borderRadius: 8,
+                paddingVertical: 10,
+                paddingHorizontal: 18,
                 alignItems: "center",
-                borderColor: themeColors.black,
-                borderWidth: 0.5,
+                flex: 1,
+                marginRight: 8,
+                borderWidth: 1,
+                borderColor: themeColors.purple,
               }}
             >
               <Text
@@ -161,9 +149,17 @@ export default function GeneralReportModal({
                 Cancel
               </Text>
             </TouchableOpacity>
+            <PrimaryActionButton
+              label={submitting ? "Submitting..." : "Submit"}
+              onPress={handleSubmit}
+              disabled={submitting}
+              loading={submitting}
+              themeColors={themeColors}
+              style={{ marginLeft: 8 }}
+            />
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     </Modal>
   );
 }
