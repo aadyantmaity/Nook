@@ -197,6 +197,33 @@ export default function ProfileScreen({ navigation, route }) {
     setUnfollowingUid(null);
   };
 
+  // remove follower handler
+  const handleRemoveFollower = async (uid) => {
+  setListLoading(true);
+  try {
+    const { db, auth } = await import("../firebaseConfig");
+    const { updateDoc, arrayRemove, doc, getDoc } = await import("firebase/firestore");
+    const user = auth.currentUser;
+    if (!user || !uid || user.uid === uid) return;
+    // Remove follower from your followers
+    await updateDoc(doc(db, "users", user.uid), {
+      followers: arrayRemove(uid),
+    });
+    // Remove yourself from their following
+    await updateDoc(doc(db, "users", uid), {
+      following: arrayRemove(user.uid),
+    });
+    setUserList((prev) => prev.filter((u) => u.uid !== uid));
+    // Optionally refresh followers list
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (userDoc.exists()) {
+      const updatedFollowers = userDoc.data().followers || [];
+      await fetchUserList(updatedFollowers);
+    }
+  } catch {}
+  setListLoading(false);
+};
+
   // --- New: Unfollow confirmation for main profile button ---
   const handleUnfollowButton = () => {
     setUnfollowConfirmVisible(true);
@@ -648,10 +675,12 @@ export default function ProfileScreen({ navigation, route }) {
       <FollowersModal
         visible={showFollowersModal}
         onClose={() => setShowFollowersModal(false)}
-        userList={userList}
+        userList={userList} 
         listLoading={listLoading}
         navigation={navigation}
         themeColors={themeColors}
+        isOwnProfile={isOwnProfile}
+        handleRemoveFollower={handleRemoveFollower}
       />
       {/* Following Modal */}
       <FollowingModal
