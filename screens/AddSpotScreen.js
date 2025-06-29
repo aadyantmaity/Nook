@@ -570,6 +570,7 @@ export default function AddSpotScreen({ navigation, route }) {
                 style={{
                   flexDirection: "row",
                   justifyContent: "space-between",
+                  gap: 8,
                 }}
               >
                 <TouchableOpacity
@@ -577,8 +578,9 @@ export default function AddSpotScreen({ navigation, route }) {
                   style={{
                     flex: 1,
                     alignItems: "center",
-                    padding: 12,
-                    marginRight: 8,
+                    paddingVertical: 8,
+                    paddingHorizontal: 0,
+                    marginRight: 4,
                     backgroundColor: !huskyCardNeeded
                       ? themeColors.purple
                       : themeColors.white,
@@ -593,6 +595,7 @@ export default function AddSpotScreen({ navigation, route }) {
                         ? themeColors.white
                         : themeColors.purple,
                       fontFamily: "CarosSoft",
+                      fontSize: 15,
                     }}
                   >
                     No
@@ -603,8 +606,9 @@ export default function AddSpotScreen({ navigation, route }) {
                   style={{
                     flex: 1,
                     alignItems: "center",
-                    padding: 12,
-                    marginLeft: 8,
+                    paddingVertical: 10,
+                    paddingHorizontal: 0,
+                    marginLeft: 4,
                     backgroundColor: huskyCardNeeded
                       ? themeColors.purple
                       : themeColors.white,
@@ -619,6 +623,7 @@ export default function AddSpotScreen({ navigation, route }) {
                         ? themeColors.white
                         : themeColors.purple,
                       fontFamily: "CarosSoft",
+                      fontSize: 15,
                     }}
                   >
                     Yes
