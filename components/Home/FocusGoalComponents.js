@@ -526,34 +526,17 @@ export const GoalModal = ({
           )}
           <View style={{ flexDirection: "row", width: "100%" }}>
             <TouchableOpacity
-              onPress={handleSave}
-              style={{
-                flex: 1,
-                backgroundColor: themeColors.purple,
-                borderRadius: 8,
-                paddingVertical: 10,
-                alignItems: "center",
-                marginRight: 8,
-              }}
-            >
-              <Text
-                style={{
-                  color: themeColors.white,
-                  fontWeight: "bold",
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                Save
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
               onPress={onClose}
               style={{
                 flex: 1,
-                backgroundColor: themeColors.gray,
+                backgroundColor: themeColors.white,
+                borderColor: themeColors.purple,
+                borderWidth: 1,
                 borderRadius: 8,
                 paddingVertical: 10,
                 alignItems: "center",
+
+                marginRight: 8,
               }}
             >
               <Text
@@ -564,6 +547,26 @@ export const GoalModal = ({
                 }}
               >
                 Cancel
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleSave}
+              style={{
+                flex: 1,
+                backgroundColor: themeColors.purple,
+                borderRadius: 8,
+                paddingVertical: 10,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                Submit
               </Text>
             </TouchableOpacity>
           </View>

@@ -207,6 +207,7 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
               alignItems: "center",
               justifyContent: "center",
             }}
+            accessibilityLabel="Submit"
           >
             <PaperPlaneRight size={24} color={themeColors.purple} />
           </TouchableOpacity>
