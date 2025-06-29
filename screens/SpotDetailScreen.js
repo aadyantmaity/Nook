@@ -237,7 +237,7 @@ export default function SpotDetailScreen({ route, navigation }) {
     if (!spotId) return;
     Alert.alert(
       "Delete Nook",
-      "Are you sure you want to delete this nook? This action cannot be undone.",
+      "Are you sure you want to delete this Nook? This action cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -297,7 +297,7 @@ export default function SpotDetailScreen({ route, navigation }) {
     return (
       <HomeLoadingScreen
         themeColors={themeColors}
-        loadingMessage="Loading nook details..."
+        loadingMessage="Loading Nook details..."
       />
     );
   }

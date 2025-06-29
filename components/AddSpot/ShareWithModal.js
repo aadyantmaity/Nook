@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Modal, View, Text, TouchableOpacity, ScrollView } from "react-native";
+import {
+  Modal,
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
 
 export default function ShareWithModal({
   visible,
@@ -8,6 +15,7 @@ export default function ShareWithModal({
   setSharedWith,
   themeColors,
   followingList = [],
+  loading = false, // <-- add loading prop
 }) {
   // No search, just use followingList as in AddSpotScreen
   return (
@@ -48,9 +56,11 @@ export default function ShareWithModal({
               fontFamily: "CarosSoft",
             }}
           >
-            Share this nook with people you follow
+            Share this Nook with people you follow
           </Text>
-          {followingList.length === 0 ? (
+          {loading ? (
+            <ActivityIndicator color={themeColors.purple} />
+          ) : followingList.length === 0 ? (
             <Text
               style={{
                 color: themeColors.darkGray,

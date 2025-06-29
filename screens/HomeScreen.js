@@ -503,7 +503,7 @@ export default function HomeScreen({ navigation, route }) {
   // Determine loading message based on navigation params
   let loadingMessage;
   if (route?.params?.refresh) {
-    loadingMessage = "Fetching your nooks...";
+    loadingMessage = "Fetching your Nooks...";
   }
 
   // Show loading screen immediately if refreshing from home page

@@ -366,9 +366,7 @@ export const GoalModal = ({
               style={{
                 flex: 1,
                 backgroundColor:
-                  goalTypeInput === "time"
-                    ? themeColors.purple
-                    : themeColors.gray,
+                  goalTypeInput === "time" ? themeColors.purple : null,
                 borderRadius: 8,
                 paddingVertical: 8,
                 alignItems: "center",
@@ -393,9 +391,7 @@ export const GoalModal = ({
               style={{
                 flex: 1,
                 backgroundColor:
-                  goalTypeInput === "custom"
-                    ? themeColors.purple
-                    : themeColors.gray,
+                  goalTypeInput === "custom" ? themeColors.purple : null,
                 borderRadius: 8,
                 paddingVertical: 8,
                 alignItems: "center",

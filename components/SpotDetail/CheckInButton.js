@@ -249,7 +249,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
     } else {
       canCheckIn = false;
       canCheckOut = false;
-      checkInDisabledReason = "You are already checked in at another nook.";
+      checkInDisabledReason = "You are already checked in at another Nook.";
     }
   } else if (checkedIn.taggedSpotId) {
     if (checkedIn.taggedSpotId === spotId) {
@@ -258,7 +258,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
     } else {
       canCheckIn = false;
       canCheckOut = false;
-      checkInDisabledReason = "You were tagged at another nook.";
+      checkInDisabledReason = "You were tagged at another Nook.";
     }
   }
 
@@ -275,7 +275,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
       if (status !== "granted") {
         Alert.alert(
           "Location Required",
-          "You must allow location access to check in at this nook."
+          "You must allow location access to check in at this Nook."
         );
         return;
       }
@@ -294,7 +294,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
       // if (distance > 30.48) {
       //   Alert.alert(
       //     "Too Far",
-      //     "You must be within 100 feet of this nook to check in."
+      //     "You must be within 100 feet of this Nook to check in."
       //   );
       //   return;
       // }
