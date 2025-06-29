@@ -66,7 +66,7 @@ export default function LiveUpdateSliders({
       if (status !== "granted") {
         Alert.alert(
           "Location Required",
-          "You must allow location access to submit a live update for this nook."
+          "You must allow location access to submit a live update for this Nook."
         );
         return;
       }
@@ -85,7 +85,7 @@ export default function LiveUpdateSliders({
       if (distance > 30.48) {
         Alert.alert(
           "Too Far",
-          "You must be within 100 feet of this nook to submit a live update."
+          "You must be within 100 feet of this Nook to submit a live update."
         );
         return;
       }

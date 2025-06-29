@@ -128,12 +128,18 @@ export default function AddSpotScreen({ navigation, route }) {
   const [sharedWith, setSharedWith] = useState([]);
   const [showShareModal, setShowShareModal] = useState(false);
   const [followingList, setFollowingList] = useState([]);
+  const [followingLoading, setFollowingLoading] = useState(false); // <-- add loading state
 
   // Fetch following list for sharing
   useEffect(() => {
     const fetchFollowing = async () => {
+      setFollowingLoading(true); // <-- set loading true
       const user = auth.currentUser;
-      if (!user) return;
+      if (!user) {
+        setFollowingList([]);
+        setFollowingLoading(false);
+        return;
+      }
       const userDoc = await getDoc(doc(db, "users", user.uid));
       if (userDoc.exists()) {
         const following = userDoc.data().following || [];
@@ -153,7 +159,10 @@ export default function AddSpotScreen({ navigation, route }) {
           }
         }
         setFollowingList(users);
+      } else {
+        setFollowingList([]);
       }
+      setFollowingLoading(false); // <-- set loading false
     };
     if (privateNook && !isUWBuilding) fetchFollowing();
   }, [privateNook, isUWBuilding]);
@@ -570,6 +579,7 @@ export default function AddSpotScreen({ navigation, route }) {
                 style={{
                   flexDirection: "row",
                   justifyContent: "space-between",
+                  gap: 8,
                 }}
               >
                 <TouchableOpacity
@@ -577,8 +587,9 @@ export default function AddSpotScreen({ navigation, route }) {
                   style={{
                     flex: 1,
                     alignItems: "center",
-                    padding: 12,
-                    marginRight: 8,
+                    paddingVertical: 8,
+                    paddingHorizontal: 0,
+                    marginRight: 4,
                     backgroundColor: !huskyCardNeeded
                       ? themeColors.purple
                       : themeColors.white,
@@ -593,6 +604,7 @@ export default function AddSpotScreen({ navigation, route }) {
                         ? themeColors.white
                         : themeColors.purple,
                       fontFamily: "CarosSoft",
+                      fontSize: 15,
                     }}
                   >
                     No
@@ -603,8 +615,9 @@ export default function AddSpotScreen({ navigation, route }) {
                   style={{
                     flex: 1,
                     alignItems: "center",
-                    padding: 12,
-                    marginLeft: 8,
+                    paddingVertical: 10,
+                    paddingHorizontal: 0,
+                    marginLeft: 4,
                     backgroundColor: huskyCardNeeded
                       ? themeColors.purple
                       : themeColors.white,
@@ -619,6 +632,7 @@ export default function AddSpotScreen({ navigation, route }) {
                         ? themeColors.white
                         : themeColors.purple,
                       fontFamily: "CarosSoft",
+                      fontSize: 15,
                     }}
                   >
                     Yes
@@ -627,7 +641,6 @@ export default function AddSpotScreen({ navigation, route }) {
               </View>
             </View>
           )}
-          {/* Department input only for UW buildings */}
           {isUWBuilding && huskyCardNeeded && (
             <TextInput
               placeholder="Department (if applicable)"
@@ -733,6 +746,7 @@ export default function AddSpotScreen({ navigation, route }) {
               setSharedWith={setSharedWith}
               themeColors={themeColors}
               followingList={followingList}
+              loading={followingLoading} // <-- pass loading prop
             />
           )}
 
@@ -749,21 +763,21 @@ export default function AddSpotScreen({ navigation, route }) {
             <TouchableOpacity
               onPress={resetForm}
               style={{
-                flex: 1,
-                maxWidth: "35%",
-                flexDirection: "row",
+                flex: 0.25,
+                backgroundColor: themeColors.white,
+                borderColor: themeColors.purple,
+                borderWidth: 1,
+                borderRadius: 8,
+                paddingVertical: 10,
+                paddingHorizontal: 24,
                 alignItems: "center",
                 justifyContent: "center",
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                backgroundColor: colors.red,
-                borderRadius: 25,
-                marginRight: 12,
+                marginRight: 8,
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
+                shadowOpacity: 0.08,
                 shadowRadius: 4,
-                elevation: 3,
+                elevation: 2,
                 minWidth: 90,
               }}
               accessibilityLabel="Reset Form"
@@ -771,12 +785,12 @@ export default function AddSpotScreen({ navigation, route }) {
             >
               <Text
                 style={{
-                  color: "white",
+                  color: themeColors.purple,
                   fontWeight: "bold",
-                  fontSize: 13,
+                  fontSize: 16,
                   textAlign: "center",
-                  flex: 1,
                   fontFamily: "CarosSoft",
+                  letterSpacing: 0.1,
                 }}
               >
                 Reset
@@ -785,37 +799,32 @@ export default function AddSpotScreen({ navigation, route }) {
             <TouchableOpacity
               onPress={handleSubmit}
               style={{
-                flex: 1,
-                maxWidth: "35%",
-                flexDirection: "row",
+                flex: 0.25,
+                backgroundColor: themeColors.purple,
+                borderRadius: 8,
+                paddingVertical: 10,
+                paddingHorizontal: 24,
                 alignItems: "center",
                 justifyContent: "center",
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                backgroundColor: colors.green,
-                borderRadius: 25,
-                marginLeft: 12,
+                marginLeft: 8,
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
+                shadowOpacity: 0.08,
                 shadowRadius: 4,
-                alignSelf: "center",
-                elevation: 3,
+                elevation: 2,
                 minWidth: 90,
               }}
               accessibilityLabel="Add Nook"
               accessible={true}
             >
-              <Check size={20} color="white" />
               <Text
                 style={{
-                  marginLeft: 8,
-                  color: "white",
+                  color: themeColors.white,
                   fontWeight: "bold",
-                  fontSize: 13,
+                  fontSize: 16,
                   textAlign: "center",
-                  flex: 1,
                   fontFamily: "CarosSoft",
+                  letterSpacing: 0.1,
                 }}
               >
                 Add Nook

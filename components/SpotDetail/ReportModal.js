@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Modal, View, Text, TextInput, TouchableOpacity } from "react-native";
+import PrimaryActionButton from "../PrimaryActionButton";
 
 export default function ReportModal({
   visible,
@@ -101,18 +102,20 @@ export default function ReportModal({
             <TouchableOpacity
               onPress={onClose}
               style={{
-                backgroundColor: themeColors.gray,
+                backgroundColor: themeColors.white,
                 borderRadius: 8,
                 paddingVertical: 10,
                 paddingHorizontal: 18,
                 alignItems: "center",
                 flex: 1,
                 marginRight: 8,
+                borderWidth: 1,
+                borderColor: themeColors.purple,
               }}
             >
               <Text
                 style={{
-                  color: themeColors.black,
+                  color: themeColors.purple,
                   fontWeight: "bold",
                   fontFamily: "CarosSoft",
                 }}
@@ -120,28 +123,12 @@ export default function ReportModal({
                 Cancel
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity
+            <PrimaryActionButton
+              label="Submit"
               onPress={handleReport}
-              style={{
-                backgroundColor: themeColors.purple,
-                borderRadius: 8,
-                paddingVertical: 10,
-                paddingHorizontal: 18,
-                alignItems: "center",
-                flex: 1,
-                marginLeft: 8,
-              }}
-            >
-              <Text
-                style={{
-                  color: themeColors.white,
-                  fontWeight: "bold",
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                Submit
-              </Text>
-            </TouchableOpacity>
+              themeColors={themeColors}
+              style={{ marginLeft: 8 }}
+            />
           </View>
         </View>
       </TouchableOpacity>
