@@ -6,7 +6,8 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
-  Alert, // <-- add Alert import
+  Alert,
+  // Switch, // remove Switch import
 } from "react-native";
 import { db, auth } from "../../firebaseConfig";
 import {
@@ -23,7 +24,13 @@ import {
 } from "firebase/firestore";
 import { colors } from "../../constants/colors";
 import { ThemeContext } from "../../App";
-import { PaperPlaneRight, Trash } from "phosphor-react-native";
+import {
+  PaperPlaneRight,
+  Trash,
+  LockKey,
+  CheckSquare,
+  Square,
+} from "phosphor-react-native"; // add CheckSquare, Square
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient"; // <-- add this import
 
@@ -37,6 +44,23 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
   const user = auth.currentUser;
   const navigation = propNavigation || useNavigation();
 
+  const [myFollowing, setMyFollowing] = React.useState([]); // store who I follow
+
+  React.useEffect(() => {
+    // Fetch my following list for mutual friends logic
+    let unsubUser = null;
+    if (auth.currentUser) {
+      const usersCol = collection(db, "users");
+      unsubUser = onSnapshot(query(usersCol), (snap) => {
+        const me = snap.docs.find((d) => d.id === auth.currentUser.uid);
+        setMyFollowing(me?.data()?.following || []);
+      });
+    }
+    return () => {
+      if (unsubUser) unsubUser();
+    };
+  }, [auth.currentUser]);
+
   React.useEffect(() => {
     setFeedLoading(true);
     const q = query(
@@ -46,68 +70,80 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
     );
     const unsub = onSnapshot(q, async (snap) => {
       const posts = [];
+      const usersSnap = await getDocs(query(collection(db, "users")));
       for (const docSnap of snap.docs) {
         const post = docSnap.data();
         let userName = "Unknown";
         let isOwnPost = false;
+        let authorFollowers = [];
+        let authorFollowing = [];
+        let canSee = true;
         if (post.uid) {
-          try {
-            const userDoc = await getDocs(query(collection(db, "users")));
-            const userDocSnap = userDoc.docs.find((d) => d.id === post.uid);
-            if (userDocSnap) {
-              const d = userDocSnap.data();
-              userName = `${d.firstName || ""} ${d.lastName || ""}`.trim();
-              if (auth.currentUser && post.uid === auth.currentUser.uid) {
-                userName = "You";
-                isOwnPost = true;
-              }
-            } else if (auth.currentUser && post.uid === auth.currentUser.uid) {
-              userName = "You";
-              isOwnPost = true;
-            }
-          } catch {
+          const userDocSnap = usersSnap.docs.find((d) => d.id === post.uid);
+          if (userDocSnap) {
+            const d = userDocSnap.data();
+            userName = `${d.firstName || ""} ${d.lastName || ""}`.trim();
+            authorFollowers = d.followers || [];
+            authorFollowing = d.following || [];
             if (auth.currentUser && post.uid === auth.currentUser.uid) {
               userName = "You";
               isOwnPost = true;
             }
+          } else if (auth.currentUser && post.uid === auth.currentUser.uid) {
+            userName = "You";
+            isOwnPost = true;
+          }
+        }
+        // Only show if current user is author or mutual friend
+        if (!auth.currentUser) {
+          canSee = false;
+        } else if (post.uid !== auth.currentUser.uid) {
+          // Mutual: I follow them AND they follow me
+          const amIFriend =
+            myFollowing.includes(post.uid) &&
+            authorFollowers.includes(auth.currentUser.uid);
+          const areTheyFriend =
+            authorFollowing.includes(auth.currentUser.uid) &&
+            authorFollowers.includes(auth.currentUser.uid);
+          if (!amIFriend && !areTheyFriend) {
+            canSee = false;
           }
         }
         // --- New: resolve tagged user names if taggedUids exists ---
         let taggedNames = [];
         let youTaggedIndex = -1;
         if (Array.isArray(post.taggedUids) && post.taggedUids.length > 0) {
-          try {
-            const userDoc = await getDocs(query(collection(db, "users")));
-            for (let i = 0; i < post.taggedUids.length; i++) {
-              const uid = post.taggedUids[i];
-              if (auth.currentUser && uid === auth.currentUser.uid) {
-                taggedNames.push("you");
-                youTaggedIndex = taggedNames.length - 1;
-              } else {
-                const u = userDoc.docs.find((d) => d.id === uid);
-                if (u) {
-                  const d = u.data();
-                  taggedNames.push(
-                    `${d.firstName || ""} ${d.lastName || ""}`.trim() || d.email
-                  );
-                }
+          for (let i = 0; i < post.taggedUids.length; i++) {
+            const uid = post.taggedUids[i];
+            if (auth.currentUser && uid === auth.currentUser.uid) {
+              taggedNames.push("you");
+              youTaggedIndex = taggedNames.length - 1;
+            } else {
+              const u = usersSnap.docs.find((d) => d.id === uid);
+              if (u) {
+                const d = u.data();
+                taggedNames.push(
+                  `${d.firstName || ""} ${d.lastName || ""}`.trim() || d.email
+                );
               }
             }
-          } catch {}
+          }
         }
-        posts.push({
-          id: docSnap.id,
-          ...post,
-          userName,
-          taggedNames,
-          isOwnPost,
-        });
+        if (canSee) {
+          posts.push({
+            id: docSnap.id,
+            ...post,
+            userName,
+            taggedNames,
+            isOwnPost,
+          });
+        }
       }
       setFeed(posts);
       setFeedLoading(false);
     });
     return () => unsub();
-  }, []);
+  }, [myFollowing]);
 
   const handlePost = async () => {
     if (!postText.trim() || posting) return;
@@ -154,9 +190,8 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
         backgroundColor: themeColors.white,
         borderRadius: 16,
         padding: 24,
-        marginHorizontal: 0, // remove side margin for full width
-        width: "100%", // extend to full width
-        // maxWidth: 600,     // remove maxWidth
+        marginHorizontal: 0,
+        width: "100%",
         marginTop: -8,
         alignItems: "center",
         flex: 1,
@@ -212,6 +247,7 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
             <PaperPlaneRight size={24} color={themeColors.purple} />
           </TouchableOpacity>
         </View>
+        {/* Remove Friends Only Checkbox below input */}
       </View>
       {feedLoading ? (
         <ActivityIndicator
@@ -266,6 +302,7 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
                     borderColor: themeColors.gray,
                     flexDirection: "row",
                     alignItems: "flex-start",
+                    position: "relative",
                   }}
                 >
                   <View style={{ flex: 1 }}>
@@ -388,7 +425,7 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
                         );
                       })()}
                     </Text>
-                    {/* Bottom row: timestamp right */}
+                    {/* Remove Friends Only indicator */}
                     <View
                       style={{
                         flexDirection: "row",
@@ -396,11 +433,11 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
                         marginTop: 6,
                       }}
                     >
+                      <View style={{ flex: 1 }} />
                       <Text
                         style={{
                           color: themeColors.darkGray,
                           fontSize: 12,
-                          flex: 1,
                           textAlign: "right",
                           fontFamily: "CarosSoft",
                         }}
