@@ -16,7 +16,10 @@ export default function FollowersModal({
   listLoading,
   navigation,
   themeColors,
+  isOwnProfile,
+  handleRemoveFollower,
 }) {
+  
   return (
     <Modal
       visible={visible}
@@ -66,23 +69,57 @@ export default function FollowersModal({
               data={userList}
               keyExtractor={(item) => item.uid}
               renderItem={({ item }) => (
-                <TouchableOpacity
-                  onPress={() => {
-                    onClose();
-                    navigation.push("Profile", { uid: item.uid });
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    paddingVertical: 10,
                   }}
-                  style={{ paddingVertical: 10 }}
                 >
-                  <Text
-                    style={{
-                      color: themeColors.black,
-                      fontSize: 16,
-                      fontFamily: "CarosSoft",
+                  <TouchableOpacity
+                    onPress={() => {
+                      onClose();
+                      navigation.push("Profile", { uid: item.uid });
                     }}
+                    style={{ flex: 1 }}
                   >
-                    {item.name}
-                  </Text>
-                </TouchableOpacity>
+                    <Text
+                      style={{
+                        color: themeColors.black,
+                        fontSize: 16,
+                        fontFamily: "CarosSoft",
+                      }}
+                    >
+                      {item.name}
+                    </Text>
+                  </TouchableOpacity>
+                  {isOwnProfile && (
+                    <TouchableOpacity
+                      onPress={() => handleRemoveFollower(item.uid)}
+                      style={{
+                        marginLeft: 12,
+                        backgroundColor: themeColors.red,
+                        borderRadius: 6,
+                        paddingVertical: 6,
+                        paddingHorizontal: 14,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: themeColors.white,
+                          fontWeight: "bold",
+                          fontSize: 14,
+                          fontFamily: "CarosSoft",
+                        }}
+                      >
+                        Remove
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               )}
             />
           )}
