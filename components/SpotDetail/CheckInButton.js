@@ -574,12 +574,11 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
                   const isSelected = taggedUids.includes(user.uid);
                   // Disable select if already checked in/tagged in last hour and not already selected
                   const disableSelect =
-                    (!isSelected &&
-                      (recentlyCheckedInUids.includes(user.uid) ||
-                        // Prevent tagging if user is on global cooldown
-                        (user.uid !== undefined &&
-                          recentlyCheckedInUids.includes(user.uid)))) ||
-                    (!isSelected && taggedUids.length >= 3);
+                    !isSelected &&
+                    (recentlyCheckedInUids.includes(user.uid) ||
+                      // Prevent tagging if user is on global cooldown
+                      (user.uid !== undefined &&
+                        recentlyCheckedInUids.includes(user.uid)));
                   return (
                     <TouchableOpacity
                       key={user.uid}
@@ -664,20 +663,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
                 })}
               </ScrollView>
             )}
-            {/* Show a message if max selected */}
-            {taggedUids.length === 3 && (
-              <Text
-                style={{
-                  color: themeColors.red || "#d00",
-                  fontSize: 12,
-                  marginTop: 6,
-                  fontFamily: "CarosSoft",
-                  textAlign: "center",
-                }}
-              >
-                You can tag up to 3 friends only.
-              </Text>
-            )}
+
             <View
               style={{ flexDirection: "row", marginTop: 16, width: "100%" }}
             >

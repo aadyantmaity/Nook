@@ -8,7 +8,7 @@ import {
   Platform,
   UIManager,
 } from "react-native";
-import { FadersHorizontal, ArrowUp, ArrowDown } from "phosphor-react-native";
+import { FadersHorizontal } from "phosphor-react-native";
 
 const TAGS = [
   "All",
@@ -26,12 +26,12 @@ const TAGS = [
 
 const SORT_OPTIONS = [
   { label: "Default", value: "default", icon: null },
-  { label: "Name (A-Z)", value: "name-asc", icon: ArrowUp },
-  { label: "Name (Z-A)", value: "name-desc", icon: ArrowDown },
-  { label: "Noise (Asc.)", value: "noise-asc", icon: ArrowUp },
-  { label: "Crowd (Asc.)", value: "crowd-asc", icon: ArrowUp },
-  { label: "Overall Rating", value: "overall-desc", icon: ArrowDown },
-  { label: "Distance (Asc.)", value: "distance-asc", icon: ArrowUp },
+  { label: "A-Z", value: "name-asc" },
+  { label: "Noise (Low-High)", value: "noise-asc" },
+  { label: "Rating (High-Low)", value: "overall-desc" },
+
+  { label: "Crowd (Low-High)", value: "crowd-asc" },
+  { label: "Distance (Low-High)", value: "distance-asc" },
 ];
 
 // Enable LayoutAnimation on Android
@@ -175,7 +175,7 @@ export default function Filters({
                 fontFamily: "CarosSoft",
               }}
             >
-              Filter Nooks
+              Filters
             </Text>
             {/* Grid layout for tags */}
             <View
@@ -197,7 +197,7 @@ export default function Filters({
                       marginRight: 8,
                       marginBottom: 8,
                       paddingVertical: 10,
-                      paddingHorizontal: 18,
+                      paddingHorizontal: 14,
                       backgroundColor: selected
                         ? themeColors.purple
                         : themeColors.white,
@@ -244,15 +244,17 @@ export default function Filters({
             <View style={{ width: "100%", marginBottom: 10 }}>
               <Text
                 style={{
-                  fontSize: 15,
+                  fontSize: 18,
                   fontWeight: "bold",
                   color: themeColors.purple,
-                  marginBottom: 8,
+                  marginBottom: 12,
                   fontFamily: "CarosSoft",
+                  alignSelf: "center",
                 }}
               >
                 Sort By
               </Text>
+
               <View
                 style={{
                   flexDirection: "row",
@@ -261,7 +263,7 @@ export default function Filters({
                 }}
               >
                 {SORT_OPTIONS.map((opt) => {
-                  const Icon = opt.icon;
+                  // Remove Icon usage
                   return (
                     <TouchableOpacity
                       key={opt.value}
@@ -275,7 +277,7 @@ export default function Filters({
                         marginRight: 8,
                         marginBottom: 8,
                         paddingVertical: 10,
-                        paddingHorizontal: 18,
+                        paddingHorizontal: 14,
                         borderWidth: 1,
                         shadowColor: themeColors.purple,
                         shadowOffset: { width: 0, height: 2 },
@@ -286,18 +288,7 @@ export default function Filters({
                         alignItems: "center",
                       }}
                     >
-                      {Icon && (
-                        <Icon
-                          size={16}
-                          color={
-                            localSortBy === opt.value
-                              ? themeColors.white
-                              : themeColors.purple
-                          }
-                          weight="bold"
-                          style={{ marginRight: 6 }}
-                        />
-                      )}
+                      {/* No Icon */}
                       <Text
                         style={{
                           color:
@@ -309,7 +300,7 @@ export default function Filters({
                           fontFamily: "CarosSoft",
                         }}
                       >
-                        {opt.label.replace(/\s*\(.*\)/, "")}
+                        {opt.label}
                       </Text>
                     </TouchableOpacity>
                   );

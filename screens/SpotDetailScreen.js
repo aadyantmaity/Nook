@@ -553,18 +553,29 @@ export default function SpotDetailScreen({ route, navigation }) {
                           }}
                           style={{
                             // backgroundColor: themeColors.red, // REMOVE red background
-                            borderRadius: 8,
-                            padding: 8,
+                            flexDirection: "row",
                             alignItems: "center",
-                            justifyContent: "center",
+                            paddingVertical: 14,
+                            paddingHorizontal: 18,
                           }}
                           accessibilityLabel="Delete Nook"
                         >
                           <Trash
-                            size={22}
+                            size={18}
                             color={themeColors.red}
                             weight="bold"
+                            style={{ marginRight: 10 }}
                           />
+                          <Text
+                            style={{
+                              color: themeColors.red,
+                              fontWeight: "bold",
+                              fontSize: 15,
+                              fontFamily: "CarosSoft",
+                            }}
+                          >
+                            Delete Nook
+                          </Text>
                         </TouchableOpacity>
                       )}
                       {/* --- Add menu option for private nook sharing management --- */}
@@ -984,18 +995,29 @@ export default function SpotDetailScreen({ route, navigation }) {
                           }}
                           style={{
                             // backgroundColor: themeColors.red, // REMOVE red background
-                            borderRadius: 8,
-                            padding: 8,
+                            flexDirection: "row",
                             alignItems: "center",
-                            justifyContent: "center",
+                            paddingVertical: 14,
+                            paddingHorizontal: 18,
                           }}
                           accessibilityLabel="Delete Nook"
                         >
                           <Trash
-                            size={22}
+                            size={18}
                             color={themeColors.red}
                             weight="bold"
+                            style={{ marginRight: 10 }}
                           />
+                          <Text
+                            style={{
+                              color: themeColors.red,
+                              fontWeight: "bold",
+                              fontSize: 15,
+                              fontFamily: "CarosSoft",
+                            }}
+                          >
+                            Delete Nook
+                          </Text>
                         </TouchableOpacity>
                       )}
                       {/* --- Add menu option for private nook sharing management --- */}
