@@ -217,7 +217,7 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
           }}
         >
           <TextInput
-            placeholder="Share something with Nook..."
+            placeholder="Share something with friends..."
             value={postText}
             onChangeText={setPostText}
             style={{
