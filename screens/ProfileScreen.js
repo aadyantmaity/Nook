@@ -152,7 +152,7 @@ export default function ProfileScreen({ navigation, route }) {
         const userDoc = await getDoc(doc(db, "users", id));
         if (userDoc.exists()) {
           const d = userDoc.data();
-          users.push({ uid: id, name: `${d.firstName} ${d.lastName}` });
+          users.push({ uid: id, name: `${d.firstName} ${d.lastName}`, profilePic: d.profilePic ?? null });
         }
       }
       setUserList(users);
