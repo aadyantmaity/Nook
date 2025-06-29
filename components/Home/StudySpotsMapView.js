@@ -560,8 +560,6 @@ export default function StudySpotsMapView({
               shadowOffset: { width: 0, height: 1 },
               shadowOpacity: 0.12,
               shadowRadius: 2,
-              borderWidth: 0.5,
-              borderColor: themeColors.black,
               elevation: 2,
             }}
             onPress={() => setRegionPickerVisible(true)}

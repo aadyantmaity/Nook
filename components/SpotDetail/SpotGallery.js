@@ -17,6 +17,7 @@ import { Plus } from "phosphor-react-native";
 import { getAuth } from "firebase/auth"; // Add this import
 import { Timestamp } from "firebase/firestore";
 import { Trash } from "phosphor-react-native"; // Import Trash icon
+import { getDoc } from "firebase/firestore"; // <-- add this import
 
 export default function SpotGallery({
   spotId,
@@ -92,13 +93,16 @@ export default function SpotGallery({
       await uploadBytes(storageRef, blob, { contentType: "image/jpeg" });
       const downloadUrl = await getDownloadURL(storageRef);
       // Prepare gallery image object
+      // Generate a unique id for the image
+      const imageId = `${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
       const galleryImageObj = {
+        id: imageId,
         url: downloadUrl,
         author: {
           uid: user.uid,
           name: user.displayName || user.email || "Unknown",
         },
-        createdAt: Timestamp.now(), // Use Firestore Timestamp
+        createdAt: Date.now(), // Store as number (ms since epoch)
       };
       // Update Firestore
       const spotRef = doc(db, "studySpots", spotId);
@@ -117,43 +121,6 @@ export default function SpotGallery({
       setIsUploading(false);
       console.error("Gallery image upload error:", e); // Add error logging
       Alert.alert("Error", "Failed to upload image.");
-    }
-  };
-
-  // Delete gallery image
-  const handleDeleteGalleryImage = async (imgObj) => {
-    if (!user || !spotId) return;
-    try {
-      setIsUploading(true);
-      // Ensure createdAt is a Firestore Timestamp for comparison
-      const deleteObj = {
-        ...imgObj,
-        createdAt:
-          typeof imgObj.createdAt === "object" && imgObj.createdAt.seconds
-            ? new Timestamp(
-                imgObj.createdAt.seconds,
-                imgObj.createdAt.nanoseconds
-              )
-            : Timestamp.fromDate(new Date(imgObj.createdAt)),
-      };
-      const spotRef = doc(db, "studySpots", spotId);
-      await updateDoc(spotRef, {
-        galleryImages: arrayRemove(deleteObj),
-      });
-      setImages((prev) => prev.filter((img) => img.url !== imgObj.url));
-      if (setSpot) {
-        setSpot((prev) => ({
-          ...prev,
-          galleryImages: (prev.galleryImages || []).filter(
-            (img) => (img.url || img) !== imgObj.url
-          ),
-        }));
-      }
-      setShowModal(false);
-      setIsUploading(false);
-    } catch (e) {
-      setIsUploading(false);
-      Alert.alert("Error", "Failed to delete image.");
     }
   };
 
@@ -217,47 +184,30 @@ export default function SpotGallery({
             style={{
               backgroundColor: themeColors.white,
               borderRadius: 12,
-              padding: 20,
+              paddingHorizontal: 20,
+              paddingVertical: 16,
               alignItems: "center",
               maxWidth: 420,
               width: "90%",
               position: "relative",
             }}
           >
-            {/* Trash can button in top right */}
+            {/* Trash can button above the image, but no delete logic */}
             {selectedImage &&
               user &&
               selectedImage.author?.uid === user.uid && (
                 <TouchableOpacity
-                  onPress={() =>
-                    Alert.alert(
-                      "Delete Image",
-                      "Are you sure you want to delete this image?",
-                      [
-                        { text: "Cancel", style: "cancel" },
-                        {
-                          text: "Delete",
-                          style: "destructive",
-                          onPress: () =>
-                            handleDeleteGalleryImage(selectedImage),
-                        },
-                      ]
-                    )
-                  }
+                  // onPress removed
                   style={{
-                    position: "absolute",
-                    top: 12,
-                    right: 12,
-                    zIndex: 10,
-                    // backgroundColor: themeColors.red || "#e74c3c", // REMOVE red background
+                    marginBottom: 15,
+                    alignSelf: "flex-end",
                     borderRadius: 12,
-                    padding: 8,
                     alignItems: "center",
                     justifyContent: "center",
-                    opacity: isUploading ? 0.6 : 1,
+                    opacity: 0.4, // visually indicate disabled
                   }}
-                  disabled={isUploading}
-                  accessibilityLabel="Delete image"
+                  disabled={true}
+                  accessibilityLabel="Delete image (disabled)"
                 >
                   <Trash size={22} color={themeColors.red} weight="bold" />
                 </TouchableOpacity>
