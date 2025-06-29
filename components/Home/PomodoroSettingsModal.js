@@ -209,6 +209,8 @@ export default function PomodoroSettingsModal({
                 color: themeColors.white,
                 fontWeight: "bold",
                 fontFamily: "CarosSoft",
+                fontSize: 16,
+                letterSpacing: 0.1,
               }}
             >
               Done
