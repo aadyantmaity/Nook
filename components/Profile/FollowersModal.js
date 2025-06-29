@@ -19,8 +19,6 @@ export default function FollowersModal({
   isOwnProfile,
   handleRemoveFollower,
 }) {
-
-  console.log("FollowersModal isOwnProfile:", isOwnProfile);
   
   return (
     <Modal
