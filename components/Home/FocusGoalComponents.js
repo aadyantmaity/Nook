@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Trophy, PencilSimple, Trash } from "phosphor-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import PrimaryActionButton from "../PrimaryActionButton";
 
 // Goal constants
 export const GOAL_STATE_KEY = "focusGoalState";
@@ -524,51 +525,46 @@ export const GoalModal = ({
           ) : (
             <View></View>
           )}
-          <View style={{ flexDirection: "row", width: "100%" }}>
-            <TouchableOpacity
-              onPress={onClose}
-              style={{
-                flex: 1,
-                backgroundColor: themeColors.white,
-                borderColor: themeColors.purple,
-                borderWidth: 1,
-                borderRadius: 8,
-                paddingVertical: 10,
-                alignItems: "center",
-
-                marginRight: 8,
-              }}
-            >
-              <Text
+          <View style={{ flexDirection: "row", width: "100%", gap: 0 }}>
+            <View style={{ flex: 1, marginRight: 8 }}>
+              <TouchableOpacity
+                onPress={onClose}
                 style={{
-                  color: themeColors.purple,
-                  fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  backgroundColor: themeColors.white,
+                  borderColor: themeColors.purple,
+                  borderWidth: 1,
+                  borderRadius: 8,
+                  paddingVertical: 10,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: 48,
+                  width: "100%",
                 }}
               >
-                Cancel
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleSave}
-              style={{
-                flex: 1,
-                backgroundColor: themeColors.purple,
-                borderRadius: 8,
-                paddingVertical: 10,
-                alignItems: "center",
-              }}
-            >
-              <Text
+                <Text
+                  style={{
+                    color: themeColors.purple,
+                    fontWeight: "bold",
+                    fontFamily: "CarosSoft",
+                  }}
+                >
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <View style={{ flex: 1 }}>
+              <PrimaryActionButton
+                label="Save"
+                onPress={handleSave}
+                themeColors={themeColors}
                 style={{
-                  color: themeColors.white,
-                  fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  height: 48,
+                  width: "100%",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
-              >
-                Submit
-              </Text>
-            </TouchableOpacity>
+              />
+            </View>
           </View>
         </View>
       </View>

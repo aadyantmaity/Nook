@@ -449,6 +449,23 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
     };
   }, [user]);
 
+  // --- Timer to auto-clear check-in after 60 minutes ---
+  useEffect(() => {
+    if (!checkedIn || !checkedIn.spotId || !checkedIn.checkedInAt) return;
+    const now = Date.now();
+    const elapsed = now - checkedIn.checkedInAt;
+    if (elapsed >= 60 * 60 * 1000) {
+      // Already expired, clear checkedIn state
+      setCheckedIn(null);
+    } else {
+      // Set a timer to clear after remaining time
+      const timeout = setTimeout(() => {
+        setCheckedIn(null);
+      }, 60 * 60 * 1000 - elapsed);
+      return () => clearTimeout(timeout);
+    }
+  }, [checkedIn]);
+
   // Listen for user's check-in post at this spot to enable "Check Out"
   useEffect(() => {
     if (!spotId || !user) return;
