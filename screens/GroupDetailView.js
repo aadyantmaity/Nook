@@ -11,6 +11,7 @@ import {
   SafeAreaView,
   Alert,
   Modal,
+  Image,
 } from "react-native";
 import {
   ArrowLeft,
@@ -367,6 +368,76 @@ export default function GroupDetailView({ navigation, route }) {
             }}
             renderItem={({ item }) => {
               const isMe = item.uid === auth.currentUser?.uid;
+              // --- Nook Share Card ---
+              if (item.type === "nook_share") {
+                return (
+                  <TouchableOpacity
+                    onPress={() =>
+                      navigation.navigate("SpotDetail", {
+                        spotId: item.spotId,
+                      })
+                    }
+                    style={{
+                      alignSelf: "center", // changed from "flex-start" to "center"
+                      marginBottom: 10,
+                      maxWidth: "80%",
+                      backgroundColor: themeColors.lightGray,
+                      borderRadius: 14,
+                      padding: 12,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: 0.06,
+                      shadowRadius: 2,
+                      elevation: 1,
+                    }}
+                  >
+                    {item.spotPhoto ? (
+                      <View
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 8,
+                          overflow: "hidden",
+                          marginRight: 12,
+                        }}
+                      >
+                        <Image
+                          source={{ uri: item.spotPhoto }}
+                          style={{ width: "100%", height: "100%" }}
+                          resizeMode="cover"
+                        />
+                      </View>
+                    ) : null}
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={{
+                          color: themeColors.purple,
+                          fontWeight: "bold",
+                          fontSize: 16,
+                          fontFamily: "CarosSoft",
+                        }}
+                        numberOfLines={1}
+                      >
+                        {item.spotName || "Nook"}
+                      </Text>
+                      <Text
+                        style={{
+                          color: themeColors.darkGray,
+                          fontSize: 13,
+                          fontFamily: "CarosSoft",
+                          marginTop: 2,
+                        }}
+                        numberOfLines={1}
+                      >
+                        Shared by {item.senderName || "Someone"}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              }
+              // Regular message bubble
               return (
                 <View
                   style={{
@@ -388,6 +459,9 @@ export default function GroupDetailView({ navigation, route }) {
                       shadowOpacity: 0.06,
                       shadowRadius: 2,
                       elevation: 1,
+                      minWidth: 50, // set to 50 as you want
+                      alignItems: "center", // add this to center text in short bubbles
+                      alignSelf: isMe ? "flex-end" : "flex-start", // add this for bubble alignment
                     }}
                   >
                     <Text
