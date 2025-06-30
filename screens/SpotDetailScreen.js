@@ -61,6 +61,7 @@ import HomeLoadingScreen from "../components/Home/HomeLoadingScreen"; // Add thi
 import PrivateNookShareModal from "../components/SpotDetail/PrivateNookShareModal";
 import UserFocusStatsDropdown from "../components/SpotDetail/UserFocusStatsDropdown";
 import AddPrivateNookNoteInput from "../components/SpotDetail/AddPrivateNookNoteInput";
+import ShareNookToGroupModal from "../components/SpotDetail/ShareNookToGroupModal"; // <-- ADD THIS IMPORT
 
 // Hooks
 import useSpotDetails from "../hooks/useSpotDetails";
@@ -83,6 +84,8 @@ export default function SpotDetailScreen({ route, navigation }) {
   const [showQRModal, setShowQRModal] = useState(false);
   const [isSubmittingLive, setIsSubmittingLive] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showShareNookToGroupModal, setShowShareNookToGroupModal] =
+    useState(false); // <-- ADD STATE
 
   // Add this missing state:
   const [lastCheckIn, setLastCheckIn] = useState(null);
@@ -444,9 +447,48 @@ export default function SpotDetailScreen({ route, navigation }) {
                         zIndex: 100,
                       }}
                     >
-                      {/* Show QR Code */}
-                      {/* Removed QR Code option */}
-
+                      {/* --- SHARE TO GROUP MENU ITEM --- */}
+                      {!isPrivateNook && (
+                        <TouchableOpacity
+                          onPress={() => {
+                            setShowMenu(false);
+                            setTimeout(
+                              () => setShowShareNookToGroupModal(true),
+                              150
+                            );
+                          }}
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            paddingVertical: 14,
+                            paddingHorizontal: 18,
+                          }}
+                        >
+                          <UsersThree
+                            size={18}
+                            color={themeColors.purple}
+                            weight="bold"
+                            style={{ marginRight: 10 }}
+                          />
+                          <Text
+                            style={{
+                              color: themeColors.purple,
+                              fontWeight: "bold",
+                              fontSize: 15,
+                              fontFamily: "CarosSoft",
+                            }}
+                          >
+                            Share to Group
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                      <View
+                        style={{
+                          height: 1,
+                          backgroundColor: themeColors.gray,
+                          marginHorizontal: 10,
+                        }}
+                      />
                       {/* Report Incorrect Info */}
                       <TouchableOpacity
                         onPress={() => {
@@ -1461,6 +1503,15 @@ export default function SpotDetailScreen({ route, navigation }) {
         spotId={spotId}
         themeColors={themeColors}
         ownerUid={user?.uid}
+      />
+      {/* --- SHARE NOOK TO GROUP MODAL --- */}
+      <ShareNookToGroupModal
+        visible={showShareNookToGroupModal}
+        onClose={() => setShowShareNookToGroupModal(false)}
+        spot={spot}
+        spotId={spotId}
+        themeColors={themeColors}
+        navigation={navigation}
       />
     </View>
   );
