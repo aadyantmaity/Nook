@@ -1,335 +1,494 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
-  ScrollView,
   TextInput,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
   ActivityIndicator,
+  SafeAreaView,
+  Alert,
+  Modal,
 } from "react-native";
+import {
+  ArrowLeft,
+  PaperPlaneRight,
+  DotsThreeVertical,
+} from "phosphor-react-native";
+import { ThemeContext } from "../App";
+import { colors } from "../constants/colors";
 import { db, auth } from "../firebaseConfig";
 import {
   doc,
   getDoc,
-  collection,
-  query,
-  orderBy,
   onSnapshot,
+  collection,
   addDoc,
   serverTimestamp,
+  query,
+  orderBy,
+  deleteDoc,
 } from "firebase/firestore";
-import { ThemeContext } from "../App";
-import { colors } from "../constants/colors";
+import PrivateNookShareModal from "../components/SpotDetail/PrivateNookShareModal"; // reuse for group sharing
 
-export default function GroupDetailView({ route, navigation }) {
+export default function GroupDetailView({ navigation, route }) {
   const { groupId } = route.params;
   const themeCtx = useContext(ThemeContext);
   const themeColors = themeCtx?.themeColors ?? colors;
-  const user = auth.currentUser;
-
   const [group, setGroup] = useState(null);
-  const [groupMembers, setGroupMembers] = useState([]);
   const [messages, setMessages] = useState([]);
-  const [messageText, setMessageText] = useState("");
-  const [sendingMsg, setSendingMsg] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [input, setInput] = useState("");
+  const [showMenu, setShowMenu] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareLoading, setShareLoading] = useState(false);
+  const flatListRef = useRef();
 
   // Fetch group info
   useEffect(() => {
-    let unsub = null;
-    (async () => {
-      const groupDoc = await getDoc(doc(db, "studyGroups", groupId));
-      if (groupDoc.exists()) {
-        setGroup({ id: groupDoc.id, ...groupDoc.data() });
+    if (!groupId) return;
+    const unsub = onSnapshot(
+      doc(db, "studyGroups", groupId),
+      (snap) => {
+        if (!snap.exists()) {
+          setGroup(null);
+          // Optionally, navigate back if group is deleted
+          navigation.goBack?.();
+          return;
+        }
+        setGroup({ id: snap.id, ...snap.data() });
+      },
+      (error) => {
+        // Permission denied or other error
+        setGroup(null);
+        navigation.navigate("Home", {
+          screen: "Community",
+          params: { selectedTab: "groups" },
+        });
       }
+    );
+    return () => unsub();
+  }, [groupId]);
+
+  // Fetch messages (subcollection "messages" under group)
+  useEffect(() => {
+    if (!groupId) return;
+    setLoading(true);
+    let unsub;
+    let isActive = true;
+    const q = query(
+      collection(db, "studyGroups", groupId, "messages"),
+      orderBy("createdAt", "asc")
+    );
+    try {
+      unsub = onSnapshot(
+        q,
+        (snap) => {
+          if (!isActive) return;
+          setMessages(
+            snap.docs.map((d) => ({
+              id: d.id,
+              ...d.data(),
+            }))
+          );
+          setLoading(false);
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+          }, 100);
+        },
+        (error) => {
+          // Permission denied or group deleted
+          setMessages([]);
+          setLoading(false);
+        }
+      );
+    } catch {
+      setMessages([]);
       setLoading(false);
-    })();
+    }
     return () => {
-      if (unsub) unsub();
+      isActive = false;
+      unsub && unsub();
     };
   }, [groupId]);
 
-  // Fetch members
-  useEffect(() => {
-    if (!group) return;
-    (async () => {
-      const members = [];
-      for (let uid of group.memberUids) {
-        const uDoc = await getDoc(doc(db, "users", uid));
-        if (uDoc.exists()) {
-          members.push({
-            uid,
-            name:
-              `${uDoc.data().firstName || ""} ${
-                uDoc.data().lastName || ""
-              }`.trim() || uDoc.data().email,
-            email: uDoc.data().email,
-          });
-        }
-      }
-      setGroupMembers(members);
-    })();
-  }, [group]);
-
-  // Listen to messages
-  useEffect(() => {
-    if (!group) return;
-    const msgsCol = collection(db, "studyGroups", group.id, "messages");
-    const q = query(msgsCol, orderBy("createdAt", "asc"));
-    const unsub = onSnapshot(q, (snap) => {
-      setMessages(
-        snap.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        }))
-      );
-    });
-    return () => unsub();
-  }, [group]);
-
-  // Send message handler
-  const handleSendMessage = async () => {
-    if (!messageText.trim() || !group) return;
-    setSendingMsg(true);
+  // Send message
+  const handleSend = async () => {
+    if (!input.trim() || sending) return;
+    setSending(true);
     try {
-      await addDoc(collection(db, "studyGroups", group.id, "messages"), {
-        senderUid: user.uid,
-        text: messageText.trim(),
+      await addDoc(collection(db, "studyGroups", groupId, "messages"), {
+        text: input.trim(),
+        uid: auth.currentUser?.uid,
         createdAt: serverTimestamp(),
       });
-      setMessageText("");
+      setInput("");
     } catch {}
-    setSendingMsg(false);
+    setSending(false);
   };
 
-  if (loading || !group) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: themeColors.white,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <ActivityIndicator color={themeColors.purple} />
-      </View>
-    );
-  }
+  // Get user display name (could be improved with caching)
+  const getUserName = (uid) => {
+    // Optionally, cache user names for performance
+    if (!group || !Array.isArray(group.memberUids)) return "User";
+    // In a real app, fetch user info from users collection
+    if (uid === auth.currentUser?.uid) return "You";
+    return "Member";
+  };
 
-  return (
-    <View
-      style={{
-        flex: 1,
+  // Header with back arrow, group name/members, and Dots menu for owner
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: true,
+      headerTitle: () => (
+        <View style={{ alignItems: "center" }}>
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: "bold",
+              color: themeColors.purple,
+              fontFamily: "CarosSoft",
+              textAlign: "center",
+              maxWidth: 200,
+            }}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {group?.name || "Group"}
+          </Text>
+          <Text
+            style={{
+              color: themeColors.darkGray,
+              fontSize: 13,
+              fontFamily: "CarosSoft",
+              textAlign: "center",
+            }}
+            numberOfLines={1}
+          >
+            {(group?.memberUids?.length || 0) + " members"}
+          </Text>
+        </View>
+      ),
+      headerTitleAlign: "center",
+      headerStyle: {
         backgroundColor: themeColors.white,
-        padding: 24,
-        alignItems: "center",
-      }}
+        shadowColor: "transparent",
+        elevation: 0,
+      },
+      headerTitleStyle: {
+        color: themeColors.purple,
+        fontWeight: "bold",
+        fontFamily: "CarosSoft",
+        fontSize: 18,
+      },
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={{ paddingHorizontal: 16, paddingVertical: 8 }}
+          accessibilityLabel="Back"
+        >
+          <ArrowLeft size={26} color={themeColors.purple} weight="bold" />
+        </TouchableOpacity>
+      ),
+      headerRight: () =>
+        group?.createdBy === auth.currentUser?.uid ? (
+          <TouchableOpacity
+            onPress={() => setShowMenu(true)}
+            style={{ paddingHorizontal: 16, paddingVertical: 8 }}
+            accessibilityLabel="More"
+          >
+            <DotsThreeVertical
+              size={26}
+              color={themeColors.purple}
+              weight="bold"
+            />
+          </TouchableOpacity>
+        ) : null,
+    });
+  }, [navigation, group, themeColors]);
+
+  // --- Delete group handler ---
+  const handleDeleteGroup = async () => {
+    Alert.alert(
+      "Delete Group",
+      "Are you sure you want to delete this group? This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteDoc(doc(db, "studyGroups", groupId));
+              // Navigate to Community tab, Groups subtab
+              navigation.navigate("Home", {
+                screen: "Community",
+                params: { selectedTab: "groups" },
+              });
+            } catch (e) {
+              Alert.alert("Error", "Failed to delete group.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // --- Modal for menu actions ---
+  const renderMenuModal = () => (
+    <Modal
+      visible={showMenu}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setShowMenu(false)}
     >
       <TouchableOpacity
-        onPress={() => navigation.goBack()}
         style={{
-          alignSelf: "flex-start",
-          marginBottom: 12,
-          paddingVertical: 6,
-          paddingHorizontal: 12,
-          backgroundColor: themeColors.purple,
-          borderRadius: 8,
+          flex: 1,
+          backgroundColor: "rgba(0,0,0,0.2)",
+          justifyContent: "flex-start",
+          alignItems: "flex-end",
         }}
+        activeOpacity={1}
+        onPressOut={() => setShowMenu(false)}
       >
-        <Text
+        <View
           style={{
-            color: themeColors.white,
-            fontWeight: "bold",
-            fontFamily: "CarosSoft",
+            backgroundColor: themeColors.white,
+            borderRadius: 12,
+            marginTop: 54,
+            marginRight: 12,
+            minWidth: 180,
+            paddingVertical: 6,
+            borderWidth: 1,
+            borderColor: themeColors.gray,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.12,
+            shadowRadius: 4,
+            elevation: 5,
           }}
         >
-          Back
-        </Text>
-      </TouchableOpacity>
-      <Text
-        style={{
-          fontSize: 18,
-          fontWeight: "bold",
-          color: themeColors.purple,
-          marginBottom: 6,
-          fontFamily: "CarosSoft",
-        }}
-      >
-        {group.name}
-      </Text>
-      <Text
-        style={{
-          color: themeColors.darkGray,
-          marginBottom: 8,
-          fontFamily: "CarosSoft",
-        }}
-      >
-        {group.description}
-      </Text>
-      <Text
-        style={{
-          fontWeight: "bold",
-          color: themeColors.purple,
-          marginBottom: 4,
-          fontFamily: "CarosSoft",
-        }}
-      >
-        Members
-      </Text>
-      <View style={{ marginBottom: 10, width: "100%" }}>
-        {groupMembers.map((m) => (
-          <Text
-            key={m.uid}
+          <TouchableOpacity
+            onPress={() => {
+              setShowMenu(false);
+              setShowShareModal(true);
+            }}
             style={{
-              color: themeColors.black,
-              fontFamily: "CarosSoft",
-              marginBottom: 2,
+              paddingVertical: 12,
+              paddingHorizontal: 18,
             }}
           >
-            {m.name} ({m.email})
-          </Text>
-        ))}
-      </View>
-      {/* Simple group chat */}
-      <View
-        style={{
-          width: "100%",
-          backgroundColor: themeColors.gray,
-          borderRadius: 8,
-          padding: 8,
-          minHeight: 80,
-          maxHeight: 180,
-          marginBottom: 8,
-        }}
-      >
-        <ScrollView
-          style={{ width: "100%" }}
-          contentContainerStyle={{ paddingBottom: 8 }}
-        >
-          {messages.length === 0 ? (
             <Text
               style={{
-                color: themeColors.darkGray,
+                color: themeColors.purple,
+                fontWeight: "bold",
                 fontFamily: "CarosSoft",
+                fontSize: 15,
               }}
             >
-              No messages yet.
+              Manage Sharing
             </Text>
-          ) : (
-            messages.map((msg) => {
-              const sender =
-                groupMembers.find((m) => m.uid === msg.senderUid) || {};
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              setShowMenu(false);
+              handleDeleteGroup();
+            }}
+            style={{
+              paddingVertical: 12,
+              paddingHorizontal: 18,
+            }}
+          >
+            <Text
+              style={{
+                color: themeColors.red,
+                fontWeight: "bold",
+                fontFamily: "CarosSoft",
+                fontSize: 15,
+              }}
+            >
+              Delete Group
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  );
+
+  // --- Render PrivateNookShareModal for group sharing ---
+  // Use groupId, group.createdBy as ownerUid, and memberUids as sharedWith
+  // The modal will update the memberUids field in the group doc
+  const renderShareModal = () => (
+    <PrivateNookShareModal
+      visible={showShareModal}
+      onClose={() => setShowShareModal(false)}
+      spotId={groupId}
+      themeColors={themeColors}
+      ownerUid={group?.createdBy}
+      isGroup // pass a prop to distinguish group mode
+      collectionName="studyGroups"
+      fieldName="memberUids"
+    />
+  );
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
+      {renderMenuModal()}
+      {renderShareModal()}
+      {/* Messages */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+      >
+        {loading ? (
+          <View
+            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+          >
+            <ActivityIndicator color={themeColors.purple} />
+          </View>
+        ) : (
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{
+              padding: 18,
+              paddingBottom: 12,
+              flexGrow: 1,
+              backgroundColor: themeColors.white,
+            }}
+            renderItem={({ item }) => {
+              const isMe = item.uid === auth.currentUser?.uid;
               return (
                 <View
-                  key={msg.id}
                   style={{
-                    marginBottom: 6,
-                    alignSelf:
-                      msg.senderUid === user.uid ? "flex-end" : "flex-start",
-                    backgroundColor:
-                      msg.senderUid === user.uid
-                        ? themeColors.purple
-                        : themeColors.white,
-                    borderRadius: 6,
-                    padding: 6,
+                    alignSelf: isMe ? "flex-end" : "flex-start",
+                    marginBottom: 10,
                     maxWidth: "80%",
                   }}
                 >
-                  <Text
+                  <View
                     style={{
-                      color:
-                        msg.senderUid === user.uid
-                          ? themeColors.white
-                          : themeColors.black,
-                      fontFamily: "CarosSoft",
-                      fontWeight: "bold",
+                      backgroundColor: isMe
+                        ? themeColors.purple
+                        : themeColors.gray,
+                      borderRadius: 14,
+                      paddingVertical: 10,
+                      paddingHorizontal: 16,
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: 0.06,
+                      shadowRadius: 2,
+                      elevation: 1,
                     }}
                   >
-                    {msg.senderUid === user.uid
-                      ? "You"
-                      : sender.name || sender.email || "Unknown"}
-                  </Text>
+                    <Text
+                      style={{
+                        color: isMe ? themeColors.white : themeColors.black,
+                        fontSize: 15,
+                        fontFamily: "CarosSoft",
+                      }}
+                    >
+                      {item.text}
+                    </Text>
+                  </View>
                   <Text
                     style={{
-                      color:
-                        msg.senderUid === user.uid
-                          ? themeColors.white
-                          : themeColors.black,
-                      fontFamily: "CarosSoft",
-                    }}
-                  >
-                    {msg.text}
-                  </Text>
-                  <Text
-                    style={{
-                      color:
-                        msg.senderUid === user.uid
-                          ? themeColors.white
-                          : themeColors.darkGray,
+                      color: themeColors.darkGray,
                       fontSize: 11,
+                      marginTop: 2,
                       fontFamily: "CarosSoft",
-                      alignSelf: "flex-end",
+                      textAlign: isMe ? "right" : "left",
                     }}
                   >
-                    {msg.createdAt && msg.createdAt.seconds
+                    {getUserName(item.uid)}
+                    {" · "}
+                    {item.createdAt && item.createdAt.seconds
                       ? new Date(
-                          msg.createdAt.seconds * 1000
-                        ).toLocaleTimeString()
+                          item.createdAt.seconds * 1000
+                        ).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
                       : ""}
                   </Text>
                 </View>
               );
-            })
-          )}
-        </ScrollView>
-      </View>
-      {/* Message input */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          width: "100%",
-        }}
-      >
-        <TextInput
-          placeholder="Type a message..."
-          value={messageText}
-          onChangeText={setMessageText}
+            }}
+            onContentSizeChange={() =>
+              flatListRef.current?.scrollToEnd({ animated: true })
+            }
+            onLayout={() =>
+              flatListRef.current?.scrollToEnd({ animated: true })
+            }
+          />
+        )}
+        {/* Input Bar */}
+        <View
           style={{
-            flex: 1,
-            borderWidth: 1,
-            borderColor: themeColors.darkGray,
-            borderRadius: 8,
-            padding: 8,
-            color: themeColors.black,
-            fontFamily: "CarosSoft",
+            flexDirection: "row",
+            alignItems: "center",
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+            borderTopWidth: 1,
+            borderTopColor: themeColors.gray,
             backgroundColor: themeColors.white,
           }}
-          placeholderTextColor={themeColors.darkGray}
-        />
-        <TouchableOpacity
-          onPress={handleSendMessage}
-          disabled={sendingMsg || !messageText.trim()}
-          style={{
-            marginLeft: 8,
-            backgroundColor: themeColors.purple,
-            borderRadius: 8,
-            padding: 10,
-            opacity: sendingMsg || !messageText.trim() ? 0.7 : 1,
-          }}
         >
-          <Text
+          <TextInput
+            value={input}
+            onChangeText={setInput}
+            placeholder="Type a message..."
+            placeholderTextColor={themeColors.darkGray}
             style={{
-              color: themeColors.white,
-              fontWeight: "bold",
+              flex: 1,
+              backgroundColor: themeColors.gray,
+              borderRadius: 20,
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+              fontSize: 15,
+              color: themeColors.black,
               fontFamily: "CarosSoft",
+              marginRight: 8,
             }}
+            editable={!sending}
+            returnKeyType="send"
+            onSubmitEditing={handleSend}
+            blurOnSubmit={true}
+          />
+          <TouchableOpacity
+            onPress={handleSend}
+            disabled={sending || !input.trim()}
+            style={{
+              backgroundColor:
+                sending || !input.trim()
+                  ? themeColors.gray
+                  : themeColors.purple,
+              borderRadius: 20,
+              padding: 10,
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: sending || !input.trim() ? 0.7 : 1,
+            }}
+            accessibilityLabel="Send"
           >
-            Send
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+            <PaperPlaneRight
+              size={24}
+              color={
+                sending || !input.trim()
+                  ? themeColors.darkGray
+                  : themeColors.white
+              }
+              weight="bold"
+            />
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

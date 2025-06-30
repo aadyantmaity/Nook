@@ -17,24 +17,27 @@ export default function PrivateNookShareModal({
   spotId,
   themeColors,
   ownerUid,
+  isGroup, // new prop
+  collectionName = "studySpots", // new prop
+  fieldName = "sharedWith", // new prop
 }) {
   const [sharedWith, setSharedWith] = useState([]);
   const [followingList, setFollowingList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
 
-  // Live update sharedWith from Firestore
+  // Live update sharedWith/memberUids from Firestore
   useEffect(() => {
     if (!spotId) return;
     setLoading(true);
-    const unsub = onSnapshot(doc(db, "studySpots", spotId), (docSnap) => {
+    const unsub = onSnapshot(doc(db, collectionName, spotId), (docSnap) => {
       if (docSnap.exists()) {
-        setSharedWith(docSnap.data().sharedWith || []);
+        setSharedWith(docSnap.data()[fieldName] || []);
       }
       setLoading(false);
     });
     return () => unsub();
-  }, [spotId]);
+  }, [spotId, collectionName, fieldName]);
 
   // Fetch following list for owner
   useEffect(() => {
@@ -62,20 +65,23 @@ export default function PrivateNookShareModal({
     })();
   }, [ownerUid]);
 
-  // Add or remove user from sharedWith
+  // Add or remove user from sharedWith/memberUids
   const handleToggleUser = async (uid) => {
     setUpdating(true);
     try {
-      const spotRef = doc(db, "studySpots", spotId);
+      const spotRef = doc(db, collectionName, spotId);
       const docSnap = await getDoc(spotRef);
-      let current = (docSnap.exists() && docSnap.data().sharedWith) || [];
-      let updated;
-      if (current.includes(uid)) {
-        updated = current.filter((id) => id !== uid);
-      } else {
-        updated = [...current, uid];
+      let arr = [];
+      if (docSnap.exists()) {
+        arr = docSnap.data()[fieldName] || [];
       }
-      await updateDoc(spotRef, { sharedWith: updated });
+      let updated;
+      if (arr.includes(uid)) {
+        updated = arr.filter((id) => id !== uid);
+      } else {
+        updated = [...arr, uid];
+      }
+      await updateDoc(spotRef, { [fieldName]: updated });
     } catch (e) {
       Alert.alert("Error", "Failed to update sharing.");
     }
