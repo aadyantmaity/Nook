@@ -25,6 +25,7 @@ import {
 } from "firebase/firestore";
 import { ThemeContext } from "../../App";
 import { colors } from "../../constants/colors";
+import { LinearGradient } from "expo-linear-gradient";
 
 function getMutualFriends(users, currentUser) {
   // Mutual: I follow them AND they follow me
@@ -58,6 +59,7 @@ export default function StudyGroupsSection({ navigation }) {
   const [mutualFriends, setMutualFriends] = useState([]);
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [creating, setCreating] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   // Fetch groups where user is a member
   useEffect(() => {
@@ -367,67 +369,107 @@ export default function StudyGroupsSection({ navigation }) {
             You are not a member of any study groups yet.
           </Text>
         ) : (
-          <FlatList
-            data={groups}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => {
-                  // Navigate to the new group detail page
-                  navigation.navigate("GroupDetail", { groupId: item.id });
-                }}
+          <View style={{ flex: 1, position: "relative" }}>
+            {/* Top gradient */}
+            {groups.length > 0 && isScrolled && (
+              <LinearGradient
+                colors={[themeColors.white + "FF", themeColors.white + "00"]}
                 style={{
-                  // --- Match StudySpotCard UI ---
-                  backgroundColor: themeColors.white,
-                  borderRadius: 8,
-                  padding: 16,
-                  marginBottom: 12,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
-                  elevation: 3,
-                  borderColor: themeColors.black,
-                  borderWidth: 0.5,
-                  position: "relative",
-                  // Remove alignItems: "flex-start"
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 24,
+                  zIndex: 2,
+                  pointerEvents: "none",
                 }}
-              >
-                <Text
-                  style={{
-                    color: themeColors.purple,
-                    fontWeight: "bold",
-                    fontSize: 18,
-                    fontFamily: "CarosSoft",
-                    marginBottom: 4,
-                  }}
-                >
-                  {item.name}
-                </Text>
-                <Text
-                  style={{
-                    color: themeColors.black,
-                    fontSize: 15,
-                    fontFamily: "CarosSoft",
-                    marginBottom: 4,
-                  }}
-                >
-                  {item.description}
-                </Text>
-                <Text
-                  style={{
-                    color: themeColors.darkGray,
-                    fontSize: 13,
-                    fontFamily: "CarosSoft",
-                  }}
-                >
-                  Members: {item.memberUids.length}
-                </Text>
-              </TouchableOpacity>
+                pointerEvents="none"
+              />
             )}
-            style={{ flex: 1 }}
-            contentContainerStyle={{ flexGrow: 1 }}
-          />
+            <FlatList
+              data={groups}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    // Navigate to the new group detail page
+                    navigation.navigate("GroupDetail", { groupId: item.id });
+                  }}
+                  style={{
+                    // --- Match StudySpotCard UI ---
+                    backgroundColor: themeColors.white,
+                    borderRadius: 8,
+                    padding: 16,
+                    marginBottom: 12,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                    elevation: 3,
+                    borderColor: themeColors.black,
+                    borderWidth: 0.5,
+                    position: "relative",
+                    // Remove alignItems: "flex-start"
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: themeColors.purple,
+                      fontWeight: "bold",
+                      fontSize: 18,
+                      fontFamily: "CarosSoft",
+                      marginBottom: 4,
+                    }}
+                  >
+                    {item.name}
+                  </Text>
+                  <Text
+                    style={{
+                      color: themeColors.black,
+                      fontSize: 15,
+                      fontFamily: "CarosSoft",
+                      marginBottom: 4,
+                    }}
+                  >
+                    {item.description}
+                  </Text>
+                  <Text
+                    style={{
+                      color: themeColors.darkGray,
+                      fontSize: 13,
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    Members: {item.memberUids.length}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              style={{ flex: 1 }}
+              contentContainerStyle={{ flexGrow: 1 }}
+              showsVerticalScrollIndicator={false}
+              onScroll={e => {
+                const offsetY = e.nativeEvent.contentOffset.y;
+                setIsScrolled(offsetY > 2);
+              }}
+              scrollEventThrottle={16}
+            />
+            {/* Bottom gradient */}
+            {groups.length > 0 && (
+              <LinearGradient
+                colors={[themeColors.white + "00", themeColors.white + "FF"]}
+                style={{
+                  position: "absolute",
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: 24,
+                  zIndex: 2,
+                  pointerEvents: "none",
+                }}
+                pointerEvents="none"
+              />
+            )}
+          </View>
         )}
       </View>
     </View>

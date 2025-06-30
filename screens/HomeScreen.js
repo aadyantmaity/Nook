@@ -98,7 +98,14 @@ export default function HomeScreen({ navigation, route }) {
   const [findPeopleModalVisible, setFindPeopleModalVisible] = useState(false); // <-- add modal state
 
   // Social tab selectedTab state
-  const [socialSelectedTab, setSocialSelectedTab] = useState("findPeople");
+  const [socialSelectedTab, setSocialSelectedTab] = useState("socialFeed");
+
+  // Reset socialSelectedTab to "socialFeed" whenever Community tab is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      setSocialSelectedTab("studyGroups");
+    }, [])
+  );
 
   // Hooks
   const { studySpots, isLoading, fetchStudySpots } = useStudySpots();

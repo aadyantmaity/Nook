@@ -187,10 +187,13 @@ export default function GroupDetailView({ navigation, route }) {
       headerLeft: () => (
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={{ paddingHorizontal: 16, paddingVertical: 8 }}
+          style={{
+            paddingHorizontal: 16,
+            paddingVertical: 8,
+          }}
           accessibilityLabel="Back"
         >
-          <ArrowLeft size={26} color={themeColors.purple} weight="bold" />
+          <ArrowLeft size={24} color={themeColors.purple} />
         </TouchableOpacity>
       ),
       headerRight: () =>
@@ -434,7 +437,7 @@ export default function GroupDetailView({ navigation, route }) {
             flexDirection: "row",
             alignItems: "center",
             paddingHorizontal: 12,
-            paddingVertical: 10,
+            paddingTop: 10,
             borderTopWidth: 1,
             borderTopColor: themeColors.gray,
             backgroundColor: themeColors.white,
@@ -447,7 +450,6 @@ export default function GroupDetailView({ navigation, route }) {
             placeholderTextColor={themeColors.darkGray}
             style={{
               flex: 1,
-              backgroundColor: themeColors.gray,
               borderRadius: 20,
               paddingHorizontal: 16,
               paddingVertical: 10,
@@ -460,30 +462,22 @@ export default function GroupDetailView({ navigation, route }) {
             returnKeyType="send"
             onSubmitEditing={handleSend}
             blurOnSubmit={true}
+            maxLength={200}
           />
           <TouchableOpacity
             onPress={handleSend}
             disabled={sending || !input.trim()}
             style={{
-              backgroundColor:
-                sending || !input.trim()
-                  ? themeColors.gray
-                  : themeColors.purple,
               borderRadius: 20,
               padding: 10,
               alignItems: "center",
               justifyContent: "center",
-              opacity: sending || !input.trim() ? 0.7 : 1,
             }}
             accessibilityLabel="Send"
           >
             <PaperPlaneRight
               size={24}
-              color={
-                sending || !input.trim()
-                  ? themeColors.darkGray
-                  : themeColors.white
-              }
+              color={themeColors.purple}
               weight="bold"
             />
           </TouchableOpacity>

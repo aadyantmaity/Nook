@@ -86,6 +86,7 @@ export default function SpotDetailScreen({ route, navigation }) {
 
   // Add this missing state:
   const [lastCheckIn, setLastCheckIn] = useState(null);
+  const [isScrolled, setIsScrolled] = React.useState(false);
 
   // REMOVE: const [galleryImages, setGalleryImages] = useState([]);
   // REMOVE: const [isUploadingGallery, setIsUploadingGallery] = useState(false);
@@ -330,7 +331,28 @@ export default function SpotDetailScreen({ route, navigation }) {
               paddingBottom: 80, // add extra bottom padding to avoid FAB overlap
             }}
             showsVerticalScrollIndicator={false}
+            onScroll={(e) => {
+              const offsetY = e.nativeEvent.contentOffset.y;
+              setIsScrolled(offsetY > 2);
+            }}
+            scrollEventThrottle={16}
           >
+            {/* Top gradient */}
+            {isScrolled && (
+              <LinearGradient
+                colors={[themeColors.white + "FF", themeColors.white + "00"]}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 24,
+                  zIndex: 2,
+                  pointerEvents: "none",
+                }}
+                pointerEvents="none"
+              />
+            )}
             {/* Top Bar */}
             <View
               style={{
@@ -775,7 +797,28 @@ export default function SpotDetailScreen({ route, navigation }) {
               paddingTop: 0,
             }}
             showsVerticalScrollIndicator={false}
+            onScroll={(e) => {
+              const offsetY = e.nativeEvent.contentOffset.y;
+              setIsScrolled(offsetY > 2);
+            }}
+            scrollEventThrottle={16}
           >
+            {/* Top gradient */}
+            {isScrolled && (
+              <LinearGradient
+                colors={[themeColors.white + "FF", themeColors.white + "00"]}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 24,
+                  zIndex: 2,
+                  pointerEvents: "none",
+                }}
+                pointerEvents="none"
+              />
+            )}
             {/* Top Bar */}
             <View
               style={{

@@ -31,37 +31,6 @@ export default function FindPeopleView({
         }}
       >
         <TouchableOpacity
-          onPress={() => setSelectedTab("socialFeed")}
-          style={{
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "center",
-            paddingVertical: 0,
-            height: 36,
-            borderRadius: 20,
-            backgroundColor:
-              selectedTab === "socialFeed" ? themeColors.purple : "transparent",
-            marginRight: 2,
-          }}
-        >
-          <Text
-            style={{
-              color:
-                selectedTab === "socialFeed"
-                  ? themeColors.white
-                  : themeColors.darkGray,
-              fontWeight: "bold",
-              fontSize: 16,
-              fontFamily: "CarosSoft",
-              letterSpacing: 0.1,
-              textAlign: "center",
-              textAlignVertical: "center",
-            }}
-          >
-            Feed
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
           onPress={() => setSelectedTab("studyGroups")}
           style={{
             flex: 1,
@@ -92,6 +61,37 @@ export default function FindPeopleView({
             }}
           >
             Groups
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setSelectedTab("socialFeed")}
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            paddingVertical: 0,
+            height: 36,
+            borderRadius: 20,
+            backgroundColor:
+              selectedTab === "socialFeed" ? themeColors.purple : "transparent",
+            marginRight: 2,
+          }}
+        >
+          <Text
+            style={{
+              color:
+                selectedTab === "socialFeed"
+                  ? themeColors.white
+                  : themeColors.darkGray,
+              fontWeight: "bold",
+              fontSize: 16,
+              fontFamily: "CarosSoft",
+              letterSpacing: 0.1,
+              textAlign: "center",
+              textAlignVertical: "center",
+            }}
+          >
+            Feed
           </Text>
         </TouchableOpacity>
       </View>
