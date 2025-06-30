@@ -45,7 +45,6 @@ export default function FavoriteSpotCard({
         backgroundColor: themeColors.white,
         borderRadius: 12,
         padding: 14,
-        marginBottom: 10,
         flexDirection: "row",
         alignItems: "center",
         shadowColor: "#000",
@@ -56,6 +55,7 @@ export default function FavoriteSpotCard({
         borderColor: themeColors.black,
         borderWidth: 0.5,
         position: "relative",
+        marginRight: 16,
       }}
       onPress={onPress}
       activeOpacity={0.85}
