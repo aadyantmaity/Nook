@@ -1070,37 +1070,6 @@ export function FocusTimerView({ navigation }) {
               });
 
               await removeSessionFromGoal(session.sessionId, session.duration);
-
-              // Archive modal UI update (move here, after confirmation)
-              if (archiveContext) {
-                const { year, month, spotId: archiveSpotId } = archiveContext;
-                setArchiveData((prev) => {
-                  const newData = JSON.parse(JSON.stringify(prev));
-                  try {
-                    if (
-                      newData[year] &&
-                      newData[year][month] &&
-                      newData[year][month][archiveSpotId]
-                    ) {
-                      newData[year][month][archiveSpotId] = newData[year][
-                        month
-                      ][archiveSpotId].filter(
-                        (sess) => sess.sessionId !== session.sessionId
-                      );
-                      if (newData[year][month][archiveSpotId].length === 0) {
-                        delete newData[year][month][archiveSpotId];
-                      }
-                      if (Object.keys(newData[year][month]).length === 0) {
-                        delete newData[year][month];
-                      }
-                      if (Object.keys(newData[year]).length === 0) {
-                        delete newData[year];
-                      }
-                    }
-                  } catch {}
-                  return newData;
-                });
-              }
             } catch (e) {
               Alert.alert("Error", `Failed to delete session: ${e.message}`);
             }
