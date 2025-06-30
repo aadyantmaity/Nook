@@ -22,7 +22,7 @@ import { ThemeContext } from "../../App";
 import { MagnifyingGlass, Plus, Minus } from "phosphor-react-native";
 import ProfilePicture from "../Profile/ProfilePicture";
 
-export default function FindPeopleSection({ navigation }) {
+export default function FindPeopleSection({ navigation, onNavigateToProfile }) {
   const [search, setSearch] = React.useState("");
   const [results, setResults] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
@@ -293,9 +293,10 @@ export default function FindPeopleSection({ navigation }) {
                 keyExtractor={(item) => item.uid}
                 renderItem={({ item }) => (
                   <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate("Profile", { uid: item.uid })
-                    }
+                    onPress={() => {
+                      navigation.navigate("Profile", { uid: item.uid });
+                      if (onNavigateToProfile) onNavigateToProfile();
+                    }}
                     style={{
                       backgroundColor: themeColors.lightGray,
                       borderRadius: 10,
@@ -443,6 +444,7 @@ export default function FindPeopleSection({ navigation }) {
           <TouchableOpacity
             onPress={() => {
               navigation.navigate("Profile", { uid: item.uid });
+              if (onNavigateToProfile) onNavigateToProfile();
             }}
             style={{
               backgroundColor: themeColors.white,
