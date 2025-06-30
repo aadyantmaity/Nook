@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { TouchableOpacity, Text, View, Modal, ScrollView } from "react-native";
+import {
+  TouchableOpacity,
+  Text,
+  View,
+  Modal,
+  ScrollView,
+  Alert,
+} from "react-native";
 import { Archive, CaretRight, Trash } from "phosphor-react-native";
 import {
   collection,
@@ -151,34 +158,48 @@ export function ArchiveButton({
 
   // --- Local delete handler for archived goals ---
   const handleDeleteArchivedGoal = async (goal, year, month) => {
-    // Remove from Firestore and local state
-    try {
-      const archiveRef = doc(db, "goalArchives", auth.currentUser.uid);
-      // Remove from Firestore
-      const archiveDoc = await getDoc(archiveRef);
-      if (archiveDoc.exists()) {
-        const currentGoals = archiveDoc.data().goals || [];
-        const updatedGoals = currentGoals.filter(
-          (g) =>
-            !(
-              g.achievedAt === goal.achievedAt &&
-              g.title === goal.title &&
-              g.target === goal.target
-            )
-        );
-        await archiveRef.update({ goals: updatedGoals });
-      }
-    } catch {}
-    // Remove from local state
-    setArchivedGoals((prev) =>
-      prev.filter(
-        (g) =>
-          !(
-            g.achievedAt === goal.achievedAt &&
-            g.title === goal.title &&
-            g.target === goal.target
-          )
-      )
+    // Show confirmation alert before deleting
+    Alert.alert(
+      "Delete Goal",
+      "Are you sure you want to delete this goal from your archive?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            // Remove from Firestore and local state
+            try {
+              const archiveRef = doc(db, "goalArchives", auth.currentUser.uid);
+              // Remove from Firestore
+              const archiveDoc = await getDoc(archiveRef);
+              if (archiveDoc.exists()) {
+                const currentGoals = archiveDoc.data().goals || [];
+                const updatedGoals = currentGoals.filter(
+                  (g) =>
+                    !(
+                      g.achievedAt === goal.achievedAt &&
+                      g.title === goal.title &&
+                      g.target === goal.target
+                    )
+                );
+                await archiveRef.update({ goals: updatedGoals });
+              }
+            } catch {}
+            // Remove from local state
+            setArchivedGoals((prev) =>
+              prev.filter(
+                (g) =>
+                  !(
+                    g.achievedAt === goal.achievedAt &&
+                    g.title === goal.title &&
+                    g.target === goal.target
+                  )
+              )
+            );
+          },
+        },
+      ]
     );
   };
 

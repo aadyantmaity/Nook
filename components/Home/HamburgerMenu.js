@@ -122,44 +122,6 @@ export default function HamburgerMenu({
               marginHorizontal: 10,
             }}
           />
-          {/* Report */}
-          <TouchableOpacity
-            onPress={() => {
-              onClose();
-              setTimeout(onReportPress, 150);
-            }}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingVertical: 12,
-              paddingHorizontal: 20,
-            }}
-          >
-            <ExclamationMark
-              size={22}
-              color={themeColors.purple}
-              weight="bold"
-            />
-            <Text
-              style={{
-                marginLeft: 12,
-                color: themeColors.purple,
-                fontWeight: "bold",
-                fontSize: 16,
-                fontFamily: "CarosSoft",
-              }}
-            >
-              Suggestion / Report
-            </Text>
-          </TouchableOpacity>
-          {/* Divider */}
-          <View
-            style={{
-              height: 1,
-              backgroundColor: themeColors.lightGrayBorder || "#eee",
-              marginHorizontal: 10,
-            }}
-          />
           {/* Theme toggle */}
           <TouchableOpacity
             onPress={() => {
@@ -188,6 +150,44 @@ export default function HamburgerMenu({
               }}
             >
               {isDarkMode ? "Light Mode" : "Dark Mode"}
+            </Text>
+          </TouchableOpacity>
+          {/* Divider */}
+          <View
+            style={{
+              height: 1,
+              backgroundColor: themeColors.lightGrayBorder || "#eee",
+              marginHorizontal: 10,
+            }}
+          />
+          {/* Report */}
+          <TouchableOpacity
+            onPress={() => {
+              onClose();
+              setTimeout(onReportPress, 150);
+            }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingVertical: 12,
+              paddingHorizontal: 20,
+            }}
+          >
+            <ExclamationMark
+              size={22}
+              color={themeColors.purple}
+              weight="bold"
+            />
+            <Text
+              style={{
+                marginLeft: 12,
+                color: themeColors.purple,
+                fontWeight: "bold",
+                fontSize: 16,
+                fontFamily: "CarosSoft",
+              }}
+            >
+              Suggestion / Report
             </Text>
           </TouchableOpacity>
         </View>
