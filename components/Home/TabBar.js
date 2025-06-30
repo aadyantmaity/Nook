@@ -4,8 +4,8 @@ import { Timer, House, Chats } from "phosphor-react-native"; // Changed icons
 
 const TAB_ICONS = {
   focus: Timer,
-  home: House, // Changed from Rows to House
-  social: Chats, // Changed from Users to Chats
+  home: House,
+  social: Chats,
 };
 
 const TAB_LABELS = {
