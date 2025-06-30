@@ -88,10 +88,6 @@ export default function App() {
       <Stack.Screen name="AddSpot" component={AddSpotScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="EditSpot" component={EditSpotScreen} />
-      <Stack.Screen
-        name="FindPeopleView"
-        component={require("./screens/FindPeopleView").default}
-      />
       <Stack.Screen name="GroupDetail" component={GroupDetailView} />
     </Stack.Navigator>
   );
