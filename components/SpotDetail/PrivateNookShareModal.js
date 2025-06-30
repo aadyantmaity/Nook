@@ -44,31 +44,40 @@ export default function PrivateNookShareModal({
     return () => unsub();
   }, [spotId, collectionName, fieldName]);
 
-  // Fetch following list for owner
+  // Fetch mutual friends for owner (real-time, every open)
   useEffect(() => {
-    if (!ownerUid) return;
-    (async () => {
-      const userDoc = await getDoc(doc(db, "users", ownerUid));
+    if (!ownerUid || !visible) return;
+    setLoading(true);
+    const unsub = onSnapshot(doc(db, "users", ownerUid), async (userDoc) => {
       if (userDoc.exists()) {
         const following = userDoc.data().following || [];
+        const followers = userDoc.data().followers || [];
+        const mutualUids = following.filter((uid) => followers.includes(uid));
         const users = [];
-        for (let uid of following) {
-          const uDoc = await getDoc(doc(db, "users", uid));
-          if (uDoc.exists()) {
-            users.push({
-              uid,
-              name:
-                `${uDoc.data().firstName || ""} ${
-                  uDoc.data().lastName || ""
-                }`.trim() || uDoc.data().email,
-              email: uDoc.data().email,
-            });
-          }
-        }
+        // Fetch all mutual users in parallel
+        await Promise.all(
+          mutualUids.map(async (uid) => {
+            const uDoc = await getDoc(doc(db, "users", uid));
+            if (uDoc.exists()) {
+              users.push({
+                uid,
+                name:
+                  `${uDoc.data().firstName || ""} ${
+                    uDoc.data().lastName || ""
+                  }`.trim() || uDoc.data().email,
+                email: uDoc.data().email,
+              });
+            }
+          })
+        );
         setFollowingList(users);
+      } else {
+        setFollowingList([]);
       }
-    })();
-  }, [ownerUid]);
+      setLoading(false);
+    });
+    return () => unsub();
+  }, [ownerUid, visible]);
 
   // --- Only update Firestore when Done is pressed ---
   const handleDone = async () => {

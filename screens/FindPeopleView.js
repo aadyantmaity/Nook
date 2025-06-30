@@ -15,12 +15,12 @@ export default function FindPeopleView({
   const themeColors = themeCtx?.themeColors ?? colors;
   const navigation = propNavigation || useNavigation();
 
-  // Add a handler to be passed down to close the modal
+  // Profile press handler for children
   const handleProfilePress = (closeModal) => {
     if (typeof closeModal === "function") {
       closeModal();
     }
-    // Optionally, you can add navigation or other logic here
+    // Optional: Add navigation logic here
   };
 
   return (
@@ -32,43 +32,12 @@ export default function FindPeopleView({
           marginTop: 24,
           marginBottom: 8,
           alignSelf: "center",
-          backgroundColor: themeColors.gray + "22", // subtle background
+          backgroundColor: themeColors.gray + "22",
           borderRadius: 24,
           padding: 4,
           width: 220,
         }}
       >
-        <TouchableOpacity
-          onPress={() => setSelectedTab("socialFeed")}
-          style={{
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "center",
-            paddingVertical: 0,
-            height: 36,
-            borderRadius: 20,
-            backgroundColor:
-              selectedTab === "socialFeed" ? themeColors.purple : "transparent",
-            marginRight: 2,
-          }}
-        >
-          <Text
-            style={{
-              color:
-                selectedTab === "socialFeed"
-                  ? themeColors.white
-                  : themeColors.darkGray,
-              fontWeight: "bold",
-              fontSize: 16,
-              fontFamily: "CarosSoft",
-              letterSpacing: 0.1,
-              textAlign: "center",
-              textAlignVertical: "center",
-            }}
-          >
-            Feed
-          </Text>
-        </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setSelectedTab("studyGroups")}
           style={{
@@ -102,8 +71,40 @@ export default function FindPeopleView({
             Groups
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setSelectedTab("socialFeed")}
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            paddingVertical: 0,
+            height: 36,
+            borderRadius: 20,
+            backgroundColor:
+              selectedTab === "socialFeed" ? themeColors.purple : "transparent",
+            marginRight: 2,
+          }}
+        >
+          <Text
+            style={{
+              color:
+                selectedTab === "socialFeed"
+                  ? themeColors.white
+                  : themeColors.darkGray,
+              fontWeight: "bold",
+              fontSize: 16,
+              fontFamily: "CarosSoft",
+              letterSpacing: 0.1,
+              textAlign: "center",
+              textAlignVertical: "center",
+            }}
+          >
+            Feed
+          </Text>
+        </TouchableOpacity>
       </View>
-      {/* Render selected view */}
+
+      {/* Render selected section */}
       {selectedTab === "socialFeed" ? (
         <SocialFeedSection
           navigation={navigation}

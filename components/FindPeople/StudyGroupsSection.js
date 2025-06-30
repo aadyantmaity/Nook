@@ -409,7 +409,6 @@ export default function StudyGroupsSection({ navigation }) {
                     borderColor: themeColors.black,
                     borderWidth: 0.5,
                     position: "relative",
-                    // Remove alignItems: "flex-start"
                   }}
                 >
                   <Text
@@ -433,6 +432,7 @@ export default function StudyGroupsSection({ navigation }) {
                   >
                     {item.description}
                   </Text>
+                  {/* --- Show member names (first name + last initial) --- */}
                   <Text
                     style={{
                       color: themeColors.darkGray,
@@ -440,14 +440,28 @@ export default function StudyGroupsSection({ navigation }) {
                       fontFamily: "CarosSoft",
                     }}
                   >
-                    Members: {item.memberUids.length}
+                    Members:{" "}
+                    {Array.isArray(item.memberUids) && allUsers.length > 0
+                      ? item.memberUids
+                          .map((uid) => {
+                            if (uid === user.uid) return "You";
+                            const u = allUsers.find((user) => user.uid === uid);
+                            if (!u) return "User";
+                            const first = u.firstName || "";
+                            const lastInitial = u.lastName
+                              ? ` ${u.lastName.charAt(0)}`
+                              : "";
+                            return `${first}${lastInitial}`.trim();
+                          })
+                          .join(", ")
+                      : item.memberUids.length}
                   </Text>
                 </TouchableOpacity>
               )}
               style={{ flex: 1 }}
               contentContainerStyle={{ flexGrow: 1 }}
               showsVerticalScrollIndicator={false}
-              onScroll={e => {
+              onScroll={(e) => {
                 const offsetY = e.nativeEvent.contentOffset.y;
                 setIsScrolled(offsetY > 2);
               }}
