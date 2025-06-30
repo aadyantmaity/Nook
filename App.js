@@ -14,6 +14,7 @@ import { colors, getThemeColors } from "./constants/colors";
 import * as Linking from "expo-linking";
 import * as Font from "expo-font";
 import AppLoading from "expo-app-loading"; // Show while fonts are loading
+import GroupDetailView from "./screens/GroupDetailView"; // <-- add this import
 
 const Stack = createStackNavigator();
 
@@ -91,6 +92,7 @@ export default function App() {
         name="FindPeopleView"
         component={require("./screens/FindPeopleView").default}
       />
+      <Stack.Screen name="GroupDetail" component={GroupDetailView} />
     </Stack.Navigator>
   );
 
