@@ -39,6 +39,7 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
   const [posting, setPosting] = React.useState(false);
   const [feed, setFeed] = React.useState([]);
   const [feedLoading, setFeedLoading] = React.useState(true);
+  const [isScrolled, setIsScrolled] = React.useState(false);
   const themeCtx = useContext(ThemeContext);
   const themeColors = themeCtx?.themeColors ?? colors;
   const user = auth.currentUser;
@@ -270,7 +271,7 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
           {/* Gradient scrollview wrapper */}
           <View style={{ flex: 1, position: "relative" }}>
             {/* Top gradient */}
-            {feed.length > 0 && (
+            {feed.length > 0 && isScrolled && (
               <LinearGradient
                 colors={[themeColors.white + "FF", themeColors.white + "00"]}
                 style={{
@@ -452,6 +453,11 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
                   </View>
                 </View>
               )}
+              onScroll={(e) => {
+                const offsetY = e.nativeEvent.contentOffset.y;
+                setIsScrolled(offsetY > 2);
+              }}
+              scrollEventThrottle={16}
             />
             {/* Bottom gradient */}
             {feed.length > 0 && (
