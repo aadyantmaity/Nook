@@ -17,6 +17,7 @@ import {
   ArrowLeft,
   PaperPlaneRight,
   DotsThreeVertical,
+  MapPin,
 } from "phosphor-react-native";
 import { ThemeContext } from "../App";
 import { colors } from "../constants/colors";
@@ -33,6 +34,7 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import PrivateNookShareModal from "../components/SpotDetail/PrivateNookShareModal"; // reuse for group sharing
+import { Keyboard } from "react-native";
 
 export default function GroupDetailView({ navigation, route }) {
   const { groupId } = route.params;
@@ -46,6 +48,7 @@ export default function GroupDetailView({ navigation, route }) {
   const [showMenu, setShowMenu] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
+  const [userCache, setUserCache] = useState({});
   const flatListRef = useRef();
 
   // Fetch group info
@@ -131,13 +134,34 @@ export default function GroupDetailView({ navigation, route }) {
     setSending(false);
   };
 
-  // Get user display name (could be improved with caching)
-  const getUserName = (uid) => {
-    // Optionally, cache user names for performance
-    if (!group || !Array.isArray(group.memberUids)) return "User";
-    // In a real app, fetch user info from users collection
+  // Helper to fetch and cache user info
+  const fetchUserName = async (uid) => {
+    if (!uid) return "User";
     if (uid === auth.currentUser?.uid) return "You";
-    return "Member";
+    if (userCache[uid]) return userCache[uid];
+    try {
+      const userDoc = await getDoc(doc(db, "users", uid));
+      if (userDoc.exists()) {
+        const d = userDoc.data();
+        const first = d.firstName || "";
+        const last = d.lastName || "";
+        const name =
+          first && last ? `${first} ${last.charAt(0)}` : first ? first : "User";
+        setUserCache((prev) => ({ ...prev, [uid]: name }));
+        return name;
+      }
+    } catch {}
+    return "User";
+  };
+
+  // Get user display name (with caching)
+  const getUserName = (uid) => {
+    if (!uid) return "User";
+    if (uid === auth.currentUser?.uid) return "You";
+    if (userCache[uid]) return userCache[uid];
+    // Trigger fetch in background (non-blocking)
+    fetchUserName(uid);
+    return "User";
   };
 
   // Header with back arrow, group name/members, and Dots menu for owner
@@ -339,6 +363,15 @@ export default function GroupDetailView({ navigation, route }) {
     />
   );
 
+  // --- Delete a message ---
+  const handleDeleteMessage = async (messageId) => {
+    try {
+      await deleteDoc(doc(db, "studyGroups", groupId, "messages", messageId));
+    } catch (e) {
+      Alert.alert("Error", "Failed to delete message.");
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
       {renderMenuModal()}
@@ -346,7 +379,7 @@ export default function GroupDetailView({ navigation, route }) {
       {/* Messages */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
       >
         {loading ? (
@@ -359,10 +392,11 @@ export default function GroupDetailView({ navigation, route }) {
           <FlatList
             ref={flatListRef}
             data={messages}
+            showsVerticalScrollIndicator={false}
             keyExtractor={(item) => item.id}
             contentContainerStyle={{
               padding: 18,
-              paddingBottom: 12,
+              paddingBottom: 24, // match input bar's bottom padding
               flexGrow: 1,
               backgroundColor: themeColors.white,
             }}
@@ -409,7 +443,25 @@ export default function GroupDetailView({ navigation, route }) {
                           resizeMode="cover"
                         />
                       </View>
-                    ) : null}
+                    ) : (
+                      <View
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 8,
+                          backgroundColor: themeColors.purple,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          marginRight: 12,
+                        }}
+                      >
+                        <MapPin
+                          size={32}
+                          color={themeColors.white}
+                          weight="bold"
+                        />
+                      </View>
+                    )}
                     <View style={{ flex: 1 }}>
                       <Text
                         style={{
@@ -446,34 +498,54 @@ export default function GroupDetailView({ navigation, route }) {
                     maxWidth: "80%",
                   }}
                 >
-                  <View
-                    style={{
-                      backgroundColor: isMe
-                        ? themeColors.purple
-                        : themeColors.gray,
-                      borderRadius: 14,
-                      paddingVertical: 10,
-                      paddingHorizontal: 16,
-                      shadowColor: "#000",
-                      shadowOffset: { width: 0, height: 1 },
-                      shadowOpacity: 0.06,
-                      shadowRadius: 2,
-                      elevation: 1,
-                      minWidth: 50, // set to 50 as you want
-                      alignItems: "center", // add this to center text in short bubbles
-                      alignSelf: isMe ? "flex-end" : "flex-start", // add this for bubble alignment
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    disabled={!isMe}
+                    onLongPress={() => {
+                      if (!isMe) return;
+                      Alert.alert(
+                        "Delete Message",
+                        "Do you want to delete this message?",
+                        [
+                          { text: "Cancel", style: "cancel" },
+                          {
+                            text: "Delete",
+                            style: "destructive",
+                            onPress: () => handleDeleteMessage(item.id),
+                          },
+                        ]
+                      );
                     }}
                   >
-                    <Text
+                    <View
                       style={{
-                        color: isMe ? themeColors.white : themeColors.black,
-                        fontSize: 15,
-                        fontFamily: "CarosSoft",
+                        backgroundColor: isMe
+                          ? themeColors.purple
+                          : themeColors.gray,
+                        borderRadius: 14,
+                        paddingVertical: 10,
+                        paddingHorizontal: 16,
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: 0.06,
+                        shadowRadius: 2,
+                        elevation: 1,
+                        minWidth: 50,
+                        alignItems: "center",
+                        alignSelf: isMe ? "flex-end" : "flex-start",
                       }}
                     >
-                      {item.text}
-                    </Text>
-                  </View>
+                      <Text
+                        style={{
+                          color: isMe ? themeColors.white : themeColors.black,
+                          fontSize: 15,
+                          fontFamily: "CarosSoft",
+                        }}
+                      >
+                        {item.text}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
                   <Text
                     style={{
                       color: themeColors.darkGray,
@@ -511,7 +583,8 @@ export default function GroupDetailView({ navigation, route }) {
             flexDirection: "row",
             alignItems: "center",
             paddingHorizontal: 12,
-            paddingTop: 10,
+            paddingBottom: 24,
+            paddingTop: 8,
             borderTopWidth: 1,
             borderTopColor: themeColors.gray,
             backgroundColor: themeColors.white,
