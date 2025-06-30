@@ -5,6 +5,7 @@ import { colors } from "../constants/colors";
 import { ThemeContext } from "../App";
 import FindPeopleSection from "../components/FindPeople/FindPeopleSection";
 import SocialFeedSection from "../components/FindPeople/SocialFeedSection";
+import StudyGroupsSection from "../components/FindPeople/StudyGroupsSection";
 
 export default function FindPeopleView({
   navigation: propNavigation,
@@ -29,6 +30,7 @@ export default function FindPeopleView({
           paddingHorizontal: 16,
         }}
       >
+        {/* Find People Tab */}
         <TouchableOpacity
           onPress={() => setSelectedTab("findPeople")}
           style={{
@@ -57,6 +59,7 @@ export default function FindPeopleView({
             Find People
           </Text>
         </TouchableOpacity>
+        {/* Feed Tab */}
         <TouchableOpacity
           onPress={() => setSelectedTab("socialFeed")}
           style={{
@@ -85,12 +88,43 @@ export default function FindPeopleView({
             Feed
           </Text>
         </TouchableOpacity>
+        {/* Study Groups Tab */}
+        <TouchableOpacity
+          onPress={() => setSelectedTab("studyGroups")}
+          style={{
+            flex: 1,
+            paddingVertical: 10,
+            backgroundColor:
+              selectedTab === "studyGroups"
+                ? themeColors.purple
+                : themeColors.white,
+            borderRadius: 10,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text
+            style={{
+              color:
+                selectedTab === "studyGroups"
+                  ? themeColors.white
+                  : themeColors.purple,
+              fontWeight: "bold",
+              fontSize: 16,
+              fontFamily: "CarosSoft",
+            }}
+          >
+            Groups
+          </Text>
+        </TouchableOpacity>
       </View>
       {/* Render selected view */}
       {selectedTab === "findPeople" ? (
         <FindPeopleSection navigation={navigation} />
-      ) : (
+      ) : selectedTab === "socialFeed" ? (
         <SocialFeedSection navigation={navigation} />
+      ) : (
+        <StudyGroupsSection navigation={navigation} />
       )}
     </View>
   );
