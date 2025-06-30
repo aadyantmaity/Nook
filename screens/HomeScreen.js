@@ -666,7 +666,10 @@ export default function HomeScreen({ navigation, route }) {
                 elevation: 5,
               }}
             >
-              <FindPeopleSection navigation={navigation} />
+              <FindPeopleSection
+                navigation={navigation}
+                onNavigateToProfile={() => setFindPeopleModalVisible(false)}
+              />
               <TouchableOpacity
                 onPress={() => setFindPeopleModalVisible(false)}
                 style={{

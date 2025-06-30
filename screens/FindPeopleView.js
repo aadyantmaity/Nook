@@ -15,6 +15,14 @@ export default function FindPeopleView({
   const themeColors = themeCtx?.themeColors ?? colors;
   const navigation = propNavigation || useNavigation();
 
+  // Add a handler to be passed down to close the modal
+  const handleProfilePress = (closeModal) => {
+    if (typeof closeModal === "function") {
+      closeModal();
+    }
+    // Optionally, you can add navigation or other logic here
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: themeColors.white }}>
       {/* Minimalistic Pill Tab Bar */}
@@ -30,6 +38,37 @@ export default function FindPeopleView({
           width: 220,
         }}
       >
+        <TouchableOpacity
+          onPress={() => setSelectedTab("socialFeed")}
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            paddingVertical: 0,
+            height: 36,
+            borderRadius: 20,
+            backgroundColor:
+              selectedTab === "socialFeed" ? themeColors.purple : "transparent",
+            marginRight: 2,
+          }}
+        >
+          <Text
+            style={{
+              color:
+                selectedTab === "socialFeed"
+                  ? themeColors.white
+                  : themeColors.darkGray,
+              fontWeight: "bold",
+              fontSize: 16,
+              fontFamily: "CarosSoft",
+              letterSpacing: 0.1,
+              textAlign: "center",
+              textAlignVertical: "center",
+            }}
+          >
+            Feed
+          </Text>
+        </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setSelectedTab("studyGroups")}
           style={{
@@ -63,43 +102,18 @@ export default function FindPeopleView({
             Groups
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setSelectedTab("socialFeed")}
-          style={{
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "center",
-            paddingVertical: 0,
-            height: 36,
-            borderRadius: 20,
-            backgroundColor:
-              selectedTab === "socialFeed" ? themeColors.purple : "transparent",
-            marginRight: 2,
-          }}
-        >
-          <Text
-            style={{
-              color:
-                selectedTab === "socialFeed"
-                  ? themeColors.white
-                  : themeColors.darkGray,
-              fontWeight: "bold",
-              fontSize: 16,
-              fontFamily: "CarosSoft",
-              letterSpacing: 0.1,
-              textAlign: "center",
-              textAlignVertical: "center",
-            }}
-          >
-            Feed
-          </Text>
-        </TouchableOpacity>
       </View>
       {/* Render selected view */}
       {selectedTab === "socialFeed" ? (
-        <SocialFeedSection navigation={navigation} />
+        <SocialFeedSection
+          navigation={navigation}
+          onProfilePress={handleProfilePress}
+        />
       ) : (
-        <StudyGroupsSection navigation={navigation} />
+        <StudyGroupsSection
+          navigation={navigation}
+          onProfilePress={handleProfilePress}
+        />
       )}
     </View>
   );
