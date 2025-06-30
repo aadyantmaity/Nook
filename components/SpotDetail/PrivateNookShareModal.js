@@ -17,24 +17,32 @@ export default function PrivateNookShareModal({
   spotId,
   themeColors,
   ownerUid,
+  isGroup, // new prop
+  collectionName = "studySpots", // new prop
+  fieldName = "sharedWith", // new prop
 }) {
   const [sharedWith, setSharedWith] = useState([]);
   const [followingList, setFollowingList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
 
-  // Live update sharedWith from Firestore
+  // --- Local selection state for pending changes ---
+  const [pendingSharedWith, setPendingSharedWith] = useState([]);
+
+  // Live update sharedWith/memberUids from Firestore
   useEffect(() => {
     if (!spotId) return;
     setLoading(true);
-    const unsub = onSnapshot(doc(db, "studySpots", spotId), (docSnap) => {
+    const unsub = onSnapshot(doc(db, collectionName, spotId), (docSnap) => {
       if (docSnap.exists()) {
-        setSharedWith(docSnap.data().sharedWith || []);
+        const arr = docSnap.data()[fieldName] || [];
+        setSharedWith(arr);
+        setPendingSharedWith(arr); // sync local selection to Firestore value
       }
       setLoading(false);
     });
     return () => unsub();
-  }, [spotId]);
+  }, [spotId, collectionName, fieldName]);
 
   // Fetch following list for owner
   useEffect(() => {
@@ -62,24 +70,24 @@ export default function PrivateNookShareModal({
     })();
   }, [ownerUid]);
 
-  // Add or remove user from sharedWith
-  const handleToggleUser = async (uid) => {
+  // --- Only update Firestore when Done is pressed ---
+  const handleDone = async () => {
     setUpdating(true);
     try {
-      const spotRef = doc(db, "studySpots", spotId);
-      const docSnap = await getDoc(spotRef);
-      let current = (docSnap.exists() && docSnap.data().sharedWith) || [];
-      let updated;
-      if (current.includes(uid)) {
-        updated = current.filter((id) => id !== uid);
-      } else {
-        updated = [...current, uid];
-      }
-      await updateDoc(spotRef, { sharedWith: updated });
+      const spotRef = doc(db, collectionName, spotId);
+      await updateDoc(spotRef, { [fieldName]: pendingSharedWith });
     } catch (e) {
       Alert.alert("Error", "Failed to update sharing.");
     }
     setUpdating(false);
+    onClose && onClose();
+  };
+
+  // --- Toggle user in local pendingSharedWith only ---
+  const handleToggleUser = (uid) => {
+    setPendingSharedWith((prev) =>
+      prev.includes(uid) ? prev.filter((id) => id !== uid) : [...prev, uid]
+    );
   };
 
   return (
@@ -153,7 +161,7 @@ export default function PrivateNookShareModal({
                       borderRadius: 11,
                       borderWidth: 1,
                       borderColor: themeColors.purple,
-                      backgroundColor: sharedWith.includes(user.uid)
+                      backgroundColor: pendingSharedWith.includes(user.uid)
                         ? themeColors.purple
                         : themeColors.white,
                       marginRight: 12,
@@ -161,7 +169,7 @@ export default function PrivateNookShareModal({
                       justifyContent: "center",
                     }}
                   >
-                    {sharedWith.includes(user.uid) && (
+                    {pendingSharedWith.includes(user.uid) && (
                       <Text
                         style={{ color: themeColors.white, fontWeight: "bold" }}
                       >
@@ -182,7 +190,7 @@ export default function PrivateNookShareModal({
             </ScrollView>
           )}
           <TouchableOpacity
-            onPress={onClose}
+            onPress={handleDone}
             style={{
               marginTop: 16,
               backgroundColor: themeColors.purple,
@@ -190,6 +198,7 @@ export default function PrivateNookShareModal({
               paddingVertical: 10,
               paddingHorizontal: 24,
               alignItems: "center",
+              opacity: updating ? 0.7 : 1,
             }}
             disabled={updating}
           >
