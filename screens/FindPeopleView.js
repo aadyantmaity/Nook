@@ -49,7 +49,7 @@ export default function FindPeopleView({
               color:
                 selectedTab === "socialFeed"
                   ? themeColors.white
-                  : themeColors.purple,
+                  : themeColors.darkGray,
               fontWeight: "bold",
               fontSize: 16,
               fontFamily: "CarosSoft",
@@ -82,7 +82,7 @@ export default function FindPeopleView({
               color:
                 selectedTab === "studyGroups"
                   ? themeColors.white
-                  : themeColors.purple,
+                  : themeColors.darkGray,
               fontWeight: "bold",
               fontSize: 16,
               fontFamily: "CarosSoft",

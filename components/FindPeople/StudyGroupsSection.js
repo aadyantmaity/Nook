@@ -332,7 +332,7 @@ export default function StudyGroupsSection({ navigation }) {
         </TouchableOpacity>
       </Modal>
       {/* Main group list */}
-      <View style={{ width: "100%", marginBottom: 12 }}>
+      <View style={{ width: "100%", marginBottom: 12, flex: 1 }}>
         <TouchableOpacity
           onPress={() => setShowCreateModal(true)}
           style={{
@@ -377,19 +377,29 @@ export default function StudyGroupsSection({ navigation }) {
                   navigation.navigate("GroupDetail", { groupId: item.id });
                 }}
                 style={{
-                  backgroundColor: themeColors.lightGray,
-                  borderRadius: 10,
-                  padding: 14,
-                  marginBottom: 10,
-                  alignItems: "flex-start",
+                  // --- Match StudySpotCard UI ---
+                  backgroundColor: themeColors.white,
+                  borderRadius: 8,
+                  padding: 16,
+                  marginBottom: 12,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 3,
+                  borderColor: themeColors.black,
+                  borderWidth: 0.5,
+                  position: "relative",
+                  // Remove alignItems: "flex-start"
                 }}
               >
                 <Text
                   style={{
                     color: themeColors.purple,
                     fontWeight: "bold",
-                    fontSize: 16,
+                    fontSize: 18,
                     fontFamily: "CarosSoft",
+                    marginBottom: 4,
                   }}
                 >
                   {item.name}
@@ -397,8 +407,9 @@ export default function StudyGroupsSection({ navigation }) {
                 <Text
                   style={{
                     color: themeColors.black,
-                    fontSize: 14,
+                    fontSize: 15,
                     fontFamily: "CarosSoft",
+                    marginBottom: 4,
                   }}
                 >
                   {item.description}
@@ -414,7 +425,8 @@ export default function StudyGroupsSection({ navigation }) {
                 </Text>
               </TouchableOpacity>
             )}
-            style={{ minHeight: 60 }}
+            style={{ flex: 1 }}
+            contentContainerStyle={{ flexGrow: 1 }}
           />
         )}
       </View>
