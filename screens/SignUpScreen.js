@@ -62,7 +62,8 @@ export default function SignUpScreen({ navigation }) {
       // Send email verification
       await sendEmailVerification(user);
       setInfo("Verification email sent. Please check your inbox.");
-      navigation.navigate("Verification"); // Navigate to verification screen
+      // Optionally, sign out user here to force verification before login
+      // await auth.signOut();
     } catch (error) {
       setError(error.message);
     }
