@@ -3,8 +3,8 @@ import { View, TouchableOpacity, Text } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { colors } from "../constants/colors";
 import { ThemeContext } from "../App";
-import FindPeopleSection from "../components/FindPeople/FindPeopleSection";
 import SocialFeedSection from "../components/FindPeople/SocialFeedSection";
+import StudyGroupsSection from "../components/FindPeople/StudyGroupsSection";
 
 export default function FindPeopleView({
   navigation: propNavigation,
@@ -15,60 +15,74 @@ export default function FindPeopleView({
   const themeColors = themeCtx?.themeColors ?? colors;
   const navigation = propNavigation || useNavigation();
 
+  // Profile press handler for children
+  const handleProfilePress = (closeModal) => {
+    if (typeof closeModal === "function") {
+      closeModal();
+    }
+    // Optional: Add navigation logic here
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: themeColors.white }}>
-      {/* Segmented control */}
+      {/* Minimalistic Pill Tab Bar */}
       <View
         style={{
           flexDirection: "row",
           marginTop: 24,
           marginBottom: 8,
           alignSelf: "center",
-          borderRadius: 10,
-          overflow: "hidden",
-          paddingHorizontal: 16,
+          backgroundColor: themeColors.gray + "22",
+          borderRadius: 24,
+          padding: 4,
+          width: 220,
         }}
       >
         <TouchableOpacity
-          onPress={() => setSelectedTab("findPeople")}
+          onPress={() => setSelectedTab("studyGroups")}
           style={{
             flex: 1,
-            paddingVertical: 10,
-            backgroundColor:
-              selectedTab === "findPeople"
-                ? themeColors.purple
-                : themeColors.white,
-            borderRadius: 10,
             alignItems: "center",
             justifyContent: "center",
+            paddingVertical: 0,
+            height: 36,
+            borderRadius: 20,
+            backgroundColor:
+              selectedTab === "studyGroups"
+                ? themeColors.purple
+                : "transparent",
+            marginLeft: 2,
           }}
         >
           <Text
             style={{
               color:
-                selectedTab === "findPeople"
+                selectedTab === "studyGroups"
                   ? themeColors.white
-                  : themeColors.purple,
+                  : themeColors.darkGray,
               fontWeight: "bold",
               fontSize: 16,
               fontFamily: "CarosSoft",
+              letterSpacing: 0.1,
+              textAlign: "center",
+              textAlignVertical: "center",
             }}
           >
-            Find People
+            Groups
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setSelectedTab("socialFeed")}
           style={{
             flex: 1,
-            paddingVertical: 10,
-            backgroundColor:
-              selectedTab === "socialFeed"
-                ? themeColors.purple
-                : themeColors.white,
-            borderRadius: 10,
             alignItems: "center",
             justifyContent: "center",
+            paddingVertical: 0,
+            height: 36,
+            borderRadius: 20,
+            backgroundColor:
+              selectedTab === "socialFeed" ? themeColors.purple : "transparent",
+            marginRight: 2,
           }}
         >
           <Text
@@ -76,21 +90,31 @@ export default function FindPeopleView({
               color:
                 selectedTab === "socialFeed"
                   ? themeColors.white
-                  : themeColors.purple,
+                  : themeColors.darkGray,
               fontWeight: "bold",
               fontSize: 16,
               fontFamily: "CarosSoft",
+              letterSpacing: 0.1,
+              textAlign: "center",
+              textAlignVertical: "center",
             }}
           >
             Feed
           </Text>
         </TouchableOpacity>
       </View>
-      {/* Render selected view */}
-      {selectedTab === "findPeople" ? (
-        <FindPeopleSection navigation={navigation} />
+
+      {/* Render selected section */}
+      {selectedTab === "socialFeed" ? (
+        <SocialFeedSection
+          navigation={navigation}
+          onProfilePress={handleProfilePress}
+        />
       ) : (
-        <SocialFeedSection navigation={navigation} />
+        <StudyGroupsSection
+          navigation={navigation}
+          onProfilePress={handleProfilePress}
+        />
       )}
     </View>
   );

@@ -26,6 +26,7 @@ import {
 import { ThemeContext } from "../App";
 import * as ImagePicker from "expo-image-picker";
 import { getLastUpdatedLabel } from "../utils/lastUpdatedLabel";
+import { onSnapshot, doc } from "firebase/firestore";
 
 // Hooks and components
 import { useProfileData } from "../hooks/useProfileData";
@@ -152,7 +153,11 @@ export default function ProfileScreen({ navigation, route }) {
         const userDoc = await getDoc(doc(db, "users", id));
         if (userDoc.exists()) {
           const d = userDoc.data();
-          users.push({ uid: id, name: `${d.firstName} ${d.lastName}`, profilePic: d.profilePic ?? null });
+          users.push({
+            uid: id,
+            name: `${d.firstName} ${d.lastName}`,
+            profilePic: d.profilePic ?? null,
+          });
         }
       }
       setUserList(users);
@@ -160,14 +165,63 @@ export default function ProfileScreen({ navigation, route }) {
     setListLoading(false);
   };
 
+  // --- Live update userList for Followers/Following Modal ---
+  const [followersUnsub, setFollowersUnsub] = useState(null);
+  const [followingUnsub, setFollowingUnsub] = useState(null);
+
   const openFollowers = async () => {
-    await fetchUserList(followers);
+    setListLoading(true);
+    // Unsubscribe previous listener if any
+    if (followersUnsub) followersUnsub();
+    const { db } = await import("../firebaseConfig");
+    const uid = targetUid || currentUserUid;
+    // Listen to changes in followers array
+    const unsub = onSnapshot(doc(db, "users", uid), async (userDoc) => {
+      if (userDoc.exists()) {
+        const updatedFollowers = userDoc.data().followers || [];
+        await fetchUserList(updatedFollowers);
+      } else {
+        setUserList([]);
+      }
+      setListLoading(false);
+    });
+    setFollowersUnsub(() => unsub);
     setShowFollowersModal(true);
   };
+
   const openFollowing = async () => {
-    await fetchUserList(following);
+    setListLoading(true);
+    // Unsubscribe previous listener if any
+    if (followingUnsub) followingUnsub();
+    const { db } = await import("../firebaseConfig");
+    const uid = targetUid || currentUserUid;
+    // Listen to changes in following array
+    const unsub = onSnapshot(doc(db, "users", uid), async (userDoc) => {
+      if (userDoc.exists()) {
+        const updatedFollowing = userDoc.data().following || [];
+        await fetchUserList(updatedFollowing);
+      } else {
+        setUserList([]);
+      }
+      setListLoading(false);
+    });
+    setFollowingUnsub(() => unsub);
     setShowFollowingModal(true);
   };
+
+  // Clean up snapshot listeners when modals close
+  React.useEffect(() => {
+    if (!showFollowersModal && followersUnsub) {
+      followersUnsub();
+      setFollowersUnsub(null);
+    }
+  }, [showFollowersModal]);
+  React.useEffect(() => {
+    if (!showFollowingModal && followingUnsub) {
+      followingUnsub();
+      setFollowingUnsub(null);
+    }
+  }, [showFollowingModal]);
 
   // Unfollow handler for modal
   const handleUnfollowFromModal = async (uid) => {
@@ -199,30 +253,33 @@ export default function ProfileScreen({ navigation, route }) {
 
   // remove follower handler
   const handleRemoveFollower = async (uid) => {
-  setListLoading(true);
-  try {
-    const { db, auth } = await import("../firebaseConfig");
-    const { updateDoc, arrayRemove, doc, getDoc } = await import("firebase/firestore");
-    const user = auth.currentUser;
-    if (!user || !uid || user.uid === uid) return;
-    // Remove follower from your followers
-    await updateDoc(doc(db, "users", user.uid), {
-      followers: arrayRemove(uid),
-    });
-    // Remove yourself from their following
-    await updateDoc(doc(db, "users", uid), {
-      following: arrayRemove(user.uid),
-    });
-    setUserList((prev) => prev.filter((u) => u.uid !== uid));
-    // Optionally refresh followers list
-    const userDoc = await getDoc(doc(db, "users", user.uid));
-    if (userDoc.exists()) {
-      const updatedFollowers = userDoc.data().followers || [];
-      await fetchUserList(updatedFollowers);
+    setListLoading(true);
+    try {
+      const { db, auth } = await import("../firebaseConfig");
+      const { updateDoc, arrayRemove, doc, getDoc } = await import(
+        "firebase/firestore"
+      );
+      const user = auth.currentUser;
+      if (!user || !uid || user.uid === uid) return;
+      // Remove follower from your followers
+      await updateDoc(doc(db, "users", user.uid), {
+        followers: arrayRemove(uid),
+      });
+      // Remove yourself from their following
+      await updateDoc(doc(db, "users", uid), {
+        following: arrayRemove(user.uid),
+      });
+      setUserList((prev) => prev.filter((u) => u.uid !== uid));
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (userDoc.exists()) {
+        const updatedFollowers = userDoc.data().followers || [];
+        await fetchUserList(updatedFollowers);
+      }
+    } catch (e) {
+      console.log(e);
     }
-  } catch {}
-  setListLoading(false);
-};
+    setListLoading(false);
+  };
 
   // --- New: Unfollow confirmation for main profile button ---
   const handleUnfollowButton = () => {
@@ -574,12 +631,12 @@ export default function ProfileScreen({ navigation, route }) {
                       themeColors={themeColors}
                       getLastUpdatedLabel={getLastUpdatedLabel}
                       onPress={() =>
-                        navigation.navigate("SpotDetail", {spotId: item.id,})
+                        navigation.navigate("SpotDetail", { spotId: item.id })
                       }
                       style={{ marginRight: 12, width: 200 }}
                     />
-              )}
-              />
+                  )}
+                />
               )}
             </View>
           )}
@@ -675,7 +732,7 @@ export default function ProfileScreen({ navigation, route }) {
       <FollowersModal
         visible={showFollowersModal}
         onClose={() => setShowFollowersModal(false)}
-        userList={userList} 
+        userList={userList}
         listLoading={listLoading}
         navigation={navigation}
         themeColors={themeColors}

@@ -571,14 +571,16 @@ export function FocusTimerView({ navigation }) {
 
   // When timer ends (Pomodoro or break complete)
   const handleSessionEnd = async () => {
+    if (sessionEndedRef.current) return; // Prevent double execution
+    sessionEndedRef.current = true;
     setIsRunning(false);
     timerStartRef.current = null;
     await clearTimerState();
 
     if (sessionStart) {
       if (!isBreak) {
-        // Always use workTimeSetting * 60 - timer for elapsedSeconds
-        const elapsedSeconds = workTimeSetting * 60 - timer;
+        // Always use full Pomodoro duration for completed sessions
+        const elapsedSeconds = workTimeSetting * 60;
         const sessionEnd = new Timestamp(
           sessionStart.seconds !== undefined
             ? sessionStart.seconds + elapsedSeconds
@@ -601,7 +603,7 @@ export function FocusTimerView({ navigation }) {
             isBreak,
             "",
             false,
-            elapsedSeconds
+            elapsedSeconds // <-- always use full duration here
           );
           setSessionNote("");
           setPendingSession(null);
@@ -974,7 +976,7 @@ export function FocusTimerView({ navigation }) {
               } else {
                 setIsRunning(false);
                 timerStartRef.current = null;
-                if (newTime === 0) {
+                if (newTime === 0 && !sessionEndedRef.current) {
                   timerEndedOnFocusRef.current = true; // <-- defer session end
                 }
               }
@@ -1068,37 +1070,6 @@ export function FocusTimerView({ navigation }) {
               });
 
               await removeSessionFromGoal(session.sessionId, session.duration);
-
-              // Archive modal UI update (move here, after confirmation)
-              if (archiveContext) {
-                const { year, month, spotId: archiveSpotId } = archiveContext;
-                setArchiveData((prev) => {
-                  const newData = JSON.parse(JSON.stringify(prev));
-                  try {
-                    if (
-                      newData[year] &&
-                      newData[year][month] &&
-                      newData[year][month][archiveSpotId]
-                    ) {
-                      newData[year][month][archiveSpotId] = newData[year][
-                        month
-                      ][archiveSpotId].filter(
-                        (sess) => sess.sessionId !== session.sessionId
-                      );
-                      if (newData[year][month][archiveSpotId].length === 0) {
-                        delete newData[year][month][archiveSpotId];
-                      }
-                      if (Object.keys(newData[year][month]).length === 0) {
-                        delete newData[year][month];
-                      }
-                      if (Object.keys(newData[year]).length === 0) {
-                        delete newData[year];
-                      }
-                    }
-                  } catch {}
-                  return newData;
-                });
-              }
             } catch (e) {
               Alert.alert("Error", `Failed to delete session: ${e.message}`);
             }
@@ -1110,11 +1081,13 @@ export function FocusTimerView({ navigation }) {
 
   // Add this ref at the top-level of the component
   const timerEndedOnFocusRef = useRef(false);
+  // Add this ref to track if session end has already been handled
+  const sessionEndedRef = useRef(false);
 
-  // After all state declarations, add this effect:
+  // Add this effect to handle session end on focus
   useEffect(() => {
     if (timerEndedOnFocusRef.current && sessionStart) {
-      timerEndedOnFocusRef.current = false;
+      timerEndedOnFocusRef.current = false; // Clear the flag immediately
       handleSessionEnd();
     }
   }, [sessionStart]);
