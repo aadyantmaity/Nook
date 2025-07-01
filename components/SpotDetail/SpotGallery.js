@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,57 +10,60 @@ import {
   Modal,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
+} from "firebase/storage";
+import {
+  collection,
+  addDoc,
+  onSnapshot,
+  doc,
+  deleteDoc,
+  getDocs,
+  query,
+  orderBy,
+} from "firebase/firestore";
 import { db } from "../../firebaseConfig";
-import { Plus } from "phosphor-react-native";
-import { getAuth } from "firebase/auth"; // Add this import
-import { Timestamp } from "firebase/firestore";
-import { Trash } from "phosphor-react-native"; // Import Trash icon
+import { Plus, Trash } from "phosphor-react-native";
+import { getAuth } from "firebase/auth";
 
 export default function SpotGallery({
   spotId,
-  galleryImages,
-  setSpot,
   themeColors,
-  imageStyle, // <-- add imageStyle prop
-  style, // <-- add style prop
+  imageStyle,
+  style,
 }) {
   const [isUploading, setIsUploading] = useState(false);
-  // Store images as array of objects: { url, author, createdAt }
-  const [images, setImages] = useState(
-    Array.isArray(galleryImages)
-      ? galleryImages.map((img) =>
-          typeof img === "string"
-            ? { url: img, author: null, createdAt: null }
-            : img
-        )
-      : []
-  );
-  // Modal state for image details
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [images, setImages] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const auth = getAuth();
   const user = auth.currentUser;
 
-  // Update images if prop changes
-  React.useEffect(() => {
-    setImages(
-      Array.isArray(galleryImages)
-        ? galleryImages.map((img) =>
-            typeof img === "string"
-              ? { url: img, author: null, createdAt: null }
-              : img
-          )
-        : []
-    );
-  }, [galleryImages]);
+  // Fetch gallery images from subcollection
+  useEffect(() => {
+    if (!spotId) return;
+    const imagesRef = collection(db, "galleryImages", spotId, "images");
+    // Order by createdAt descending
+    const q = query(imagesRef, orderBy("createdAt", "desc"));
+    const unsub = onSnapshot(q, (snap) => {
+      const arr = [];
+      snap.forEach((doc) => {
+        arr.push({ id: doc.id, ...doc.data() });
+      });
+      setImages(arr);
+    });
+    return () => unsub();
+  }, [spotId]);
 
+  // Upload image to subcollection
   const handleAddGalleryImage = async () => {
     try {
-      // Ensure user is authenticated
-      const auth = getAuth();
-      const user = auth.currentUser;
       if (!user) {
         Alert.alert("Error", "You must be signed in to upload images.");
         return;
@@ -70,7 +73,6 @@ export default function SpotGallery({
         return;
       }
       setIsUploading(true);
-      // Use the correct ImagePicker API for Expo SDK 48+
       let result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -91,100 +93,66 @@ export default function SpotGallery({
       const storageRef = ref(storage, `spot_galleries/${spotId}/${filename}`);
       await uploadBytes(storageRef, blob, { contentType: "image/jpeg" });
       const downloadUrl = await getDownloadURL(storageRef);
-      // Prepare gallery image object
-      const galleryImageObj = {
+      // Add to Firestore subcollection
+      const imagesRef = collection(db, "galleryImages", spotId, "images");
+      await addDoc(imagesRef, {
         url: downloadUrl,
-        author: {
-          uid: user.uid,
-          name: user.displayName || user.email || "Unknown",
-        },
-        createdAt: Timestamp.now(), // Use Firestore Timestamp
-      };
-      // Update Firestore
-      const spotRef = doc(db, "studySpots", spotId);
-      await updateDoc(spotRef, {
-        galleryImages: arrayUnion(galleryImageObj),
+        authorId: user.uid,
+        authorName: user.displayName || user.email || "Unknown",
+        createdAt: Date.now(),
+        storagePath: `spot_galleries/${spotId}/${filename}`,
       });
-      setImages((prev) => [...prev, galleryImageObj]);
-      if (setSpot) {
-        setSpot((prev) => ({
-          ...prev,
-          galleryImages: [...(prev.galleryImages || []), galleryImageObj],
-        }));
-      }
       setIsUploading(false);
     } catch (e) {
       setIsUploading(false);
-      console.error("Gallery image upload error:", e); // Add error logging
+      console.error("Gallery image upload error:", e);
       Alert.alert("Error", "Failed to upload image.");
     }
   };
 
-  // Delete gallery image
+  // Delete image from subcollection and storage
   const handleDeleteGalleryImage = async (imgObj) => {
-    if (!user || !spotId) return;
-    try {
-      setIsUploading(true);
-      // Ensure createdAt is a Firestore Timestamp for comparison
-      const deleteObj = {
-        ...imgObj,
-        createdAt:
-          typeof imgObj.createdAt === "object" && imgObj.createdAt.seconds
-            ? new Timestamp(
-                imgObj.createdAt.seconds,
-                imgObj.createdAt.nanoseconds
-              )
-            : Timestamp.fromDate(new Date(imgObj.createdAt)),
-      };
-      const spotRef = doc(db, "studySpots", spotId);
-      await updateDoc(spotRef, {
-        galleryImages: arrayRemove(deleteObj),
-      });
-      setImages((prev) => prev.filter((img) => img.url !== imgObj.url));
-      if (setSpot) {
-        setSpot((prev) => ({
-          ...prev,
-          galleryImages: (prev.galleryImages || []).filter(
-            (img) => (img.url || img) !== imgObj.url
-          ),
-        }));
-      }
-      setShowModal(false);
-      setIsUploading(false);
-    } catch (e) {
-      setIsUploading(false);
-      Alert.alert("Error", "Failed to delete image.");
-    }
+    if (!user || !imgObj || imgObj.authorId !== user.uid) return;
+    Alert.alert("Delete Image", "Are you sure you want to delete this image?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            setIsDeleting(true);
+            // Delete Firestore doc
+            const imgDocRef = doc(
+              db,
+              "galleryImages",
+              spotId,
+              "images",
+              imgObj.id
+            );
+            await deleteDoc(imgDocRef);
+            // Delete from Storage
+            if (imgObj.storagePath) {
+              try {
+                const storage = getStorage();
+                const fileRef = ref(storage, imgObj.storagePath);
+                await deleteObject(fileRef);
+              } catch (_) {}
+            }
+            setShowModal(false);
+          } catch (e) {
+            console.error("Gallery image delete error:", e);
+            Alert.alert("Error", "Failed to delete image.");
+          } finally {
+            setIsDeleting(false);
+          }
+        },
+      },
+    ]);
   };
-
-  if (!spotId) return null;
 
   // Helper to format timestamp
   function formatTimestamp(ts) {
     if (!ts) return "";
-    // Firestore Timestamp object
-    if (typeof ts === "object" && ts !== null) {
-      if (typeof ts.toDate === "function") {
-        return ts.toDate().toLocaleString([], {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-      }
-      // Plain object with seconds/nanoseconds
-      if (typeof ts.seconds === "number") {
-        return new Date(ts.seconds * 1000).toLocaleString([], {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-      }
-    }
-    // String or number
     const d = new Date(ts);
     if (isNaN(d.getTime())) return "";
     return d.toLocaleString([], {
@@ -195,6 +163,8 @@ export default function SpotGallery({
       minute: "2-digit",
     });
   }
+
+  if (!spotId) return null;
 
   return (
     <View style={[{ marginTop: -16 }, style]}>
@@ -217,51 +187,32 @@ export default function SpotGallery({
             style={{
               backgroundColor: themeColors.white,
               borderRadius: 12,
-              padding: 20,
+              paddingHorizontal: 20,
+              paddingVertical: 16,
               alignItems: "center",
               maxWidth: 420,
               width: "90%",
               position: "relative",
             }}
           >
-            {/* Trash can button in top right */}
-            {selectedImage &&
-              user &&
-              selectedImage.author?.uid === user.uid && (
-                <TouchableOpacity
-                  onPress={() =>
-                    Alert.alert(
-                      "Delete Image",
-                      "Are you sure you want to delete this image?",
-                      [
-                        { text: "Cancel", style: "cancel" },
-                        {
-                          text: "Delete",
-                          style: "destructive",
-                          onPress: () =>
-                            handleDeleteGalleryImage(selectedImage),
-                        },
-                      ]
-                    )
-                  }
-                  style={{
-                    position: "absolute",
-                    top: 12,
-                    right: 12,
-                    zIndex: 10,
-                    backgroundColor: themeColors.red || "#e74c3c",
-                    borderRadius: 12,
-                    padding: 8,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    opacity: isUploading ? 0.6 : 1,
-                  }}
-                  disabled={isUploading}
-                  accessibilityLabel="Delete image"
-                >
-                  <Trash size={22} color={themeColors.white} weight="bold" />
-                </TouchableOpacity>
-              )}
+            {/* Trash can button with delete logic */}
+            {selectedImage && user && selectedImage.authorId === user.uid && (
+              <TouchableOpacity
+                onPress={() => handleDeleteGalleryImage(selectedImage)}
+                style={{
+                  marginBottom: 15,
+                  alignSelf: "flex-end",
+                  borderRadius: 12,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: isDeleting ? 0.5 : 1,
+                }}
+                accessibilityLabel="Delete image"
+                disabled={isDeleting}
+              >
+                <Trash size={22} color={themeColors.red} weight="bold" />
+              </TouchableOpacity>
+            )}
             {selectedImage && (
               <>
                 <Image
@@ -282,7 +233,7 @@ export default function SpotGallery({
                     fontFamily: "CarosSoft",
                   }}
                 >
-                  Added by: {selectedImage.author?.name || "Unknown"}
+                  Added by: {selectedImage.authorName || "Unknown"}
                 </Text>
                 <Text
                   style={{
@@ -361,14 +312,14 @@ export default function SpotGallery({
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{
-            minHeight: 120, // match preview height
+            minHeight: 120,
             alignItems: "center",
           }}
           paddingVertical={8}
         >
-          {images.map((img, idx) => (
+          {images.map((img) => (
             <TouchableOpacity
-              key={idx}
+              key={img.id}
               onPress={() => {
                 setSelectedImage(img);
                 setShowModal(true);
@@ -377,8 +328,8 @@ export default function SpotGallery({
             >
               <View
                 style={{
-                  width: 200, // match preview width
-                  height: 120, // match preview height
+                  width: 200,
+                  height: 120,
                   borderRadius: 8,
                   overflow: "hidden",
                   marginRight: 10,
@@ -388,7 +339,7 @@ export default function SpotGallery({
                 }}
               >
                 <Image
-                  source={{ uri: img.url || img }}
+                  source={{ uri: img.url }}
                   style={{
                     width: "100%",
                     height: "100%",

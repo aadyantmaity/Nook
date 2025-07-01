@@ -65,6 +65,7 @@ import TabBar from "../components/Home/TabBar"; // Import TabBar component
 import GeneralReportModal from "../components/Home/GeneralReportModal"; // Import GeneralReportModal component
 import HomeLoadingScreen from "../components/Home/HomeLoadingScreen"; // <-- Import the new component
 import ProfilePicture from "../components/Profile/ProfilePicture";
+import FindPeopleSection from "../components/FindPeople/FindPeopleSection"; // <-- import FindPeopleSection
 
 //hook imports
 import useStudySpots from "../hooks/useStudySpots";
@@ -93,9 +94,18 @@ export default function HomeScreen({ navigation, route }) {
   const [showAlertsModal, setShowAlertsModal] = useState(false);
   const [currentAlerts, setCurrentAlerts] = useState([]);
   const [showMapView, setShowMapView] = useState(false);
+  const [hamburgerOpen, setHamburgerOpen] = useState(false);
+  const [findPeopleModalVisible, setFindPeopleModalVisible] = useState(false); // <-- add modal state
 
   // Social tab selectedTab state
-  const [socialSelectedTab, setSocialSelectedTab] = useState("findPeople");
+  const [socialSelectedTab, setSocialSelectedTab] = useState("socialFeed");
+
+  // Reset socialSelectedTab to "socialFeed" whenever Community tab is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      setSocialSelectedTab("studyGroups");
+    }, [])
+  );
 
   // Hooks
   const { studySpots, isLoading, fetchStudySpots } = useStudySpots();
@@ -212,8 +222,6 @@ export default function HomeScreen({ navigation, route }) {
                 backgroundColor: !showMapView
                   ? themeColors.purple
                   : themeColors.white,
-                borderWidth: 1.5,
-                borderColor: themeColors.purple,
                 padding: 10,
                 borderRadius: 8,
                 marginRight: 8,
@@ -235,8 +243,6 @@ export default function HomeScreen({ navigation, route }) {
                 backgroundColor: showMapView
                   ? themeColors.purple
                   : themeColors.white,
-                borderWidth: 1.5,
-                borderColor: themeColors.purple,
                 padding: 10,
                 borderRadius: 8,
                 minWidth: 48,
@@ -503,7 +509,7 @@ export default function HomeScreen({ navigation, route }) {
   // Determine loading message based on navigation params
   let loadingMessage;
   if (route?.params?.refresh) {
-    loadingMessage = "Fetching your nooks...";
+    loadingMessage = "Fetching your Nooks...";
   }
 
   // Show loading screen immediately if refreshing from home page
@@ -591,6 +597,7 @@ export default function HomeScreen({ navigation, route }) {
             }}
             isDarkMode={isDarkMode}
             themeColors={themeColors}
+            onAddFriend={() => setFindPeopleModalVisible(true)} // <-- pass handler
           />
         </View>
 
@@ -627,6 +634,68 @@ export default function HomeScreen({ navigation, route }) {
           alerts={currentAlerts}
           themeColors={themeColors}
         />
+        {/* Find People Modal */}
+        <Modal
+          visible={findPeopleModalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setFindPeopleModalVisible(false)}
+        >
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.3)",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: themeColors.white,
+                borderRadius: 16,
+                padding: 0,
+                width: "95%",
+                maxHeight: "90%",
+                alignItems: "center",
+                borderWidth: 1,
+                borderColor: themeColors.black,
+                shadowColor: themeColors.black,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+                elevation: 5,
+              }}
+            >
+              <FindPeopleSection
+                navigation={navigation}
+                onNavigateToProfile={() => setFindPeopleModalVisible(false)}
+              />
+              <TouchableOpacity
+                onPress={() => setFindPeopleModalVisible(false)}
+                style={{
+                  marginTop: 8,
+                  backgroundColor: themeColors.purple,
+                  borderRadius: 8,
+                  paddingVertical: 10,
+                  alignItems: "center",
+                  width: "90%",
+                  alignSelf: "center",
+                  marginBottom: 12,
+                }}
+              >
+                <Text
+                  style={{
+                    color: themeColors.white,
+                    fontWeight: "bold",
+                    fontFamily: "CarosSoft",
+                  }}
+                >
+                  Close
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </View>
     </View>
   );

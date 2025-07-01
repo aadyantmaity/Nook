@@ -251,7 +251,7 @@ export default function EditSpotScreen({ navigation, route }) {
       setIsLoading(true);
       const user = auth.currentUser;
       if (!user) {
-        alert("You must be signed in to edit a nook.");
+        alert("You must be signed in to edit a Nook.");
         setIsLoading(false);
         return;
       }
@@ -359,6 +359,7 @@ export default function EditSpotScreen({ navigation, route }) {
           backgroundColor: themeColors.white,
         }}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         <View
           style={{ flex: 1, padding: 16, backgroundColor: themeColors.white }}
@@ -375,7 +376,6 @@ export default function EditSpotScreen({ navigation, route }) {
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                padding: 10,
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.2,
@@ -597,15 +597,20 @@ export default function EditSpotScreen({ navigation, route }) {
               Husky Card Needed:
             </Text>
             <View
-              style={{ flexDirection: "row", justifyContent: "space-between" }}
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                gap: 8,
+              }}
             >
               <TouchableOpacity
                 onPress={() => setHuskyCardNeeded(false)}
                 style={{
                   flex: 1,
                   alignItems: "center",
-                  padding: 12,
-                  marginRight: 8,
+                  paddingVertical: 8,
+                  paddingHorizontal: 0,
+                  marginRight: 4,
                   backgroundColor: !huskyCardNeeded
                     ? themeColors.purple
                     : themeColors.white,
@@ -620,6 +625,7 @@ export default function EditSpotScreen({ navigation, route }) {
                       ? themeColors.white
                       : themeColors.purple,
                     fontFamily: "CarosSoft",
+                    fontSize: 15,
                   }}
                 >
                   No
@@ -630,8 +636,9 @@ export default function EditSpotScreen({ navigation, route }) {
                 style={{
                   flex: 1,
                   alignItems: "center",
-                  padding: 12,
-                  marginLeft: 8,
+                  paddingVertical: 10,
+                  paddingHorizontal: 0,
+                  marginLeft: 4,
                   backgroundColor: huskyCardNeeded
                     ? themeColors.purple
                     : themeColors.white,
@@ -646,6 +653,7 @@ export default function EditSpotScreen({ navigation, route }) {
                       ? themeColors.white
                       : themeColors.purple,
                     fontFamily: "CarosSoft",
+                    fontSize: 15,
                   }}
                 >
                   Yes
@@ -667,6 +675,7 @@ export default function EditSpotScreen({ navigation, route }) {
                 marginBottom: 16,
                 backgroundColor: themeColors.white,
                 color: themeColors.purple,
+                fontFamily: "CarosSoft",
               }}
             />
           )}
@@ -781,21 +790,20 @@ export default function EditSpotScreen({ navigation, route }) {
             <TouchableOpacity
               onPress={resetForm}
               style={{
-                flex: 1,
-                maxWidth: "35%",
-                flexDirection: "row",
+                flex: 0.25,
+                backgroundColor: themeColors.white,
+                borderColor: themeColors.purple,
+                borderWidth: 1,
+                borderRadius: 8,
+                paddingVertical: 10,
                 alignItems: "center",
                 justifyContent: "center",
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                backgroundColor: colors.red,
-                borderRadius: 25,
-                marginRight: 12,
+                marginRight: 8,
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
+                shadowOpacity: 0.08,
                 shadowRadius: 4,
-                elevation: 3,
+                elevation: 2,
                 minWidth: 90,
               }}
               accessibilityLabel="Reset Form"
@@ -803,12 +811,12 @@ export default function EditSpotScreen({ navigation, route }) {
             >
               <Text
                 style={{
-                  color: "white",
+                  color: themeColors.purple,
                   fontWeight: "bold",
-                  fontSize: 13,
+                  fontSize: 16,
                   textAlign: "center",
-                  flex: 1,
                   fontFamily: "CarosSoft",
+                  letterSpacing: 0.1,
                 }}
               >
                 Reset
@@ -817,37 +825,31 @@ export default function EditSpotScreen({ navigation, route }) {
             <TouchableOpacity
               onPress={() => handleEdit(spotId)}
               style={{
-                flex: 1,
-                maxWidth: "35%",
-                flexDirection: "row",
+                flex: 0.25,
+                backgroundColor: themeColors.purple,
+                borderRadius: 8,
+                paddingVertical: 10,
                 alignItems: "center",
                 justifyContent: "center",
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                backgroundColor: colors.green,
-                borderRadius: 25,
-                marginLeft: 12,
+                marginLeft: 8,
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
+                shadowOpacity: 0.08,
                 shadowRadius: 4,
-                alignSelf: "center",
-                elevation: 3,
+                elevation: 2,
                 minWidth: 90,
               }}
               accessibilityLabel="Finish"
               accessible={true}
             >
-              <Check size={20} color="white" />
               <Text
                 style={{
-                  marginLeft: 8,
                   color: "white",
                   fontWeight: "bold",
-                  fontSize: 13,
+                  fontSize: 16,
                   textAlign: "center",
-                  flex: 1,
                   fontFamily: "CarosSoft",
+                  letterSpacing: 0.1,
                 }}
               >
                 Finish

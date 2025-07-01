@@ -1,6 +1,12 @@
 import React from "react";
 import { Modal, View, TouchableOpacity, Text } from "react-native";
-import { ExclamationMark, Sun, Moon, User } from "phosphor-react-native";
+import {
+  ExclamationMark,
+  Sun,
+  Moon,
+  User,
+  UserPlus,
+} from "phosphor-react-native";
 
 export default function HamburgerMenu({
   isOpen,
@@ -10,6 +16,7 @@ export default function HamburgerMenu({
   onProfilePress,
   isDarkMode,
   themeColors,
+  onAddFriend,
 }) {
   return (
     <Modal
@@ -46,11 +53,11 @@ export default function HamburgerMenu({
             zIndex: 1000,
           }}
         >
-          {/* Report */}
+          {/* Profile */}
           <TouchableOpacity
             onPress={() => {
               onClose();
-              setTimeout(onReportPress, 150);
+              setTimeout(onProfilePress, 150);
             }}
             style={{
               flexDirection: "row",
@@ -59,11 +66,7 @@ export default function HamburgerMenu({
               paddingHorizontal: 20,
             }}
           >
-            <ExclamationMark
-              size={22}
-              color={themeColors.purple}
-              weight="bold"
-            />
+            <User size={20} color={themeColors.purple} weight="bold" />
             <Text
               style={{
                 marginLeft: 12,
@@ -73,9 +76,44 @@ export default function HamburgerMenu({
                 fontFamily: "CarosSoft",
               }}
             >
-              Suggestion / Report
+              Profile
             </Text>
           </TouchableOpacity>
+          {/* Divider */}
+          <View
+            style={{
+              height: 1,
+              backgroundColor: themeColors.lightGrayBorder || "#eee",
+              marginHorizontal: 10,
+            }}
+          />
+          {/* Add Friend */}
+          <TouchableOpacity
+            onPress={() => {
+              onClose();
+              setTimeout(onAddFriend, 150);
+            }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingVertical: 12,
+              paddingHorizontal: 20,
+            }}
+          >
+            <UserPlus size={20} color={themeColors.purple} weight="bold" />
+            <Text
+              style={{
+                marginLeft: 12,
+                color: themeColors.purple,
+                fontWeight: "bold",
+                fontSize: 16,
+                fontFamily: "CarosSoft",
+              }}
+            >
+              Add Friend
+            </Text>
+          </TouchableOpacity>
+
           {/* Divider */}
           <View
             style={{
@@ -122,11 +160,11 @@ export default function HamburgerMenu({
               marginHorizontal: 10,
             }}
           />
-          {/* Profile */}
+          {/* Report */}
           <TouchableOpacity
             onPress={() => {
               onClose();
-              setTimeout(onProfilePress, 150);
+              setTimeout(onReportPress, 150);
             }}
             style={{
               flexDirection: "row",
@@ -135,7 +173,11 @@ export default function HamburgerMenu({
               paddingHorizontal: 20,
             }}
           >
-            <User size={20} color={themeColors.purple} weight="bold" />
+            <ExclamationMark
+              size={22}
+              color={themeColors.purple}
+              weight="bold"
+            />
             <Text
               style={{
                 marginLeft: 12,
@@ -145,7 +187,7 @@ export default function HamburgerMenu({
                 fontFamily: "CarosSoft",
               }}
             >
-              Profile
+              Suggestion / Report
             </Text>
           </TouchableOpacity>
         </View>

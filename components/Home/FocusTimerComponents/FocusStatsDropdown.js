@@ -248,7 +248,6 @@ export function FocusStatsDropdown({
                                     marginLeft: 8,
                                     padding: 4,
                                     borderRadius: 6,
-                                    backgroundColor: themeColors.red,
                                     alignItems: "center",
                                     justifyContent: "center",
                                   }}
@@ -256,7 +255,7 @@ export function FocusStatsDropdown({
                                 >
                                   <Trash
                                     size={18}
-                                    color={themeColors.white}
+                                    color={themeColors.red}
                                     weight="bold"
                                   />
                                 </TouchableOpacity>
