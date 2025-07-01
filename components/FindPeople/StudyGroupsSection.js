@@ -32,12 +32,17 @@ function getMutualFriends(users, currentUser) {
   if (!currentUser) return [];
   const me = users.find((u) => u.uid === currentUser.uid);
   if (!me) return [];
+  // Only show users who are mutual friends (both follow each other)
   return users.filter(
     (u) =>
       u.uid !== currentUser.uid &&
       Array.isArray(me.following) &&
+      Array.isArray(me.followers) &&
+      Array.isArray(u.following) &&
       Array.isArray(u.followers) &&
       me.following.includes(u.uid) &&
+      me.followers.includes(u.uid) &&
+      u.following.includes(currentUser.uid) &&
       u.followers.includes(currentUser.uid)
   );
 }
