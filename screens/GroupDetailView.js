@@ -50,6 +50,8 @@ export default function GroupDetailView({ navigation, route }) {
   const [shareLoading, setShareLoading] = useState(false);
   const [userCache, setUserCache] = useState({});
   const flatListRef = useRef();
+  const unsubGroupRef = useRef(null);
+  const unsubMessagesRef = useRef(null);
 
   // Fetch group info
   useEffect(() => {
@@ -74,7 +76,13 @@ export default function GroupDetailView({ navigation, route }) {
         });
       }
     );
-    return () => unsub();
+    unsubGroupRef.current = unsub;
+    return () => {
+      if (unsubGroupRef.current) {
+        unsubGroupRef.current();
+        unsubGroupRef.current = null;
+      }
+    };
   }, [groupId]);
 
   // Fetch messages (subcollection "messages" under group)
@@ -109,13 +117,17 @@ export default function GroupDetailView({ navigation, route }) {
           setLoading(false);
         }
       );
+      unsubMessagesRef.current = unsub;
     } catch {
       setMessages([]);
       setLoading(false);
     }
     return () => {
       isActive = false;
-      unsub && unsub();
+      if (unsubMessagesRef.current) {
+        unsubMessagesRef.current();
+        unsubMessagesRef.current = null;
+      }
     };
   }, [groupId]);
 
@@ -249,6 +261,15 @@ export default function GroupDetailView({ navigation, route }) {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
+            // Unsubscribe from all listeners before deleting
+            if (unsubGroupRef.current) {
+              unsubGroupRef.current();
+              unsubGroupRef.current = null;
+            }
+            if (unsubMessagesRef.current) {
+              unsubMessagesRef.current();
+              unsubMessagesRef.current = null;
+            }
             try {
               await deleteDoc(doc(db, "studyGroups", groupId));
               // Navigate to Community tab, Groups subtab

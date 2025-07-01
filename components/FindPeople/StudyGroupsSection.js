@@ -215,7 +215,10 @@ export default function StudyGroupsSection({ navigation }) {
             >
               Add Friends
             </Text>
-            <ScrollView style={{ width: "100%", maxHeight: 120 }}>
+            <ScrollView
+              style={{ width: "100%", maxHeight: 120 }}
+              showsVerticalScrollIndicator={false}
+            >
               {mutualFriends.length === 0 ? (
                 <Text
                   style={{
