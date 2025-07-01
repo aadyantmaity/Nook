@@ -8,6 +8,7 @@ import LoginScreen from "./screens/LoginScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import EditSpotScreen from "./screens/EditSpotScreen";
+import VerificationScreen from "./screens/VerificationScreen";
 import { auth } from "./firebaseConfig";
 import { Appearance } from "react-native";
 import { colors, getThemeColors } from "./constants/colors";
@@ -41,7 +42,8 @@ const linking = {
 };
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isEmailVerified, setIsEmailVerified] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(
     Appearance.getColorScheme() === "dark"
   );
@@ -60,13 +62,19 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setIsAuthenticated(!!user);
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      setCurrentUser(user);
+      if (user) {
+        await user.reload();
+        setIsEmailVerified(user.emailVerified);
+      } else {
+        setIsEmailVerified(null);
+      }
     });
     return unsubscribe;
   }, []);
 
-  if (!fontsLoaded || isAuthenticated === null) {
+  if (!fontsLoaded || isEmailVerified === null) {
     return <AppLoading />;
   }
 
@@ -87,6 +95,7 @@ export default function App() {
       <Stack.Screen name="AddSpot" component={AddSpotScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="EditSpot" component={EditSpotScreen} />
+      <Stack.Screen name="Verification" component={VerificationScreen} />
       <Stack.Screen
         name="FindPeopleView"
         component={require("./screens/FindPeopleView").default}
@@ -97,7 +106,13 @@ export default function App() {
   return (
     <ThemeContext.Provider value={{ isDarkMode, setIsDarkMode, themeColors }}>
       <NavigationContainer linking={linking}>
-        {isAuthenticated ? <MainStack /> : <AuthStack />}
+        {!currentUser ? (
+          <AuthStack />
+        ) : !isEmailVerified ? (
+          <VerificationScreen />
+        ) : (
+          <MainStack />
+        )}
       </NavigationContainer>
     </ThemeContext.Provider>
   );
