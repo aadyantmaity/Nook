@@ -11,6 +11,7 @@ import EditSpotScreen from "./screens/EditSpotScreen";
 import { auth } from "./firebaseConfig";
 import { Appearance } from "react-native";
 import { colors, getThemeColors } from "./constants/colors";
+import VerificationScreen from "./screens/VerificationScreen";
 import * as Linking from "expo-linking";
 import * as Font from "expo-font";
 import AppLoading from "expo-app-loading"; // Show while fonts are loading
@@ -49,6 +50,8 @@ export default function App() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
   const themeColors = getThemeColors(isDarkMode);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isEmailVerified, setIsEmailVerified] = useState(null);
 
   useEffect(() => {
     const loadFonts = async () => {
@@ -61,13 +64,19 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setIsAuthenticated(!!user);
+        const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      setCurrentUser(user);
+      if (user) {
+        await user.reload();
+        setIsEmailVerified(user.emailVerified);
+      } else {
+        setIsEmailVerified(null);
+      }
     });
     return unsubscribe;
   }, []);
 
-  if (!fontsLoaded || isAuthenticated === null) {
+  if (!fontsLoaded || isEmailVerified === null) {
     return <AppLoading />;
   }
 
@@ -89,13 +98,20 @@ export default function App() {
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="EditSpot" component={EditSpotScreen} />
       <Stack.Screen name="GroupDetail" component={GroupDetailView} />
+      <Stack.Screen name="Verification" component={VerificationScreen} />
     </Stack.Navigator>
   );
 
   return (
     <ThemeContext.Provider value={{ isDarkMode, setIsDarkMode, themeColors }}>
       <NavigationContainer linking={linking}>
-        {isAuthenticated ? <MainStack /> : <AuthStack />}
+        {!currentUser ? (
+          <AuthStack />
+        ) : !isEmailVerified ? (
+          <VerificationScreen />
+        ) : (
+          <MainStack />
+        )}
       </NavigationContainer>
     </ThemeContext.Provider>
   );
