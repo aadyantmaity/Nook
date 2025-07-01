@@ -100,13 +100,13 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
           canSee = false;
         } else if (post.uid !== auth.currentUser.uid) {
           // Mutual: I follow them AND they follow me
-          const amIFriend =
+          const isMutual =
             myFollowing.includes(post.uid) &&
-            authorFollowers.includes(auth.currentUser.uid);
-          const areTheyFriend =
+            authorFollowers.includes(auth.currentUser.uid) &&
             authorFollowing.includes(auth.currentUser.uid) &&
+            Array.isArray(authorFollowers) &&
             authorFollowers.includes(auth.currentUser.uid);
-          if (!amIFriend && !areTheyFriend) {
+          if (!isMutual) {
             canSee = false;
           }
         }
@@ -264,7 +264,7 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
             fontFamily: "CarosSoft",
           }}
         >
-          No posts yet.
+          Your friends haven't posted yet.
         </Text>
       ) : (
         <View style={{ width: "100%", flex: 1 }}>
