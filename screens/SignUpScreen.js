@@ -32,10 +32,6 @@ export default function SignUpScreen({ navigation }) {
   const handleSignUp = async () => {
     setError("");
     setInfo("");
-    // if (!email.endsWith("@uw.edu")) {
-    //   setError("Only uw.edu emails are allowed");
-    //   return;
-    // }
     try {
       const userCredential = await createUserWithEmailAndPassword(
         auth,

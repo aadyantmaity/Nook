@@ -25,6 +25,7 @@ import {
   onSnapshot,
   doc,
 } from "firebase/firestore"; // Ensure Timestamp is imported
+import { getAuth, sendEmailVerification, reload, signOut } from "firebase/auth";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Plus,
@@ -565,16 +566,6 @@ export default function HomeScreen({ navigation, route }) {
     setCheckingVerification(false);
   };
 
-  const handleResendEmail = async () => {
-    setVerifyError("");
-    try {
-      await auth.currentUser.sendEmailVerification();
-      setVerifyError("Verification email resent.");
-    } catch (e) {
-      setVerifyError("Failed to resend email.");
-    }
-  };
-
   // Add this handler for back to login
   const handleBackToLogin = async () => {
     try {
@@ -605,7 +596,6 @@ export default function HomeScreen({ navigation, route }) {
         <View style={{ flex: 1, backgroundColor: themeColors.white }} />
         <EmailVerificationModal
           isVisible={true}
-          onResendEmail={handleResendEmail}
           onCheckVerification={handleCheckVerification}
           errorMessage={verifyError}
           onBackToLogin={handleBackToLogin} // <-- add this prop

@@ -137,6 +137,7 @@ export default function EmailVerificationModal({
                     flexDirection: "row",
                     width: "100%",
                     marginBottom: 0,
+                    gap: 8, // add some gap between buttons
                   }}
                 >
                   <TouchableOpacity
@@ -148,7 +149,6 @@ export default function EmailVerificationModal({
                       alignItems: "center",
                       alignSelf: "center",
                       marginBottom: 0,
-                      marginRight: 4,
                       flex: 1,
                     }}
                     onPress={onCheckVerification}
@@ -176,18 +176,15 @@ export default function EmailVerificationModal({
                     </View>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    onPress={onResendEmail}
+                    onPress={onBackToLogin}
                     style={{
-                      backgroundColor: colors.white,
-                      borderColor: colors.purple,
-                      borderWidth: 1.5,
+                      backgroundColor: colors.red,
                       height: 38,
                       borderRadius: 19,
                       justifyContent: "center",
                       alignItems: "center",
                       alignSelf: "center",
                       marginBottom: 0,
-                      marginLeft: 4,
                       flex: 1,
                     }}
                     activeOpacity={0.85}
@@ -199,57 +196,21 @@ export default function EmailVerificationModal({
                         justifyContent: "center",
                       }}
                     >
-                      <Repeat size={18} color={colors.purple} weight="bold" />
+                      <X size={18} color={colors.white} weight="bold" />
                       <Text
                         style={{
                           fontFamily: "CarosSoft",
                           fontSize: 15,
                           fontWeight: "500",
                           marginLeft: 4,
-                          color: colors.purple,
+                          color: colors.white,
                         }}
                       >
-                        Resend email
+                        Back to Sign Up
                       </Text>
                     </View>
                   </TouchableOpacity>
                 </View>
-                <TouchableOpacity
-                  onPress={onBackToLogin}
-                  style={{
-                    width: "100%",
-                    backgroundColor: colors.red,
-                    height: 38,
-                    borderRadius: 19,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    alignSelf: "center",
-                    marginBottom: 0,
-                    marginTop: 10,
-                  }}
-                  activeOpacity={0.85}
-                >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <X size={18} color={colors.white} weight="bold" />
-                    <Text
-                      style={{
-                        fontFamily: "CarosSoft",
-                        fontSize: 15,
-                        fontWeight: "500",
-                        marginLeft: 4,
-                        color: colors.white,
-                      }}
-                    >
-                      Back to Login/Sign Up
-                    </Text>
-                  </View>
-                </TouchableOpacity>
               </View>
             </View>
           </View>
