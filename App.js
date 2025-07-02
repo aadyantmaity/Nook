@@ -89,6 +89,8 @@ export default function App() {
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="EditSpot" component={EditSpotScreen} />
       <Stack.Screen name="GroupDetail" component={GroupDetailView} />
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="SignUp" component={SignUpScreen} />
     </Stack.Navigator>
   );
 

@@ -444,9 +444,19 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
                         }}
                       >
                         {item.createdAt && item.createdAt.seconds
-                          ? new Date(
-                              item.createdAt.seconds * 1000
-                            ).toLocaleString()
+                          ? (() => {
+                              const d = new Date(item.createdAt.seconds * 1000);
+                              // Format: locale date, hour:minute am/pm (no seconds)
+                              return (
+                                d.toLocaleDateString() +
+                                ", " +
+                                d.toLocaleTimeString([], {
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                })
+                              );
+                            })()
                           : ""}
                       </Text>
                     </View>

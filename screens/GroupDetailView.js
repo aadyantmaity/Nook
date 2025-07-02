@@ -272,10 +272,18 @@ export default function GroupDetailView({ navigation, route }) {
             }
             try {
               await deleteDoc(doc(db, "studyGroups", groupId));
-              // Navigate to Community tab, Groups subtab
-              navigation.navigate("Home", {
-                screen: "Community",
-                params: { selectedTab: "groups" },
+              // Navigate to Community tab, Study Groups section
+              navigation.reset({
+                index: 0,
+                routes: [
+                  {
+                    name: "Home",
+                    params: {
+                      screen: "Community",
+                      params: { selectedTab: "groups" },
+                    },
+                  },
+                ],
               });
             } catch (e) {
               Alert.alert("Error", "Failed to delete group.");
