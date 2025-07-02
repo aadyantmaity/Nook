@@ -130,6 +130,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
+    fontFamily: "CarosSoft",
   },
   button: {
     width: "100%",

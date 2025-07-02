@@ -36,10 +36,6 @@ export default function SignUpScreen({ navigation }) {
       setError("Only uw.edu emails are allowed");
       return;
     }
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
     try {
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -107,6 +103,36 @@ export default function SignUpScreen({ navigation }) {
               color: themeColors.black,
             },
           ]}
+          placeholder="Email"
+          placeholderTextColor={themeColors.darkGray}
+          value={email}
+          onChangeText={setEmail}
+        />
+
+        <TextInput
+          style={[
+            styles.input,
+            {
+              borderColor: themeColors.darkGray,
+              backgroundColor: themeColors.white,
+              color: themeColors.black,
+            },
+          ]}
+          placeholder="Password"
+          placeholderTextColor={themeColors.darkGray}
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+        <TextInput
+          style={[
+            styles.input,
+            {
+              borderColor: themeColors.darkGray,
+              backgroundColor: themeColors.white,
+              color: themeColors.black,
+            },
+          ]}
           placeholder="First Name"
           placeholderTextColor={themeColors.darkGray}
           value={firstName}
@@ -135,56 +161,13 @@ export default function SignUpScreen({ navigation }) {
               color: themeColors.black,
             },
           ]}
-          placeholder="Email"
-          placeholderTextColor={themeColors.darkGray}
-          value={email}
-          onChangeText={setEmail}
-        />
-        <TextInput
-          style={[
-            styles.input,
-            {
-              borderColor: themeColors.darkGray,
-              backgroundColor: themeColors.white,
-              color: themeColors.black,
-            },
-          ]}
           placeholder="Graduation Year"
           placeholderTextColor={themeColors.darkGray}
           value={gradYear}
           onChangeText={setGradYear}
           keyboardType="numeric" // Ensure numeric input
         />
-        <TextInput
-          style={[
-            styles.input,
-            {
-              borderColor: themeColors.darkGray,
-              backgroundColor: themeColors.white,
-              color: themeColors.black,
-            },
-          ]}
-          placeholder="Password"
-          placeholderTextColor={themeColors.darkGray}
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-        <TextInput
-          style={[
-            styles.input,
-            {
-              borderColor: themeColors.darkGray,
-              backgroundColor: themeColors.white,
-              color: themeColors.black,
-            },
-          ]}
-          placeholder="Confirm Password"
-          placeholderTextColor={themeColors.darkGray}
-          secureTextEntry
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-        />
+
         <TouchableOpacity
           style={[styles.button, { backgroundColor: themeColors.purple }]}
           onPress={handleSignUp}
@@ -229,6 +212,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
+    fontFamily: "CarosSoft",
   },
   button: {
     width: "100%",
