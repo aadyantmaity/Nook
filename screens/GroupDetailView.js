@@ -28,6 +28,7 @@ import {
   onSnapshot,
   collection,
   addDoc,
+  getDocs,
   serverTimestamp,
   query,
   orderBy,
@@ -271,6 +272,17 @@ export default function GroupDetailView({ navigation, route }) {
               unsubMessagesRef.current = null;
             }
             try {
+              const messagesRef = collection(
+                db,
+                "studyGroups",
+                groupId,
+                "messages"
+              );
+              const messageDocs = await getDocs(messagesRef);
+              const deletePromises = messageDocs.docs.map((docSnap) =>
+                deleteDoc(docSnap.ref)
+              );
+              await Promise.all(deletePromises);
               await deleteDoc(doc(db, "studyGroups", groupId));
               // Navigate to Community tab, Study Groups section
               navigation.reset({
