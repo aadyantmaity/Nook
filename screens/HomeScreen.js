@@ -66,6 +66,7 @@ import GeneralReportModal from "../components/Home/GeneralReportModal"; // Impor
 import HomeLoadingScreen from "../components/Home/HomeLoadingScreen"; // <-- Import the new component
 import ProfilePicture from "../components/Profile/ProfilePicture";
 import FindPeopleSection from "../components/FindPeople/FindPeopleSection"; // <-- import FindPeopleSection
+import EmailVerificationModal from "../components/Auth/EmailVerificationModal"; // <-- Import EmailVerificationModal
 
 //hook imports
 import useStudySpots from "../hooks/useStudySpots";
@@ -500,9 +501,117 @@ export default function HomeScreen({ navigation, route }) {
     }
   }, [route?.params?.refresh]);
 
+  // --- Email Verification Modal State ---
+  const [showVerifyModal, setShowVerifyModal] = useState(false); // <-- always false initially
+  const [verifyError, setVerifyError] = useState("");
+  const [checkingVerification, setCheckingVerification] = useState(false);
+
+  // Track requireEmailVerification flag from user doc
+  const [userRequireEmailVerification, setUserRequireEmailVerification] =
+    useState(undefined); // <-- undefined until loaded
+
+  // Subscribe to user's profilePic and requireEmailVerification for instant updates
+  useEffect(() => {
+    if (!user) return;
+    setIsProfilePicLoading(true);
+    const unsub = onSnapshot(doc(db, "users", user.uid), (userDoc) => {
+      if (userDoc.exists()) {
+        setProfilePic(userDoc.data().profilePic || null);
+        setUserRequireEmailVerification(
+          userDoc.data().requireEmailVerification !== false
+        );
+      } else {
+        setUserRequireEmailVerification(false);
+      }
+      setIsProfilePicLoading(false);
+    });
+    return () => unsub();
+  }, [user]);
+
+  // Show modal if user is not verified and requireEmailVerification is not false
+  useEffect(() => {
+    // Only run if userRequireEmailVerification is loaded (not undefined)
+    if (!user || userRequireEmailVerification === undefined) return;
+    if (user.emailVerified) {
+      setShowVerifyModal(false);
+      setVerifyError("");
+    } else if (
+      userRequireEmailVerification // Only show if required
+    ) {
+      setShowVerifyModal(true);
+    } else {
+      setShowVerifyModal(false);
+    }
+  }, [user, userRequireEmailVerification]);
+
+  // --- Modal logic: block all interaction until verified ---
+  const handleCheckVerification = async () => {
+    setCheckingVerification(true);
+    setVerifyError("");
+    try {
+      await user.reload();
+      if (auth.currentUser.emailVerified) {
+        setShowVerifyModal(false);
+        setVerifyError("");
+        // Optionally, clear param so modal doesn't show again
+        navigation.setParams &&
+          navigation.setParams({ showVerifyModal: undefined });
+      } else {
+        setVerifyError("Email not verified yet. Please check your inbox.");
+      }
+    } catch (e) {
+      setVerifyError("Error checking verification. Try again.");
+    }
+    setCheckingVerification(false);
+  };
+
+  const handleResendEmail = async () => {
+    setVerifyError("");
+    try {
+      await auth.currentUser.sendEmailVerification();
+      setVerifyError("Verification email resent.");
+    } catch (e) {
+      setVerifyError("Failed to resend email.");
+    }
+  };
+
+  // Add this handler for back to login
+  const handleBackToLogin = async () => {
+    try {
+      await auth.signOut();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Login" }],
+      });
+    } catch {}
+  };
+
   // Wait for font to load before rendering (move this before any other return)
   if (!fontsLoaded) {
     return null;
+  }
+
+  // --- Show email verification modal if needed ---
+  // Only show if requireEmailVerification !== false
+  if (
+    user &&
+    !user.emailVerified &&
+    userRequireEmailVerification && // Only block if required
+    userRequireEmailVerification !== undefined && // Only after loaded
+    showVerifyModal // Only if modal should be shown
+  ) {
+    return (
+      <>
+        <View style={{ flex: 1, backgroundColor: themeColors.white }} />
+        <EmailVerificationModal
+          isVisible={true}
+          onResendEmail={handleResendEmail}
+          onCheckVerification={handleCheckVerification}
+          errorMessage={verifyError}
+          onBackToLogin={handleBackToLogin} // <-- add this prop
+        />
+      </>
+    );
   }
 
   // --- Show loading screen only on initial mount and isLoading, for at least 10s ---

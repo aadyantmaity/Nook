@@ -32,10 +32,10 @@ export default function SignUpScreen({ navigation }) {
   const handleSignUp = async () => {
     setError("");
     setInfo("");
-    if (!email.endsWith("@uw.edu")) {
-      setError("Only uw.edu emails are allowed");
-      return;
-    }
+    // if (!email.endsWith("@uw.edu")) {
+    //   setError("Only uw.edu emails are allowed");
+    //   return;
+    // }
     try {
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -53,13 +53,11 @@ export default function SignUpScreen({ navigation }) {
         profilePic: null,
         followers: [],
         following: [],
+        requireEmailVerification: true, // Add this field
       });
 
       // Send email verification
       await sendEmailVerification(user);
-      setInfo("Verification email sent. Please check your inbox.");
-      // Optionally, sign out user here to force verification before login
-      // await auth.signOut();
     } catch (error) {
       setError(error.message);
     }
