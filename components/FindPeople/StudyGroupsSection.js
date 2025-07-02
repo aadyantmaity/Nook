@@ -28,22 +28,15 @@ import { colors } from "../../constants/colors";
 import { LinearGradient } from "expo-linear-gradient";
 
 function getMutualFriends(users, currentUser) {
-  // Mutual: I follow them AND they follow me
+  // Show all friends: users who are both in my followers and following
   if (!currentUser) return [];
   const me = users.find((u) => u.uid === currentUser.uid);
   if (!me) return [];
-  // Only show users who are mutual friends (both follow each other)
+  if (!Array.isArray(me.followers) || !Array.isArray(me.following)) return [];
+  // Friends: users who are both in followers and following
+  const friendUids = me.followers.filter((uid) => me.following.includes(uid));
   return users.filter(
-    (u) =>
-      u.uid !== currentUser.uid &&
-      Array.isArray(me.following) &&
-      Array.isArray(me.followers) &&
-      Array.isArray(u.following) &&
-      Array.isArray(u.followers) &&
-      me.following.includes(u.uid) &&
-      me.followers.includes(u.uid) &&
-      u.following.includes(currentUser.uid) &&
-      u.followers.includes(currentUser.uid)
+    (u) => u.uid !== currentUser.uid && friendUids.includes(u.uid)
   );
 }
 
@@ -89,6 +82,7 @@ export default function StudyGroupsSection({ navigation }) {
   // Fetch all users for mutual friends
   useEffect(() => {
     if (!user) return;
+    if (!showCreateModal) return; // Only fetch when modal is open
     (async () => {
       const snap = await getDocs(collection(db, "users"));
       const users = snap.docs.map((d) => ({
@@ -97,6 +91,17 @@ export default function StudyGroupsSection({ navigation }) {
       }));
       setAllUsers(users);
       setMutualFriends(getMutualFriends(users, user));
+      // --- Log followers, following, and friends when modal opens ---
+      const me = users.find((u) => u.uid === user.uid);
+      if (me) {
+        console.log("My followers:", me.followers);
+        console.log("My following:", me.following);
+        const myFriends =
+          Array.isArray(me.followers) && Array.isArray(me.following)
+            ? me.followers.filter((uid) => me.following.includes(uid))
+            : [];
+        console.log("My friends:", myFriends);
+      }
     })();
   }, [user, showCreateModal]);
 
