@@ -258,7 +258,7 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
       ) : feed.length === 0 ? (
         <Text
           style={{
-            color: themeColors.gray,
+            color: themeColors.darkGray,
             fontSize: 15,
             marginTop: 10,
             fontFamily: "CarosSoft",

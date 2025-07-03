@@ -21,6 +21,7 @@ import {
   doc,
   getDoc,
   onSnapshot,
+  updateDoc,
   orderBy,
   serverTimestamp,
 } from "firebase/firestore";
@@ -88,25 +89,57 @@ export default function StudyGroupsSection({ navigation }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [groupProfilePic, setGroupProfilePic] = useState(null);
   const [uploadingPic, setUploadingPic] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(false); // <-- add state
 
-  // Fetch groups where user is a member
+  // Fetch groups: public for all, private only if user is a member
   useEffect(() => {
     if (!user) return;
     setLoadingGroups(true);
-    const q = query(
+
+    // Helper to merge and deduplicate groups by id
+    const mergeGroups = (arr1, arr2) => {
+      const map = {};
+      [...arr1, ...arr2].forEach((g) => {
+        map[g.id] = g;
+      });
+      return Object.values(map);
+    };
+
+    // Use onSnapshot for both queries and merge results
+    let unsubMember = null;
+    let unsubPublic = null;
+
+    // Groups where user is a member
+    const memberQ = query(
       collection(db, "studyGroups"),
       where("memberUids", "array-contains", user.uid)
     );
-    const unsub = onSnapshot(q, (snap) => {
-      setGroups(
-        snap.docs.map((d) => ({
+    // Public groups (isPrivate === false)
+    const publicQ = query(
+      collection(db, "studyGroups"),
+      where("isPrivate", "==", false)
+    );
+
+    unsubMember = onSnapshot(memberQ, (snapMember) => {
+      const memberGroups = snapMember.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
+
+      unsubPublic = onSnapshot(publicQ, (snapPublic) => {
+        const publicGroups = snapPublic.docs.map((d) => ({
           id: d.id,
           ...d.data(),
-        }))
-      );
-      setLoadingGroups(false);
+        }));
+        setGroups(mergeGroups(memberGroups, publicGroups));
+        setLoadingGroups(false);
+      });
     });
-    return () => unsub();
+
+    return () => {
+      if (unsubMember) unsubMember();
+      if (unsubPublic) unsubPublic();
+    };
   }, [user]);
 
   // Fetch all users for mutual friends and group member display
@@ -140,8 +173,13 @@ export default function StudyGroupsSection({ navigation }) {
 
   // Create group handler
   const handleCreateGroup = async () => {
-    if (!groupName.trim() || selectedMembers.length === 0) {
-      Alert.alert("Please enter a group name and select members.");
+    // Only require members for private groups
+    if (!groupName.trim() || (isPrivate && selectedMembers.length === 0)) {
+      Alert.alert(
+        isPrivate
+          ? "Please enter a group name and select members."
+          : "Please enter a group name."
+      );
       return;
     }
     setCreating(true);
@@ -170,12 +208,14 @@ export default function StudyGroupsSection({ navigation }) {
         memberUids: [user.uid, ...selectedMembers],
         icon: randomIcon,
         profilePic: uploadedPicUrl || null,
+        isPrivate, // <-- store privacy flag
       });
       setShowCreateModal(false);
       setGroupName("");
       setGroupDesc("");
       setSelectedMembers([]);
       setGroupProfilePic(null);
+      setIsPrivate(false); // reset
     } catch (e) {
       Alert.alert("Error", "Failed to create group.");
     }
@@ -224,6 +264,18 @@ export default function StudyGroupsSection({ navigation }) {
             }}
             onStartShouldSetResponder={() => true}
           >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "bold",
+                color: themeColors.purple,
+                marginBottom: 10,
+                textAlign: "center",
+                fontFamily: "CarosSoft",
+              }}
+            >
+              Create Study Group
+            </Text>
             {/* Group Profile Pic Picker */}
             <TouchableOpacity
               onPress={handlePickGroupProfilePic}
@@ -284,18 +336,7 @@ export default function StudyGroupsSection({ navigation }) {
                 {groupProfilePic ? "Change Group Picture" : "Add Group Picture"}
               </Text>
             </TouchableOpacity>
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "bold",
-                color: themeColors.purple,
-                marginBottom: 10,
-                textAlign: "center",
-                fontFamily: "CarosSoft",
-              }}
-            >
-              Create Study Group
-            </Text>
+
             <TextInput
               placeholder="Group Name"
               value={groupName}
@@ -309,6 +350,7 @@ export default function StudyGroupsSection({ navigation }) {
                 marginBottom: 10,
                 color: themeColors.black,
                 fontFamily: "CarosSoft",
+                maxLength: 50, // Limit group name length
               }}
               placeholderTextColor={themeColors.darkGray}
             />
@@ -325,19 +367,142 @@ export default function StudyGroupsSection({ navigation }) {
                 marginBottom: 10,
                 color: themeColors.black,
                 fontFamily: "CarosSoft",
+                maxLength: 50, // Limit description length
               }}
               placeholderTextColor={themeColors.darkGray}
             />
+            {/* Public/Private Toggle */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 10,
+                marginTop: 2,
+                alignSelf: "center",
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => setIsPrivate(false)}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginRight: 18,
+                }}
+                accessibilityLabel="Set group as public"
+              >
+                <View
+                  style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: 9,
+                    borderWidth: 2,
+                    borderColor: isPrivate
+                      ? themeColors.gray
+                      : themeColors.purple,
+                    backgroundColor: !isPrivate
+                      ? themeColors.purple
+                      : themeColors.white,
+                    marginRight: 6,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {!isPrivate && (
+                    <View
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: 5,
+                        backgroundColor: themeColors.white,
+                      }}
+                    />
+                  )}
+                </View>
+                <Text
+                  style={{
+                    color: !isPrivate
+                      ? themeColors.purple
+                      : themeColors.darkGray,
+                    fontWeight: "bold",
+                    fontFamily: "CarosSoft",
+                  }}
+                >
+                  Public
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setIsPrivate(true)}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+                accessibilityLabel="Set group as private"
+              >
+                <View
+                  style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: 9,
+                    borderWidth: 2,
+                    borderColor: isPrivate
+                      ? themeColors.purple
+                      : themeColors.gray,
+                    backgroundColor: isPrivate
+                      ? themeColors.purple
+                      : themeColors.white,
+                    marginRight: 6,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {isPrivate && (
+                    <View
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: 5,
+                        backgroundColor: themeColors.white,
+                      }}
+                    />
+                  )}
+                </View>
+                <Text
+                  style={{
+                    color: isPrivate
+                      ? themeColors.purple
+                      : themeColors.darkGray,
+                    fontWeight: "bold",
+                    fontFamily: "CarosSoft",
+                  }}
+                >
+                  Private
+                </Text>
+              </TouchableOpacity>
+            </View>
             <Text
               style={{
                 fontWeight: "bold",
                 color: themeColors.purple,
                 marginBottom: 6,
+                marginTop: 10,
                 fontFamily: "CarosSoft",
               }}
             >
               Add Friends
             </Text>
+            {/* Show hint if public group */}
+            {!isPrivate && (
+              <Text
+                style={{
+                  color: themeColors.darkGray,
+                  fontSize: 12,
+                  marginBottom: 4,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                (Optional for public groups)
+              </Text>
+            )}
             <ScrollView
               style={{ width: "100%", maxHeight: 120 }}
               showsVerticalScrollIndicator={false}
@@ -521,12 +686,66 @@ export default function StudyGroupsSection({ navigation }) {
                   item.icon && PhosphorIcons[item.icon]
                     ? PhosphorIcons[item.icon]
                     : PhosphorIcons.UsersThree;
+                // --- Add join logic for public groups ---
+                const isMember =
+                  Array.isArray(item.memberUids) &&
+                  item.memberUids.includes(user.uid);
+                const isPublic = !(item.isPrivate ?? false);
+                const handlePress = async () => {
+                  if (isPublic && !isMember) {
+                    Alert.alert(
+                      "Join Group",
+                      "You are not a member of this public group. Would you like to join?",
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Join",
+                          style: "default",
+                          onPress: async () => {
+                            try {
+                              // Add user to memberUids
+                              const groupRef = doc(db, "studyGroups", item.id);
+                              await getDoc(groupRef).then(async (snap) => {
+                                if (snap.exists()) {
+                                  const data = snap.data();
+                                  const memberUids = Array.isArray(
+                                    data.memberUids
+                                  )
+                                    ? data.memberUids
+                                    : [];
+                                  if (memberUids.length >= 32) {
+                                    Alert.alert(
+                                      "Group Full",
+                                      "This public group already has 32 members and cannot accept more."
+                                    );
+                                    return;
+                                  }
+                                  if (!memberUids.includes(user.uid)) {
+                                    await updateDoc(groupRef, {
+                                      memberUids: [...memberUids, user.uid],
+                                    });
+                                  }
+                                }
+                              });
+                              // Navigate after joining
+                              navigation.navigate("GroupDetail", {
+                                groupId: item.id,
+                              });
+                            } catch (e) {
+                              Alert.alert("Error", "Failed to join group.");
+                              console.error("Join group error:", e);
+                            }
+                          },
+                        },
+                      ]
+                    );
+                  } else {
+                    navigation.navigate("GroupDetail", { groupId: item.id });
+                  }
+                };
                 return (
                   <TouchableOpacity
-                    onPress={() => {
-                      // Navigate to the new group detail page
-                      navigation.navigate("GroupDetail", { groupId: item.id });
-                    }}
+                    onPress={handlePress}
                     style={{
                       backgroundColor: themeColors.white,
                       borderRadius: 8,
@@ -595,46 +814,67 @@ export default function StudyGroupsSection({ navigation }) {
                       >
                         {item.name}
                       </Text>
+                      {item.description !== "" && (
+                        <Text
+                          style={{
+                            color: themeColors.black,
+                            fontSize: 15,
+                            fontFamily: "CarosSoft",
+                            marginBottom: 4,
+                          }}
+                        >
+                          {item.description}
+                        </Text>
+                      )}
+                      {/* --- Show privacy label --- */}
                       <Text
                         style={{
-                          color: themeColors.black,
-                          fontSize: 15,
+                          color:
+                            item.isPrivate ?? false
+                              ? themeColors.red
+                              : themeColors.green,
+                          fontSize: 13,
+                          fontWeight: "bold",
                           fontFamily: "CarosSoft",
                           marginBottom: 4,
                         }}
                       >
-                        {item.description}
+                        {item.isPrivate ?? false
+                          ? "Private Group"
+                          : "Public Group"}
                       </Text>
                       {/* --- Show member names (first name + last initial) --- */}
-                      <Text
-                        style={{
-                          color: themeColors.darkGray,
-                          fontSize: 13,
-                          fontFamily: "CarosSoft",
-                        }}
-                      >
-                        Members:{" "}
-                        {Array.isArray(item.memberUids) && allUsers.length > 0
-                          ? (() => {
-                              // "You" first, then others
-                              const you = "You";
-                              const others = item.memberUids
-                                .filter((uid) => uid !== user.uid)
-                                .map((uid) => {
-                                  const u = allUsers.find(
-                                    (user) => user.uid === uid
-                                  );
-                                  if (!u) return "User";
-                                  const first = u.firstName || "";
-                                  const lastInitial = u.lastName
-                                    ? ` ${u.lastName.charAt(0)}`
-                                    : "";
-                                  return `${first}${lastInitial}`.trim();
-                                });
-                              return [you, ...others].join(", ");
-                            })()
-                          : item.memberUids.length}
-                      </Text>
+                      {item.isPrivate && (
+                        <Text
+                          style={{
+                            color: themeColors.darkGray,
+                            fontSize: 13,
+                            fontFamily: "CarosSoft",
+                          }}
+                        >
+                          Members:{" "}
+                          {Array.isArray(item.memberUids) && allUsers.length > 0
+                            ? (() => {
+                                // "You" first, then others
+                                const you = "You";
+                                const others = item.memberUids
+                                  .filter((uid) => uid !== user.uid)
+                                  .map((uid) => {
+                                    const u = allUsers.find(
+                                      (user) => user.uid === uid
+                                    );
+                                    if (!u) return "User";
+                                    const first = u.firstName || "";
+                                    const lastInitial = u.lastName
+                                      ? ` ${u.lastName.charAt(0)}`
+                                      : "";
+                                    return `${first}${lastInitial}`.trim();
+                                  });
+                                return [you, ...others].join(", ");
+                              })()
+                            : item.memberUids.length}
+                        </Text>
+                      )}
                     </View>
                   </TouchableOpacity>
                 );
