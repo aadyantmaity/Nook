@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   ScrollView,
   Alert,
+  Image,
 } from "react-native";
 import { db, auth } from "../../firebaseConfig";
 import {
@@ -26,6 +27,14 @@ import {
 import { ThemeContext } from "../../App";
 import { colors } from "../../constants/colors";
 import { LinearGradient } from "expo-linear-gradient";
+import * as PhosphorIcons from "phosphor-react-native";
+import * as ImagePicker from "expo-image-picker";
+import {
+  getStorage,
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL,
+} from "firebase/storage";
 
 function getMutualFriends(users, currentUser) {
   // Show all friends: users who are both in my followers and following
@@ -39,6 +48,25 @@ function getMutualFriends(users, currentUser) {
     (u) => u.uid !== currentUser.uid && friendUids.includes(u.uid)
   );
 }
+
+// List of icon names from phosphor-react-native (pick your favorites)
+const GROUP_ICONS = [
+  "UsersThree",
+  "ChatsCircle",
+  "Books",
+  "Student",
+  "Globe",
+  "Lightbulb",
+  "Notebook",
+  "Atom",
+  "PuzzlePiece",
+  "Brain",
+  "Code",
+  "Flask",
+  "PenNib",
+  "BookOpen",
+  "Rocket",
+];
 
 export default function StudyGroupsSection({ navigation }) {
   const themeCtx = useContext(ThemeContext);
@@ -58,6 +86,8 @@ export default function StudyGroupsSection({ navigation }) {
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [creating, setCreating] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [groupProfilePic, setGroupProfilePic] = useState(null);
+  const [uploadingPic, setUploadingPic] = useState(false);
 
   // Fetch groups where user is a member
   useEffect(() => {
@@ -79,10 +109,9 @@ export default function StudyGroupsSection({ navigation }) {
     return () => unsub();
   }, [user]);
 
-  // Fetch all users for mutual friends
+  // Fetch all users for mutual friends and group member display
   useEffect(() => {
     if (!user) return;
-    if (!showCreateModal) return; // Only fetch when modal is open
     (async () => {
       const snap = await getDocs(collection(db, "users"));
       const users = snap.docs.map((d) => ({
@@ -91,19 +120,23 @@ export default function StudyGroupsSection({ navigation }) {
       }));
       setAllUsers(users);
       setMutualFriends(getMutualFriends(users, user));
-      // --- Log followers, following, and friends when modal opens ---
-      const me = users.find((u) => u.uid === user.uid);
-      if (me) {
-        console.log("My followers:", me.followers);
-        console.log("My following:", me.following);
-        const myFriends =
-          Array.isArray(me.followers) && Array.isArray(me.following)
-            ? me.followers.filter((uid) => me.following.includes(uid))
-            : [];
-        console.log("My friends:", myFriends);
-      }
     })();
-  }, [user, showCreateModal]);
+  }, [user]);
+
+  // Helper to pick image
+  const handlePickGroupProfilePic = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+      if (result.canceled || result.cancelled) return;
+      const asset = result.assets ? result.assets[0] : result;
+      setGroupProfilePic(asset.uri);
+    } catch {}
+  };
 
   // Create group handler
   const handleCreateGroup = async () => {
@@ -112,22 +145,42 @@ export default function StudyGroupsSection({ navigation }) {
       return;
     }
     setCreating(true);
+    let uploadedPicUrl = null;
     try {
-      const groupDoc = await addDoc(collection(db, "studyGroups"), {
+      // Upload group profile pic if selected
+      if (groupProfilePic) {
+        setUploadingPic(true);
+        const storage = getStorage();
+        const response = await fetch(groupProfilePic);
+        const blob = await response.blob();
+        const filename = `group_${user.uid}_${Date.now()}.jpg`;
+        const fileRef = storageRef(storage, `group_pictures/${filename}`);
+        await uploadBytes(fileRef, blob, { contentType: "image/jpeg" });
+        uploadedPicUrl = await getDownloadURL(fileRef);
+        setUploadingPic(false);
+      }
+      // Pick a random icon for the group (as fallback)
+      const randomIcon =
+        GROUP_ICONS[Math.floor(Math.random() * GROUP_ICONS.length)];
+      await addDoc(collection(db, "studyGroups"), {
         name: groupName.trim(),
         description: groupDesc.trim(),
         createdBy: user.uid,
         createdAt: serverTimestamp(),
         memberUids: [user.uid, ...selectedMembers],
+        icon: randomIcon,
+        profilePic: uploadedPicUrl || null,
       });
       setShowCreateModal(false);
       setGroupName("");
       setGroupDesc("");
       setSelectedMembers([]);
+      setGroupProfilePic(null);
     } catch (e) {
       Alert.alert("Error", "Failed to create group.");
     }
     setCreating(false);
+    setUploadingPic(false);
   };
 
   return (
@@ -171,6 +224,66 @@ export default function StudyGroupsSection({ navigation }) {
             }}
             onStartShouldSetResponder={() => true}
           >
+            {/* Group Profile Pic Picker */}
+            <TouchableOpacity
+              onPress={handlePickGroupProfilePic}
+              style={{
+                marginBottom: 14,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              disabled={uploadingPic}
+            >
+              {groupProfilePic ? (
+                <View
+                  style={{
+                    width: 128,
+                    height: 128,
+                    borderRadius: 32,
+                    overflow: "hidden",
+                    backgroundColor: themeColors.purple + "22",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: 4,
+                  }}
+                >
+                  <Image
+                    source={{ uri: groupProfilePic }}
+                    style={{ width: 128, height: 128, borderRadius: 32 }}
+                    resizeMode="cover"
+                  />
+                </View>
+              ) : (
+                <View
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 32,
+                    backgroundColor: themeColors.purple + "22",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: 4,
+                  }}
+                >
+                  <PhosphorIcons.UsersThree
+                    size={36}
+                    color={themeColors.purple}
+                    weight="fill"
+                  />
+                </View>
+              )}
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                  fontSize: 14,
+                  marginTop: 2,
+                }}
+              >
+                {groupProfilePic ? "Change Group Picture" : "Add Group Picture"}
+              </Text>
+            </TouchableOpacity>
             <Text
               style={{
                 fontSize: 18,
@@ -402,75 +515,130 @@ export default function StudyGroupsSection({ navigation }) {
             <FlatList
               data={groups}
               keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  onPress={() => {
-                    // Navigate to the new group detail page
-                    navigation.navigate("GroupDetail", { groupId: item.id });
-                  }}
-                  style={{
-                    // --- Match StudySpotCard UI ---
-                    backgroundColor: themeColors.white,
-                    borderRadius: 8,
-                    padding: 16,
-                    marginBottom: 12,
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 4,
-                    elevation: 3,
-                    borderColor: themeColors.black,
-                    borderWidth: 0.5,
-                    position: "relative",
-                  }}
-                >
-                  <Text
+              renderItem={({ item }) => {
+                // Get the icon component from PhosphorIcons
+                const IconComponent =
+                  item.icon && PhosphorIcons[item.icon]
+                    ? PhosphorIcons[item.icon]
+                    : PhosphorIcons.UsersThree;
+                return (
+                  <TouchableOpacity
+                    onPress={() => {
+                      // Navigate to the new group detail page
+                      navigation.navigate("GroupDetail", { groupId: item.id });
+                    }}
                     style={{
-                      color: themeColors.purple,
-                      fontWeight: "bold",
-                      fontSize: 18,
-                      fontFamily: "CarosSoft",
-                      marginBottom: 4,
+                      backgroundColor: themeColors.white,
+                      borderRadius: 8,
+                      padding: 16,
+                      marginBottom: 12,
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 4,
+                      elevation: 3,
+                      borderColor: themeColors.black,
+                      borderWidth: 0.5,
+                      position: "relative",
+                      flexDirection: "row",
+                      alignItems: "center",
                     }}
                   >
-                    {item.name}
-                  </Text>
-                  <Text
-                    style={{
-                      color: themeColors.black,
-                      fontSize: 15,
-                      fontFamily: "CarosSoft",
-                      marginBottom: 4,
-                    }}
-                  >
-                    {item.description}
-                  </Text>
-                  {/* --- Show member names (first name + last initial) --- */}
-                  <Text
-                    style={{
-                      color: themeColors.darkGray,
-                      fontSize: 13,
-                      fontFamily: "CarosSoft",
-                    }}
-                  >
-                    Members:{" "}
-                    {Array.isArray(item.memberUids) && allUsers.length > 0
-                      ? item.memberUids
-                          .map((uid) => {
-                            if (uid === user.uid) return "You";
-                            const u = allUsers.find((user) => user.uid === uid);
-                            if (!u) return "User";
-                            const first = u.firstName || "";
-                            const lastInitial = u.lastName
-                              ? ` ${u.lastName.charAt(0)}`
-                              : "";
-                            return `${first}${lastInitial}`.trim();
-                          })
-                          .join(", ")
-                      : item.memberUids.length}
-                  </Text>
-                </TouchableOpacity>
-              )}
+                    {/* Group Profile Pic or Icon */}
+                    {item.profilePic ? (
+                      <View
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 20,
+                          backgroundColor: themeColors.purple + "22",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          marginRight: 14,
+                          overflow: "hidden",
+                        }}
+                      >
+                        <Image
+                          source={{ uri: item.profilePic }}
+                          style={{ width: 40, height: 40, borderRadius: 20 }}
+                          resizeMode="cover"
+                        />
+                      </View>
+                    ) : (
+                      <View
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 20,
+                          backgroundColor: themeColors.purple + "22",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          marginRight: 14,
+                        }}
+                      >
+                        <IconComponent
+                          size={28}
+                          color={themeColors.purple}
+                          weight="fill"
+                        />
+                      </View>
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={{
+                          color: themeColors.purple,
+                          fontWeight: "bold",
+                          fontSize: 18,
+                          fontFamily: "CarosSoft",
+                          marginBottom: 4,
+                        }}
+                      >
+                        {item.name}
+                      </Text>
+                      <Text
+                        style={{
+                          color: themeColors.black,
+                          fontSize: 15,
+                          fontFamily: "CarosSoft",
+                          marginBottom: 4,
+                        }}
+                      >
+                        {item.description}
+                      </Text>
+                      {/* --- Show member names (first name + last initial) --- */}
+                      <Text
+                        style={{
+                          color: themeColors.darkGray,
+                          fontSize: 13,
+                          fontFamily: "CarosSoft",
+                        }}
+                      >
+                        Members:{" "}
+                        {Array.isArray(item.memberUids) && allUsers.length > 0
+                          ? (() => {
+                              // "You" first, then others
+                              const you = "You";
+                              const others = item.memberUids
+                                .filter((uid) => uid !== user.uid)
+                                .map((uid) => {
+                                  const u = allUsers.find(
+                                    (user) => user.uid === uid
+                                  );
+                                  if (!u) return "User";
+                                  const first = u.firstName || "";
+                                  const lastInitial = u.lastName
+                                    ? ` ${u.lastName.charAt(0)}`
+                                    : "";
+                                  return `${first}${lastInitial}`.trim();
+                                });
+                              return [you, ...others].join(", ");
+                            })()
+                          : item.memberUids.length}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              }}
               style={{ flex: 1 }}
               contentContainerStyle={{ flexGrow: 1 }}
               showsVerticalScrollIndicator={false}
