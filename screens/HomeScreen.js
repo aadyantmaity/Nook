@@ -350,14 +350,13 @@ export default function HomeScreen({ navigation, route }) {
               themeColors={themeColors}
               filters={filters}
               setFilters={setFilters}
-              sortBy={sortBy} // <-- pass sortBy
-              setSortBy={setSortBy} // <-- pass setSortBy
+              sortBy={sortBy}
+              setSortBy={setSortBy}
             />
           </View>
           <StudySpotsMapView
             spots={filteredSpots}
             navigation={(navProps) => {
-              // When navigating to SpotDetail, pass the current view
               navigation.navigate("SpotDetail", {
                 ...navProps,
                 view: showMapView ? "map" : "list",
@@ -373,7 +372,6 @@ export default function HomeScreen({ navigation, route }) {
           navigation={{
             ...navigation,
             navigate: (screen, params) => {
-              // When navigating to SpotDetail, pass the current view
               if (screen === "SpotDetail") {
                 navigation.navigate(screen, {
                   ...params,
@@ -397,8 +395,8 @@ export default function HomeScreen({ navigation, route }) {
           getLastUpdatedLabel={getLastUpdatedLabel}
           showMapView={showMapView}
           setShowMapView={handleSetShowMapView}
-          sortBy={sortBy} // <-- pass sortBy
-          setSortBy={setSortBy} // <-- pass setSortBy
+          sortBy={sortBy}
+          setSortBy={setSortBy}
           ListHeaderComponent={
             <StudySpotsHeader
               showMapView={showMapView}
@@ -406,8 +404,8 @@ export default function HomeScreen({ navigation, route }) {
               themeColors={themeColors}
               filters={filters}
               setFilters={setFilters}
-              sortBy={sortBy} // <-- pass sortBy
-              setSortBy={setSortBy} // <-- pass setSortBy
+              sortBy={sortBy}
+              setSortBy={setSortBy}
             />
           }
         />
@@ -416,7 +414,7 @@ export default function HomeScreen({ navigation, route }) {
       <View
         style={{
           position: "absolute",
-          bottom: 25,
+          bottom: 70, // <-- move up to avoid tab bar overlap (was 25)
           right: 16,
           zIndex: 20,
         }}
@@ -445,7 +443,7 @@ export default function HomeScreen({ navigation, route }) {
               fontWeight: "bold",
               fontSize: 14,
               marginLeft: 8,
-              fontFamily: "CarosSoft", // <-- Add fontFamily here
+              fontFamily: "CarosSoft",
             }}
           >
             Add Nook
@@ -701,25 +699,43 @@ export default function HomeScreen({ navigation, route }) {
         </View>
 
         {/* Main Content */}
-        <TabView
-          navigationState={{ index, routes }}
-          renderScene={renderScene}
-          onIndexChange={setIndex}
-          initialLayout={{ width: layout.width }}
-          lazy
-          renderLazyPlaceholder={() => (
-            <View style={{ flex: 1, backgroundColor: themeColors.white }} />
-          )}
-          style={{ flex: 1 }}
-          renderTabBar={(props) => (
+        <View style={{ flex: 1 }}>
+          <TabView
+            navigationState={{ index, routes }}
+            renderScene={renderScene}
+            onIndexChange={setIndex}
+            initialLayout={{ width: layout.width }}
+            lazy
+            renderLazyPlaceholder={() => (
+              <View style={{ flex: 1, backgroundColor: themeColors.white }} />
+            )}
+            style={{ flex: 1 }}
+            renderTabBar={() => null} // Hide default tab bar
+          />
+          {/* TabBar at the bottom */}
+          <View
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 100,
+              backgroundColor: themeColors.white,
+              elevation: 8,
+            }}
+          >
             <TabBar
-              {...props}
+              navigationState={{ index, routes }}
+              jumpTo={(key) => {
+                const idx = routes.findIndex((r) => r.key === key);
+                if (idx !== -1) setIndex(idx);
+              }}
               themeColors={themeColors}
               currentIndex={index}
-              labelStyle={{ fontFamily: "CarosSoft" }} // <-- Add fontFamily for tab labels
+              labelStyle={{ fontFamily: "CarosSoft" }}
             />
-          )}
-        />
+          </View>
+        </View>
 
         {/* Modals */}
         <GeneralReportModal
