@@ -18,6 +18,8 @@ import {
   updateDoc,
   arrayUnion,
   arrayRemove,
+  collection,
+  getDocs,
 } from "firebase/firestore";
 import { ThemeContext } from "../App";
 import { colors } from "../constants/colors";
@@ -54,6 +56,8 @@ export default function GroupDetailsScreen({ route, navigation }) {
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editSaving, setEditSaving] = useState(false);
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const starredListRef = useRef(null);
 
   // Open edit modal and pre-fill fields
@@ -167,6 +171,85 @@ export default function GroupDetailsScreen({ route, navigation }) {
       Alert.alert("Error", "Failed to unfollow user.");
     }
   };
+
+  // --- Leaderboard: Fetch each member's focus stats for this week ---
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      if (!members || members.length === 0) {
+        setLeaderboard([]);
+        return;
+      }
+      setLeaderboardLoading(true);
+      // Calculate start and end of current week (Monday 00:00 to next Monday 00:00)
+      const now = new Date();
+      const day = now.getDay();
+      const diffToMonday = (day + 6) % 7;
+      const monday = new Date(now);
+      monday.setHours(0, 0, 0, 0);
+      monday.setDate(now.getDate() - diffToMonday);
+      const weekStartMillis = monday.getTime();
+      const nextMonday = new Date(monday);
+      nextMonday.setDate(monday.getDate() + 7);
+      const weekEndMillis = nextMonday.getTime();
+
+      // For each member, fetch their focusSessions for this week
+      const stats = await Promise.all(
+        members.map(async (member) => {
+          try {
+            const q = collection(db, "users", member.uid, "focusSessions");
+            const snapshot = await getDocs(q);
+            let totalMs = 0;
+            snapshot.forEach((doc) => {
+              const d = doc.data();
+              if (
+                !d.isBreak &&
+                d.start &&
+                d.end &&
+                d.duration &&
+                typeof d.duration === "number"
+              ) {
+                // Only include sessions ending within this week
+                let endMillis;
+                if (d.end.toMillis) {
+                  endMillis = d.end.toMillis();
+                } else if (d.end.seconds) {
+                  endMillis = d.end.seconds * 1000;
+                }
+                if (
+                  typeof endMillis === "number" &&
+                  endMillis >= weekStartMillis &&
+                  endMillis < weekEndMillis
+                ) {
+                  totalMs += d.duration;
+                }
+              }
+            });
+            return {
+              uid: member.uid,
+              firstName: member.firstName,
+              lastName: member.lastName,
+              profilePic: member.profilePic ?? null,
+              totalMs,
+            };
+          } catch {
+            return {
+              uid: member.uid,
+              firstName: member.firstName,
+              lastName: member.lastName,
+              profilePic: member.profilePic ?? null,
+              totalMs: 0,
+            };
+          }
+        })
+      );
+      // Sort descending by totalMs
+      stats.sort((a, b) => b.totalMs - a.totalMs);
+      setLeaderboard(stats);
+      setLeaderboardLoading(false);
+    };
+    if (members.length > 0) fetchLeaderboard();
+    else setLeaderboard([]);
+  }, [members]);
 
   // Set navigation header to match GroupDetailView (no DotsThreeVertical)
   React.useLayoutEffect(() => {
@@ -358,28 +441,95 @@ export default function GroupDetailsScreen({ route, navigation }) {
   // --- Compose leaderboard and starred nooks section for FlatList footer ---
   const listFooter = (
     <View style={{ paddingHorizontal: 24 }}>
-      {/* Leaderboard (placeholder) */}
+      {/* Leaderboard */}
       <Text
         style={{
           fontWeight: "bold",
           color: themeColors.purple,
           fontSize: 17,
           fontFamily: "CarosSoft",
-          marginTop: 6,
+          marginTop: 24,
           marginBottom: 6,
         }}
       >
-        Leaderboard
+        This Week's Leaderboard
       </Text>
-      <Text
-        style={{
-          color: themeColors.darkGray,
-          fontFamily: "CarosSoft",
-          marginBottom: 12,
-        }}
-      >
-        (Coming soon)
-      </Text>
+      {leaderboardLoading ? (
+        <ActivityIndicator color={themeColors.purple} />
+      ) : leaderboard.length === 0 ? (
+        <Text
+          style={{
+            color: themeColors.darkGray,
+            fontFamily: "CarosSoft",
+            marginBottom: 12,
+          }}
+        >
+          No focus sessions this week.
+        </Text>
+      ) : (
+        <View style={{ marginBottom: 18 }}>
+          {leaderboard.map((user, idx) => {
+            const totalSeconds = Math.floor(user.totalMs / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            return (
+              <View
+                key={user.uid}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 8,
+                  backgroundColor:
+                    idx === 0 ? themeColors.purple + "60" : themeColors.white,
+                  borderRadius: 8,
+                  paddingVertical: 8,
+                  paddingHorizontal: 10,
+                  borderWidth: idx === 0 ? 1 : 0,
+                  borderColor: idx === 0 ? themeColors.purple : "transparent",
+                }}
+              >
+                <Text
+                  style={{
+                    fontWeight: "bold",
+                    fontSize: 16,
+                    color: themeColors.purple,
+                    width: 28,
+                    textAlign: "center",
+                    fontFamily: "CarosSoft",
+                  }}
+                >
+                  {idx + 1}
+                </Text>
+                <Text
+                  style={{
+                    color: themeColors.black,
+                    fontSize: 15,
+                    fontFamily: "CarosSoft",
+                    flex: 1,
+                  }}
+                  numberOfLines={1}
+                >
+                  {user.uid !== auth.currentUser?.uid
+                    ? user.firstName + " " + user.lastName
+                    : "You"}
+                </Text>
+                <Text
+                  style={{
+                    color: themeColors.purple,
+                    fontWeight: "bold",
+                    fontSize: 15,
+                    fontFamily: "CarosSoft",
+                    marginLeft: 8,
+                  }}
+                >
+                  {hours}h {minutes}m {seconds}s
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      )}
       {/* Starred Nooks */}
       <Text
         style={{
