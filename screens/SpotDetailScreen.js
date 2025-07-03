@@ -378,7 +378,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                   shadowOpacity: 0.2,
                   shadowRadius: 4,
                   marginBottom: 8,
-                  marginLeft: -8,
+                  marginLeft: -12,
                 }}
               >
                 <ArrowLeft size={24} color={themeColors.purple} />
@@ -884,7 +884,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                   shadowOpacity: 0.2,
                   shadowRadius: 4,
                   marginBottom: 8,
-                  marginLeft: -8,
+                  marginLeft: -12,
                 }}
               >
                 <ArrowLeft size={24} color={themeColors.purple} />
