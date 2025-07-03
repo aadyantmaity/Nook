@@ -37,6 +37,8 @@ import {
   uploadBytes,
   getDownloadURL,
 } from "firebase/storage";
+import useFavorites from "../../hooks/useFavorites";
+import { Heart } from "phosphor-react-native";
 
 function getMutualFriends(users, currentUser) {
   // Show all friends: users who are both in my followers and following
@@ -74,6 +76,7 @@ export default function StudyGroupsSection({ navigation }) {
   const themeCtx = useContext(ThemeContext);
   const themeColors = themeCtx?.themeColors ?? colors;
   const user = auth.currentUser;
+  const { favoriteGroups, toggleFavoriteGroup } = useFavorites();
 
   // Groups state
   const [groups, setGroups] = useState([]);
@@ -223,6 +226,15 @@ export default function StudyGroupsSection({ navigation }) {
     setCreating(false);
     setUploadingPic(false);
   };
+
+  // --- Sort groups: favorite groups first for current user ---
+  const sortedGroups = [...groups].sort((a, b) => {
+    const aFav = favoriteGroups.includes(a.id) ? 1 : 0;
+    const bFav = favoriteGroups.includes(b.id) ? 1 : 0;
+    if (aFav !== bFav) return bFav - aFav; // favorite first
+    // fallback: alphabetical
+    return (a.name || "").localeCompare(b.name || "");
+  });
 
   return (
     <View
@@ -666,7 +678,7 @@ export default function StudyGroupsSection({ navigation }) {
               />
             )}
             <FlatList
-              data={groups}
+              data={sortedGroups}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => {
                 // Get the icon component from PhosphorIcons
@@ -896,6 +908,36 @@ export default function StudyGroupsSection({ navigation }) {
                         </Text>
                       )}
                     </View>
+                    {/* --- Favorite group heart icon --- */}
+                    <TouchableOpacity
+                      onPress={() => toggleFavoriteGroup(item.id)}
+                      style={{
+                        marginLeft: 10,
+                        backgroundColor: themeColors.white,
+                        borderRadius: 20,
+                        borderWidth: 1,
+                        borderColor: themeColors.black,
+                        padding: 6,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                      accessibilityLabel={
+                        favoriteGroups.includes(item.id)
+                          ? "Unfavorite group"
+                          : "Favorite group"
+                      }
+                      onPressOut={(e) =>
+                        e.stopPropagation && e.stopPropagation()
+                      }
+                    >
+                      <Heart
+                        size={22}
+                        color={themeColors.purple}
+                        weight={
+                          favoriteGroups.includes(item.id) ? "fill" : "regular"
+                        }
+                      />
+                    </TouchableOpacity>
                   </TouchableOpacity>
                 );
               }}
