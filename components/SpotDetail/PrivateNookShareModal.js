@@ -48,36 +48,73 @@ export default function PrivateNookShareModal({
   useEffect(() => {
     if (!ownerUid || !visible) return;
     setLoading(true);
-    const unsub = onSnapshot(doc(db, "users", ownerUid), async (userDoc) => {
-      if (userDoc.exists()) {
-        const following = userDoc.data().following || [];
-        const followers = userDoc.data().followers || [];
-        const mutualUids = following.filter((uid) => followers.includes(uid));
-        const users = [];
-        // Fetch all mutual users in parallel
-        await Promise.all(
-          mutualUids.map(async (uid) => {
-            const uDoc = await getDoc(doc(db, "users", uid));
-            if (uDoc.exists()) {
-              users.push({
-                uid,
-                name:
-                  `${uDoc.data().firstName || ""} ${
-                    uDoc.data().lastName || ""
-                  }`.trim() || uDoc.data().email,
-                email: uDoc.data().email,
-              });
-            }
-          })
-        );
-        setFollowingList(users);
-      } else {
-        setFollowingList([]);
-      }
-      setLoading(false);
-    });
-    return () => unsub();
-  }, [ownerUid, visible]);
+    // --- For study groups: show all members except owner ---
+    if (isGroup) {
+      // For groups, spotId is the groupId, collectionName is "studyGroups", fieldName is "memberUids"
+      const unsub = onSnapshot(
+        doc(db, collectionName, spotId),
+        async (docSnap) => {
+          if (docSnap.exists()) {
+            const memberUids = docSnap.data()[fieldName] || [];
+            // Fetch all users in memberUids except owner
+            const users = [];
+            await Promise.all(
+              memberUids
+                .filter((uid) => uid !== ownerUid)
+                .map(async (uid) => {
+                  const uDoc = await getDoc(doc(db, "users", uid));
+                  if (uDoc.exists()) {
+                    users.push({
+                      uid,
+                      name:
+                        `${uDoc.data().firstName || ""} ${
+                          uDoc.data().lastName || ""
+                        }`.trim() || uDoc.data().email,
+                      email: uDoc.data().email,
+                    });
+                  }
+                })
+            );
+            setFollowingList(users);
+          } else {
+            setFollowingList([]);
+          }
+          setLoading(false);
+        }
+      );
+      return () => unsub();
+    } else {
+      const unsub = onSnapshot(doc(db, "users", ownerUid), async (userDoc) => {
+        if (userDoc.exists()) {
+          const following = userDoc.data().following || [];
+          const followers = userDoc.data().followers || [];
+          const mutualUids = following.filter((uid) => followers.includes(uid));
+          const users = [];
+          // Fetch all mutual users in parallel
+          await Promise.all(
+            mutualUids.map(async (uid) => {
+              const uDoc = await getDoc(doc(db, "users", uid));
+              if (uDoc.exists()) {
+                users.push({
+                  uid,
+                  name:
+                    `${uDoc.data().firstName || ""} ${
+                      uDoc.data().lastName || ""
+                    }`.trim() || uDoc.data().email,
+                  email: uDoc.data().email,
+                });
+              }
+            })
+          );
+          setFollowingList(users);
+        } else {
+          setFollowingList([]);
+        }
+        setLoading(false);
+      });
+      return () => unsub();
+    }
+  }, [ownerUid, visible, isGroup, spotId, collectionName, fieldName]);
 
   // --- Only update Firestore when Done is pressed ---
   const handleDone = async () => {

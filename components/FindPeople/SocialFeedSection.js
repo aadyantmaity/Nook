@@ -396,7 +396,6 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
                               <>
                                 {baseMsg.replace(/!$/, "")}
                                 {others.length > 0 ? tagString : ""}
-                                {"!"}
                               </>
                             );
                           } else {

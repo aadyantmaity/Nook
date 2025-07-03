@@ -761,10 +761,7 @@ export default function GroupDetailView({ navigation, route }) {
             });
 
             // Navigate back to groups list
-            navigation.navigate("Home", {
-              screen: "Community",
-              params: { selectedTab: "groups" },
-            });
+            navigation.goBack();
           } catch (error) {
             Alert.alert("Error", "Failed to leave group.");
           }
@@ -976,12 +973,9 @@ export default function GroupDetailView({ navigation, route }) {
                         style={{
                           marginLeft: 10,
                           padding: 4,
-                          backgroundColor: themeColors.white,
                           alignItems: "center",
                           justifyContent: "center",
-                          borderRadius: 20,
                         }}
-                        activeOpacity={0.7}
                       >
                         <Star
                           size={22}
@@ -1063,7 +1057,8 @@ export default function GroupDetailView({ navigation, route }) {
                       flexDirection: "row",
                       alignSelf: "center",
                       alignItems: "center",
-                      marginBottom: 10,
+                      marginBottom: 30,
+                      marginTop: 30,
                       maxWidth: "100%",
                     }}
                   >
@@ -1146,31 +1141,36 @@ export default function GroupDetailView({ navigation, route }) {
                           }}
                           numberOfLines={1}
                         >
-                          Shared by {item.senderName || "Someone"}
+                          {/* Shared by firstName lastInitial */}
+                          {"Shared by "}
+                          {item.senderFirstName
+                            ? item.senderFirstName +
+                              (item.senderLastName
+                                ? " " + item.senderLastName.charAt(0)
+                                : "")
+                            : item.senderName || "Someone"}
                         </Text>
                       </View>
-                    </TouchableOpacity>
-                    {/* --- Star button outside the card --- */}
-                    <TouchableOpacity
-                      onPress={() => toggleStarNook(item.spotId)}
-                      style={{
-                        marginLeft: 10,
-                        padding: 4,
-                        backgroundColor: themeColors.white,
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <Star
-                        size={22}
-                        color={themeColors.purple}
-                        weight={
-                          starredNooks.includes(item.spotId)
-                            ? "fill"
-                            : "regular"
-                        }
-                      />
+                      {/* --- Star button now inside the card, at the end --- */}
+                      <TouchableOpacity
+                        onPress={() => toggleStarNook(item.spotId)}
+                        style={{
+                          marginLeft: 10,
+                          padding: 4,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Star
+                          size={22}
+                          color={themeColors.purple}
+                          weight={
+                            starredNooks.includes(item.spotId)
+                              ? "fill"
+                              : "regular"
+                          }
+                        />
+                      </TouchableOpacity>
                     </TouchableOpacity>
                   </View>
                 );
