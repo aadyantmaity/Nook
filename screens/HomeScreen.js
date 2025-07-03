@@ -363,7 +363,7 @@ export default function HomeScreen({ navigation, route }) {
               });
             }}
             themeColors={themeColors}
-            containerStyle={{ marginHorizontal: 16, paddingBottom: 120 }} // <-- Increased padding
+            containerStyle={{ marginHorizontal: 16 }} // <-- Increased padding
           />
         </ScrollView>
       ) : (

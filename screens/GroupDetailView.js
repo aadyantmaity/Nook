@@ -49,6 +49,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import GroupMembersModal from "../components/Groups/GroupMembersModal";
 import GroupMenuModal from "../components/Groups/GroupMenuModal";
 import GroupStarredNooksModal from "../components/Groups/GroupStarredNooksModal";
+import ProfilePicture from "../components/Profile/ProfilePicture"; // <-- Add this import if not present
 
 // --- Add state for Starred Nooks Modal and data ---
 export default function GroupDetailView({ navigation, route }) {
@@ -66,6 +67,7 @@ export default function GroupDetailView({ navigation, route }) {
   const [showStarredModal, setShowStarredModal] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
   const [userCache, setUserCache] = useState({});
+  const [userPicCache, setUserPicCache] = useState({}); // <-- Add for profile pics
   const [membersList, setMembersList] = useState([]);
   const [starredNooks, setStarredNooks] = useState([]);
   const [starredNooksData, setStarredNooksData] = useState([]);
@@ -111,42 +113,6 @@ export default function GroupDetailView({ navigation, route }) {
       }
     };
   }, [groupId]);
-
-  // --- NEW: Send "joined the group" system message after joining ---
-  useEffect(() => {
-    if (!group || !auth.currentUser?.uid) return;
-
-    // Check if user is a member
-    const isMember = group.memberUids?.includes(auth.currentUser.uid) ?? false;
-
-    if (isMember && !hasSentJoinMessageRef.current) {
-      (async () => {
-        let userDoc;
-        try {
-          userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
-        } catch {}
-
-        const userName = userDoc?.exists()
-          ? (userDoc.data().firstName || "User") +
-            (userDoc.data().lastName
-              ? " " + userDoc.data().lastName.charAt(0)
-              : "")
-          : "User";
-
-        await addDoc(collection(db, "studyGroups", groupId, "messages"), {
-          type: "system",
-          text: `${userName} joined the group.`,
-          uid: auth.currentUser.uid,
-          createdAt: serverTimestamp(),
-        });
-
-        hasSentJoinMessageRef.current = true;
-      })();
-    }
-
-    // Update the ref based on current membership status
-    hasSentJoinMessageRef.current = isMember;
-  }, [group, groupId]);
 
   // Fetch messages (subcollection "messages" under group)
   useEffect(() => {
@@ -209,11 +175,12 @@ export default function GroupDetailView({ navigation, route }) {
     setSending(false);
   };
 
-  // Helper to fetch and cache user info
-  const fetchUserName = async (uid) => {
-    if (!uid) return "User";
-    if (uid === auth.currentUser?.uid) return "You";
-    if (userCache[uid]) return userCache[uid];
+  // Helper to fetch and cache user info (name and profilePic)
+  const fetchUserNameAndPic = async (uid) => {
+    if (!uid) return { name: "User", profilePic: null };
+    if (uid === auth.currentUser?.uid) return { name: "You", profilePic: null };
+    if (userCache[uid] && userPicCache[uid] !== undefined)
+      return { name: userCache[uid], profilePic: userPicCache[uid] };
     try {
       const userDoc = await getDoc(doc(db, "users", uid));
       if (userDoc.exists()) {
@@ -222,11 +189,13 @@ export default function GroupDetailView({ navigation, route }) {
         const last = d.lastName || "";
         const name =
           first && last ? `${first} ${last.charAt(0)}` : first ? first : "User";
+        const profilePic = d.profilePic || null;
         setUserCache((prev) => ({ ...prev, [uid]: name }));
-        return name;
+        setUserPicCache((prev) => ({ ...prev, [uid]: profilePic }));
+        return { name, profilePic };
       }
     } catch {}
-    return "User";
+    return { name: "User", profilePic: null };
   };
 
   // Get user display name (with caching)
@@ -235,8 +204,18 @@ export default function GroupDetailView({ navigation, route }) {
     if (uid === auth.currentUser?.uid) return "You";
     if (userCache[uid]) return userCache[uid];
     // Trigger fetch in background (non-blocking)
-    fetchUserName(uid);
+    fetchUserNameAndPic(uid);
     return "User";
+  };
+
+  // Get user profile picture (with caching)
+  const getUserProfilePic = (uid) => {
+    if (!uid) return null;
+    if (uid === auth.currentUser?.uid) return null;
+    if (userPicCache[uid] !== undefined) return userPicCache[uid];
+    // Trigger fetch in background (non-blocking)
+    fetchUserNameAndPic(uid);
+    return null;
   };
 
   // Fetch member info for Members modal
@@ -821,82 +800,168 @@ export default function GroupDetailView({ navigation, route }) {
                       </Text>
                     </View>
                   )}
-                  <View
-                    style={{
-                      alignSelf: isMe ? "flex-end" : "flex-start",
-                      marginBottom: 10,
-                      maxWidth: "80%",
-                    }}
-                  >
-                    <TouchableOpacity
-                      activeOpacity={0.8}
-                      disabled={!isMe}
-                      onLongPress={() => {
-                        if (!isMe) return;
-                        Alert.alert(
-                          "Delete Message",
-                          "Do you want to delete this message?",
-                          [
-                            { text: "Cancel", style: "cancel" },
-                            {
-                              text: "Delete",
-                              style: "destructive",
-                              onPress: () => handleDeleteMessage(item.id),
-                            },
-                          ]
-                        );
+                  {isMe ? (
+                    // My own message: right aligned, no profile picture
+                    <View
+                      style={{
+                        flexDirection: "row-reverse",
+                        alignItems: "flex-end",
+                        alignSelf: "flex-end",
+                        marginBottom: 10,
+                        maxWidth: "80%",
                       }}
                     >
-                      <View
-                        style={{
-                          backgroundColor: isMe
-                            ? themeColors.purple
-                            : themeColors.gray,
-                          borderRadius: 14,
-                          paddingVertical: 10,
-                          paddingHorizontal: 16,
-                          shadowColor: "#000",
-                          shadowOffset: { width: 0, height: 1 },
-                          shadowOpacity: 0.06,
-                          shadowRadius: 2,
-                          elevation: 1,
-                          minWidth: 50,
-                          alignItems: "center",
-                          alignSelf: isMe ? "flex-end" : "flex-start",
-                        }}
-                      >
-                        <Text
-                          style={{
-                            color: isMe ? themeColors.white : themeColors.black,
-                            fontSize: 15,
-                            fontFamily: "CarosSoft",
+                      <View style={{ flexShrink: 1 }}>
+                        <TouchableOpacity
+                          activeOpacity={0.8}
+                          disabled={!isMe}
+                          onLongPress={() => {
+                            if (!isMe) return;
+                            Alert.alert(
+                              "Delete Message",
+                              "Do you want to delete this message?",
+                              [
+                                { text: "Cancel", style: "cancel" },
+                                {
+                                  text: "Delete",
+                                  style: "destructive",
+                                  onPress: () => handleDeleteMessage(item.id),
+                                },
+                              ]
+                            );
                           }}
                         >
-                          {item.text}
-                        </Text>
+                          <View
+                            style={{
+                              backgroundColor: themeColors.purple,
+                              borderRadius: 14,
+                              paddingVertical: 10,
+                              paddingHorizontal: 16,
+                              shadowColor: "#000",
+                              shadowOffset: { width: 0, height: 1 },
+                              shadowOpacity: 0.06,
+                              shadowRadius: 2,
+                              elevation: 1,
+                              minWidth: 50,
+                              alignItems: "center",
+                              alignSelf: "flex-end",
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: themeColors.white,
+                                fontSize: 15,
+                                fontFamily: "CarosSoft",
+                              }}
+                            >
+                              {item.text}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                        {/* --- Sender info row (no profile picture) --- */}
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginTop: 2,
+                            alignSelf: "flex-end",
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: themeColors.darkGray,
+                              fontSize: 11,
+                              marginLeft: 0,
+                              fontFamily: "CarosSoft",
+                              textAlign: "right",
+                            }}
+                          >
+                            {getUserName(item.uid)}
+                            {" · "}
+                            {item.createdAt && item.createdAt.seconds
+                              ? new Date(
+                                  item.createdAt.seconds * 1000
+                                ).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : ""}
+                          </Text>
+                        </View>
                       </View>
-                    </TouchableOpacity>
-                    <Text
+                    </View>
+                  ) : (
+                    // Other's message: profile picture left, bubble right, properly aligned
+                    <View
                       style={{
-                        color: themeColors.darkGray,
-                        fontSize: 11,
-                        marginTop: 2,
-                        fontFamily: "CarosSoft",
-                        textAlign: isMe ? "right" : "left",
+                        flexDirection: "row",
+                        alignItems: "flex-start",
+                        marginBottom: 10,
+                        maxWidth: "80%",
                       }}
                     >
-                      {getUserName(item.uid)}
-                      {" · "}
-                      {item.createdAt && item.createdAt.seconds
-                        ? new Date(
-                            item.createdAt.seconds * 1000
-                          ).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : ""}
-                    </Text>
-                  </View>
+                      <View style={{ marginTop: 5, marginRight: 10 }}>
+                        <ProfilePicture
+                          profilePic={getUserProfilePic(item.uid)}
+                          themeColors={themeColors}
+                          size={28}
+                        />
+                      </View>
+                      <View style={{ flexShrink: 1 }}>
+                        <View
+                          style={{
+                            backgroundColor: themeColors.gray,
+                            borderRadius: 14,
+                            paddingVertical: 10,
+                            paddingHorizontal: 16,
+                            shadowColor: "#000",
+                            shadowOffset: { width: 0, height: 1 },
+                            shadowOpacity: 0.06,
+                            shadowRadius: 2,
+                            elevation: 1,
+                            minWidth: 50,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: themeColors.black,
+                              fontSize: 15,
+                              fontFamily: "CarosSoft",
+                            }}
+                          >
+                            {item.text}
+                          </Text>
+                        </View>
+                        {/* Sender info row */}
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginTop: 2,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: themeColors.darkGray,
+                              fontSize: 11,
+                              fontFamily: "CarosSoft",
+                            }}
+                          >
+                            {getUserName(item.uid)}
+                            {" · "}
+                            {item.createdAt && item.createdAt.seconds
+                              ? new Date(
+                                  item.createdAt.seconds * 1000
+                                ).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : ""}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  )}
                 </>
               );
             }}
