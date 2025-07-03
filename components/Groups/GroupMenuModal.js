@@ -1,12 +1,6 @@
 import React from "react";
 import { Modal, TouchableOpacity, View, Text } from "react-native";
-import {
-  UsersThree,
-  Star,
-  SignOut,
-  Trash,
-  DotsThreeVertical,
-} from "phosphor-react-native";
+import { Star, SignOut, Trash, Info } from "phosphor-react-native";
 
 export default function GroupMenuModal({
   visible,
@@ -20,6 +14,7 @@ export default function GroupMenuModal({
   fetchMembersList,
   handleLeaveGroup,
   handleDeleteGroup,
+  navigation, // <-- add this line
 }) {
   return (
     <Modal
@@ -57,98 +52,33 @@ export default function GroupMenuModal({
           }}
         >
           <TouchableOpacity
-            onPress={() => {
-              onClose();
-              setShowStarredModal(true);
-            }}
             style={{
               flexDirection: "row",
               alignItems: "center",
-              paddingVertical: 12,
+              paddingVertical: 14,
               paddingHorizontal: 18,
             }}
+            onPress={() => {
+              onClose?.();
+              navigation.navigate("GroupDetails", { groupId: group?.id });
+            }}
           >
-            <Star
+            <Info
               size={20}
               color={themeColors.purple}
-              weight="bold"
               style={{ marginRight: 10 }}
             />
             <Text
               style={{
                 color: themeColors.purple,
-                fontWeight: "bold",
                 fontFamily: "CarosSoft",
-                fontSize: 15,
+                fontSize: 16,
+                fontWeight: "bold",
               }}
             >
-              Starred Nooks
+              Details
             </Text>
           </TouchableOpacity>
-          {group?.createdBy === auth.currentUser?.uid ? (
-            <>
-              <TouchableOpacity
-                onPress={() => {
-                  onClose();
-                  setShowShareModal(true);
-                }}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingVertical: 12,
-                  paddingHorizontal: 18,
-                }}
-              >
-                <UsersThree
-                  size={20}
-                  color={themeColors.purple}
-                  weight="bold"
-                  style={{ marginRight: 10 }}
-                />
-                <Text
-                  style={{
-                    color: themeColors.purple,
-                    fontWeight: "bold",
-                    fontFamily: "CarosSoft",
-                    fontSize: 15,
-                  }}
-                >
-                  Manage Sharing
-                </Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <TouchableOpacity
-              onPress={async () => {
-                onClose();
-                await fetchMembersList();
-                setShowMembersModal(true);
-              }}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingVertical: 12,
-                paddingHorizontal: 18,
-              }}
-            >
-              <UsersThree
-                size={20}
-                color={themeColors.purple}
-                weight="bold"
-                style={{ marginRight: 10 }}
-              />
-              <Text
-                style={{
-                  color: themeColors.purple,
-                  fontWeight: "bold",
-                  fontFamily: "CarosSoft",
-                  fontSize: 15,
-                }}
-              >
-                Members
-              </Text>
-            </TouchableOpacity>
-          )}
           <TouchableOpacity
             onPress={() => {
               onClose();

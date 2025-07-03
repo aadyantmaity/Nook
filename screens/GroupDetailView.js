@@ -48,7 +48,6 @@ import { LinearGradient } from "expo-linear-gradient";
 // --- New extracted components ---
 import GroupMembersModal from "../components/Groups/GroupMembersModal";
 import GroupMenuModal from "../components/Groups/GroupMenuModal";
-import GroupStarredNooksModal from "../components/Groups/GroupStarredNooksModal";
 import ProfilePicture from "../components/Profile/ProfilePicture"; // <-- Add this import if not present
 import useFavorites from "../hooks/useFavorites"; // <-- Import useFavorites hook
 
@@ -65,7 +64,6 @@ export default function GroupDetailView({ navigation, route }) {
   const [showMenu, setShowMenu] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showMembersModal, setShowMembersModal] = useState(false);
-  const [showStarredModal, setShowStarredModal] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
   const [userCache, setUserCache] = useState({});
   const [userPicCache, setUserPicCache] = useState({}); // <-- Add for profile pics
@@ -74,6 +72,7 @@ export default function GroupDetailView({ navigation, route }) {
   const [starredNooksData, setStarredNooksData] = useState([]);
   const [showLeftGradient, setShowLeftGradient] = useState(false);
   const [showRightGradient, setShowRightGradient] = useState(false);
+  const [showStarredModal, setShowStarredModal] = useState(false); // --- Add this line to fix the error ---
   const flatListRef = useRef();
   const starredListRef = useRef(null);
   const unsubGroupRef = useRef(null);
@@ -325,33 +324,29 @@ export default function GroupDetailView({ navigation, route }) {
     navigation.setOptions({
       headerShown: true,
       headerTitle: () => (
-        <View style={{ alignItems: "center" }}>
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "bold",
-              color: themeColors.purple,
-              fontFamily: "CarosSoft",
-              textAlign: "center",
-              maxWidth: 200,
-            }}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {group?.name || "Group"}
-          </Text>
-          <Text
-            style={{
-              color: themeColors.darkGray,
-              fontSize: 13,
-              fontFamily: "CarosSoft",
-              textAlign: "center",
-            }}
-            numberOfLines={1}
-          >
-            {(group?.memberUids?.length || 0) + " members"}
-          </Text>
-        </View>
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate("GroupDetails", { groupId: group?.id })
+          }
+          activeOpacity={0.7}
+        >
+          <View style={{ alignItems: "center" }}>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "bold",
+                color: themeColors.purple,
+                fontFamily: "CarosSoft",
+                textAlign: "center",
+                maxWidth: 200,
+              }}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {group?.name || "Group"}
+            </Text>
+          </View>
+        </TouchableOpacity>
       ),
       headerTitleAlign: "center",
       headerStyle: {
@@ -515,11 +510,12 @@ export default function GroupDetailView({ navigation, route }) {
         themeColors={themeColors}
         auth={auth}
         setShowShareModal={setShowShareModal}
-        setShowStarredModal={setShowStarredModal}
-        setShowMembersModal={setShowMembersModal}
-        fetchMembersList={fetchMembersList}
+        setShowStarredModal={() => {}} // Remove starred nooks modal
+        setShowMembersModal={() => {}} // Remove members modal
+        fetchMembersList={() => {}} // Remove members modal
         handleLeaveGroup={handleLeaveGroup}
         handleDeleteGroup={handleDeleteGroup}
+        navigation={navigation} // <-- add this line
       />
       {/* Share Modal */}
       <PrivateNookShareModal
@@ -532,23 +528,8 @@ export default function GroupDetailView({ navigation, route }) {
         collectionName="studyGroups"
         fieldName="memberUids"
       />
-      {/* Members Modal */}
-      <GroupMembersModal
-        visible={showMembersModal}
-        onClose={() => setShowMembersModal(false)}
-        membersList={membersList}
-        themeColors={themeColors}
-      />
-      {/* Starred Nooks Modal */}
-      <GroupStarredNooksModal
-        visible={showStarredModal}
-        onClose={() => setShowStarredModal(false)}
-        starredNooksData={starredNooksData}
-        starredNooks={starredNooks}
-        toggleStarNook={toggleStarNook}
-        navigation={navigation}
-        themeColors={themeColors}
-      />
+      {/* Remove Members Modal */}
+      {/* Remove Starred Nooks Modal */}
       {/* Messages */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}

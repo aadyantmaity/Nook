@@ -15,6 +15,7 @@ import * as Linking from "expo-linking";
 import * as Font from "expo-font";
 import AppLoading from "expo-app-loading"; // Show while fonts are loading
 import GroupDetailView from "./screens/GroupDetailView"; // <-- add this import
+import GroupDetailsScreen from "./screens/GroupDetailsScreen"; // <-- add this import
 
 const Stack = createStackNavigator();
 
@@ -89,6 +90,7 @@ export default function App() {
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="EditSpot" component={EditSpotScreen} />
       <Stack.Screen name="GroupDetail" component={GroupDetailView} />
+      <Stack.Screen name="GroupDetails" component={GroupDetailsScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="SignUp" component={SignUpScreen} />
     </Stack.Navigator>
