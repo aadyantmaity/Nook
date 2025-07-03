@@ -545,7 +545,7 @@ export default function GroupDetailView({ navigation, route }) {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0} // adjust as needed for your header
       >
         {loading ? (
           <View
@@ -556,44 +556,65 @@ export default function GroupDetailView({ navigation, route }) {
         ) : (
           <FlatList
             ref={flatListRef}
-            data={messages}
+            data={[...messages].reverse()} // reverse for inverted list
+            inverted
             showsVerticalScrollIndicator={false}
             keyExtractor={(item) => item.id}
             contentContainerStyle={{
               padding: 18,
-              paddingBottom: 24, // match input bar's bottom padding
+              paddingBottom: 24,
               flexGrow: 1,
               backgroundColor: themeColors.white,
             }}
             renderItem={({ item, index }) => {
               const isMe = item.uid === auth.currentUser?.uid;
+
+              // Calculate the real index in the original (non-inverted) array
+              const realIndex = messages.length - 1 - index;
+              const nextItem = messages[realIndex - 1]; // Note: We look at the next item in the original array
+
               // --- Date separator logic ---
               let showDateSeparator = false;
               let dateLabel = "";
               if (item.createdAt && item.createdAt.seconds) {
                 const currentDate = new Date(item.createdAt.seconds * 1000);
-                const prevItem = messages[index - 1];
-                let prevDate = null;
+
+                // Show separator if:
+                // - This is the first message in the original array (realIndex === 0)
+                // - OR the next message is from a different day
                 if (
-                  prevItem &&
-                  prevItem.createdAt &&
-                  prevItem.createdAt.seconds
+                  realIndex === 0 ||
+                  !nextItem ||
+                  !nextItem.createdAt ||
+                  !nextItem.createdAt.seconds ||
+                  currentDate.getDate() !==
+                    new Date(nextItem.createdAt.seconds * 1000).getDate() ||
+                  currentDate.getMonth() !==
+                    new Date(nextItem.createdAt.seconds * 1000).getMonth() ||
+                  currentDate.getFullYear() !==
+                    new Date(nextItem.createdAt.seconds * 1000).getFullYear()
                 ) {
-                  prevDate = new Date(prevItem.createdAt.seconds * 1000);
-                }
-                // Show separator if first message or date changes
-                if (
-                  index === 0 ||
-                  !prevDate ||
-                  currentDate.getFullYear() !== prevDate.getFullYear() ||
-                  currentDate.getMonth() !== prevDate.getMonth() ||
-                  currentDate.getDate() !== prevDate.getDate()
-                ) {
-                  showDateSeparator = true;
                   dateLabel = currentDate.toLocaleDateString(undefined, {
                     month: "short",
                     day: "numeric",
                   });
+                  showDateSeparator = true;
+                }
+              }
+
+              // --- Show profile picture logic ---
+              let showProfilePic = false;
+              if (!isMe) {
+                // Show profile pic if:
+                // - This is the last message in the original array (realIndex === messages.length - 1)
+                // - OR the next message is from a different user or is a system message
+                if (
+                  realIndex === messages.length - 1 ||
+                  nextItem?.uid !== item.uid ||
+                  nextItem?.type === "system" ||
+                  nextItem?.type === "nook_share"
+                ) {
+                  showProfilePic = true;
                 }
               }
               // --- System message (centered, darkGray, no timestamp, no user) ---
@@ -900,13 +921,18 @@ export default function GroupDetailView({ navigation, route }) {
                         maxWidth: "80%",
                       }}
                     >
-                      <View style={{ marginTop: 5, marginRight: 10 }}>
-                        <ProfilePicture
-                          profilePic={getUserProfilePic(item.uid)}
-                          themeColors={themeColors}
-                          size={28}
-                        />
-                      </View>
+                      {/* Only show profile picture for the first message in a sequence */}
+                      {showProfilePic ? (
+                        <View style={{ marginTop: 5, marginRight: 10 }}>
+                          <ProfilePicture
+                            profilePic={getUserProfilePic(item.uid)}
+                            themeColors={themeColors}
+                            size={28}
+                          />
+                        </View>
+                      ) : (
+                        <View style={{ width: 28, marginRight: 10 }} />
+                      )}
                       <View style={{ flexShrink: 1 }}>
                         <View
                           style={{
@@ -965,12 +991,7 @@ export default function GroupDetailView({ navigation, route }) {
                 </>
               );
             }}
-            onContentSizeChange={() =>
-              flatListRef.current?.scrollToEnd({ animated: true })
-            }
-            onLayout={() =>
-              flatListRef.current?.scrollToEnd({ animated: true })
-            }
+            // Remove scrollToEnd logic for inverted list
           />
         )}
         {/* Input Bar */}
