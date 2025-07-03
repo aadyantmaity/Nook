@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   Image,
   Alert,
+  TextInput,
+  Modal,
 } from "react-native";
 import { db, auth } from "../firebaseConfig";
 import {
@@ -24,9 +26,13 @@ import {
   Star,
   MapPin,
   UserPlus,
-  UserCheck,
+  User,
+  Users,
+  PlusMinus,
+  PencilSimple,
 } from "phosphor-react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import PrivateNookShareModal from "../components/SpotDetail/PrivateNookShareModal";
 
 export default function GroupDetailsScreen({ route, navigation }) {
   const { groupId } = route.params;
@@ -43,7 +49,35 @@ export default function GroupDetailsScreen({ route, navigation }) {
   const [showRightGradient, setShowRightGradient] = useState(false);
   const [starredListWidth, setStarredListWidth] = useState(0);
   const [starredContentWidth, setStarredContentWidth] = useState(0);
+  const [showMembersModal, setShowMembersModal] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
   const starredListRef = useRef(null);
+
+  // Open edit modal and pre-fill fields
+  const openEditModal = () => {
+    setEditName(group?.name || "");
+    setEditDesc(group?.description || "");
+    setEditModalVisible(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!group || !editName.trim()) return;
+    setEditSaving(true);
+    try {
+      await updateDoc(doc(db, "studyGroups", group.id), {
+        name: editName.trim(),
+        description: editDesc.trim(),
+      });
+      setEditModalVisible(false);
+    } catch (e) {
+      Alert.alert("Error", "Failed to update group details.");
+    } finally {
+      setEditSaving(false);
+    }
+  };
 
   // Fetch group info and members
   useEffect(() => {
@@ -199,22 +233,47 @@ export default function GroupDetailsScreen({ route, navigation }) {
     );
   }
 
-  // Remove the old header bar from listHeader (since header is now in navigation)
+  // Remove the Manage Members button from the header section
   const listHeader = (
     <View style={{ padding: 0, marginBottom: 12 }}>
       {/* Group Name and Description */}
       <View style={{ paddingHorizontal: 24 }}>
-        <Text
-          style={{
-            fontSize: 22,
-            fontWeight: "bold",
-            color: themeColors.purple,
-            fontFamily: "CarosSoft",
-            marginBottom: 8,
-          }}
-        >
-          {group?.name}
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Text
+            style={{
+              fontSize: 22,
+              fontWeight: "bold",
+              color: themeColors.purple,
+              fontFamily: "CarosSoft",
+              marginBottom: 8,
+              flex: 1,
+            }}
+          >
+            {group?.name}
+          </Text>
+          {/* Show edit button for owner */}
+          {group?.createdBy === auth.currentUser?.uid && (
+            <TouchableOpacity
+              onPress={openEditModal}
+              style={{
+                marginLeft: 8,
+                padding: 4,
+                borderRadius: 6,
+                backgroundColor: themeColors.white,
+                alignItems: "center",
+                justifyContent: "center",
+                height: 28,
+              }}
+              accessibilityLabel="Edit Group"
+            >
+              <PencilSimple
+                size={20}
+                color={themeColors.purple}
+                weight="bold"
+              />
+            </TouchableOpacity>
+          )}
+        </View>
         {group?.description ? (
           <Text
             style={{
@@ -226,20 +285,61 @@ export default function GroupDetailsScreen({ route, navigation }) {
           >
             {group.description}
           </Text>
-        ) : null}
-        {/* Members */}
-        <Text
+        ) : (
+          <Text
+            style={{
+              color: themeColors.darkGray,
+              fontSize: 15,
+              fontFamily: "CarosSoft",
+              marginBottom: 32,
+            }}
+          >
+            No description provided.
+          </Text>
+        )}
+        {/* Members row */}
+        <View
           style={{
-            fontWeight: "bold",
-            color: themeColors.purple,
-            fontSize: 17,
-            fontFamily: "CarosSoft",
+            flexDirection: "row",
+            alignItems: "center",
             marginBottom: 6,
           }}
         >
-          Members{" "}
-          {("(" + group?.memberUids?.length || members.length || 0) + ")"}
-        </Text>
+          <Text
+            style={{
+              fontWeight: "bold",
+              color: themeColors.purple,
+              fontSize: 17,
+              fontFamily: "CarosSoft",
+            }}
+          >
+            Members{" "}
+            {("(" + group?.memberUids?.length || members.length || 0) + ")"}
+          </Text>
+          {group?.createdBy === auth.currentUser?.uid && (
+            <TouchableOpacity
+              onPress={() => setShowMembersModal(true)}
+              style={{
+                marginLeft: 8,
+                padding: 4,
+                borderRadius: 6,
+                backgroundColor: themeColors.white,
+                alignItems: "center",
+                justifyContent: "center",
+                height: 28, // Ensures vertical centering with text
+              }}
+              accessibilityLabel="Manage Members"
+            >
+              <PlusMinus
+                size={22}
+                color={themeColors.purple}
+                weight="bold"
+                style={{}}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+
         {members.length === 0 ? (
           <Text
             style={{
@@ -265,7 +365,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
           color: themeColors.purple,
           fontSize: 17,
           fontFamily: "CarosSoft",
-          marginTop: 24,
+          marginTop: 6,
           marginBottom: 6,
         }}
       >
@@ -440,125 +540,273 @@ export default function GroupDetailsScreen({ route, navigation }) {
 
   // --- Main FlatList for members, with header/footer for group info and starred nooks ---
   return (
-    <FlatList
-      style={{ flex: 1, backgroundColor: themeColors.white }}
-      contentContainerStyle={{ paddingTop: 32 }}
-      data={members}
-      keyExtractor={(item) => item.uid}
-      ListHeaderComponent={listHeader}
-      ListFooterComponent={listFooter}
-      renderItem={({ item }) => (
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginBottom: 10,
-            paddingHorizontal: 24,
-          }}
+    <>
+      {/* --- Edit Group Modal (owner only) --- */}
+      {group?.createdBy === auth.currentUser?.uid && (
+        <Modal
+          visible={editModalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setEditModalVisible(false)}
         >
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.3)",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+            activeOpacity={1}
+            onPressOut={() => setEditModalVisible(false)}
+          >
+            <View
+              style={{
+                backgroundColor: themeColors.white,
+                borderRadius: 16,
+                padding: 24,
+                width: "85%",
+                maxWidth: 400,
+                alignItems: "center",
+              }}
+              onStartShouldSetResponder={() => true}
+            >
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "bold",
+                  color: themeColors.purple,
+                  marginBottom: 10,
+                  textAlign: "center",
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                Edit Group Details
+              </Text>
+              <TextInput
+                value={editName}
+                onChangeText={setEditName}
+                placeholder="Group Name"
+                style={{
+                  borderWidth: 1,
+                  borderColor: themeColors.darkGray,
+                  borderRadius: 8,
+                  padding: 10,
+                  width: "100%",
+                  marginBottom: 10,
+                  color: themeColors.black,
+                  fontFamily: "CarosSoft",
+                  fontSize: 16,
+                }}
+                placeholderTextColor={themeColors.darkGray}
+                maxLength={50}
+              />
+              <TextInput
+                value={editDesc}
+                onChangeText={setEditDesc}
+                placeholder="Description (optional)"
+                style={{
+                  borderWidth: 1,
+                  borderColor: themeColors.darkGray,
+                  borderRadius: 8,
+                  padding: 10,
+                  width: "100%",
+                  marginBottom: 10,
+                  color: themeColors.black,
+                  fontFamily: "CarosSoft",
+                  fontSize: 15,
+                }}
+                placeholderTextColor={themeColors.darkGray}
+                maxLength={50}
+              />
+              <View
+                style={{ flexDirection: "row", marginTop: 8, width: "100%" }}
+              >
+                <TouchableOpacity
+                  onPress={() => setEditModalVisible(false)}
+                  style={{
+                    flex: 1,
+                    backgroundColor: themeColors.white,
+                    borderColor: themeColors.purple,
+                    borderWidth: 1,
+                    borderRadius: 8,
+                    alignItems: "center",
+                    paddingVertical: 10,
+                    marginRight: 8,
+                  }}
+                  disabled={editSaving}
+                >
+                  <Text
+                    style={{
+                      color: themeColors.purple,
+                      fontWeight: "bold",
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleSaveEdit}
+                  disabled={editSaving || !editName.trim()}
+                  style={{
+                    flex: 1,
+                    backgroundColor: themeColors.purple,
+                    borderRadius: 8,
+                    paddingVertical: 10,
+                    alignItems: "center",
+                    marginLeft: 8,
+                    opacity: editSaving ? 0.7 : 1,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: themeColors.white,
+                      fontWeight: "bold",
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    {editSaving ? "Saving..." : "Save"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
+      {/* Manage Members Modal (owner only, uses PrivateNookShareModal in group mode) */}
+      {group?.createdBy === auth.currentUser?.uid && (
+        <PrivateNookShareModal
+          visible={showMembersModal}
+          onClose={() => setShowMembersModal(false)}
+          spotId={groupId}
+          themeColors={themeColors}
+          ownerUid={group?.createdBy}
+          isGroup
+          collectionName="studyGroups"
+          fieldName="memberUids"
+        />
+      )}
+      {/* Main FlatList */}
+      <FlatList
+        style={{ flex: 1, backgroundColor: themeColors.white }}
+        contentContainerStyle={{ paddingTop: 32 }}
+        data={members}
+        keyExtractor={(item) => item.uid}
+        ListHeaderComponent={listHeader}
+        ListFooterComponent={listFooter}
+        renderItem={({ item }) => (
           <View
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
-              backgroundColor: themeColors.gray,
+              flexDirection: "row",
               alignItems: "center",
-              justifyContent: "center",
-              marginRight: 12,
-              overflow: "hidden",
+              marginBottom: 10,
+              paddingHorizontal: 24,
             }}
           >
-            {item.profilePic ? (
-              <Image
-                source={{ uri: item.profilePic }}
-                style={{ width: 36, height: 36, borderRadius: 18 }}
-              />
-            ) : (
-              <UserCheck size={22} color={themeColors.purple} />
-            )}
-          </View>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("Profile", { uid: item.uid })}
-            style={{ flex: 1 }}
-          >
-            <Text
+            <View
               style={{
-                color: themeColors.black,
-                fontSize: 16,
-                fontFamily: "CarosSoft",
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                backgroundColor: themeColors.purple,
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 12,
+                overflow: "hidden",
               }}
             >
-              {item.firstName} {item.lastName}
-            </Text>
-          </TouchableOpacity>
-          {item.uid !== auth.currentUser?.uid &&
-            (following.includes(item.uid) ? (
-              <TouchableOpacity
-                onPress={() => handleUnfollow(item.uid)}
-                disabled={followingLoading}
+              {item.profilePic ? (
+                <Image
+                  source={{ uri: item.profilePic }}
+                  style={{ width: 36, height: 36, borderRadius: 18 }}
+                />
+              ) : (
+                <User size={22} color={themeColors.white} />
+              )}
+            </View>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Profile", { uid: item.uid })}
+              style={{ flex: 1 }}
+            >
+              <Text
                 style={{
-                  backgroundColor: themeColors.red,
-                  borderRadius: 6,
-                  paddingVertical: 6,
-                  paddingHorizontal: 14,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginLeft: 8,
-                  opacity: followingLoading ? 0.6 : 1,
+                  color: themeColors.black,
+                  fontSize: 16,
+                  fontFamily: "CarosSoft",
                 }}
               >
-                <Text
+                {item.firstName} {item.lastName}
+              </Text>
+            </TouchableOpacity>
+            {item.uid !== auth.currentUser?.uid &&
+              (following.includes(item.uid) ? (
+                <TouchableOpacity
+                  onPress={() => handleUnfollow(item.uid)}
+                  disabled={followingLoading}
                   style={{
-                    color: themeColors.white,
-                    fontWeight: "bold",
-                    fontSize: 14,
-                    fontFamily: "CarosSoft",
+                    backgroundColor: themeColors.red,
+                    borderRadius: 6,
+                    paddingVertical: 6,
+                    paddingHorizontal: 14,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginLeft: 8,
+                    opacity: followingLoading ? 0.6 : 1,
                   }}
                 >
-                  Unfollow
-                </Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                onPress={() => handleFollow(item.uid)}
-                disabled={followingLoading}
-                style={{
-                  backgroundColor: themeColors.purple,
-                  borderRadius: 6,
-                  paddingVertical: 6,
-                  paddingHorizontal: 14,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginLeft: 8,
-                  opacity: followingLoading ? 0.6 : 1,
-                }}
-              >
-                <Text
+                  <Text
+                    style={{
+                      color: themeColors.white,
+                      fontWeight: "bold",
+                      fontSize: 14,
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    Unfollow
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  onPress={() => handleFollow(item.uid)}
+                  disabled={followingLoading}
                   style={{
-                    color: themeColors.white,
-                    fontWeight: "bold",
-                    fontSize: 14,
-                    fontFamily: "CarosSoft",
+                    backgroundColor: themeColors.purple,
+                    borderRadius: 6,
+                    paddingVertical: 6,
+                    paddingHorizontal: 14,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginLeft: 8,
+                    opacity: followingLoading ? 0.6 : 1,
                   }}
                 >
-                  Follow
-                </Text>
-              </TouchableOpacity>
-            ))}
-        </View>
-      )}
-      ListEmptyComponent={
-        <Text
-          style={{
-            color: themeColors.darkGray,
-            fontFamily: "CarosSoft",
-            marginBottom: 12,
-            paddingHorizontal: 24,
-          }}
-        >
-          No members.
-        </Text>
-      }
-    />
+                  <Text
+                    style={{
+                      color: themeColors.white,
+                      fontWeight: "bold",
+                      fontSize: 14,
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    Follow
+                  </Text>
+                </TouchableOpacity>
+              ))}
+          </View>
+        )}
+        ListEmptyComponent={
+          <Text
+            style={{
+              color: themeColors.darkGray,
+              fontFamily: "CarosSoft",
+              marginBottom: 12,
+              paddingHorizontal: 24,
+            }}
+          >
+            No members.
+          </Text>
+        }
+      />
+    </>
   );
 }
