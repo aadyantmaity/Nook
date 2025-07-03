@@ -971,7 +971,6 @@ export default function GroupDetailView({ navigation, route }) {
                       <TouchableOpacity
                         onPress={() => toggleStarNook(item.id)}
                         style={{
-                          marginLeft: 10,
                           padding: 4,
                           alignItems: "center",
                           justifyContent: "center",
@@ -1047,212 +1046,280 @@ export default function GroupDetailView({ navigation, route }) {
               flexGrow: 1,
               backgroundColor: themeColors.white,
             }}
-            renderItem={({ item }) => {
+            renderItem={({ item, index }) => {
               const isMe = item.uid === auth.currentUser?.uid;
+              // --- Date separator logic ---
+              let showDateSeparator = false;
+              let dateLabel = "";
+              if (item.createdAt && item.createdAt.seconds) {
+                const currentDate = new Date(item.createdAt.seconds * 1000);
+                const prevItem = messages[index - 1];
+                let prevDate = null;
+                if (
+                  prevItem &&
+                  prevItem.createdAt &&
+                  prevItem.createdAt.seconds
+                ) {
+                  prevDate = new Date(prevItem.createdAt.seconds * 1000);
+                }
+                // Show separator if first message or date changes
+                if (
+                  index === 0 ||
+                  !prevDate ||
+                  currentDate.getFullYear() !== prevDate.getFullYear() ||
+                  currentDate.getMonth() !== prevDate.getMonth() ||
+                  currentDate.getDate() !== prevDate.getDate()
+                ) {
+                  showDateSeparator = true;
+                  dateLabel = currentDate.toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                  });
+                }
+              }
               // --- Nook Share Card ---
               if (item.type === "nook_share") {
                 return (
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignSelf: "center",
-                      alignItems: "center",
-                      marginBottom: 30,
-                      marginTop: 30,
-                      maxWidth: "100%",
-                    }}
-                  >
-                    <TouchableOpacity
-                      onPress={() =>
-                        navigation.navigate("SpotDetail", {
-                          spotId: item.spotId,
-                        })
-                      }
-                      style={{
-                        maxWidth: 280,
-                        backgroundColor: themeColors.lightGray,
-                        borderRadius: 14,
-                        padding: 12,
-                        flexDirection: "row",
-                        alignItems: "center",
-                        shadowColor: "#000",
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 4,
-                        elevation: 3,
-                        borderColor: themeColors.black,
-                        borderWidth: 0.5,
-                        elevation: 5,
-                      }}
-                    >
-                      {item.spotPhoto ? (
-                        <View
-                          style={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: 8,
-                            overflow: "hidden",
-                            marginRight: 12,
-                          }}
-                        >
-                          <Image
-                            source={{ uri: item.spotPhoto }}
-                            style={{ width: "100%", height: "100%" }}
-                            resizeMode="cover"
-                          />
-                        </View>
-                      ) : (
-                        <View
-                          style={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: 8,
-                            backgroundColor: themeColors.purple,
-                            alignItems: "center",
-                            justifyContent: "center",
-                            marginRight: 12,
-                          }}
-                        >
-                          <MapPin
-                            size={32}
-                            color={themeColors.white}
-                            weight="bold"
-                          />
-                        </View>
-                      )}
-                      <View style={{ flex: 1 }}>
-                        <Text
-                          style={{
-                            color: themeColors.purple,
-                            fontWeight: "bold",
-                            fontSize: 16,
-                            fontFamily: "CarosSoft",
-                          }}
-                          numberOfLines={1}
-                        >
-                          {item.spotName || "Nook"}
-                        </Text>
+                  <>
+                    {showDateSeparator && (
+                      <View style={{ alignItems: "center", marginBottom: 10 }}>
                         <Text
                           style={{
                             color: themeColors.darkGray,
                             fontSize: 13,
                             fontFamily: "CarosSoft",
-                            marginTop: 2,
+                            backgroundColor: themeColors.lightGray,
+                            borderRadius: 8,
+                            paddingHorizontal: 12,
+                            paddingVertical: 2,
+                            marginBottom: 2,
                           }}
-                          numberOfLines={1}
                         >
-                          {/* Shared by firstName lastInitial */}
-                          {"Shared by "}
-                          {item.senderFirstName
-                            ? item.senderFirstName +
-                              (item.senderLastName
-                                ? " " + item.senderLastName.charAt(0)
-                                : "")
-                            : item.senderName || "Someone"}
+                          {dateLabel}
                         </Text>
                       </View>
-                      {/* --- Star button now inside the card, at the end --- */}
+                    )}
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignSelf: "center",
+                        alignItems: "center",
+                        marginBottom: 30,
+                        marginTop: 30,
+                        maxWidth: "100%",
+                      }}
+                    >
                       <TouchableOpacity
-                        onPress={() => toggleStarNook(item.spotId)}
+                        onPress={() =>
+                          navigation.navigate("SpotDetail", {
+                            spotId: item.spotId,
+                          })
+                        }
                         style={{
-                          marginLeft: 10,
-                          padding: 4,
+                          maxWidth: 280,
+                          backgroundColor: themeColors.lightGray,
+                          borderRadius: 14,
+                          padding: 12,
+                          flexDirection: "row",
                           alignItems: "center",
-                          justifyContent: "center",
+                          shadowColor: "#000",
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.1,
+                          shadowRadius: 4,
+                          elevation: 3,
+                          borderColor: themeColors.black,
+                          borderWidth: 0.5,
+                          elevation: 5,
                         }}
                       >
-                        <Star
-                          size={22}
-                          color={themeColors.purple}
-                          weight={
-                            starredNooks.includes(item.spotId)
-                              ? "fill"
-                              : "regular"
-                          }
-                        />
+                        {item.spotPhoto ? (
+                          <View
+                            style={{
+                              width: 48,
+                              height: 48,
+                              borderRadius: 8,
+                              overflow: "hidden",
+                              marginRight: 12,
+                            }}
+                          >
+                            <Image
+                              source={{ uri: item.spotPhoto }}
+                              style={{ width: "100%", height: "100%" }}
+                              resizeMode="cover"
+                            />
+                          </View>
+                        ) : (
+                          <View
+                            style={{
+                              width: 48,
+                              height: 48,
+                              borderRadius: 8,
+                              backgroundColor: themeColors.purple,
+                              alignItems: "center",
+                              justifyContent: "center",
+                              marginRight: 12,
+                            }}
+                          >
+                            <MapPin
+                              size={32}
+                              color={themeColors.white}
+                              weight="bold"
+                            />
+                          </View>
+                        )}
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={{
+                              color: themeColors.purple,
+                              fontWeight: "bold",
+                              fontSize: 16,
+                              fontFamily: "CarosSoft",
+                            }}
+                            numberOfLines={1}
+                          >
+                            {item.spotName || "Nook"}
+                          </Text>
+                          <Text
+                            style={{
+                              color: themeColors.darkGray,
+                              fontSize: 13,
+                              fontFamily: "CarosSoft",
+                              marginTop: 2,
+                            }}
+                            numberOfLines={1}
+                          >
+                            {/* Shared by firstName lastInitial */}
+                            {"Shared by "}
+                            {item.senderFirstName
+                              ? item.senderFirstName +
+                                (item.senderLastName
+                                  ? " " + item.senderLastName.charAt(0)
+                                  : "")
+                              : item.senderName || "Someone"}
+                          </Text>
+                        </View>
+                        {/* --- Star button now inside the card, at the end --- */}
+                        <TouchableOpacity
+                          onPress={() => toggleStarNook(item.spotId)}
+                          style={{
+                            padding: 4,
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <Star
+                            size={22}
+                            color={themeColors.purple}
+                            weight={
+                              starredNooks.includes(item.spotId)
+                                ? "fill"
+                                : "regular"
+                            }
+                          />
+                        </TouchableOpacity>
                       </TouchableOpacity>
-                    </TouchableOpacity>
-                  </View>
+                    </View>
+                  </>
                 );
               }
               // Regular message bubble
               return (
-                <View
-                  style={{
-                    alignSelf: isMe ? "flex-end" : "flex-start",
-                    marginBottom: 10,
-                    maxWidth: "80%",
-                  }}
-                >
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    disabled={!isMe}
-                    onLongPress={() => {
-                      if (!isMe) return;
-                      Alert.alert(
-                        "Delete Message",
-                        "Do you want to delete this message?",
-                        [
-                          { text: "Cancel", style: "cancel" },
-                          {
-                            text: "Delete",
-                            style: "destructive",
-                            onPress: () => handleDeleteMessage(item.id),
-                          },
-                        ]
-                      );
-                    }}
-                  >
-                    <View
-                      style={{
-                        backgroundColor: isMe
-                          ? themeColors.purple
-                          : themeColors.gray,
-                        borderRadius: 14,
-                        paddingVertical: 10,
-                        paddingHorizontal: 16,
-                        shadowColor: "#000",
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.06,
-                        shadowRadius: 2,
-                        elevation: 1,
-                        minWidth: 50,
-                        alignItems: "center",
-                        alignSelf: isMe ? "flex-end" : "flex-start",
-                      }}
-                    >
+                <>
+                  {showDateSeparator && (
+                    <View style={{ alignItems: "center", marginBottom: 10 }}>
                       <Text
                         style={{
-                          color: isMe ? themeColors.white : themeColors.black,
-                          fontSize: 15,
+                          color: themeColors.darkGray,
+                          fontSize: 13,
                           fontFamily: "CarosSoft",
+                          backgroundColor: themeColors.lightGray,
+                          borderRadius: 8,
+                          paddingHorizontal: 12,
+                          paddingVertical: 2,
+                          marginBottom: 2,
                         }}
                       >
-                        {item.text}
+                        {dateLabel}
                       </Text>
                     </View>
-                  </TouchableOpacity>
-                  <Text
+                  )}
+                  <View
                     style={{
-                      color: themeColors.darkGray,
-                      fontSize: 11,
-                      marginTop: 2,
-                      fontFamily: "CarosSoft",
-                      textAlign: isMe ? "right" : "left",
+                      alignSelf: isMe ? "flex-end" : "flex-start",
+                      marginBottom: 10,
+                      maxWidth: "80%",
                     }}
                   >
-                    {getUserName(item.uid)}
-                    {" · "}
-                    {item.createdAt && item.createdAt.seconds
-                      ? new Date(
-                          item.createdAt.seconds * 1000
-                        ).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                      : ""}
-                  </Text>
-                </View>
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      disabled={!isMe}
+                      onLongPress={() => {
+                        if (!isMe) return;
+                        Alert.alert(
+                          "Delete Message",
+                          "Do you want to delete this message?",
+                          [
+                            { text: "Cancel", style: "cancel" },
+                            {
+                              text: "Delete",
+                              style: "destructive",
+                              onPress: () => handleDeleteMessage(item.id),
+                            },
+                          ]
+                        );
+                      }}
+                    >
+                      <View
+                        style={{
+                          backgroundColor: isMe
+                            ? themeColors.purple
+                            : themeColors.gray,
+                          borderRadius: 14,
+                          paddingVertical: 10,
+                          paddingHorizontal: 16,
+                          shadowColor: "#000",
+                          shadowOffset: { width: 0, height: 1 },
+                          shadowOpacity: 0.06,
+                          shadowRadius: 2,
+                          elevation: 1,
+                          minWidth: 50,
+                          alignItems: "center",
+                          alignSelf: isMe ? "flex-end" : "flex-start",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: isMe ? themeColors.white : themeColors.black,
+                            fontSize: 15,
+                            fontFamily: "CarosSoft",
+                          }}
+                        >
+                          {item.text}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                    <Text
+                      style={{
+                        color: themeColors.darkGray,
+                        fontSize: 11,
+                        marginTop: 2,
+                        fontFamily: "CarosSoft",
+                        textAlign: isMe ? "right" : "left",
+                      }}
+                    >
+                      {getUserName(item.uid)}
+                      {" · "}
+                      {item.createdAt && item.createdAt.seconds
+                        ? new Date(
+                            item.createdAt.seconds * 1000
+                          ).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : ""}
+                    </Text>
+                  </View>
+                </>
               );
             }}
             onContentSizeChange={() =>
