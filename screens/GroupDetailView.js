@@ -42,9 +42,13 @@ import {
   updateDoc,
   deleteDoc,
 } from "firebase/firestore";
-import PrivateNookShareModal from "../components/SpotDetail/PrivateNookShareModal"; // reuse for group sharing
-import { Keyboard } from "react-native";
+import PrivateNookShareModal from "../components/SpotDetail/PrivateNookShareModal";
 import { LinearGradient } from "expo-linear-gradient";
+
+// --- New extracted components ---
+import GroupMembersModal from "../components/Groups/GroupMembersModal";
+import GroupMenuModal from "../components/Groups/GroupMenuModal";
+import GroupStarredNooksModal from "../components/Groups/GroupStarredNooksModal";
 
 // --- Add state for Starred Nooks Modal and data ---
 export default function GroupDetailView({ navigation, route }) {
@@ -74,11 +78,11 @@ export default function GroupDetailView({ navigation, route }) {
   const [starredListWidth, setStarredListWidth] = useState(0);
   const [starredContentWidth, setStarredContentWidth] = useState(0);
   const prevMembersRef = useRef(null); // Track previous members for system messages
+  const hasSentJoinMessageRef = useRef(false); // Track if join message was sent for this session
 
-  // Fetch group info and handle system messages for membership changes
+  // Fetch group info (NO system message logic here anymore)
   useEffect(() => {
     if (!groupId) return;
-    let initialLoad = true;
     const unsub = onSnapshot(
       doc(db, "studyGroups", groupId),
       async (snap) => {
@@ -89,39 +93,7 @@ export default function GroupDetailView({ navigation, route }) {
         }
         const groupData = { id: snap.id, ...snap.data() };
         setGroup(groupData);
-
-        // --- System message logic for member changes ---
-        const prevMembers = prevMembersRef.current;
-        const currMembers = groupData.memberUids || [];
-        if (prevMembers && !initialLoad) {
-          // Detect joins/adds
-          const joined = currMembers.filter(
-            (uid) => !prevMembers.includes(uid)
-          );
-          // Only handle join/add system messages here
-          for (const uid of joined) {
-            let userDoc;
-            try {
-              userDoc = await getDoc(doc(db, "users", uid));
-            } catch {}
-            const userName =
-              userDoc && userDoc.exists()
-                ? (userDoc.data().firstName || "User") +
-                  (userDoc.data().lastName
-                    ? " " + userDoc.data().lastName.charAt(0)
-                    : "")
-                : "User";
-            await addDoc(collection(db, "studyGroups", groupId, "messages"), {
-              type: "system",
-              text: `${userName} joined the group.`,
-              uid,
-              createdAt: serverTimestamp(),
-            });
-          }
-          // Do NOT handle leave/remove system messages here
-        }
-        prevMembersRef.current = currMembers;
-        initialLoad = false;
+        prevMembersRef.current = groupData.memberUids || [];
       },
       (error) => {
         setGroup(null);
@@ -139,6 +111,42 @@ export default function GroupDetailView({ navigation, route }) {
       }
     };
   }, [groupId]);
+
+  // --- NEW: Send "joined the group" system message after joining ---
+  useEffect(() => {
+    if (!group || !auth.currentUser?.uid) return;
+
+    // Check if user is a member
+    const isMember = group.memberUids?.includes(auth.currentUser.uid) ?? false;
+
+    if (isMember && !hasSentJoinMessageRef.current) {
+      (async () => {
+        let userDoc;
+        try {
+          userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+        } catch {}
+
+        const userName = userDoc?.exists()
+          ? (userDoc.data().firstName || "User") +
+            (userDoc.data().lastName
+              ? " " + userDoc.data().lastName.charAt(0)
+              : "")
+          : "User";
+
+        await addDoc(collection(db, "studyGroups", groupId, "messages"), {
+          type: "system",
+          text: `${userName} joined the group.`,
+          uid: auth.currentUser.uid,
+          createdAt: serverTimestamp(),
+        });
+
+        hasSentJoinMessageRef.current = true;
+      })();
+    }
+
+    // Update the ref based on current membership status
+    hasSentJoinMessageRef.current = isMember;
+  }, [group, groupId]);
 
   // Fetch messages (subcollection "messages" under group)
   useEffect(() => {
@@ -251,103 +259,6 @@ export default function GroupDetailView({ navigation, route }) {
       setMembersList([]);
     }
   };
-
-  // --- Modal for members list ---
-  const renderMembersModal = () => (
-    <Modal
-      visible={showMembersModal}
-      transparent
-      animationType="fade"
-      onRequestClose={() => setShowMembersModal(false)}
-    >
-      <TouchableOpacity
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0,0,0,0.2)",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-        activeOpacity={1}
-        onPressOut={() => setShowMembersModal(false)}
-      >
-        <View
-          style={{
-            backgroundColor: themeColors.white,
-            borderRadius: 16,
-            padding: 24,
-            width: "85%",
-            maxHeight: "70%",
-            alignItems: "center",
-          }}
-          onStartShouldSetResponder={() => true}
-        >
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "bold",
-              color: themeColors.purple,
-              fontFamily: "CarosSoft",
-              marginBottom: 12,
-            }}
-          >
-            Group Members
-          </Text>
-          <ScrollView style={{ width: "100%" }}>
-            {membersList.map((u) => (
-              <View
-                key={u.uid}
-                style={{
-                  paddingVertical: 8,
-                  borderBottomWidth: 1,
-                  borderBottomColor: themeColors.gray + "33",
-                }}
-              >
-                <Text
-                  style={{
-                    color: themeColors.black,
-                    fontFamily: "CarosSoft",
-                    fontWeight: "bold",
-                  }}
-                >
-                  {u.firstName} {u.lastName}
-                </Text>
-                <Text
-                  style={{
-                    color: themeColors.darkGray,
-                    fontFamily: "CarosSoft",
-                    fontSize: 13,
-                  }}
-                >
-                  {u.email}
-                </Text>
-              </View>
-            ))}
-          </ScrollView>
-          <TouchableOpacity
-            onPress={() => setShowMembersModal(false)}
-            style={{
-              marginTop: 16,
-              backgroundColor: themeColors.purple,
-              borderRadius: 8,
-              paddingVertical: 10,
-              paddingHorizontal: 32,
-              alignItems: "center",
-            }}
-          >
-            <Text
-              style={{
-                color: themeColors.white,
-                fontWeight: "bold",
-                fontFamily: "CarosSoft",
-              }}
-            >
-              Close
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
-    </Modal>
-  );
 
   // Fetch group's starred nooks from array field
   useEffect(() => {
@@ -549,217 +460,6 @@ export default function GroupDetailView({ navigation, route }) {
     );
   };
 
-  // --- Modal for menu actions ---
-  const renderMenuModal = () => (
-    <Modal
-      visible={showMenu}
-      transparent
-      animationType="fade"
-      onRequestClose={() => setShowMenu(false)}
-    >
-      <TouchableOpacity
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0,0,0,0.2)",
-          justifyContent: "flex-start",
-          alignItems: "flex-end",
-        }}
-        activeOpacity={1}
-        onPressOut={() => setShowMenu(false)}
-      >
-        <View
-          style={{
-            backgroundColor: themeColors.white,
-            borderRadius: 12,
-            marginTop: 54,
-            marginRight: 12,
-            minWidth: 180,
-            paddingVertical: 6,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-            elevation: 3,
-            borderColor: themeColors.black,
-            borderWidth: 0.5,
-            elevation: 5,
-          }}
-        >
-          {/* --- Add Starred Nooks Option --- */}
-          <TouchableOpacity
-            onPress={() => {
-              setShowMenu(false);
-              setShowStarredModal(true);
-            }}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingVertical: 12,
-              paddingHorizontal: 18,
-            }}
-          >
-            <Star
-              size={20}
-              color={themeColors.purple}
-              weight="bold"
-              style={{ marginRight: 10 }}
-            />
-            <Text
-              style={{
-                color: themeColors.purple,
-                fontWeight: "bold",
-                fontFamily: "CarosSoft",
-                fontSize: 15,
-              }}
-            >
-              Starred Nooks
-            </Text>
-          </TouchableOpacity>
-          {group?.createdBy === auth.currentUser?.uid ? (
-            <>
-              <TouchableOpacity
-                onPress={() => {
-                  setShowMenu(false);
-                  setShowShareModal(true);
-                }}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingVertical: 12,
-                  paddingHorizontal: 18,
-                }}
-              >
-                <UsersThree
-                  size={20}
-                  color={themeColors.purple}
-                  weight="bold"
-                  style={{ marginRight: 10 }}
-                />
-                <Text
-                  style={{
-                    color: themeColors.purple,
-                    fontWeight: "bold",
-                    fontFamily: "CarosSoft",
-                    fontSize: 15,
-                  }}
-                >
-                  Manage Sharing
-                </Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <TouchableOpacity
-              onPress={async () => {
-                setShowMenu(false);
-                await fetchMembersList();
-                setShowMembersModal(true);
-              }}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingVertical: 12,
-                paddingHorizontal: 18,
-              }}
-            >
-              <UsersThree
-                size={20}
-                color={themeColors.purple}
-                weight="bold"
-                style={{ marginRight: 10 }}
-              />
-              <Text
-                style={{
-                  color: themeColors.purple,
-                  fontWeight: "bold",
-                  fontFamily: "CarosSoft",
-                  fontSize: 15,
-                }}
-              >
-                Members
-              </Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity
-            onPress={() => {
-              setShowMenu(false);
-              handleLeaveGroup();
-            }}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingVertical: 12,
-              paddingHorizontal: 18,
-            }}
-          >
-            <SignOut
-              size={20}
-              color={themeColors.red}
-              weight="bold"
-              style={{ marginRight: 10 }}
-            />
-            <Text
-              style={{
-                color: themeColors.red,
-                fontWeight: "bold",
-                fontFamily: "CarosSoft",
-                fontSize: 15,
-              }}
-            >
-              Leave
-            </Text>
-          </TouchableOpacity>
-          {group?.createdBy === auth.currentUser?.uid && (
-            <TouchableOpacity
-              onPress={() => {
-                setShowMenu(false);
-                handleDeleteGroup();
-              }}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingVertical: 12,
-                paddingHorizontal: 18,
-              }}
-            >
-              <Trash
-                size={20}
-                color={themeColors.red}
-                weight="bold"
-                style={{ marginRight: 10 }}
-              />
-              <Text
-                style={{
-                  color: themeColors.red,
-                  fontWeight: "bold",
-                  fontFamily: "CarosSoft",
-                  fontSize: 15,
-                }}
-              >
-                Delete
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </TouchableOpacity>
-    </Modal>
-  );
-
-  // --- Render PrivateNookShareModal for group sharing ---
-  // Use groupId, group.createdBy as ownerUid, and memberUids as sharedWith
-  // The modal will update the memberUids field in the group doc
-  const renderShareModal = () => (
-    <PrivateNookShareModal
-      visible={showShareModal}
-      onClose={() => setShowShareModal(false)}
-      spotId={groupId}
-      themeColors={themeColors}
-      ownerUid={group?.createdBy}
-      isGroup // pass a prop to distinguish group mode
-      collectionName="studyGroups"
-      fieldName="memberUids"
-    />
-  );
-
   // --- Delete a message ---
   const handleDeleteMessage = async (messageId) => {
     try {
@@ -818,258 +518,50 @@ export default function GroupDetailView({ navigation, route }) {
     ]);
   };
 
-  // --- Starred Nooks Modal ---
-  const renderStarredNooksModal = () => (
-    <Modal
-      visible={showStarredModal}
-      transparent
-      animationType="fade"
-      onRequestClose={() => setShowStarredModal(false)}
-    >
-      <TouchableOpacity
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0,0,0,0.2)",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-        activeOpacity={1}
-        onPressOut={() => setShowStarredModal(false)}
-      >
-        <View
-          style={{
-            backgroundColor: themeColors.white,
-            borderRadius: 16,
-            padding: 24,
-            width: "90%",
-            maxHeight: "60%",
-            alignItems: "center",
-          }}
-          onStartShouldSetResponder={() => true}
-        >
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "bold",
-              color: themeColors.purple,
-              fontFamily: "CarosSoft",
-              marginBottom: 12,
-            }}
-          >
-            Starred Nooks
-          </Text>
-          {!starredNooksData || starredNooksData.length === 0 ? (
-            <Text
-              style={{
-                color: themeColors.darkGray,
-                fontFamily: "CarosSoft",
-                fontSize: 15,
-                marginVertical: 24,
-              }}
-            >
-              No starred nooks yet.
-            </Text>
-          ) : (
-            <View
-              style={{ width: "100%", position: "relative", minHeight: 80 }}
-            >
-              {/* Left gradient */}
-              {showLeftGradient && (
-                <LinearGradient
-                  colors={[themeColors.white, themeColors.white + "00"]}
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: 10,
-                    zIndex: 2,
-                  }}
-                  pointerEvents="none"
-                  start={{ x: 0, y: 0.5 }}
-                  end={{ x: 1, y: 0.5 }}
-                />
-              )}
-              {/* Right gradient */}
-              {showRightGradient && (
-                <LinearGradient
-                  colors={[themeColors.white + "00", themeColors.white]}
-                  style={{
-                    position: "absolute",
-                    right: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: 28,
-                    zIndex: 2,
-                  }}
-                  pointerEvents="none"
-                  start={{ x: 0, y: 0.5 }}
-                  end={{ x: 1, y: 0.5 }}
-                />
-              )}
-              <FlatList
-                ref={starredListRef}
-                data={starredNooksData}
-                horizontal
-                keyExtractor={(item) => item.id}
-                showsHorizontalScrollIndicator={false}
-                onLayout={(e) => {
-                  setStarredListWidth(e.nativeEvent.layout.width);
-                }}
-                onContentSizeChange={(w, h) => {
-                  setStarredContentWidth(w);
-                  // Show right gradient if content is wider than list
-                  setShowRightGradient(w > starredListWidth + 2);
-                  setShowLeftGradient(false);
-                }}
-                onScroll={(e) => {
-                  const x = e.nativeEvent.contentOffset.x;
-                  const maxX = starredContentWidth - starredListWidth;
-                  setShowLeftGradient(x > 2);
-                  setShowRightGradient(maxX - x > 2);
-                }}
-                scrollEventThrottle={16}
-                contentContainerStyle={{
-                  paddingVertical: 8,
-                  paddingHorizontal: 0,
-                }}
-                renderItem={({ item }) => (
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignSelf: "center",
-                      alignItems: "center",
-                      marginBottom: 10,
-                      maxWidth: "100%",
-                    }}
-                  >
-                    <TouchableOpacity
-                      onPress={() => {
-                        setShowStarredModal(false);
-                        navigation.navigate("SpotDetail", { spotId: item.id });
-                      }}
-                      style={{
-                        maxWidth: 280,
-                        backgroundColor: themeColors.lightGray,
-                        borderRadius: 14,
-                        padding: 12,
-                        flexDirection: "row",
-                        alignItems: "center",
-                        shadowColor: "#000",
-                        borderColor: themeColors.darkGray,
-                        borderWidth: 1,
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.06,
-                        shadowRadius: 2,
-                        elevation: 1,
-                      }}
-                    >
-                      {item.spotPhoto || item.photoURL ? (
-                        <View
-                          style={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: 8,
-                            overflow: "hidden",
-                            marginRight: 12,
-                          }}
-                        >
-                          <Image
-                            source={{ uri: item.spotPhoto || item.photoURL }}
-                            style={{ width: "100%", height: "100%" }}
-                            resizeMode="cover"
-                          />
-                        </View>
-                      ) : (
-                        <View
-                          style={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: 8,
-                            backgroundColor: themeColors.purple,
-                            alignItems: "center",
-                            justifyContent: "center",
-                            marginRight: 12,
-                          }}
-                        >
-                          <MapPin
-                            size={32}
-                            color={themeColors.white}
-                            weight="bold"
-                          />
-                        </View>
-                      )}
-                      <View style={{ flex: 1 }}>
-                        <Text
-                          style={{
-                            color: themeColors.purple,
-                            fontWeight: "bold",
-                            fontSize: 16,
-                            fontFamily: "CarosSoft",
-                          }}
-                          numberOfLines={1}
-                        >
-                          {item.spotName ||
-                            item.buildingName ||
-                            item.name ||
-                            "Nook"}
-                        </Text>
-                      </View>
-                      {/* --- Star button inside the card, at the end --- */}
-                      <TouchableOpacity
-                        onPress={() => toggleStarNook(item.id)}
-                        style={{
-                          padding: 4,
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <Star
-                          size={22}
-                          color={themeColors.purple}
-                          weight={
-                            starredNooks.includes(item.id) ? "fill" : "regular"
-                          }
-                        />
-                      </TouchableOpacity>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              />
-            </View>
-          )}
-          <TouchableOpacity
-            onPress={() => setShowStarredModal(false)}
-            style={{
-              marginTop: 16,
-              backgroundColor: themeColors.purple,
-              borderRadius: 8,
-              paddingVertical: 10,
-              paddingHorizontal: 32,
-              alignItems: "center",
-            }}
-          >
-            <Text
-              style={{
-                color: themeColors.white,
-                fontWeight: "bold",
-                fontFamily: "CarosSoft",
-              }}
-            >
-              Close
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
-    </Modal>
-  );
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
-      {renderMenuModal()}
-      {renderShareModal()}
-      {renderMembersModal()}
-      {renderStarredNooksModal()}
+      {/* Menu Modal */}
+      <GroupMenuModal
+        visible={showMenu}
+        onClose={() => setShowMenu(false)}
+        group={group}
+        themeColors={themeColors}
+        auth={auth}
+        setShowShareModal={setShowShareModal}
+        setShowStarredModal={setShowStarredModal}
+        setShowMembersModal={setShowMembersModal}
+        fetchMembersList={fetchMembersList}
+        handleLeaveGroup={handleLeaveGroup}
+        handleDeleteGroup={handleDeleteGroup}
+      />
+      {/* Share Modal */}
+      <PrivateNookShareModal
+        visible={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        spotId={groupId}
+        themeColors={themeColors}
+        ownerUid={group?.createdBy}
+        isGroup
+        collectionName="studyGroups"
+        fieldName="memberUids"
+      />
+      {/* Members Modal */}
+      <GroupMembersModal
+        visible={showMembersModal}
+        onClose={() => setShowMembersModal(false)}
+        membersList={membersList}
+        themeColors={themeColors}
+      />
+      {/* Starred Nooks Modal */}
+      <GroupStarredNooksModal
+        visible={showStarredModal}
+        onClose={() => setShowStarredModal(false)}
+        starredNooksData={starredNooksData}
+        starredNooks={starredNooks}
+        toggleStarNook={toggleStarNook}
+        navigation={navigation}
+        themeColors={themeColors}
+      />
       {/* Messages */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
