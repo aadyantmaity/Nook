@@ -16,6 +16,7 @@ import {
   Warning,
   X,
   Trash,
+  ArrowLeft,
   Flag,
   PaperPlaneRight,
   MapPin,
@@ -366,9 +367,7 @@ export default function SpotDetailScreen({ route, navigation }) {
               }}
             >
               <TouchableOpacity
-                onPress={() =>
-                  navigation.navigate("Home", { homeLoading: true })
-                }
+                onPress={() => navigation.goBack()}
                 style={{
                   alignSelf: "flex-start",
                   flexDirection: "row",
@@ -382,7 +381,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                   marginLeft: -8,
                 }}
               >
-                <House size={24} color={themeColors.purple} />
+                <ArrowLeft size={24} color={themeColors.purple} />
               </TouchableOpacity>
               {/* Add Alert button and More Info Dropdown Menu */}
               <View
@@ -872,9 +871,9 @@ export default function SpotDetailScreen({ route, navigation }) {
               }}
             >
               <TouchableOpacity
-                onPress={() =>
-                  navigation.navigate("Home", { homeLoading: true })
-                }
+                onPress={() => {
+                  navigation.goBack();
+                }}
                 style={{
                   alignSelf: "flex-start",
                   flexDirection: "row",
@@ -888,7 +887,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                   marginLeft: -8,
                 }}
               >
-                <House size={24} color={themeColors.purple} />
+                <ArrowLeft size={24} color={themeColors.purple} />
               </TouchableOpacity>
               {/* Add Alert button and More Info Dropdown Menu */}
               <View
