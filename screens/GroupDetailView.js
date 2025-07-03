@@ -73,23 +73,57 @@ export default function GroupDetailView({ navigation, route }) {
   const unsubMessagesRef = useRef(null);
   const [starredListWidth, setStarredListWidth] = useState(0);
   const [starredContentWidth, setStarredContentWidth] = useState(0);
+  const prevMembersRef = useRef(null); // Track previous members for system messages
 
-  // Fetch group info
+  // Fetch group info and handle system messages for membership changes
   useEffect(() => {
     if (!groupId) return;
+    let initialLoad = true;
     const unsub = onSnapshot(
       doc(db, "studyGroups", groupId),
-      (snap) => {
+      async (snap) => {
         if (!snap.exists()) {
           setGroup(null);
-          // Optionally, navigate back if group is deleted
           navigation.goBack?.();
           return;
         }
-        setGroup({ id: snap.id, ...snap.data() });
+        const groupData = { id: snap.id, ...snap.data() };
+        setGroup(groupData);
+
+        // --- System message logic for member changes ---
+        const prevMembers = prevMembersRef.current;
+        const currMembers = groupData.memberUids || [];
+        if (prevMembers && !initialLoad) {
+          // Detect joins/adds
+          const joined = currMembers.filter(
+            (uid) => !prevMembers.includes(uid)
+          );
+          // Only handle join/add system messages here
+          for (const uid of joined) {
+            let userDoc;
+            try {
+              userDoc = await getDoc(doc(db, "users", uid));
+            } catch {}
+            const userName =
+              userDoc && userDoc.exists()
+                ? (userDoc.data().firstName || "User") +
+                  (userDoc.data().lastName
+                    ? " " + userDoc.data().lastName.charAt(0)
+                    : "")
+                : "User";
+            await addDoc(collection(db, "studyGroups", groupId, "messages"), {
+              type: "system",
+              text: `${userName} joined the group.`,
+              uid,
+              createdAt: serverTimestamp(),
+            });
+          }
+          // Do NOT handle leave/remove system messages here
+        }
+        prevMembersRef.current = currMembers;
+        initialLoad = false;
       },
       (error) => {
-        // Permission denied or other error
         setGroup(null);
         navigation.navigate("Home", {
           screen: "Community",
@@ -744,23 +778,37 @@ export default function GroupDetailView({ navigation, route }) {
         style: "destructive",
         onPress: async () => {
           try {
-            // Create new memberUids array without current user
+            // Add system message for leaving BEFORE removing yourself
+            let userDoc;
+            try {
+              userDoc = await getDoc(doc(db, "users", auth.currentUser?.uid));
+            } catch {}
+            const userName =
+              userDoc && userDoc.exists()
+                ? (userDoc.data().firstName || "User") +
+                  (userDoc.data().lastName
+                    ? " " + userDoc.data().lastName.charAt(0)
+                    : "")
+                : "User";
+            await addDoc(collection(db, "studyGroups", groupId, "messages"), {
+              type: "system",
+              text: `${userName} left the group.`,
+              uid: auth.currentUser?.uid,
+              createdAt: serverTimestamp(),
+            });
+
             const updatedMembers = group.memberUids.filter(
               (uid) => uid !== auth.currentUser?.uid
             );
-
             // If user is the last member, delete the group
             if (updatedMembers.length === 0) {
               await handleDeleteGroup();
               return;
             }
-
             // Update the group document
             await updateDoc(doc(db, "studyGroups", groupId), {
               memberUids: updatedMembers,
             });
-
-            // Navigate back to groups list
             navigation.goBack();
           } catch (error) {
             Alert.alert("Error", "Failed to leave group.");
@@ -1077,6 +1125,44 @@ export default function GroupDetailView({ navigation, route }) {
                   });
                 }
               }
+              // --- System message (centered, darkGray, no timestamp, no user) ---
+              if (item.type === "system") {
+                return (
+                  <>
+                    {showDateSeparator && (
+                      <View style={{ alignItems: "center", marginBottom: 10 }}>
+                        <Text
+                          style={{
+                            color: themeColors.darkGray,
+                            fontSize: 13,
+                            fontFamily: "CarosSoft",
+                            backgroundColor: themeColors.lightGray,
+                            borderRadius: 8,
+                            paddingHorizontal: 12,
+                            paddingVertical: 2,
+                            marginBottom: 2,
+                          }}
+                        >
+                          {dateLabel}
+                        </Text>
+                      </View>
+                    )}
+                    <View style={{ alignItems: "center", marginVertical: 8 }}>
+                      <Text
+                        style={{
+                          color: themeColors.darkGray,
+                          fontSize: 14,
+                          fontFamily: "CarosSoft",
+                          textAlign: "center",
+                          fontStyle: "italic",
+                        }}
+                      >
+                        {item.text}
+                      </Text>
+                    </View>
+                  </>
+                );
+              }
               // --- Nook Share Card ---
               if (item.type === "nook_share") {
                 return (
@@ -1198,7 +1284,7 @@ export default function GroupDetailView({ navigation, route }) {
                               : item.senderName || "Someone"}
                           </Text>
                         </View>
-                        {/* --- Star button now inside the card, at the end --- */}
+                        {/* --- Star button inside the card, at the end --- */}
                         <TouchableOpacity
                           onPress={() => toggleStarNook(item.spotId)}
                           style={{
