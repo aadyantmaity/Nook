@@ -25,6 +25,7 @@ import {
   Trash,
   Users,
   Star,
+  Heart, // <-- Import Heart icon
 } from "phosphor-react-native";
 import { ThemeContext } from "../App";
 import { colors } from "../constants/colors";
@@ -50,6 +51,7 @@ import GroupMembersModal from "../components/Groups/GroupMembersModal";
 import GroupMenuModal from "../components/Groups/GroupMenuModal";
 import GroupStarredNooksModal from "../components/Groups/GroupStarredNooksModal";
 import ProfilePicture from "../components/Profile/ProfilePicture"; // <-- Add this import if not present
+import useFavorites from "../hooks/useFavorites"; // <-- Import useFavorites hook
 
 // --- Add state for Starred Nooks Modal and data ---
 export default function GroupDetailView({ navigation, route }) {
@@ -81,6 +83,7 @@ export default function GroupDetailView({ navigation, route }) {
   const [starredContentWidth, setStarredContentWidth] = useState(0);
   const prevMembersRef = useRef(null); // Track previous members for system messages
   const hasSentJoinMessageRef = useRef(false); // Track if join message was sent for this session
+  const { favoriteGroups, toggleFavoriteGroup } = useFavorites(); // <-- Get favoriteGroups state and toggle function
 
   // Fetch group info (NO system message logic here anymore)
   useEffect(() => {
@@ -137,7 +140,11 @@ export default function GroupDetailView({ navigation, route }) {
           );
           setLoading(false);
           setTimeout(() => {
-            flatListRef.current?.scrollToEnd({ animated: true });
+            // For inverted FlatList, offset 0 is the bottom (most recent)
+            flatListRef.current?.scrollToOffset?.({
+              offset: 0,
+              animated: false,
+            });
           }, 100);
         },
         (error) => {
@@ -372,20 +379,47 @@ export default function GroupDetailView({ navigation, route }) {
         </TouchableOpacity>
       ),
       headerRight: () => (
-        <TouchableOpacity
-          onPress={() => setShowMenu(true)}
-          style={{ paddingHorizontal: 16, paddingVertical: 8 }}
-          accessibilityLabel="More"
-        >
-          <DotsThreeVertical
-            size={26}
-            color={themeColors.purple}
-            weight="bold"
-          />
-        </TouchableOpacity>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {/* --- Favorite group heart icon --- */}
+          <TouchableOpacity
+            onPress={() => toggleFavoriteGroup(group?.id)}
+            style={{
+              marginRight: 2,
+              backgroundColor: themeColors.white,
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor: themeColors.black,
+              padding: 6,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            accessibilityLabel={
+              favoriteGroups.includes(group?.id)
+                ? "Unfavorite group"
+                : "Favorite group"
+            }
+          >
+            <Heart
+              size={22}
+              color={themeColors.purple}
+              weight={favoriteGroups.includes(group?.id) ? "fill" : "regular"}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setShowMenu(true)}
+            style={{ paddingHorizontal: 16, paddingVertical: 8 }}
+            accessibilityLabel="More"
+          >
+            <DotsThreeVertical
+              size={26}
+              color={themeColors.purple}
+              weight="bold"
+            />
+          </TouchableOpacity>
+        </View>
       ),
     });
-  }, [navigation, group, themeColors]);
+  }, [navigation, group, themeColors, favoriteGroups]);
 
   // --- Delete group handler ---
   const handleDeleteGroup = async () => {
@@ -946,6 +980,8 @@ export default function GroupDetailView({ navigation, route }) {
                             shadowRadius: 2,
                             elevation: 1,
                             minWidth: 50,
+                            alignItems: "center",
+                            alignSelf: "flex-start",
                           }}
                         >
                           <Text
