@@ -468,22 +468,6 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
               }}
               scrollEventThrottle={16}
             />
-            {/* Bottom gradient */}
-            {feed.length > 0 && (
-              <LinearGradient
-                colors={[themeColors.white + "00", themeColors.white + "FF"]}
-                style={{
-                  position: "absolute",
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  height: 24,
-                  zIndex: 2,
-                  pointerEvents: "none",
-                }}
-                pointerEvents="none"
-              />
-            )}
           </View>
         </View>
       )}

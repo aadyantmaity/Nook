@@ -87,7 +87,7 @@ export function FocusGoalCard({
         borderRadius: 14,
         padding: 18,
         marginBottom: -18,
-        marginTop: 48,
+        marginTop: 56,
         width: "92%",
         alignSelf: "center",
         shadowColor: themeColors.black,

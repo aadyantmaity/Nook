@@ -338,7 +338,7 @@ export default function HomeScreen({ navigation, route }) {
       {showMapView ? (
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: 72 }}
+          contentContainerStyle={{ paddingBottom: 120 }} // <-- Increased padding
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -363,7 +363,7 @@ export default function HomeScreen({ navigation, route }) {
               });
             }}
             themeColors={themeColors}
-            containerStyle={{ marginHorizontal: 16 }}
+            containerStyle={{ marginHorizontal: 16, paddingBottom: 120 }} // <-- Increased padding
           />
         </ScrollView>
       ) : (
@@ -391,7 +391,7 @@ export default function HomeScreen({ navigation, route }) {
           setFilters={setFilters}
           setCurrentAlerts={setCurrentAlerts}
           setShowAlertsModal={setShowAlertsModal}
-          contentContainerStyle={{ paddingBottom: 72 }}
+          contentContainerStyle={{ paddingBottom: 120 }} // <-- Increased padding
           getLastUpdatedLabel={getLastUpdatedLabel}
           showMapView={showMapView}
           setShowMapView={handleSetShowMapView}
@@ -414,7 +414,7 @@ export default function HomeScreen({ navigation, route }) {
       <View
         style={{
           position: "absolute",
-          bottom: 70, // <-- move up to avoid tab bar overlap (was 25)
+          bottom: 75, // <-- move up to avoid tab bar overlap (was 25)
           right: 16,
           zIndex: 20,
         }}

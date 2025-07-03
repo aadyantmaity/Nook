@@ -490,19 +490,6 @@ export default function StudyGroupsSection({ navigation }) {
             >
               Add Friends
             </Text>
-            {/* Show hint if public group */}
-            {!isPrivate && (
-              <Text
-                style={{
-                  color: themeColors.darkGray,
-                  fontSize: 12,
-                  marginBottom: 4,
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                (Optional for public groups)
-              </Text>
-            )}
             <ScrollView
               style={{ width: "100%", maxHeight: 120 }}
               showsVerticalScrollIndicator={false}
