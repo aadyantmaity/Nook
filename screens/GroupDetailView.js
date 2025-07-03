@@ -25,7 +25,6 @@ import {
   Trash,
   Users,
   Star,
-  Heart, // <-- Import Heart icon
 } from "phosphor-react-native";
 import { ThemeContext } from "../App";
 import { colors } from "../constants/colors";
@@ -380,31 +379,6 @@ export default function GroupDetailView({ navigation, route }) {
       ),
       headerRight: () => (
         <View style={{ flexDirection: "row", alignItems: "center" }}>
-          {/* --- Favorite group heart icon --- */}
-          <TouchableOpacity
-            onPress={() => toggleFavoriteGroup(group?.id)}
-            style={{
-              marginRight: 2,
-              backgroundColor: themeColors.white,
-              borderRadius: 20,
-              borderWidth: 1,
-              borderColor: themeColors.black,
-              padding: 6,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            accessibilityLabel={
-              favoriteGroups.includes(group?.id)
-                ? "Unfavorite group"
-                : "Favorite group"
-            }
-          >
-            <Heart
-              size={22}
-              color={themeColors.purple}
-              weight={favoriteGroups.includes(group?.id) ? "fill" : "regular"}
-            />
-          </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setShowMenu(true)}
             style={{ paddingHorizontal: 16, paddingVertical: 8 }}

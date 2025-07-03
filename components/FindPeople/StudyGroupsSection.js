@@ -38,7 +38,7 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 import useFavorites from "../../hooks/useFavorites";
-import { Heart } from "phosphor-react-native";
+import { Heart, Plus } from "phosphor-react-native";
 
 function getMutualFriends(users, currentUser) {
   // Show all friends: users who are both in my followers and following
@@ -81,6 +81,9 @@ export default function StudyGroupsSection({ navigation }) {
   // Groups state
   const [groups, setGroups] = useState([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
+  // --- Add group search state ---
+  const [groupSearch, setGroupSearch] = useState("");
+  const [groupSearchResults, setGroupSearchResults] = useState([]);
 
   // Modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -227,14 +230,32 @@ export default function StudyGroupsSection({ navigation }) {
     setUploadingPic(false);
   };
 
+  // --- Filter groups by search (fuzzy: name or description, case-insensitive) ---
+  useEffect(() => {
+    if (!groupSearch.trim()) {
+      setGroupSearchResults(groups);
+      return;
+    }
+    const s = groupSearch.trim().toLowerCase();
+    setGroupSearchResults(
+      groups.filter(
+        (g) =>
+          (g.name && g.name.toLowerCase().includes(s)) ||
+          (g.description && g.description.toLowerCase().includes(s))
+      )
+    );
+  }, [groupSearch, groups]);
+
   // --- Sort groups: favorite groups first for current user ---
-  const sortedGroups = [...groups].sort((a, b) => {
-    const aFav = favoriteGroups.includes(a.id) ? 1 : 0;
-    const bFav = favoriteGroups.includes(b.id) ? 1 : 0;
-    if (aFav !== bFav) return bFav - aFav; // favorite first
-    // fallback: alphabetical
-    return (a.name || "").localeCompare(b.name || "");
-  });
+  const sortedGroups = [...(groupSearch ? groupSearchResults : groups)].sort(
+    (a, b) => {
+      const aFav = favoriteGroups.includes(a.id) ? 1 : 0;
+      const bFav = favoriteGroups.includes(b.id) ? 1 : 0;
+      if (aFav !== bFav) return bFav - aFav; // favorite first
+      // fallback: alphabetical
+      return (a.name || "").localeCompare(b.name || "");
+    }
+  );
 
   return (
     <View
@@ -249,6 +270,26 @@ export default function StudyGroupsSection({ navigation }) {
         flex: 1,
       }}
     >
+      {/* --- Add group search bar --- */}
+      <View style={{ width: "100%", marginBottom: 12 }}>
+        <TextInput
+          placeholder="Search for a group..."
+          value={groupSearch}
+          onChangeText={setGroupSearch}
+          style={{
+            borderWidth: 1,
+            borderColor: themeColors.darkGray,
+            borderRadius: 12,
+            paddingHorizontal: 14,
+            paddingVertical: 10,
+            fontSize: 16,
+            color: themeColors.black,
+            fontFamily: "CarosSoft",
+            backgroundColor: themeColors.white,
+          }}
+          placeholderTextColor={themeColors.darkGray}
+        />
+      </View>
       {/* Create Group Modal */}
       <Modal
         visible={showCreateModal}
@@ -626,29 +667,50 @@ export default function StudyGroupsSection({ navigation }) {
       </Modal>
       {/* Main group list */}
       <View style={{ width: "100%", marginBottom: 12, flex: 1 }}>
-        <TouchableOpacity
-          onPress={() => setShowCreateModal(true)}
+        <View
           style={{
-            backgroundColor: themeColors.purple,
-            borderRadius: 8,
-            paddingVertical: 10,
-            alignItems: "center",
-            marginBottom: 10,
+            position: "absolute",
+            bottom: 50, // <-- move up to avoid tab bar overlap (was 25)
+            right: 0,
+            zIndex: 20,
           }}
         >
-          <Text
+          <TouchableOpacity
             style={{
-              color: themeColors.white,
-              fontWeight: "bold",
-              fontFamily: "CarosSoft",
+              flexDirection: "row",
+              alignItems: "center",
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              backgroundColor: themeColors.purple,
+              borderRadius: 50,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.2,
+              shadowRadius: 4,
+              elevation: 3,
             }}
+            onPress={() => setShowCreateModal(true)}
+            activeOpacity={0.85}
           >
-            + Create Study Group
-          </Text>
-        </TouchableOpacity>
+            <Plus size={24} color={themeColors.white} />
+            <Text
+              style={{
+                color: themeColors.white,
+                fontWeight: "bold",
+                fontSize: 14,
+                marginLeft: 8,
+                fontFamily: "CarosSoft",
+              }}
+            >
+              Add Group
+            </Text>
+          </TouchableOpacity>
+        </View>
         {loadingGroups ? (
           <ActivityIndicator color={themeColors.purple} />
-        ) : groups.length === 0 ? (
+        ) : (
+            groupSearch ? groupSearchResults.length === 0 : groups.length === 0
+          ) ? (
           <Text
             style={{
               color: themeColors.darkGray,
@@ -657,7 +719,9 @@ export default function StudyGroupsSection({ navigation }) {
               marginTop: 12,
             }}
           >
-            You are not a member of any study groups yet.
+            {groupSearch
+              ? "No groups found matching your search."
+              : "You are not a member of any study groups yet."}
           </Text>
         ) : (
           <View style={{ flex: 1, position: "relative" }}>
@@ -942,7 +1006,7 @@ export default function StudyGroupsSection({ navigation }) {
                 );
               }}
               style={{ flex: 1 }}
-              contentContainerStyle={{ flexGrow: 1 }}
+              contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
               showsVerticalScrollIndicator={false}
               onScroll={(e) => {
                 const offsetY = e.nativeEvent.contentOffset.y;
