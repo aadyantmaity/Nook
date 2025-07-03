@@ -29,6 +29,7 @@ import { ThemeContext } from "../../App";
 import { colors } from "../../constants/colors";
 import { LinearGradient } from "expo-linear-gradient";
 import * as PhosphorIcons from "phosphor-react-native";
+import { LockKey } from "phosphor-react-native";
 import * as ImagePicker from "expo-image-picker";
 import {
   getStorage,
@@ -711,6 +712,35 @@ export default function StudyGroupsSection({ navigation }) {
                                     await updateDoc(groupRef, {
                                       memberUids: [...memberUids, user.uid],
                                     });
+                                    // --- Add joined the group system message ---
+                                    let userDoc;
+                                    try {
+                                      userDoc = await getDoc(
+                                        doc(db, "users", user.uid)
+                                      );
+                                    } catch {}
+                                    const userName =
+                                      userDoc && userDoc.exists()
+                                        ? (userDoc.data().firstName || "User") +
+                                          (userDoc.data().lastName
+                                            ? " " +
+                                              userDoc.data().lastName.charAt(0)
+                                            : "")
+                                        : "User";
+                                    await addDoc(
+                                      collection(
+                                        db,
+                                        "studyGroups",
+                                        item.id,
+                                        "messages"
+                                      ),
+                                      {
+                                        type: "system",
+                                        text: `${userName} joined the group.`,
+                                        uid: user.uid,
+                                        createdAt: serverTimestamp(),
+                                      }
+                                    );
                                   }
                                 }
                               });
@@ -790,17 +820,37 @@ export default function StudyGroupsSection({ navigation }) {
                       </View>
                     )}
                     <View style={{ flex: 1 }}>
-                      <Text
+                      <View
                         style={{
-                          color: themeColors.purple,
-                          fontWeight: "bold",
-                          fontSize: 18,
-                          fontFamily: "CarosSoft",
+                          flexDirection: "row",
+                          alignItems: "center",
                           marginBottom: 4,
                         }}
                       >
-                        {item.name}
-                      </Text>
+                        <Text
+                          style={{
+                            color: themeColors.purple,
+                            fontWeight: "bold",
+                            fontSize: 18,
+                            fontFamily: "CarosSoft",
+                            // marginBottom: 4, // moved to parent View
+                          }}
+                        >
+                          {item.name}
+                        </Text>
+                        {item.isPrivate && (
+                          <LockKey
+                            size={18}
+                            color={themeColors.purple}
+                            weight="fill"
+                            style={{
+                              marginLeft: 6,
+                              marginBottom: -2,
+                              alignSelf: "center",
+                            }}
+                          />
+                        )}
+                      </View>
                       {item.description !== "" && (
                         <Text
                           style={{
@@ -813,23 +863,6 @@ export default function StudyGroupsSection({ navigation }) {
                           {item.description}
                         </Text>
                       )}
-                      {/* --- Show privacy label --- */}
-                      <Text
-                        style={{
-                          color:
-                            item.isPrivate ?? false
-                              ? themeColors.red
-                              : themeColors.green,
-                          fontSize: 13,
-                          fontWeight: "bold",
-                          fontFamily: "CarosSoft",
-                          marginBottom: 4,
-                        }}
-                      >
-                        {item.isPrivate ?? false
-                          ? "Private Group"
-                          : "Public Group"}
-                      </Text>
                       {/* --- Show member names (first name + last initial) --- */}
                       {item.isPrivate && (
                         <Text
