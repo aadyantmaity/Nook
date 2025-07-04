@@ -33,6 +33,7 @@ export default function TabBar({
         alignSelf: "center",
         alignItems: "center",
         width: "100%",
+        marginBottom: 2,
       }}
     >
       <View

@@ -815,7 +815,7 @@ export default function StudyGroupsSection({ navigation }) {
         <View
           style={{
             position: "absolute",
-            bottom: 50, // <-- move up to avoid tab bar overlap (was 25)
+            bottom: 40, // <-- move up to avoid tab bar overlap (was 25)
             right: 0,
             zIndex: 20,
           }}
