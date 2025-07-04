@@ -7,6 +7,7 @@ import {
   getDocs,
   query,
   where,
+  onSnapshot,
 } from "firebase/firestore";
 
 export default function useFavoriteSpots(targetUid = null) {
@@ -74,8 +75,14 @@ export default function useFavoriteSpots(targetUid = null) {
           if (!spotData.privateNook) {
             // --- Add: Fetch ratings for each favorite spot ---
             try {
-              const { collection, getDocs, query, where, Timestamp } =
-                await import("firebase/firestore");
+              const {
+                collection,
+                getDocs,
+                query,
+                where,
+                Timestamp,
+                onSnapshot,
+              } = await import("firebase/firestore");
               const ratingsQuery = query(
                 collection(db, "ratings"),
                 where("spotId", "==", docSnap.id)
@@ -197,7 +204,7 @@ export default function useFavoriteSpots(targetUid = null) {
                 }
               }
 
-              // --- Fetch overall ratings for this spot ---
+              // --- Fetch overall ratings for this spot (live) ---
               let averageOverallRating = 0;
               let overallRatingsCount = 0;
               try {
@@ -205,18 +212,30 @@ export default function useFavoriteSpots(targetUid = null) {
                   collection(db, "overallRatings"),
                   where("spotId", "==", docSnap.id)
                 );
-                const overallRatingsSnapshot = await getDocs(
-                  overallRatingsQuery
-                );
-                let sum = 0,
-                  count = 0;
-                overallRatingsSnapshot.forEach((doc) => {
-                  const data = doc.data();
-                  sum += data.rating || 0;
-                  count++;
+                // Add live snapshot for overall ratings
+                onSnapshot(overallRatingsQuery, (overallRatingsSnapshot) => {
+                  let sum = 0,
+                    count = 0;
+                  overallRatingsSnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    sum += data.rating || 0;
+                    count++;
+                  });
+                  averageOverallRating = count > 0 ? sum / count : 0;
+                  overallRatingsCount = count;
+                  // Update the spot in setFavoriteSpots
+                  setFavoriteSpots((prevSpots) =>
+                    prevSpots.map((s) =>
+                      s.id === docSnap.id
+                        ? {
+                            ...s,
+                            averageOverallRating,
+                            overallRatingsCount,
+                          }
+                        : s
+                    )
+                  );
                 });
-                averageOverallRating = count > 0 ? sum / count : 0;
-                overallRatingsCount = count;
               } catch (e) {
                 averageOverallRating = 0;
                 overallRatingsCount = 0;

@@ -50,6 +50,7 @@ export default function GroupMenuModal({
             borderWidth: 0.5,
             elevation: 5,
           }}
+          onStartShouldSetResponder={() => true}
         >
           <TouchableOpacity
             style={{

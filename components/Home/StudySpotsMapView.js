@@ -289,13 +289,15 @@ export default function StudySpotsMapView({
         animationType="fade"
         onRequestClose={() => setRegionPickerVisible(false)}
       >
-        <View
+        <TouchableOpacity
           style={{
             flex: 1,
             backgroundColor: "rgba(0,0,0,0.25)",
             justifyContent: "center",
             alignItems: "center",
           }}
+          activeOpacity={1}
+          onPressOut={() => setRegionPickerVisible(false)}
         >
           <View
             style={{
@@ -313,6 +315,7 @@ export default function StudySpotsMapView({
               shadowRadius: 4,
               elevation: 5,
             }}
+            onStartShouldSetResponder={() => true}
           >
             <Text
               style={{
@@ -529,7 +532,7 @@ export default function StudySpotsMapView({
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </TouchableOpacity>
       </Modal>
       <View
         style={[

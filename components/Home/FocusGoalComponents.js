@@ -322,14 +322,21 @@ export const GoalModal = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <TouchableOpacity
         style={{
           flex: 1,
           backgroundColor: "rgba(0,0,0,0.3)",
           justifyContent: "center",
           alignItems: "center",
         }}
+        activeOpacity={1}
+        onPressOut={onClose}
       >
         <View
           style={{
@@ -350,6 +357,7 @@ export const GoalModal = ({
             shadowRadius: 4,
             elevation: 5,
           }}
+          onStartShouldSetResponder={() => true}
         >
           <Text
             style={{
@@ -566,7 +574,7 @@ export const GoalModal = ({
             </View>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     </Modal>
   );
 };

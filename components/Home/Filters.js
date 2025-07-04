@@ -146,13 +146,15 @@ export default function Filters({
         animationType="slide"
         onRequestClose={() => setModalVisible(false)}
       >
-        <View
+        <TouchableOpacity
           style={{
             flex: 1,
             backgroundColor: "rgba(0,0,0,0.3)",
             justifyContent: "center",
             alignItems: "center",
           }}
+          activeOpacity={1}
+          onPressOut={() => setModalVisible(false)}
         >
           <View
             style={{
@@ -165,6 +167,7 @@ export default function Filters({
               maxWidth: 400,
               alignItems: "center",
             }}
+            onStartShouldSetResponder={() => true}
           >
             <Text
               style={{
@@ -308,9 +311,33 @@ export default function Filters({
               </View>
             </View>
             {/* --- End Sort By Section --- */}
-            <View
-              style={{ flexDirection: "row", marginTop: 18, width: "100%" }}
+            {/* --- Reset Filters Button --- */}
+            <TouchableOpacity
+              onPress={() => {
+                setLocalFilters([]);
+                setLocalSortBy("default");
+              }}
+              style={{
+                width: "100%",
+                backgroundColor: themeColors.white,
+                borderRadius: 8,
+                alignItems: "center",
+                padding: 12,
+                marginBottom: 10,
+              }}
             >
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontSize: 16,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                Reset Filters
+              </Text>
+            </TouchableOpacity>
+            <View style={{ flexDirection: "row", marginTop: 8, width: "100%" }}>
               <TouchableOpacity
                 onPress={() => {
                   setModalVisible(false);
@@ -365,7 +392,7 @@ export default function Filters({
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </TouchableOpacity>
       </Modal>
     </TouchableOpacity>
   );

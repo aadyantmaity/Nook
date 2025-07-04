@@ -64,8 +64,10 @@ export default function useSearchAndFilters(studySpots, favorites) {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
-  // Sorting logic (add distance sort)
+  // Sorting logic (add distance sort and others)
   let sortedSpots = [...(studySpots || [])];
+
+  // Distance sort (handled first, as before)
   if (
     (sortBy === "distance-asc" || sortBy === "distance-desc") &&
     userLocation
@@ -89,8 +91,47 @@ export default function useSearchAndFilters(studySpots, favorites) {
         }
         return { ...spot, _distance: Infinity };
       })
-      .sort((a, b) => a._distance - b._distance);
+      .sort((a, b) =>
+        sortBy === "distance-asc"
+          ? a._distance - b._distance
+          : b._distance - a._distance
+      );
+  } else if (sortBy === "name-asc") {
+    sortedSpots.sort((a, b) =>
+      (a.buildingName || a.name || "").localeCompare(
+        b.buildingName || b.name || ""
+      )
+    );
+  } else if (sortBy === "noise-asc") {
+    sortedSpots.sort((a, b) => {
+      const aNoise =
+        typeof a.ratings?.noise === "number" ? a.ratings.noise : 999;
+      const bNoise =
+        typeof b.ratings?.noise === "number" ? b.ratings.noise : 999;
+      return aNoise - bNoise;
+    });
+  } else if (sortBy === "overall-desc") {
+    sortedSpots.sort((a, b) => {
+      const aOverall =
+        typeof a.averageOverallRating === "number"
+          ? a.averageOverallRating
+          : -1;
+      const bOverall =
+        typeof b.averageOverallRating === "number"
+          ? b.averageOverallRating
+          : -1;
+      return bOverall - aOverall;
+    });
+  } else if (sortBy === "crowd-asc") {
+    sortedSpots.sort((a, b) => {
+      const aCrowd =
+        typeof a.ratings?.crowd === "number" ? a.ratings.crowd : 999;
+      const bCrowd =
+        typeof b.ratings?.crowd === "number" ? b.ratings.crowd : 999;
+      return aCrowd - bCrowd;
+    });
   }
+  // else: default order (as fetched)
 
   const filteredSpots = sortedSpots.filter((spot) => matchFilters(spot));
 

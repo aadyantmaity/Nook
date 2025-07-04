@@ -23,6 +23,7 @@ import {
   updateDoc,
   addDoc,
   onSnapshot,
+  getDoc,
   doc,
 } from "firebase/firestore"; // Ensure Timestamp is imported
 import { getAuth, sendEmailVerification, reload, signOut } from "firebase/auth";
