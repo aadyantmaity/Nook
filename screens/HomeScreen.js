@@ -356,8 +356,9 @@ export default function HomeScreen({ navigation, route }) {
           </View>
           <StudySpotsMapView
             spots={filteredSpots}
+            navigation={navigation} // <-- pass navigation object, not a function
             themeColors={themeColors}
-            containerStyle={{ marginHorizontal: 16 }} // <-- Increased padding
+            containerStyle={{ marginTop: 0 }}
           />
         </ScrollView>
       ) : (
