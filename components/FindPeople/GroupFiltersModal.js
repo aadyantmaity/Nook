@@ -102,9 +102,7 @@ export default function GroupFiltersModal({
               </TouchableOpacity>
             ))}
           </View>
-          <View
-            style={{ flexDirection: "row", marginTop: 18, width: "100%" }}
-          >
+          <View style={{ flexDirection: "row", marginTop: 18, width: "100%" }}>
             <TouchableOpacity
               onPress={() => {
                 setPendingFilter(selectedFilter);
