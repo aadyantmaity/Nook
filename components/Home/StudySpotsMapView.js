@@ -75,6 +75,7 @@ export default function StudySpotsMapView({
 
   // Add this state for the selected spot/building
   const [selectedPin, setSelectedPin] = useState(null);
+  const [mapRefreshKey, setMapRefreshKey] = useState(0);
 
   // Calculate square size (full width minus 32px)
   const screenWidth = Dimensions.get("window").width;
@@ -575,6 +576,7 @@ export default function StudySpotsMapView({
           </TouchableOpacity>
         </View>
         <MapView
+          key={mapRefreshKey}
           ref={mapRef}
           style={{ flex: 1 }}
           region={region}
@@ -882,10 +884,14 @@ export default function StudySpotsMapView({
                 }}
                 onPress={() => {
                   setSelectedPin(null);
-                  navigation.navigate("SpotDetail", {
-                    spotId: selectedPin.spots[0].id,
-                    view: "map",
-                  });
+                  setBuildingModal((prev) => ({ ...prev, visible: false }));
+                  setMapRefreshKey((k) => k + 1);
+                  setTimeout(() => {
+                    navigation.navigate("SpotDetail", {
+                      spotId: selectedPin.spots[0].id,
+                      view: "map",
+                    });
+                  }, 250);
                 }}
               >
                 <Text
@@ -909,6 +915,7 @@ export default function StudySpotsMapView({
                 }}
                 onPress={() => {
                   setSelectedPin(null);
+                  setBuildingModal((prev) => ({ ...prev, visible: false }));
                   const coords =
                     selectedPin.spots.length === 1
                       ? selectedPin.spots[0].coordinates
@@ -936,7 +943,10 @@ export default function StudySpotsMapView({
               </TouchableOpacity>
             </View>
             <TouchableOpacity
-              onPress={() => setSelectedPin(null)}
+              onPress={() => {
+                setSelectedPin(null);
+                setMapRefreshKey((k) => k + 1);
+              }}
               style={{
                 marginTop: 14,
                 backgroundColor: themeColors.darkGray,

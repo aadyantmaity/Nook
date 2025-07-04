@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import ProfilePicture from "../Profile/ProfilePicture";
+import { Trash } from "phosphor-react-native";
 
 export default function FollowersModal({
   visible,
@@ -20,7 +21,6 @@ export default function FollowersModal({
   isOwnProfile,
   handleRemoveFollower,
 }) {
-  
   return (
     <Modal
       visible={visible}
@@ -81,8 +81,8 @@ export default function FollowersModal({
                   <ProfilePicture
                     profilePic={item.profilePic}
                     themeColors={themeColors}
-                    size={29} // if your component supports a size prop
-                    style={{ marginRight: 12 }} // if your component supports style
+                    size={29}
+                    style={{ marginRight: 12 }}
                   />
 
                   <TouchableOpacity
@@ -114,14 +114,21 @@ export default function FollowersModal({
                         paddingHorizontal: 14,
                         alignItems: "center",
                         justifyContent: "center",
+                        flexDirection: "row",
                       }}
                     >
+                      <Trash
+                        size={18}
+                        color={themeColors.white}
+                        weight="bold"
+                      />
                       <Text
                         style={{
                           color: themeColors.white,
                           fontWeight: "bold",
-                          fontSize: 14,
                           fontFamily: "CarosSoft",
+                          marginLeft: 6,
+                          fontSize: 13,
                         }}
                       >
                         Remove

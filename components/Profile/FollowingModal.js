@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import ProfilePicture from "../Profile/ProfilePicture";
+import { UserMinus } from "phosphor-react-native";
 
 export default function FollowingModal({
   visible,
@@ -97,7 +98,7 @@ export default function FollowingModal({
                         color: themeColors.black,
                         fontSize: 16,
                         fontFamily: "CarosSoft",
-                        marginLeft: 8, 
+                        marginLeft: 8,
                       }}
                     >
                       {item.name}
@@ -115,20 +116,24 @@ export default function FollowingModal({
                         paddingHorizontal: 14,
                         alignItems: "center",
                         justifyContent: "center",
-                        opacity: unfollowingUid === item.uid ? 0.6 : 1,
+                        flexDirection: "row",
                       }}
                     >
+                      <UserMinus
+                        size={18}
+                        color={themeColors.white}
+                        weight="bold"
+                      />
                       <Text
                         style={{
+                          marginLeft: 6,
                           color: themeColors.white,
                           fontWeight: "bold",
                           fontSize: 14,
                           fontFamily: "CarosSoft",
                         }}
                       >
-                        {unfollowingUid === item.uid
-                          ? "Unfollowing..."
-                          : "Unfollow"}
+                        Unfollow
                       </Text>
                     </TouchableOpacity>
                   )}
