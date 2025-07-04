@@ -31,7 +31,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
   const [isCheckedInHere, setIsCheckedInHere] = useState(false);
   const [userCheckInDocId, setUserCheckInDocId] = useState(null);
 
-  // Fetch following list for tagging
+  // Fetch following list for tagging (mutual friends only)
   useEffect(() => {
     if (!user) return;
     (async () => {
@@ -43,8 +43,13 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
         const following = userDoc.exists()
           ? userDoc.data().following || []
           : [];
+        const followers = userDoc.exists()
+          ? userDoc.data().followers || []
+          : [];
+        // Only mutual friends (in both following and followers)
+        const mutualUids = following.filter((uid) => followers.includes(uid));
         const users = [];
-        for (let uid of following) {
+        for (let uid of mutualUids) {
           const uDoc = await getDoc(
             doc(require("../../firebaseConfig").db, "users", uid)
           );

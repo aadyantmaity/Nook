@@ -28,7 +28,6 @@ export default function TabBar({
       style={{
         backgroundColor: themeColors.white,
         paddingHorizontal: 0,
-        paddingTop: 16,
         zIndex: 100,
         elevation: 8,
         alignSelf: "center",
@@ -55,9 +54,7 @@ export default function TabBar({
                 flex: 1,
                 paddingVertical: 12,
                 alignItems: "center",
-                borderBottomWidth: 3,
-                borderBottomColor:
-                  currentIndex === i ? themeColors.purple : "transparent",
+
                 backgroundColor: themeColors.white,
               }}
               accessibilityLabel={TAB_LABELS[route.key]}
