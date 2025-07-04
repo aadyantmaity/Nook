@@ -356,12 +356,6 @@ export default function HomeScreen({ navigation, route }) {
           </View>
           <StudySpotsMapView
             spots={filteredSpots}
-            navigation={(navProps) => {
-              navigation.navigate("SpotDetail", {
-                ...navProps,
-                view: showMapView ? "map" : "list",
-              });
-            }}
             themeColors={themeColors}
             containerStyle={{ marginHorizontal: 16 }} // <-- Increased padding
           />
