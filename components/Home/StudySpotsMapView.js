@@ -758,7 +758,7 @@ export default function StudySpotsMapView({
                     key={spot.id}
                     onPress={() => {
                       setBuildingModal((prev) => ({ ...prev, visible: false }));
-                      navigation({
+                      navigation.navigate("SpotDetail", {
                         spotId: spot.id,
                         view: "map",
                       });
@@ -909,7 +909,10 @@ export default function StudySpotsMapView({
                   const coords =
                     selectedPin.spots.length === 1
                       ? selectedPin.spots[0].coordinates
-                      : { latitude: selectedPin.latitude, longitude: selectedPin.longitude };
+                      : {
+                          latitude: selectedPin.latitude,
+                          longitude: selectedPin.longitude,
+                        };
                   const url = Platform.select({
                     ios: `http://maps.apple.com/?daddr=${coords.latitude},${coords.longitude}`,
                     android: `http://maps.google.com/?daddr=${coords.latitude},${coords.longitude}`,
