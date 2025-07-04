@@ -10,6 +10,7 @@ import {
   ScrollView,
   Alert,
   Image,
+  Switch,
 } from "react-native";
 import { db, auth } from "../../firebaseConfig";
 import {
@@ -29,7 +30,7 @@ import { ThemeContext } from "../../App";
 import { colors } from "../../constants/colors";
 import { LinearGradient } from "expo-linear-gradient";
 import * as PhosphorIcons from "phosphor-react-native";
-import { LockKey } from "phosphor-react-native";
+import { LockKey, Plus, FadersHorizontal } from "phosphor-react-native";
 import * as ImagePicker from "expo-image-picker";
 import {
   getStorage,
@@ -38,7 +39,7 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 import useFavorites from "../../hooks/useFavorites";
-import { Heart, Plus } from "phosphor-react-native";
+import GroupFiltersModal from "./GroupFiltersModal";
 
 function getMutualFriends(users, currentUser) {
   // Show all friends: users who are both in my followers and following
@@ -97,6 +98,26 @@ export default function StudyGroupsSection({ navigation }) {
   const [groupProfilePic, setGroupProfilePic] = useState(null);
   const [uploadingPic, setUploadingPic] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false); // <-- add state
+
+  // Add state for group view mode
+  const [showAllGroups, setShowAllGroups] = useState(false);
+
+  // Store all groups (for "All Groups" view)
+  const [allGroups, setAllGroups] = useState([]);
+
+  // --- Filter modal state ---
+  const FILTERS = [
+    { key: "default", label: "All" },
+    { key: "my", label: "My Groups" },
+    { key: "small", label: "Small (<10)" },
+    { key: "big", label: "Big (>10)" },
+    { key: "public", label: "Public" },
+    { key: "private", label: "Private" }, // <-- add private filter
+  ];
+  const [selectedFilter, setSelectedFilter] = useState("default");
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  // Add a temp filter state for the modal
+  const [pendingFilter, setPendingFilter] = useState(selectedFilter);
 
   // Fetch groups: public for all, private only if user is a member
   useEffect(() => {
@@ -161,6 +182,46 @@ export default function StudyGroupsSection({ navigation }) {
       setAllUsers(users);
       setMutualFriends(getMutualFriends(users, user));
     })();
+  }, [user]);
+
+  // Fetch all groups for "All Groups" view
+  useEffect(() => {
+    if (!user) return;
+    // Fetch all public groups and all private groups where user is a member
+    const publicQ = query(
+      collection(db, "studyGroups"),
+      where("isPrivate", "==", false)
+    );
+    const privateQ = query(
+      collection(db, "studyGroups"),
+      where("isPrivate", "==", true),
+      where("memberUids", "array-contains", user.uid)
+    );
+    // Listen to both queries and merge results
+    let unsubPublic = null;
+    let unsubPrivate = null;
+    unsubPublic = onSnapshot(publicQ, (snapPublic) => {
+      const publicGroups = snapPublic.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
+      unsubPrivate = onSnapshot(privateQ, (snapPrivate) => {
+        const privateGroups = snapPrivate.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        }));
+        // Merge and deduplicate by id
+        const map = {};
+        [...publicGroups, ...privateGroups].forEach((g) => {
+          map[g.id] = g;
+        });
+        setAllGroups(Object.values(map));
+      });
+    });
+    return () => {
+      if (unsubPublic) unsubPublic();
+      if (unsubPrivate) unsubPrivate();
+    };
   }, [user]);
 
   // Helper to pick image
@@ -230,32 +291,67 @@ export default function StudyGroupsSection({ navigation }) {
     setUploadingPic(false);
   };
 
+  // --- Filter groups based on selected filter ---
+  const filterGroups = (groupsArr) => {
+    switch (selectedFilter) {
+      case "my":
+        return groupsArr.filter(
+          (g) => Array.isArray(g.memberUids) && g.memberUids.includes(user.uid)
+        );
+      case "small":
+        return groupsArr.filter(
+          (g) => Array.isArray(g.memberUids) && g.memberUids.length < 10
+        );
+      case "big":
+        return groupsArr.filter(
+          (g) => Array.isArray(g.memberUids) && g.memberUids.length > 10
+        );
+      case "public":
+        return groupsArr.filter((g) => !(g.isPrivate ?? false));
+      case "private":
+        return groupsArr.filter((g) => g.isPrivate === true); // <-- filter private groups only
+      case "default":
+      default:
+        // All public groups + private groups where user is a member
+        return groupsArr.filter(
+          (g) =>
+            !(g.isPrivate ?? false) ||
+            (Array.isArray(g.memberUids) && g.memberUids.includes(user.uid))
+        );
+    }
+  };
+
   // --- Filter groups by search (fuzzy: name or description, case-insensitive) ---
   useEffect(() => {
+    // Always use allGroups for filtering, since it contains all public groups
+    const sourceGroups = allGroups.length > 0 ? allGroups : groups;
+    let filtered = filterGroups(sourceGroups);
     if (!groupSearch.trim()) {
-      setGroupSearchResults(groups);
+      setGroupSearchResults(filtered);
       return;
     }
     const s = groupSearch.trim().toLowerCase();
     setGroupSearchResults(
-      groups.filter(
+      filtered.filter(
         (g) =>
           (g.name && g.name.toLowerCase().includes(s)) ||
           (g.description && g.description.toLowerCase().includes(s))
       )
     );
-  }, [groupSearch, groups]);
+  }, [groupSearch, groups, allGroups, selectedFilter]);
 
   // --- Sort groups: favorite groups first for current user ---
-  const sortedGroups = [...(groupSearch ? groupSearchResults : groups)].sort(
-    (a, b) => {
-      const aFav = favoriteGroups.includes(a.id) ? 1 : 0;
-      const bFav = favoriteGroups.includes(b.id) ? 1 : 0;
-      if (aFav !== bFav) return bFav - aFav; // favorite first
-      // fallback: alphabetical
-      return (a.name || "").localeCompare(b.name || "");
-    }
-  );
+  const sortedGroups = [
+    ...(groupSearch
+      ? groupSearchResults
+      : filterGroups(allGroups.length > 0 ? allGroups : groups)),
+  ].sort((a, b) => {
+    const aFav = favoriteGroups.includes(a.id) ? 1 : 0;
+    const bFav = favoriteGroups.includes(b.id) ? 1 : 0;
+    if (aFav !== bFav) return bFav - aFav; // favorite first
+    // fallback: alphabetical
+    return (a.name || "").localeCompare(b.name || "");
+  });
 
   return (
     <View
@@ -270,26 +366,75 @@ export default function StudyGroupsSection({ navigation }) {
         flex: 1,
       }}
     >
-      {/* --- Add group search bar --- */}
-      <View style={{ width: "100%", marginBottom: 12 }}>
-        <TextInput
-          placeholder="Search for a group..."
-          value={groupSearch}
-          onChangeText={setGroupSearch}
+      {/* --- Search and Filters Row --- */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          width: "100%",
+          marginBottom: 12,
+        }}
+      >
+        <View style={{ flex: 1, marginRight: 8 }}>
+          <TextInput
+            placeholder="Search for a group..."
+            value={groupSearch}
+            onChangeText={setGroupSearch}
+            style={{
+              borderWidth: 1,
+              borderColor: themeColors.darkGray,
+              borderRadius: 12,
+              paddingHorizontal: 14,
+              paddingVertical: 10,
+              fontSize: 16,
+              color: themeColors.black,
+              fontFamily: "CarosSoft",
+              backgroundColor: themeColors.white,
+            }}
+            placeholderTextColor={themeColors.darkGray}
+          />
+        </View>
+        <TouchableOpacity
+          onPress={() => setFilterModalVisible(true)}
           style={{
-            borderWidth: 1,
-            borderColor: themeColors.darkGray,
-            borderRadius: 12,
-            paddingHorizontal: 14,
-            paddingVertical: 10,
-            fontSize: 16,
-            color: themeColors.black,
-            fontFamily: "CarosSoft",
             backgroundColor: themeColors.white,
+            borderRadius: 25,
+            paddingVertical: 10,
+            paddingLeft: 14,
+            alignItems: "center",
+            flexDirection: "row",
           }}
-          placeholderTextColor={themeColors.darkGray}
-        />
+          accessibilityLabel="Open Filters"
+        >
+          <Text
+            style={{
+              color: themeColors.purple,
+              fontWeight: "bold",
+              fontSize: 14,
+              marginRight: 8,
+              fontFamily: "CarosSoft",
+            }}
+          >
+            Filters
+          </Text>
+          <FadersHorizontal
+            size={22}
+            color={themeColors.purple}
+            weight="bold"
+          />
+        </TouchableOpacity>
       </View>
+      {/* --- Filters Modal --- */}
+      <GroupFiltersModal
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        FILTERS={FILTERS}
+        pendingFilter={pendingFilter}
+        setPendingFilter={setPendingFilter}
+        selectedFilter={selectedFilter}
+        setSelectedFilter={setSelectedFilter}
+        themeColors={themeColors}
+      />
       {/* Create Group Modal */}
       <Modal
         visible={showCreateModal}
@@ -709,7 +854,9 @@ export default function StudyGroupsSection({ navigation }) {
         {loadingGroups ? (
           <ActivityIndicator color={themeColors.purple} />
         ) : (
-            groupSearch ? groupSearchResults.length === 0 : groups.length === 0
+            groupSearch
+              ? groupSearchResults.length === 0
+              : sortedGroups.length === 0
           ) ? (
           <Text
             style={{
@@ -721,7 +868,7 @@ export default function StudyGroupsSection({ navigation }) {
           >
             {groupSearch
               ? "No groups found matching your search."
-              : "You are not a member of any study groups yet."}
+              : "No study groups found."}
           </Text>
         ) : (
           <View style={{ flex: 1, position: "relative" }}>
@@ -966,42 +1113,19 @@ export default function StudyGroupsSection({ navigation }) {
                                       : "";
                                     return `${first}${lastInitial}`.trim();
                                   });
-                                return [you, ...others].join(", ");
+                                const allNames = [you, ...others];
+                                if (allNames.length > 5) {
+                                  return (
+                                    allNames.slice(0, 5).join(", ") +
+                                    ", ...more"
+                                  );
+                                }
+                                return allNames.join(", ");
                               })()
                             : item.memberUids.length}
                         </Text>
                       )}
                     </View>
-                    {/* --- Favorite group heart icon --- */}
-                    <TouchableOpacity
-                      onPress={() => toggleFavoriteGroup(item.id)}
-                      style={{
-                        marginLeft: 10,
-                        backgroundColor: themeColors.white,
-                        borderRadius: 20,
-                        borderWidth: 1,
-                        borderColor: themeColors.black,
-                        padding: 6,
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                      accessibilityLabel={
-                        favoriteGroups.includes(item.id)
-                          ? "Unfavorite group"
-                          : "Favorite group"
-                      }
-                      onPressOut={(e) =>
-                        e.stopPropagation && e.stopPropagation()
-                      }
-                    >
-                      <Heart
-                        size={22}
-                        color={themeColors.purple}
-                        weight={
-                          favoriteGroups.includes(item.id) ? "fill" : "regular"
-                        }
-                      />
-                    </TouchableOpacity>
                   </TouchableOpacity>
                 );
               }}
