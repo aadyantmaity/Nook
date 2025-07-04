@@ -8,6 +8,7 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  Linking,
 } from "react-native";
 import MapView, { Marker, Callout, PROVIDER_GOOGLE } from "react-native-maps";
 import { auth, db } from "../../firebaseConfig";
@@ -71,6 +72,9 @@ export default function StudySpotsMapView({
   // --- NEW: Temporary state for modal edits ---
   const [modalRegion, setModalRegion] = useState(null);
   const [modalMapType, setModalMapType] = useState(mapType);
+
+  // Add this state for the selected spot/building
+  const [selectedPin, setSelectedPin] = useState(null);
 
   // Calculate square size (full width minus 32px)
   const screenWidth = Dimensions.get("window").width;
@@ -587,75 +591,8 @@ export default function StudySpotsMapView({
                 longitude: pin.longitude,
               }}
               pinColor={themeColors.orange}
-            >
-              {pin.spots.length === 1 ? (
-                <Callout
-                  tooltip={false}
-                  onPress={() =>
-                    navigation({
-                      spotId: pin.spots[0].id,
-                      view: "map",
-                    })
-                  }
-                >
-                  <View style={{ alignItems: "center" }}>
-                    <Text
-                      style={{
-                        fontWeight: "bold",
-                        color: themeColors.purple,
-                        fontFamily: "CarosSoft",
-                      }}
-                    >
-                      {pin.buildingName}
-                    </Text>
-                    <Text
-                      style={{
-                        color: themeColors.orange,
-                        fontSize: 12,
-                        marginTop: 2,
-                        fontFamily: "CarosSoft",
-                        alignSelf: "center",
-                      }}
-                    >
-                      Tap for more details
-                    </Text>
-                  </View>
-                </Callout>
-              ) : (
-                <Callout
-                  tooltip={false}
-                  onPress={() =>
-                    setBuildingModal({
-                      visible: true,
-                      buildingName: pin.buildingName,
-                      spots: pin.spots,
-                    })
-                  }
-                >
-                  <View style={{ alignItems: "center" }}>
-                    <Text
-                      style={{
-                        fontWeight: "bold",
-                        color: themeColors.purple,
-                        fontFamily: "CarosSoft",
-                      }}
-                    >
-                      {pin.buildingName}
-                    </Text>
-                    <Text
-                      style={{
-                        color: themeColors.orange,
-                        fontSize: 12,
-                        marginTop: 2,
-                        fontFamily: "CarosSoft",
-                      }}
-                    >
-                      Tap for floors
-                    </Text>
-                  </View>
-                </Callout>
-              )}
-            </Marker>
+              onPress={() => setSelectedPin(pin)}
+            />
           ))}
         </MapView>
         {spotsWithCoords.length === 0 && (
@@ -866,6 +803,137 @@ export default function StudySpotsMapView({
               style={{
                 marginTop: 14,
                 backgroundColor: themeColors.purple,
+                borderRadius: 8,
+                paddingVertical: 10,
+                paddingHorizontal: 24,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontSize: 16,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                Close
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+      <Modal
+        visible={!!selectedPin}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSelectedPin(null)}
+      >
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.3)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          activeOpacity={1}
+          onPressOut={() => setSelectedPin(null)}
+        >
+          <View
+            style={{
+              backgroundColor: themeColors.white,
+              borderRadius: 16,
+              padding: 24,
+              width: "85%",
+              alignItems: "center",
+              borderWidth: 1,
+              borderColor: themeColors.black,
+              shadowColor: themeColors.black,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+              elevation: 5,
+            }}
+            onStartShouldSetResponder={() => true}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "bold",
+                color: themeColors.purple,
+                marginBottom: 10,
+                textAlign: "center",
+                fontFamily: "CarosSoft",
+              }}
+            >
+              {selectedPin?.buildingName}
+            </Text>
+            <View style={{ flexDirection: "row", gap: 12, marginTop: 10 }}>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: themeColors.purple,
+                  borderRadius: 8,
+                  paddingVertical: 10,
+                  paddingHorizontal: 24,
+                  alignItems: "center",
+                }}
+                onPress={() => {
+                  setSelectedPin(null);
+                  navigation.navigate("SpotDetail", {
+                    spotId: selectedPin.spots[0].id,
+                    view: "map",
+                  });
+                }}
+              >
+                <Text
+                  style={{
+                    color: themeColors.white,
+                    fontWeight: "bold",
+                    fontSize: 16,
+                    fontFamily: "CarosSoft",
+                  }}
+                >
+                  Details
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: themeColors.orange,
+                  borderRadius: 8,
+                  paddingVertical: 10,
+                  paddingHorizontal: 24,
+                  alignItems: "center",
+                }}
+                onPress={() => {
+                  setSelectedPin(null);
+                  const coords =
+                    selectedPin.spots.length === 1
+                      ? selectedPin.spots[0].coordinates
+                      : { latitude: selectedPin.latitude, longitude: selectedPin.longitude };
+                  const url = Platform.select({
+                    ios: `http://maps.apple.com/?daddr=${coords.latitude},${coords.longitude}`,
+                    android: `http://maps.google.com/?daddr=${coords.latitude},${coords.longitude}`,
+                  });
+                  Linking.openURL(url);
+                }}
+              >
+                <Text
+                  style={{
+                    color: themeColors.white,
+                    fontWeight: "bold",
+                    fontSize: 16,
+                    fontFamily: "CarosSoft",
+                  }}
+                >
+                  Directions
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              onPress={() => setSelectedPin(null)}
+              style={{
+                marginTop: 14,
+                backgroundColor: themeColors.darkGray,
                 borderRadius: 8,
                 paddingVertical: 10,
                 paddingHorizontal: 24,
