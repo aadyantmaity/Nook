@@ -74,7 +74,10 @@ export const useGoal = () => {
     ) {
       setGoalCongratsShown(true);
       setTimeout(() => {
-        Alert.alert("Goal Achieved!");
+        // Only show alert if not already shown
+        if (!goalCongratsShown) {
+          Alert.alert("Goal Achieved!");
+        }
       }, 300);
     }
 

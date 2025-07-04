@@ -18,11 +18,6 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState("");
 
   const handleLogin = () => {
-    if (!email.endsWith("@uw.edu")) {
-      console.error("Only uw.edu emails are allowed");
-      return;
-    }
-
     signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
         // Navigation is handled by auth state in App.js, so no manual navigation here
@@ -130,6 +125,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
+    fontFamily: "CarosSoft",
   },
   button: {
     width: "100%",

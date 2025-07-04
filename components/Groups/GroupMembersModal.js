@@ -1,0 +1,105 @@
+import React from "react";
+import { Modal, TouchableOpacity, View, Text, ScrollView } from "react-native";
+
+export default function GroupMembersModal({
+  visible,
+  onClose,
+  membersList,
+  themeColors,
+}) {
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <TouchableOpacity
+        style={{
+          flex: 1,
+          backgroundColor: "rgba(0,0,0,0.2)",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+        activeOpacity={1}
+        onPressOut={onClose}
+      >
+        <View
+          style={{
+            backgroundColor: themeColors.white,
+            borderRadius: 16,
+            padding: 24,
+            width: "85%",
+            maxHeight: "70%",
+            alignItems: "center",
+          }}
+          onStartShouldSetResponder={() => true}
+        >
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: "bold",
+              color: themeColors.purple,
+              fontFamily: "CarosSoft",
+              marginBottom: 12,
+            }}
+          >
+            Group Members
+          </Text>
+          <ScrollView style={{ width: "100%" }}>
+            {membersList.map((u) => (
+              <View
+                key={u.uid}
+                style={{
+                  paddingVertical: 8,
+                  borderBottomWidth: 1,
+                  borderBottomColor: themeColors.gray + "33",
+                }}
+              >
+                <Text
+                  style={{
+                    color: themeColors.black,
+                    fontFamily: "CarosSoft",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {u.firstName} {u.lastName}
+                </Text>
+                <Text
+                  style={{
+                    color: themeColors.darkGray,
+                    fontFamily: "CarosSoft",
+                    fontSize: 13,
+                  }}
+                >
+                  {u.email}
+                </Text>
+              </View>
+            ))}
+          </ScrollView>
+          <TouchableOpacity
+            onPress={onClose}
+            style={{
+              marginTop: 16,
+              backgroundColor: themeColors.purple,
+              borderRadius: 8,
+              paddingVertical: 10,
+              paddingHorizontal: 32,
+              alignItems: "center",
+            }}
+          >
+            <Text
+              style={{
+                color: themeColors.white,
+                fontWeight: "bold",
+                fontFamily: "CarosSoft",
+              }}
+            >
+              Close
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  );
+}
