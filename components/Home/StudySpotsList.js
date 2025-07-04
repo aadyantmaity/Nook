@@ -9,6 +9,7 @@ import {
   Rows,
   MapTrifold,
   List,
+  LockKey, // <-- add this import
 } from "phosphor-react-native";
 import Filters from "./Filters";
 import HomeLoadingScreen from "./HomeLoadingScreen"; // Import the loading screen
@@ -306,17 +307,24 @@ export default function StudySpotsList({
                 </Text>
               )}
               {isPrivateNook && (
-                <Text
+                <View
                   style={{
-                    fontSize: 16,
-                    color: themeColors.black,
-                    fontWeight: "bold",
-                    marginLeft: 8,
-                    fontFamily: "CarosSoft",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    display: "inline-flex",
                   }}
                 >
-                  {" \u2022 Private"}
-                </Text>
+                  <View style={{ width: 4 }} />
+                  <LockKey
+                    size={18}
+                    color={themeColors.purple}
+                    weight="fill"
+                    style={{
+                      marginBottom: -2,
+                      alignSelf: "center",
+                    }}
+                  />
+                </View>
               )}
             </Text>
             {!item.privateNook && (item.huskyCardNeeded || item.department) && (

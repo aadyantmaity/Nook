@@ -9,7 +9,15 @@ import {
   Alert,
 } from "react-native";
 import { db, auth } from "../../firebaseConfig";
-import { doc, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  onSnapshot,
+  addDoc,
+  collection,
+  serverTimestamp,
+} from "firebase/firestore";
 
 export default function PrivateNookShareModal({
   visible,
@@ -48,42 +56,103 @@ export default function PrivateNookShareModal({
   useEffect(() => {
     if (!ownerUid || !visible) return;
     setLoading(true);
-    const unsub = onSnapshot(doc(db, "users", ownerUid), async (userDoc) => {
-      if (userDoc.exists()) {
-        const following = userDoc.data().following || [];
-        const followers = userDoc.data().followers || [];
-        const mutualUids = following.filter((uid) => followers.includes(uid));
-        const users = [];
-        // Fetch all mutual users in parallel
-        await Promise.all(
-          mutualUids.map(async (uid) => {
-            const uDoc = await getDoc(doc(db, "users", uid));
-            if (uDoc.exists()) {
-              users.push({
-                uid,
-                name:
-                  `${uDoc.data().firstName || ""} ${
-                    uDoc.data().lastName || ""
-                  }`.trim() || uDoc.data().email,
-                email: uDoc.data().email,
-              });
-            }
-          })
-        );
-        setFollowingList(users);
-      } else {
-        setFollowingList([]);
-      }
-      setLoading(false);
-    });
-    return () => unsub();
-  }, [ownerUid, visible]);
+    if (isGroup) {
+      // For group sharing: show all mutual friends of the owner (not just current members)
+      const unsub = onSnapshot(doc(db, "users", ownerUid), async (userDoc) => {
+        if (userDoc.exists()) {
+          const following = userDoc.data().following || [];
+          const followers = userDoc.data().followers || [];
+          const mutualUids = following.filter((uid) => followers.includes(uid));
+          const users = [];
+          // Fetch all mutual friends in parallel
+          await Promise.all(
+            mutualUids.map(async (uid) => {
+              const uDoc = await getDoc(doc(db, "users", uid));
+              if (uDoc.exists()) {
+                users.push({
+                  uid,
+                  name:
+                    `${uDoc.data().firstName || ""} ${
+                      uDoc.data().lastName || ""
+                    }`.trim() || uDoc.data().email,
+                  email: uDoc.data().email,
+                });
+              }
+            })
+          );
+          setFollowingList(users);
+        } else {
+          setFollowingList([]);
+        }
+        setLoading(false);
+      });
+      return () => unsub();
+    } else {
+      const unsub = onSnapshot(doc(db, "users", ownerUid), async (userDoc) => {
+        if (userDoc.exists()) {
+          const following = userDoc.data().following || [];
+          const followers = userDoc.data().followers || [];
+          const mutualUids = following.filter((uid) => followers.includes(uid));
+          const users = [];
+          // Fetch all mutual users in parallel
+          await Promise.all(
+            mutualUids.map(async (uid) => {
+              const uDoc = await getDoc(doc(db, "users", uid));
+              if (uDoc.exists()) {
+                users.push({
+                  uid,
+                  name:
+                    `${uDoc.data().firstName || ""} ${
+                      uDoc.data().lastName || ""
+                    }`.trim() || uDoc.data().email,
+                  email: uDoc.data().email,
+                });
+              }
+            })
+          );
+          setFollowingList(users);
+        } else {
+          setFollowingList([]);
+        }
+        setLoading(false);
+      });
+      return () => unsub();
+    }
+  }, [ownerUid, visible, isGroup, spotId, collectionName, fieldName]);
 
   // --- Only update Firestore when Done is pressed ---
   const handleDone = async () => {
     setUpdating(true);
     try {
       const spotRef = doc(db, collectionName, spotId);
+
+      // --- System message for group member removal ---
+      if (isGroup) {
+        // Find removed users
+        const removedUids = sharedWith.filter(
+          (uid) => !pendingSharedWith.includes(uid)
+        );
+        for (const removedUid of removedUids) {
+          let userDoc;
+          try {
+            userDoc = await getDoc(doc(db, "users", removedUid));
+          } catch {}
+          const userName =
+            userDoc && userDoc.exists()
+              ? (userDoc.data().firstName || "User") +
+                (userDoc.data().lastName
+                  ? " " + userDoc.data().lastName.charAt(0)
+                  : "")
+              : "User";
+          await addDoc(collection(db, "studyGroups", spotId, "messages"), {
+            type: "system",
+            text: `${userName} left the group.`,
+            uid: removedUid,
+            createdAt: serverTimestamp(),
+          });
+        }
+      }
+
       await updateDoc(spotRef, { [fieldName]: pendingSharedWith });
     } catch (e) {
       Alert.alert("Error", "Failed to update sharing.");

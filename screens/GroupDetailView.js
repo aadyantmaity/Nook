@@ -12,12 +12,19 @@ import {
   Alert,
   Modal,
   Image,
+  ScrollView,
 } from "react-native";
 import {
   ArrowLeft,
   PaperPlaneRight,
   DotsThreeVertical,
   MapPin,
+  UsersThree,
+  ShareNetwork, // <-- This is the icon used for "Manage Sharing" in SpotDetailScreen
+  SignOut,
+  Trash,
+  Users,
+  Star,
 } from "phosphor-react-native";
 import { ThemeContext } from "../App";
 import { colors } from "../constants/colors";
@@ -28,14 +35,23 @@ import {
   onSnapshot,
   collection,
   addDoc,
+  getDocs,
   serverTimestamp,
   query,
   orderBy,
+  updateDoc,
   deleteDoc,
 } from "firebase/firestore";
-import PrivateNookShareModal from "../components/SpotDetail/PrivateNookShareModal"; // reuse for group sharing
-import { Keyboard } from "react-native";
+import PrivateNookShareModal from "../components/SpotDetail/PrivateNookShareModal";
+import { LinearGradient } from "expo-linear-gradient";
 
+// --- New extracted components ---
+import GroupMembersModal from "../components/Groups/GroupMembersModal";
+import GroupMenuModal from "../components/Groups/GroupMenuModal";
+import ProfilePicture from "../components/Profile/ProfilePicture"; // <-- Add this import if not present
+import useFavorites from "../hooks/useFavorites"; // <-- Import useFavorites hook
+
+// --- Add state for Starred Nooks Modal and data ---
 export default function GroupDetailView({ navigation, route }) {
   const { groupId } = route.params;
   const themeCtx = useContext(ThemeContext);
@@ -47,26 +63,42 @@ export default function GroupDetailView({ navigation, route }) {
   const [input, setInput] = useState("");
   const [showMenu, setShowMenu] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showMembersModal, setShowMembersModal] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
   const [userCache, setUserCache] = useState({});
+  const [userPicCache, setUserPicCache] = useState({}); // <-- Add for profile pics
+  const [membersList, setMembersList] = useState([]);
+  const [starredNooks, setStarredNooks] = useState([]);
+  const [starredNooksData, setStarredNooksData] = useState([]);
+  const [showLeftGradient, setShowLeftGradient] = useState(false);
+  const [showRightGradient, setShowRightGradient] = useState(false);
+  const [showStarredModal, setShowStarredModal] = useState(false); // --- Add this line to fix the error ---
   const flatListRef = useRef();
+  const starredListRef = useRef(null);
+  const unsubGroupRef = useRef(null);
+  const unsubMessagesRef = useRef(null);
+  const [starredListWidth, setStarredListWidth] = useState(0);
+  const [starredContentWidth, setStarredContentWidth] = useState(0);
+  const prevMembersRef = useRef(null); // Track previous members for system messages
+  const hasSentJoinMessageRef = useRef(false); // Track if join message was sent for this session
+  const { favoriteGroups, toggleFavoriteGroup } = useFavorites(); // <-- Get favoriteGroups state and toggle function
 
-  // Fetch group info
+  // Fetch group info (NO system message logic here anymore)
   useEffect(() => {
     if (!groupId) return;
     const unsub = onSnapshot(
       doc(db, "studyGroups", groupId),
-      (snap) => {
+      async (snap) => {
         if (!snap.exists()) {
           setGroup(null);
-          // Optionally, navigate back if group is deleted
           navigation.goBack?.();
           return;
         }
-        setGroup({ id: snap.id, ...snap.data() });
+        const groupData = { id: snap.id, ...snap.data() };
+        setGroup(groupData);
+        prevMembersRef.current = groupData.memberUids || [];
       },
       (error) => {
-        // Permission denied or other error
         setGroup(null);
         navigation.navigate("Home", {
           screen: "Community",
@@ -74,7 +106,13 @@ export default function GroupDetailView({ navigation, route }) {
         });
       }
     );
-    return () => unsub();
+    unsubGroupRef.current = unsub;
+    return () => {
+      if (unsubGroupRef.current) {
+        unsubGroupRef.current();
+        unsubGroupRef.current = null;
+      }
+    };
   }, [groupId]);
 
   // Fetch messages (subcollection "messages" under group)
@@ -100,7 +138,11 @@ export default function GroupDetailView({ navigation, route }) {
           );
           setLoading(false);
           setTimeout(() => {
-            flatListRef.current?.scrollToEnd({ animated: true });
+            // For inverted FlatList, offset 0 is the bottom (most recent)
+            flatListRef.current?.scrollToOffset?.({
+              offset: 0,
+              animated: false,
+            });
           }, 100);
         },
         (error) => {
@@ -109,13 +151,17 @@ export default function GroupDetailView({ navigation, route }) {
           setLoading(false);
         }
       );
+      unsubMessagesRef.current = unsub;
     } catch {
       setMessages([]);
       setLoading(false);
     }
     return () => {
       isActive = false;
-      unsub && unsub();
+      if (unsubMessagesRef.current) {
+        unsubMessagesRef.current();
+        unsubMessagesRef.current = null;
+      }
     };
   }, [groupId]);
 
@@ -134,11 +180,12 @@ export default function GroupDetailView({ navigation, route }) {
     setSending(false);
   };
 
-  // Helper to fetch and cache user info
-  const fetchUserName = async (uid) => {
-    if (!uid) return "User";
-    if (uid === auth.currentUser?.uid) return "You";
-    if (userCache[uid]) return userCache[uid];
+  // Helper to fetch and cache user info (name and profilePic)
+  const fetchUserNameAndPic = async (uid) => {
+    if (!uid) return { name: "User", profilePic: null };
+    if (uid === auth.currentUser?.uid) return { name: "You", profilePic: null };
+    if (userCache[uid] && userPicCache[uid] !== undefined)
+      return { name: userCache[uid], profilePic: userPicCache[uid] };
     try {
       const userDoc = await getDoc(doc(db, "users", uid));
       if (userDoc.exists()) {
@@ -147,11 +194,13 @@ export default function GroupDetailView({ navigation, route }) {
         const last = d.lastName || "";
         const name =
           first && last ? `${first} ${last.charAt(0)}` : first ? first : "User";
+        const profilePic = d.profilePic || null;
         setUserCache((prev) => ({ ...prev, [uid]: name }));
-        return name;
+        setUserPicCache((prev) => ({ ...prev, [uid]: profilePic }));
+        return { name, profilePic };
       }
     } catch {}
-    return "User";
+    return { name: "User", profilePic: null };
   };
 
   // Get user display name (with caching)
@@ -160,8 +209,114 @@ export default function GroupDetailView({ navigation, route }) {
     if (uid === auth.currentUser?.uid) return "You";
     if (userCache[uid]) return userCache[uid];
     // Trigger fetch in background (non-blocking)
-    fetchUserName(uid);
+    fetchUserNameAndPic(uid);
     return "User";
+  };
+
+  // Get user profile picture (with caching)
+  const getUserProfilePic = (uid) => {
+    if (!uid) return null;
+    if (uid === auth.currentUser?.uid) return null;
+    if (userPicCache[uid] !== undefined) return userPicCache[uid];
+    // Trigger fetch in background (non-blocking)
+    fetchUserNameAndPic(uid);
+    return null;
+  };
+
+  // Fetch member info for Members modal
+  const fetchMembersList = async () => {
+    if (!group?.memberUids) return;
+    try {
+      const usersSnap = await getDocs(collection(db, "users"));
+      const users = usersSnap.docs.map((d) => ({
+        uid: d.id,
+        ...d.data(),
+      }));
+      // Only include group members
+      const members = group.memberUids.map((uid) => {
+        const u = users.find((user) => user.uid === uid);
+        if (!u) return { uid, firstName: "Unknown", lastName: "", email: "" };
+        return u;
+      });
+      setMembersList(members);
+    } catch {
+      setMembersList([]);
+    }
+  };
+
+  // Fetch group's starred nooks from array field
+  useEffect(() => {
+    if (!groupId) return;
+    const unsub = onSnapshot(doc(db, "studyGroups", groupId), (snap) => {
+      if (snap.exists()) {
+        setGroup({ id: snap.id, ...snap.data() }); // <-- ensure group state is always set
+        setStarredNooks(
+          Array.isArray(snap.data().starredNooks)
+            ? snap.data().starredNooks
+            : []
+        );
+      } else {
+        setGroup(null);
+        setStarredNooks([]);
+      }
+    });
+    return () => unsub();
+  }, [groupId]);
+
+  // --- Fetch starred nooks info when modal opens ---
+  useEffect(() => {
+    const fetchStarredNooksData = async () => {
+      if (!showStarredModal || !starredNooks.length) {
+        setStarredNooksData([]);
+        return;
+      }
+      try {
+        // Remove duplicates and falsy values
+        const uniqueIds = Array.from(new Set(starredNooks.filter(Boolean)));
+        const nooks = [];
+        for (const id of uniqueIds) {
+          // --- Use studySpots collection ---
+          const nookDoc = await getDoc(doc(db, "studySpots", id));
+          if (nookDoc.exists()) {
+            // Find the first message in this group that shared this nook
+            const shareMsg = messages.find(
+              (msg) => msg.type === "nook_share" && msg.spotId === id
+            );
+            nooks.push({
+              id,
+              ...nookDoc.data(),
+              sharedBy: shareMsg?.senderName,
+              sharedByUid: shareMsg?.uid,
+              spotPhoto: shareMsg?.spotPhoto,
+              spotName: shareMsg?.spotName,
+            });
+          }
+        }
+        setStarredNooksData(nooks);
+      } catch {
+        setStarredNooksData([]);
+      }
+    };
+    fetchStarredNooksData();
+  }, [showStarredModal, starredNooks, messages]);
+
+  // Toggle star for a nook in the group (array field)
+  const toggleStarNook = async (spotId) => {
+    if (!groupId || !spotId) return;
+    const groupRef = doc(db, "studyGroups", groupId);
+    try {
+      if (starredNooks.includes(spotId)) {
+        await updateDoc(groupRef, {
+          starredNooks: starredNooks.filter((id) => id !== spotId),
+        });
+      } else {
+        await updateDoc(groupRef, {
+          starredNooks: [...starredNooks, spotId],
+        });
+      }
+    } catch (e) {
+      Alert.alert("Error", "Failed to update starred nooks.");
+    }
   };
 
   // Header with back arrow, group name/members, and Dots menu for owner
@@ -169,33 +324,29 @@ export default function GroupDetailView({ navigation, route }) {
     navigation.setOptions({
       headerShown: true,
       headerTitle: () => (
-        <View style={{ alignItems: "center" }}>
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "bold",
-              color: themeColors.purple,
-              fontFamily: "CarosSoft",
-              textAlign: "center",
-              maxWidth: 200,
-            }}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {group?.name || "Group"}
-          </Text>
-          <Text
-            style={{
-              color: themeColors.darkGray,
-              fontSize: 13,
-              fontFamily: "CarosSoft",
-              textAlign: "center",
-            }}
-            numberOfLines={1}
-          >
-            {(group?.memberUids?.length || 0) + " members"}
-          </Text>
-        </View>
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate("GroupDetails", { groupId: group?.id })
+          }
+          activeOpacity={0.7}
+        >
+          <View style={{ alignItems: "center" }}>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "bold",
+                color: themeColors.purple,
+                fontFamily: "CarosSoft",
+                textAlign: "center",
+                maxWidth: 200,
+              }}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {group?.name || "Group"}
+            </Text>
+          </View>
+        </TouchableOpacity>
       ),
       headerTitleAlign: "center",
       headerStyle: {
@@ -221,8 +372,8 @@ export default function GroupDetailView({ navigation, route }) {
           <ArrowLeft size={24} color={themeColors.purple} />
         </TouchableOpacity>
       ),
-      headerRight: () =>
-        group?.createdBy === auth.currentUser?.uid ? (
+      headerRight: () => (
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
           <TouchableOpacity
             onPress={() => setShowMenu(true)}
             style={{ paddingHorizontal: 16, paddingVertical: 8 }}
@@ -234,9 +385,10 @@ export default function GroupDetailView({ navigation, route }) {
               weight="bold"
             />
           </TouchableOpacity>
-        ) : null,
+        </View>
+      ),
     });
-  }, [navigation, group, themeColors]);
+  }, [navigation, group, themeColors, favoriteGroups]);
 
   // --- Delete group handler ---
   const handleDeleteGroup = async () => {
@@ -249,13 +401,38 @@ export default function GroupDetailView({ navigation, route }) {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
+            // Unsubscribe from all listeners before deleting
+            if (unsubGroupRef.current) {
+              unsubGroupRef.current();
+              unsubGroupRef.current = null;
+            }
+            if (unsubMessagesRef.current) {
+              unsubMessagesRef.current();
+              unsubMessagesRef.current = null;
+            }
             try {
+              // Delete messages
+              const messagesRef = collection(
+                db,
+                "studyGroups",
+                groupId,
+                "messages"
+              );
+              const messageDocs = await getDocs(messagesRef);
+              const deleteMessages = messageDocs.docs.map((docSnap) =>
+                deleteDoc(docSnap.ref)
+              );
+              await Promise.all(deleteMessages);
               await deleteDoc(doc(db, "studyGroups", groupId));
-              // Navigate to Community tab, Groups subtab
-              navigation.navigate("Home", {
-                screen: "Community",
-                params: { selectedTab: "groups" },
-              });
+              // Go back to previous screen, or fallback to Community tab
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate("Home", {
+                  screen: "Community",
+                  params: { selectedTab: "groups" },
+                });
+              }
             } catch (e) {
               Alert.alert("Error", "Failed to delete group.");
             }
@@ -265,104 +442,6 @@ export default function GroupDetailView({ navigation, route }) {
     );
   };
 
-  // --- Modal for menu actions ---
-  const renderMenuModal = () => (
-    <Modal
-      visible={showMenu}
-      transparent
-      animationType="fade"
-      onRequestClose={() => setShowMenu(false)}
-    >
-      <TouchableOpacity
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0,0,0,0.2)",
-          justifyContent: "flex-start",
-          alignItems: "flex-end",
-        }}
-        activeOpacity={1}
-        onPressOut={() => setShowMenu(false)}
-      >
-        <View
-          style={{
-            backgroundColor: themeColors.white,
-            borderRadius: 12,
-            marginTop: 54,
-            marginRight: 12,
-            minWidth: 180,
-            paddingVertical: 6,
-            borderWidth: 1,
-            borderColor: themeColors.gray,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.12,
-            shadowRadius: 4,
-            elevation: 5,
-          }}
-        >
-          <TouchableOpacity
-            onPress={() => {
-              setShowMenu(false);
-              setShowShareModal(true);
-            }}
-            style={{
-              paddingVertical: 12,
-              paddingHorizontal: 18,
-            }}
-          >
-            <Text
-              style={{
-                color: themeColors.purple,
-                fontWeight: "bold",
-                fontFamily: "CarosSoft",
-                fontSize: 15,
-              }}
-            >
-              Manage Sharing
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              setShowMenu(false);
-              handleDeleteGroup();
-            }}
-            style={{
-              paddingVertical: 12,
-              paddingHorizontal: 18,
-            }}
-          >
-            <Text
-              style={{
-                color: themeColors.red,
-                fontWeight: "bold",
-                fontFamily: "CarosSoft",
-                fontSize: 15,
-              }}
-            >
-              Delete Group
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
-    </Modal>
-  );
-
-  // --- Render PrivateNookShareModal for group sharing ---
-  // Use groupId, group.createdBy as ownerUid, and memberUids as sharedWith
-  // The modal will update the memberUids field in the group doc
-  const renderShareModal = () => (
-    <PrivateNookShareModal
-      visible={showShareModal}
-      onClose={() => setShowShareModal(false)}
-      spotId={groupId}
-      themeColors={themeColors}
-      ownerUid={group?.createdBy}
-      isGroup // pass a prop to distinguish group mode
-      collectionName="studyGroups"
-      fieldName="memberUids"
-    />
-  );
-
   // --- Delete a message ---
   const handleDeleteMessage = async (messageId) => {
     try {
@@ -371,16 +450,91 @@ export default function GroupDetailView({ navigation, route }) {
       Alert.alert("Error", "Failed to delete message.");
     }
   };
+  const handleLeaveGroup = async () => {
+    if (!group || !auth.currentUser?.uid) return;
+
+    Alert.alert("Leave Group", "Are you sure you want to leave this group?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Leave",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            // Add system message for leaving BEFORE removing yourself
+            let userDoc;
+            try {
+              userDoc = await getDoc(doc(db, "users", auth.currentUser?.uid));
+            } catch {}
+            const userName =
+              userDoc && userDoc.exists()
+                ? (userDoc.data().firstName || "User") +
+                  (userDoc.data().lastName
+                    ? " " + userDoc.data().lastName.charAt(0)
+                    : "")
+                : "User";
+            await addDoc(collection(db, "studyGroups", groupId, "messages"), {
+              type: "system",
+              text: `${userName} left the group.`,
+              uid: auth.currentUser?.uid,
+              createdAt: serverTimestamp(),
+            });
+
+            const updatedMembers = group.memberUids.filter(
+              (uid) => uid !== auth.currentUser?.uid
+            );
+            // If user is the last member, delete the group
+            if (updatedMembers.length === 0) {
+              await handleDeleteGroup();
+              return;
+            }
+            // Update the group document
+            await updateDoc(doc(db, "studyGroups", groupId), {
+              memberUids: updatedMembers,
+            });
+            navigation.goBack();
+          } catch (error) {
+            Alert.alert("Error", "Failed to leave group.");
+          }
+        },
+      },
+    ]);
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
-      {renderMenuModal()}
-      {renderShareModal()}
+      {/* Menu Modal */}
+      <GroupMenuModal
+        visible={showMenu}
+        onClose={() => setShowMenu(false)}
+        group={group}
+        themeColors={themeColors}
+        auth={auth}
+        setShowShareModal={setShowShareModal}
+        setShowStarredModal={() => {}} // Remove starred nooks modal
+        setShowMembersModal={() => {}} // Remove members modal
+        fetchMembersList={() => {}} // Remove members modal
+        handleLeaveGroup={handleLeaveGroup}
+        handleDeleteGroup={handleDeleteGroup}
+        navigation={navigation} // <-- add this line
+      />
+      {/* Share Modal */}
+      <PrivateNookShareModal
+        visible={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        spotId={groupId}
+        themeColors={themeColors}
+        ownerUid={group?.createdBy}
+        isGroup
+        collectionName="studyGroups"
+        fieldName="memberUids"
+      />
+      {/* Remove Members Modal */}
+      {/* Remove Starred Nooks Modal */}
       {/* Messages */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0} // adjust as needed for your header
       >
         {loading ? (
           <View
@@ -391,190 +545,444 @@ export default function GroupDetailView({ navigation, route }) {
         ) : (
           <FlatList
             ref={flatListRef}
-            data={messages}
+            data={[...messages].reverse()} // reverse for inverted list
+            inverted
             showsVerticalScrollIndicator={false}
             keyExtractor={(item) => item.id}
             contentContainerStyle={{
               padding: 18,
-              paddingBottom: 24, // match input bar's bottom padding
+              paddingBottom: 24,
               flexGrow: 1,
               backgroundColor: themeColors.white,
             }}
-            renderItem={({ item }) => {
+            renderItem={({ item, index }) => {
               const isMe = item.uid === auth.currentUser?.uid;
-              // --- Nook Share Card ---
-              if (item.type === "nook_share") {
+
+              // Calculate the real index in the original (non-inverted) array
+              const realIndex = messages.length - 1 - index;
+              const nextItem = messages[realIndex - 1]; // Note: We look at the next item in the original array
+
+              // --- Date separator logic ---
+              let showDateSeparator = false;
+              let dateLabel = "";
+              if (item.createdAt && item.createdAt.seconds) {
+                const currentDate = new Date(item.createdAt.seconds * 1000);
+
+                // Show separator if:
+                // - This is the first message in the original array (realIndex === 0)
+                // - OR the next message is from a different day
+                if (
+                  realIndex === 0 ||
+                  !nextItem ||
+                  !nextItem.createdAt ||
+                  !nextItem.createdAt.seconds ||
+                  currentDate.getDate() !==
+                    new Date(nextItem.createdAt.seconds * 1000).getDate() ||
+                  currentDate.getMonth() !==
+                    new Date(nextItem.createdAt.seconds * 1000).getMonth() ||
+                  currentDate.getFullYear() !==
+                    new Date(nextItem.createdAt.seconds * 1000).getFullYear()
+                ) {
+                  dateLabel = currentDate.toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                  });
+                  showDateSeparator = true;
+                }
+              }
+
+              // --- Show profile picture logic ---
+              let showProfilePic = false;
+              if (!isMe) {
+                // Show profile pic if:
+                // - This is the last message in the original array (realIndex === messages.length - 1)
+                // - OR the next message is from a different user or is a system message
+                if (
+                  realIndex === messages.length - 1 ||
+                  nextItem?.uid !== item.uid ||
+                  nextItem?.type === "system" ||
+                  nextItem?.type === "nook_share"
+                ) {
+                  showProfilePic = true;
+                }
+              }
+              // --- System message (centered, darkGray, no timestamp, no user) ---
+              if (item.type === "system") {
                 return (
-                  <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate("SpotDetail", {
-                        spotId: item.spotId,
-                      })
-                    }
-                    style={{
-                      alignSelf: "center", // changed from "flex-start" to "center"
-                      marginBottom: 10,
-                      maxWidth: "80%",
-                      backgroundColor: themeColors.lightGray,
-                      borderRadius: 14,
-                      padding: 12,
-                      flexDirection: "row",
-                      alignItems: "center",
-                      shadowColor: "#000",
-                      shadowOffset: { width: 0, height: 1 },
-                      shadowOpacity: 0.06,
-                      shadowRadius: 2,
-                      elevation: 1,
-                    }}
-                  >
-                    {item.spotPhoto ? (
-                      <View
-                        style={{
-                          width: 48,
-                          height: 48,
-                          borderRadius: 8,
-                          overflow: "hidden",
-                          marginRight: 12,
-                        }}
-                      >
-                        <Image
-                          source={{ uri: item.spotPhoto }}
-                          style={{ width: "100%", height: "100%" }}
-                          resizeMode="cover"
-                        />
-                      </View>
-                    ) : (
-                      <View
-                        style={{
-                          width: 48,
-                          height: 48,
-                          borderRadius: 8,
-                          backgroundColor: themeColors.purple,
-                          alignItems: "center",
-                          justifyContent: "center",
-                          marginRight: 12,
-                        }}
-                      >
-                        <MapPin
-                          size={32}
-                          color={themeColors.white}
-                          weight="bold"
-                        />
+                  <>
+                    {showDateSeparator && (
+                      <View style={{ alignItems: "center", marginBottom: 10 }}>
+                        <Text
+                          style={{
+                            color: themeColors.darkGray,
+                            fontSize: 13,
+                            fontFamily: "CarosSoft",
+                            backgroundColor: themeColors.lightGray,
+                            borderRadius: 8,
+                            paddingHorizontal: 12,
+                            paddingVertical: 2,
+                            marginBottom: 2,
+                          }}
+                        >
+                          {dateLabel}
+                        </Text>
                       </View>
                     )}
-                    <View style={{ flex: 1 }}>
-                      <Text
-                        style={{
-                          color: themeColors.purple,
-                          fontWeight: "bold",
-                          fontSize: 16,
-                          fontFamily: "CarosSoft",
-                        }}
-                        numberOfLines={1}
-                      >
-                        {item.spotName || "Nook"}
-                      </Text>
+                    <View style={{ alignItems: "center", marginVertical: 8 }}>
                       <Text
                         style={{
                           color: themeColors.darkGray,
-                          fontSize: 13,
+                          fontSize: 14,
                           fontFamily: "CarosSoft",
-                          marginTop: 2,
-                        }}
-                        numberOfLines={1}
-                      >
-                        Shared by {item.senderName || "Someone"}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              }
-              // Regular message bubble
-              return (
-                <View
-                  style={{
-                    alignSelf: isMe ? "flex-end" : "flex-start",
-                    marginBottom: 10,
-                    maxWidth: "80%",
-                  }}
-                >
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    disabled={!isMe}
-                    onLongPress={() => {
-                      if (!isMe) return;
-                      Alert.alert(
-                        "Delete Message",
-                        "Do you want to delete this message?",
-                        [
-                          { text: "Cancel", style: "cancel" },
-                          {
-                            text: "Delete",
-                            style: "destructive",
-                            onPress: () => handleDeleteMessage(item.id),
-                          },
-                        ]
-                      );
-                    }}
-                  >
-                    <View
-                      style={{
-                        backgroundColor: isMe
-                          ? themeColors.purple
-                          : themeColors.gray,
-                        borderRadius: 14,
-                        paddingVertical: 10,
-                        paddingHorizontal: 16,
-                        shadowColor: "#000",
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.06,
-                        shadowRadius: 2,
-                        elevation: 1,
-                        minWidth: 50,
-                        alignItems: "center",
-                        alignSelf: isMe ? "flex-end" : "flex-start",
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: isMe ? themeColors.white : themeColors.black,
-                          fontSize: 15,
-                          fontFamily: "CarosSoft",
+                          textAlign: "center",
+                          fontStyle: "italic",
                         }}
                       >
                         {item.text}
                       </Text>
                     </View>
-                  </TouchableOpacity>
-                  <Text
-                    style={{
-                      color: themeColors.darkGray,
-                      fontSize: 11,
-                      marginTop: 2,
-                      fontFamily: "CarosSoft",
-                      textAlign: isMe ? "right" : "left",
-                    }}
-                  >
-                    {getUserName(item.uid)}
-                    {" · "}
-                    {item.createdAt && item.createdAt.seconds
-                      ? new Date(
-                          item.createdAt.seconds * 1000
-                        ).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                      : ""}
-                  </Text>
-                </View>
+                  </>
+                );
+              }
+              // --- Nook Share Card ---
+              if (item.type === "nook_share") {
+                return (
+                  <>
+                    {showDateSeparator && (
+                      <View style={{ alignItems: "center", marginBottom: 10 }}>
+                        <Text
+                          style={{
+                            color: themeColors.darkGray,
+                            fontSize: 13,
+                            fontFamily: "CarosSoft",
+                            backgroundColor: themeColors.lightGray,
+                            borderRadius: 8,
+                            paddingHorizontal: 12,
+                            paddingVertical: 2,
+                            marginBottom: 2,
+                          }}
+                        >
+                          {dateLabel}
+                        </Text>
+                      </View>
+                    )}
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignSelf: "center",
+                        alignItems: "center",
+                        marginBottom: 30,
+                        marginTop: 30,
+                        maxWidth: "100%",
+                      }}
+                    >
+                      <TouchableOpacity
+                        onPress={() =>
+                          navigation.navigate("SpotDetail", {
+                            spotId: item.spotId,
+                          })
+                        }
+                        style={{
+                          maxWidth: 280,
+                          backgroundColor: themeColors.lightGray,
+                          borderRadius: 14,
+                          padding: 12,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          shadowColor: "#000",
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.1,
+                          shadowRadius: 4,
+                          elevation: 3,
+                          borderColor: themeColors.black,
+                          borderWidth: 0.5,
+                          elevation: 5,
+                        }}
+                      >
+                        {item.spotPhoto ? (
+                          <View
+                            style={{
+                              width: 48,
+                              height: 48,
+                              borderRadius: 8,
+                              overflow: "hidden",
+                              marginRight: 12,
+                            }}
+                          >
+                            <Image
+                              source={{ uri: item.spotPhoto }}
+                              style={{ width: "100%", height: "100%" }}
+                              resizeMode="cover"
+                            />
+                          </View>
+                        ) : (
+                          <View
+                            style={{
+                              width: 48,
+                              height: 48,
+                              borderRadius: 8,
+                              backgroundColor: themeColors.purple,
+                              alignItems: "center",
+                              justifyContent: "center",
+                              marginRight: 12,
+                            }}
+                          >
+                            <MapPin
+                              size={32}
+                              color={themeColors.white}
+                              weight="bold"
+                            />
+                          </View>
+                        )}
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={{
+                              color: themeColors.purple,
+                              fontWeight: "bold",
+                              fontSize: 16,
+                              fontFamily: "CarosSoft",
+                            }}
+                            numberOfLines={1}
+                          >
+                            {item.spotName || "Nook"}
+                          </Text>
+                          <Text
+                            style={{
+                              color: themeColors.darkGray,
+                              fontSize: 13,
+                              fontFamily: "CarosSoft",
+                              marginTop: 2,
+                            }}
+                            numberOfLines={1}
+                          >
+                            {/* Shared by firstName lastInitial */}
+                            {"Shared by "}
+                            {item.senderFirstName
+                              ? item.senderFirstName +
+                                (item.senderLastName
+                                  ? " " + item.senderLastName.charAt(0)
+                                  : "")
+                              : item.senderName || "Someone"}
+                          </Text>
+                        </View>
+                        {/* --- Star button inside the card, at the end --- */}
+                        <TouchableOpacity
+                          onPress={() => toggleStarNook(item.spotId)}
+                          style={{
+                            padding: 4,
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <Star
+                            size={22}
+                            color={themeColors.purple}
+                            weight={
+                              starredNooks.includes(item.spotId)
+                                ? "fill"
+                                : "regular"
+                            }
+                          />
+                        </TouchableOpacity>
+                      </TouchableOpacity>
+                    </View>
+                  </>
+                );
+              }
+              // Regular message bubble
+              return (
+                <>
+                  {showDateSeparator && (
+                    <View style={{ alignItems: "center", marginBottom: 10 }}>
+                      <Text
+                        style={{
+                          color: themeColors.darkGray,
+                          fontSize: 13,
+                          fontFamily: "CarosSoft",
+                          backgroundColor: themeColors.lightGray,
+                          borderRadius: 8,
+                          paddingHorizontal: 12,
+                          paddingVertical: 2,
+                          marginBottom: 2,
+                        }}
+                      >
+                        {dateLabel}
+                      </Text>
+                    </View>
+                  )}
+                  {isMe ? (
+                    // My own message: right aligned, no profile picture
+                    <View
+                      style={{
+                        flexDirection: "row-reverse",
+                        alignItems: "flex-end",
+                        alignSelf: "flex-end",
+                        marginBottom: 10,
+                        maxWidth: "80%",
+                      }}
+                    >
+                      <View style={{ flexShrink: 1 }}>
+                        <TouchableOpacity
+                          activeOpacity={0.8}
+                          disabled={!isMe}
+                          onLongPress={() => {
+                            if (!isMe) return;
+                            Alert.alert(
+                              "Delete Message",
+                              "Do you want to delete this message?",
+                              [
+                                { text: "Cancel", style: "cancel" },
+                                {
+                                  text: "Delete",
+                                  style: "destructive",
+                                  onPress: () => handleDeleteMessage(item.id),
+                                },
+                              ]
+                            );
+                          }}
+                        >
+                          <View
+                            style={{
+                              backgroundColor: themeColors.purple,
+                              borderRadius: 14,
+                              paddingVertical: 10,
+                              paddingHorizontal: 16,
+                              shadowColor: "#000",
+                              shadowOffset: { width: 0, height: 1 },
+                              shadowOpacity: 0.06,
+                              shadowRadius: 2,
+                              elevation: 1,
+                              minWidth: 50,
+                              alignItems: "center",
+                              alignSelf: "flex-end",
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: themeColors.white,
+                                fontSize: 15,
+                                fontFamily: "CarosSoft",
+                              }}
+                            >
+                              {item.text}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                        {/* --- Sender info row (no profile picture) --- */}
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginTop: 2,
+                            alignSelf: "flex-end",
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: themeColors.darkGray,
+                              fontSize: 11,
+                              marginLeft: 0,
+                              fontFamily: "CarosSoft",
+                              textAlign: "right",
+                            }}
+                          >
+                            {getUserName(item.uid)}
+                            {" · "}
+                            {item.createdAt && item.createdAt.seconds
+                              ? new Date(
+                                  item.createdAt.seconds * 1000
+                                ).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : ""}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  ) : (
+                    // Other's message: profile picture left, bubble right, properly aligned
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "flex-start",
+                        marginBottom: 10,
+                        maxWidth: "80%",
+                      }}
+                    >
+                      {/* Only show profile picture for the first message in a sequence */}
+                      {showProfilePic ? (
+                        <View style={{ marginTop: 5, marginRight: 10 }}>
+                          <ProfilePicture
+                            profilePic={getUserProfilePic(item.uid)}
+                            themeColors={themeColors}
+                            size={28}
+                          />
+                        </View>
+                      ) : (
+                        <View style={{ width: 28, marginRight: 10 }} />
+                      )}
+                      <View style={{ flexShrink: 1 }}>
+                        <View
+                          style={{
+                            backgroundColor: themeColors.gray,
+                            borderRadius: 14,
+                            paddingVertical: 10,
+                            paddingHorizontal: 16,
+                            shadowColor: "#000",
+                            shadowOffset: { width: 0, height: 1 },
+                            shadowOpacity: 0.06,
+                            shadowRadius: 2,
+                            elevation: 1,
+                            minWidth: 50,
+                            alignItems: "center",
+                            alignSelf: "flex-start",
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: themeColors.black,
+                              fontSize: 15,
+                              fontFamily: "CarosSoft",
+                            }}
+                          >
+                            {item.text}
+                          </Text>
+                        </View>
+                        {/* Sender info row */}
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginTop: 2,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: themeColors.darkGray,
+                              fontSize: 11,
+                              fontFamily: "CarosSoft",
+                            }}
+                          >
+                            {getUserName(item.uid)}
+                            {" · "}
+                            {item.createdAt && item.createdAt.seconds
+                              ? new Date(
+                                  item.createdAt.seconds * 1000
+                                ).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : ""}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  )}
+                </>
               );
             }}
-            onContentSizeChange={() =>
-              flatListRef.current?.scrollToEnd({ animated: true })
-            }
-            onLayout={() =>
-              flatListRef.current?.scrollToEnd({ animated: true })
-            }
+            // Remove scrollToEnd logic for inverted list
           />
         )}
         {/* Input Bar */}

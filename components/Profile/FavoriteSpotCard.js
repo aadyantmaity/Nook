@@ -44,7 +44,8 @@ export default function FavoriteSpotCard({
       style={{
         backgroundColor: themeColors.white,
         borderRadius: 12,
-        padding: 14,
+        paddingHorizontal: 14,
+        paddingVertical: 8,
         flexDirection: "row",
         alignItems: "center",
         shadowColor: "#000",
@@ -213,7 +214,6 @@ export default function FavoriteSpotCard({
                 alignItems: "center",
                 marginTop: 4,
                 marginBottom: 4,
-                gap: 8,
               }}
             >
               <Text
@@ -221,47 +221,25 @@ export default function FavoriteSpotCard({
                   fontSize: 13,
                   color: themeColors.purple,
                   fontWeight: "bold",
-                  marginRight: 6,
                   fontFamily: "CarosSoft",
                 }}
               >
-                Tables Open:
+                Tables Open:{" "}
+                {(() => {
+                  switch (spot.ratings.tableAvailability) {
+                    case 0:
+                      return "0";
+                    case 1:
+                      return "1-3";
+                    case 2:
+                      return "4-6";
+                    case 3:
+                      return "7+";
+                    default:
+                      return "N/A";
+                  }
+                })()}
               </Text>
-              <View
-                style={{
-                  backgroundColor: themeColors.purple,
-                  borderRadius: 12,
-                  paddingHorizontal: 12,
-                  paddingVertical: 4,
-                  minWidth: 38,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    color: themeColors.white,
-                    fontWeight: "bold",
-                    fontSize: 13,
-                    fontFamily: "CarosSoft",
-                  }}
-                >
-                  {(() => {
-                    switch (spot.ratings.tableAvailability) {
-                      case 0:
-                        return "0";
-                      case 1:
-                        return "1-3";
-                      case 2:
-                        return "4-6";
-                      case 3:
-                        return "7+";
-                      default:
-                        return "N/A";
-                    }
-                  })()}
-                </Text>
-              </View>
             </View>
           )}
         <View

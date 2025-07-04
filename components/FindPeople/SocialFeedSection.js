@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  // Switch, // remove Switch import
 } from "react-native";
 import { db, auth } from "../../firebaseConfig";
 import {
@@ -24,15 +23,9 @@ import {
 } from "firebase/firestore";
 import { colors } from "../../constants/colors";
 import { ThemeContext } from "../../App";
-import {
-  PaperPlaneRight,
-  Trash,
-  LockKey,
-  CheckSquare,
-  Square,
-} from "phosphor-react-native"; // add CheckSquare, Square
+import { PaperPlaneRight, Trash } from "phosphor-react-native";
 import { useNavigation } from "@react-navigation/native";
-import { LinearGradient } from "expo-linear-gradient"; // <-- add this import
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function SocialFeedSection({ navigation: propNavigation }) {
   const [postText, setPostText] = React.useState("");
@@ -45,10 +38,9 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
   const user = auth.currentUser;
   const navigation = propNavigation || useNavigation();
 
-  const [myFollowing, setMyFollowing] = React.useState([]); // store who I follow
+  const [myFollowing, setMyFollowing] = React.useState([]);
 
   React.useEffect(() => {
-    // Fetch my following list for mutual friends logic
     let unsubUser = null;
     if (auth.currentUser) {
       const usersCol = collection(db, "users");
@@ -95,22 +87,19 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
             isOwnPost = true;
           }
         }
-        // Only show if current user is author or mutual friend
         if (!auth.currentUser) {
           canSee = false;
         } else if (post.uid !== auth.currentUser.uid) {
-          // Mutual: I follow them AND they follow me
-          const amIFriend =
+          const isMutual =
             myFollowing.includes(post.uid) &&
-            authorFollowers.includes(auth.currentUser.uid);
-          const areTheyFriend =
+            authorFollowers.includes(auth.currentUser.uid) &&
             authorFollowing.includes(auth.currentUser.uid) &&
+            Array.isArray(authorFollowers) &&
             authorFollowers.includes(auth.currentUser.uid);
-          if (!amIFriend && !areTheyFriend) {
+          if (!isMutual) {
             canSee = false;
           }
         }
-        // --- New: resolve tagged user names if taggedUids exists ---
         let taggedNames = [];
         let youTaggedIndex = -1;
         if (Array.isArray(post.taggedUids) && post.taggedUids.length > 0) {
@@ -168,7 +157,6 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
     } catch {}
   };
 
-  // Add confirm wrapper
   const confirmDeletePost = (postId) => {
     Alert.alert(
       "Delete Post",
@@ -248,7 +236,6 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
             <PaperPlaneRight size={24} color={themeColors.purple} />
           </TouchableOpacity>
         </View>
-        {/* Remove Friends Only Checkbox below input */}
       </View>
       {feedLoading ? (
         <ActivityIndicator
@@ -258,19 +245,17 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
       ) : feed.length === 0 ? (
         <Text
           style={{
-            color: themeColors.gray,
+            color: themeColors.darkGray,
             fontSize: 15,
             marginTop: 10,
             fontFamily: "CarosSoft",
           }}
         >
-          No posts yet.
+          Your friends haven't posted yet.
         </Text>
       ) : (
         <View style={{ width: "100%", flex: 1 }}>
-          {/* Gradient scrollview wrapper */}
           <View style={{ flex: 1, position: "relative" }}>
-            {/* Top gradient */}
             {feed.length > 0 && isScrolled && (
               <LinearGradient
                 colors={[themeColors.white + "FF", themeColors.white + "00"]}
@@ -307,7 +292,6 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
                   }}
                 >
                   <View style={{ flex: 1 }}>
-                    {/* Top row: username left, trash right */}
                     <View
                       style={{ flexDirection: "row", alignItems: "center" }}
                     >
@@ -331,13 +315,11 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
                           {item.userName || "Unknown"}
                         </Text>
                       </TouchableOpacity>
-                      {/* Only show delete button if the post belongs to the current user */}
                       {user && item.uid === user.uid ? (
                         <TouchableOpacity
                           onPress={() => confirmDeletePost(item.id)}
                           style={{
                             marginLeft: 10,
-                            // backgroundColor: themeColors.red, // REMOVE red background
                             borderRadius: 6,
                             padding: 6,
                             alignItems: "center",
@@ -363,18 +345,14 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
                         fontFamily: "CarosSoft",
                       }}
                     >
-                      {/* --- Message rendering with "you" for check-ins --- */}
                       {(() => {
-                        // If this is a check-in post and the author is the current user, remove "you" from taggedNames for display
                         if (
                           item.type === "checkin" &&
                           item.isOwnPost &&
                           item.message &&
                           item.message.startsWith("Checked in at")
                         ) {
-                          // Remove any "with ..." from message
                           let baseMsg = item.message.replace(/ with .*!$/, "!");
-                          // Only show tagged friends (excluding "you")
                           if (item.taggedNames && item.taggedNames.length > 0) {
                             const others = item.taggedNames.filter(
                               (n) => n !== "you"
@@ -396,14 +374,12 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
                               <>
                                 {baseMsg.replace(/!$/, "")}
                                 {others.length > 0 ? tagString : ""}
-                                {"!"}
                               </>
                             );
                           } else {
                             return item.message;
                           }
                         }
-                        // If not a check-in or not own post, show message as is, and show tagged friends if present and not already in message
                         return (
                           <>
                             {item.message}
@@ -426,7 +402,6 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
                         );
                       })()}
                     </Text>
-                    {/* Remove Friends Only indicator */}
                     <View
                       style={{
                         flexDirection: "row",
@@ -444,9 +419,18 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
                         }}
                       >
                         {item.createdAt && item.createdAt.seconds
-                          ? new Date(
-                              item.createdAt.seconds * 1000
-                            ).toLocaleString()
+                          ? (() => {
+                              const d = new Date(item.createdAt.seconds * 1000);
+                              return (
+                                d.toLocaleDateString() +
+                                ", " +
+                                d.toLocaleTimeString([], {
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                })
+                              );
+                            })()
                           : ""}
                       </Text>
                     </View>
@@ -459,22 +443,6 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
               }}
               scrollEventThrottle={16}
             />
-            {/* Bottom gradient */}
-            {feed.length > 0 && (
-              <LinearGradient
-                colors={[themeColors.white + "00", themeColors.white + "FF"]}
-                style={{
-                  position: "absolute",
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  height: 24,
-                  zIndex: 2,
-                  pointerEvents: "none",
-                }}
-                pointerEvents="none"
-              />
-            )}
           </View>
         </View>
       )}

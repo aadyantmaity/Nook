@@ -73,14 +73,16 @@ export default function ShareNookToGroupModal({
       // --- Fetch current user's name from Firestore ---
       let senderName = "User";
       let senderUid = auth.currentUser?.uid;
+      let senderFirstName = "";
+      let senderLastName = "";
       if (senderUid) {
         const userDoc = await getDoc(doc(db, "users", senderUid));
         if (userDoc.exists()) {
           const d = userDoc.data();
+          senderFirstName = d.firstName || "";
+          senderLastName = d.lastName || "";
           senderName =
-            `${d.firstName || ""} ${d.lastName || ""}`.trim() ||
-            d.email ||
-            "User";
+            `${senderFirstName} ${senderLastName}`.trim() || d.email || "User";
         } else {
           senderName =
             auth.currentUser?.displayName || auth.currentUser?.email || "User";
@@ -94,6 +96,8 @@ export default function ShareNookToGroupModal({
         spotPhoto: spot.photoUrl || null,
         senderUid,
         senderName,
+        senderFirstName, // <-- add this
+        senderLastName, // <-- add this
         createdAt: serverTimestamp(),
       });
       Alert.alert("Shared!", `Nook shared to "${group.name}".`);
