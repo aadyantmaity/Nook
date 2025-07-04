@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, Modal } from "react-native";
 
 export default function GroupFiltersModal({
@@ -11,6 +11,41 @@ export default function GroupFiltersModal({
   setSelectedFilter,
   themeColors,
 }) {
+  // --- Multi-select state ---
+  const [localFilters, setLocalFilters] = useState(
+    Array.isArray(pendingFilter) ? pendingFilter : [pendingFilter]
+  );
+
+  // Sync localFilters with pendingFilter when modal opens/closes
+  useEffect(() => {
+    if (visible) {
+      setLocalFilters(
+        Array.isArray(pendingFilter) ? pendingFilter : [pendingFilter]
+      );
+    }
+  }, [visible, pendingFilter]);
+
+  // Handle filter press (multi-select logic)
+  const handlePress = (key) => {
+    if (key === "default") {
+      setLocalFilters(["default"]);
+      return;
+    }
+    let next;
+    if (localFilters.includes(key)) {
+      next = localFilters.filter((f) => f !== key);
+      if (next.length === 0) next = ["default"];
+    } else {
+      next = localFilters.filter((f) => f !== "default").concat(key);
+    }
+    setLocalFilters(next);
+  };
+
+  // Is selected helper
+  const isSelected = (key) =>
+    localFilters.includes(key) ||
+    (key === "default" && localFilters.length === 0);
+
   return (
     <Modal
       visible={visible}
@@ -18,13 +53,15 @@ export default function GroupFiltersModal({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View
+      <TouchableOpacity
         style={{
           flex: 1,
           backgroundColor: "rgba(0,0,0,0.3)",
           justifyContent: "center",
           alignItems: "center",
         }}
+        activeOpacity={1}
+        onPressOut={onClose}
       >
         <View
           style={{
@@ -37,6 +74,7 @@ export default function GroupFiltersModal({
             maxWidth: 400,
             alignItems: "center",
           }}
+          onStartShouldSetResponder={() => true}
         >
           <Text
             style={{
@@ -61,16 +99,15 @@ export default function GroupFiltersModal({
             {FILTERS.map((f) => (
               <TouchableOpacity
                 key={f.key}
-                onPress={() => setPendingFilter(f.key)}
+                onPress={() => handlePress(f.key)}
                 style={{
                   marginRight: 8,
                   marginBottom: 8,
                   paddingVertical: 10,
                   paddingHorizontal: 14,
-                  backgroundColor:
-                    pendingFilter === f.key
-                      ? themeColors.purple
-                      : themeColors.white,
+                  backgroundColor: isSelected(f.key)
+                    ? themeColors.purple
+                    : themeColors.white,
                   borderRadius: 25,
                   alignItems: "center",
                   alignSelf: "flex-start",
@@ -86,10 +123,9 @@ export default function GroupFiltersModal({
               >
                 <Text
                   style={{
-                    color:
-                      pendingFilter === f.key
-                        ? themeColors.white
-                        : themeColors.purple,
+                    color: isSelected(f.key)
+                      ? themeColors.white
+                      : themeColors.purple,
                     fontWeight: "bold",
                     fontSize: 13,
                     fontFamily: "CarosSoft",
@@ -102,10 +138,36 @@ export default function GroupFiltersModal({
               </TouchableOpacity>
             ))}
           </View>
-          <View style={{ flexDirection: "row", marginTop: 18, width: "100%" }}>
+          {/* --- Reset Filters Button --- */}
+          <TouchableOpacity
+            onPress={() => setLocalFilters(["default"])}
+            style={{
+              width: "100%",
+              backgroundColor: themeColors.white,
+              borderRadius: 8,
+              alignItems: "center",
+              padding: 12,
+              marginBottom: 10,
+            }}
+          >
+            <Text
+              style={{
+                color: themeColors.purple,
+                fontWeight: "bold",
+                fontFamily: "CarosSoft",
+              }}
+            >
+              Reset Filters
+            </Text>
+          </TouchableOpacity>
+          <View style={{ flexDirection: "row", marginTop: 8, width: "100%" }}>
             <TouchableOpacity
               onPress={() => {
-                setPendingFilter(selectedFilter);
+                setLocalFilters(
+                  Array.isArray(selectedFilter)
+                    ? selectedFilter
+                    : [selectedFilter]
+                );
                 onClose();
               }}
               style={{
@@ -131,7 +193,13 @@ export default function GroupFiltersModal({
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
-                setSelectedFilter(pendingFilter);
+                // Remove "default" if other filters are selected
+                const toSet =
+                  localFilters.length === 1 && localFilters[0] === "default"
+                    ? ["default"]
+                    : localFilters.filter((f) => f !== "default");
+                setPendingFilter(toSet);
+                setSelectedFilter(toSet);
                 onClose();
               }}
               style={{
@@ -155,7 +223,7 @@ export default function GroupFiltersModal({
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     </Modal>
   );
 }

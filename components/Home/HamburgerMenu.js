@@ -52,6 +52,7 @@ export default function HamburgerMenu({
             elevation: 20,
             zIndex: 1000,
           }}
+          onStartShouldSetResponder={() => true}
         >
           {/* Profile */}
           <TouchableOpacity

@@ -300,13 +300,15 @@ export function FocusStatsDropdown({
         animationType="slide"
         onRequestClose={() => setShowStatModal(false)}
       >
-        <View
+        <TouchableOpacity
           style={{
             flex: 1,
             backgroundColor: "rgba(0,0,0,0.3)",
             justifyContent: "center",
             alignItems: "center",
           }}
+          activeOpacity={1}
+          onPressOut={() => setShowStatModal(false)}
         >
           <View
             style={{
@@ -317,6 +319,7 @@ export function FocusStatsDropdown({
               alignItems: "center",
               maxHeight: "85%",
             }}
+            onStartShouldSetResponder={() => true}
           >
             <Text
               style={{
@@ -484,7 +487,7 @@ export function FocusStatsDropdown({
               {/* Delete All button removed */}
             </View>
           </View>
-        </View>
+        </TouchableOpacity>
       </Modal>
     </>
   );

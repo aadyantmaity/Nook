@@ -32,7 +32,6 @@ export default function FindPeopleView({
           marginTop: 24,
           marginBottom: 8,
           alignSelf: "center",
-          backgroundColor: themeColors.gray + "22",
           borderRadius: 24,
           padding: 4,
           width: 220,

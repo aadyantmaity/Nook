@@ -272,13 +272,15 @@ export function ArchiveButton({
         animationType="slide"
         onRequestClose={() => setShowArchiveModal(false)}
       >
-        <View
+        <TouchableOpacity
           style={{
             flex: 1,
             backgroundColor: "rgba(0,0,0,0.3)",
             justifyContent: "center",
             alignItems: "center",
           }}
+          activeOpacity={1}
+          onPressOut={() => setShowArchiveModal(false)}
         >
           <View
             style={{
@@ -295,6 +297,7 @@ export function ArchiveButton({
               shadowRadius: 4,
               elevation: 5,
             }}
+            onStartShouldSetResponder={() => true}
           >
             <Text
               style={{
@@ -817,7 +820,7 @@ export function ArchiveButton({
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </TouchableOpacity>
       </Modal>
     </>
   );

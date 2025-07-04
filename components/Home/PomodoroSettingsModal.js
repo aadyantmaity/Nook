@@ -54,14 +54,21 @@ export default function PomodoroSettingsModal({
     parseInt(breakInput, 10) > 60;
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <TouchableOpacity
         style={{
           flex: 1,
           backgroundColor: "rgba(0,0,0,0.3)",
           justifyContent: "center",
           alignItems: "center",
         }}
+        activeOpacity={1}
+        onPressOut={onClose}
       >
         <View
           style={{
@@ -82,6 +89,7 @@ export default function PomodoroSettingsModal({
             shadowRadius: 4,
             elevation: 5,
           }}
+          onStartShouldSetResponder={() => true}
         >
           <Text
             style={{
@@ -217,7 +225,7 @@ export default function PomodoroSettingsModal({
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </TouchableOpacity>
     </Modal>
   );
 }

@@ -129,13 +129,15 @@ export default function MapLocationPicker({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View
+      <TouchableOpacity
         style={{
           flex: 1,
           backgroundColor: "rgba(0,0,0,0.3)",
           justifyContent: "center",
           alignItems: "center",
         }}
+        activeOpacity={1}
+        onPressOut={onClose}
       >
         <View
           style={{
@@ -158,6 +160,7 @@ export default function MapLocationPicker({
             zIndex: 101,
             overflow: "visible",
           }}
+          onStartShouldSetResponder={() => true}
         >
           <Text
             style={[
@@ -336,7 +339,7 @@ export default function MapLocationPicker({
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     </Modal>
   );
 }

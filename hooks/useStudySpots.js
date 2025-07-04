@@ -226,29 +226,42 @@ export default function useStudySpots() {
                   }
                 }
 
-                // --- Fetch overall ratings for this spot ---
+                // --- Listen to overallRatings for this spot ---
                 let averageOverallRating = 0;
                 let overallRatingsCount = 0;
+                let unsubOverall = null;
                 try {
-                  const { collection, getDocs, query, where } = await import(
-                    "firebase/firestore"
-                  );
                   const overallRatingsQuery = query(
                     collection(db, "overallRatings"),
                     where("spotId", "==", docSnap.id)
                   );
-                  const overallRatingsSnapshot = await getDocs(
-                    overallRatingsQuery
+                  unsubOverall = onSnapshot(
+                    overallRatingsQuery,
+                    (overallRatingsSnapshot) => {
+                      let sum = 0,
+                        count = 0;
+                      overallRatingsSnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        sum += data.rating || 0;
+                        count++;
+                      });
+                      averageOverallRating = count > 0 ? sum / count : 0;
+                      overallRatingsCount = count;
+                      // Update the spot in setStudySpots
+                      setStudySpots((prevSpots) =>
+                        prevSpots.map((s) =>
+                          s.id === docSnap.id
+                            ? {
+                                ...s,
+                                averageOverallRating,
+                                overallRatingsCount,
+                              }
+                            : s
+                        )
+                      );
+                    }
                   );
-                  let sum = 0,
-                    count = 0;
-                  overallRatingsSnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    sum += data.rating || 0;
-                    count++;
-                  });
-                  averageOverallRating = count > 0 ? sum / count : 0;
-                  overallRatingsCount = count;
+                  unsubRefs.current.push(unsubOverall);
                 } catch (e) {
                   averageOverallRating = 0;
                   overallRatingsCount = 0;
