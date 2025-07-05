@@ -9,6 +9,9 @@ import {
   TextInput,
   TouchableOpacity,
   Text,
+  ScrollView,
+  Image,
+  Keyboard, // <-- Add Keyboard import
 } from "react-native";
 import { ThemeContext } from "../App";
 import { colors } from "../constants/colors";
@@ -54,7 +57,7 @@ export default function GroupDetailView({ navigation, route }) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(""); // ensure this is defined
   const [showMenu, setShowMenu] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showMembersModal, setShowMembersModal] = useState(false);
@@ -76,7 +79,11 @@ export default function GroupDetailView({ navigation, route }) {
   const prevMembersRef = useRef(null); // Track previous members for system messages
   const hasSentJoinMessageRef = useRef(false); // Track if join message was sent for this session
   const { favoriteGroups, toggleFavoriteGroup } = useFavorites(); // <-- Get favoriteGroups state and toggle function
-  const [replyToMessage, setReplyToMessage] = useState(null); // <-- add state
+  const [replyToMessage, setReplyToMessage] = useState(null); // ensure this is defined
+  const [mentionPickerVisible, setMentionPickerVisible] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [mentionUsers, setMentionUsers] = useState([]);
+  const [keyboardHeight, setKeyboardHeight] = useState(0); // <-- Add this state
 
   // Fetch group info (NO system message logic here anymore)
   useEffect(() => {
@@ -160,11 +167,87 @@ export default function GroupDetailView({ navigation, route }) {
     };
   }, [groupId]);
 
-  // Send message
+  // Fetch group members for mention suggestions
+  useEffect(() => {
+    if (!groupId) return;
+    // Fetch group members from Firestore and set mentionUsers
+    const fetchMentionUsers = async () => {
+      try {
+        const groupDoc = await getDoc(doc(db, "studyGroups", groupId));
+        if (!groupDoc.exists()) {
+          setMentionUsers([]);
+          return;
+        }
+        const memberUids = groupDoc.data().memberUids || [];
+        if (!memberUids.length) {
+          setMentionUsers([]);
+          return;
+        }
+        // Fetch user docs for all memberUids
+        const usersSnap = await getDocs(collection(db, "users"));
+        const users = usersSnap.docs
+          .filter((d) => memberUids.includes(d.id))
+          .map((d) => {
+            const data = d.data();
+            const first = data.firstName || "";
+            const last = data.lastName || "";
+            return {
+              uid: d.id,
+              name:
+                first && last
+                  ? `${first} ${last.charAt(0)}`
+                  : first
+                  ? first
+                  : "User",
+              email: data.email || "",
+              profilePic: data.profilePic || null, // <-- Add profilePic here
+            };
+          });
+        setMentionUsers(users);
+      } catch {
+        setMentionUsers([]);
+      }
+    };
+    fetchMentionUsers();
+  }, [groupId]);
+
+  // Detect "@" and show mention picker
+  const handleInputChange = (text) => {
+    setInput(text);
+    const match = text.match(/@(\w*)$/);
+    if (match) {
+      setMentionQuery(match[1]);
+      setMentionPickerVisible(true);
+    } else {
+      setMentionPickerVisible(false);
+    }
+  };
+
+  // Insert mention at cursor
+  const handleMentionSelect = (user) => {
+    const atIdx = input.lastIndexOf("@");
+    if (atIdx !== -1) {
+      const before = input.slice(0, atIdx);
+      const after = input.slice(atIdx).replace(/@\w*$/, "");
+      setInput(before + "@" + user.name + " " + after);
+    }
+    setMentionPickerVisible(false);
+  };
+
+  // Send message with mentions
   const handleSend = async () => {
     if (!input.trim() || sending) return;
     setSending(true);
     try {
+      // Extract mentioned user names from input
+      const mentionNames = Array.from(input.matchAll(/@([\w\s]+)/g), (m) =>
+        m[1].trim()
+      );
+      // Map names to UIDs
+      const mentionedUids = mentionUsers
+        .filter((u) => mentionNames.includes(u.name))
+        .map((u) => u.uid);
+
       await addDoc(collection(db, "studyGroups", groupId, "messages"), {
         text: input.trim(),
         uid: auth.currentUser?.uid,
@@ -176,9 +259,10 @@ export default function GroupDetailView({ navigation, route }) {
               senderName: getUserName(replyToMessage.uid),
             }
           : null,
+        mentions: mentionedUids, // <-- store mentioned UIDs
       });
       setInput("");
-      setReplyToMessage(null); // clear reply after sending
+      setReplyToMessage(null);
     } catch {}
     setSending(false);
   };
@@ -543,6 +627,20 @@ export default function GroupDetailView({ navigation, route }) {
     );
   }
 
+  // Listen for keyboard events to adjust mention picker position
+  useEffect(() => {
+    const showSub = Keyboard.addListener("keyboardDidShow", (e) => {
+      setKeyboardHeight(e.endCoordinates.height || 0);
+    });
+    const hideSub = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardHeight(0);
+    });
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
       {/* Menu Modal */}
@@ -619,7 +717,7 @@ export default function GroupDetailView({ navigation, route }) {
             />
             <GroupInputBar
               input={input}
-              setInput={setInput}
+              setInput={handleInputChange}
               sending={sending}
               handleSend={handleSend}
               replyToMessage={replyToMessage}
@@ -629,6 +727,117 @@ export default function GroupDetailView({ navigation, route }) {
             />
           </>
         )}
+        {mentionPickerVisible &&
+          mentionUsers.filter((u) =>
+            u.name.toLowerCase().includes(mentionQuery.toLowerCase())
+          ).length > 0 && (
+            <View
+              style={{
+                position: "absolute",
+                left: 12,
+                right: 12,
+                // Dynamically position above keyboard
+                bottom: keyboardHeight + 12,
+                backgroundColor: themeColors.white,
+                zIndex: 1000,
+                maxHeight: 220,
+                borderRadius: 14,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.15,
+                shadowRadius: 8,
+                elevation: 8,
+                borderWidth: 1,
+                borderColor: themeColors.lightGray,
+                paddingHorizontal: 0,
+                overflow: "hidden",
+              }}
+            >
+              <ScrollView
+                keyboardShouldPersistTaps="always"
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{
+                  paddingVertical: 4,
+                  paddingHorizontal: 0,
+                }}
+              >
+                {mentionUsers
+                  .filter((u) =>
+                    u.name.toLowerCase().includes(mentionQuery.toLowerCase())
+                  )
+                  .map((u, idx, arr) => (
+                    <TouchableOpacity
+                      key={u.uid}
+                      onPress={() => handleMentionSelect(u)}
+                      activeOpacity={0.7}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingVertical: 12,
+                        paddingHorizontal: 18,
+                        backgroundColor: themeColors.white,
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 16,
+                          backgroundColor: themeColors.purple,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          marginRight: 12,
+                          overflow: "hidden",
+                        }}
+                      >
+                        {u.profilePic ? (
+                          <Image
+                            source={{ uri: u.profilePic }}
+                            style={{ width: 32, height: 32, borderRadius: 16 }}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <Text
+                            style={{
+                              color: themeColors.white,
+                              fontWeight: "bold",
+                              fontSize: 16,
+                              fontFamily: "CarosSoft",
+                            }}
+                          >
+                            {u.name.charAt(0).toUpperCase()}
+                          </Text>
+                        )}
+                      </View>
+                      <Text
+                        style={{
+                          color: themeColors.purple,
+                          fontFamily: "CarosSoft",
+                          fontSize: 16,
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {u.name}
+                      </Text>
+                      {/* Add bottom border with padding */}
+                      {idx !== arr.length - 1 && (
+                        <View
+                          style={{
+                            position: "absolute",
+                            left: 32 + 18 + 12,
+                            right: 18,
+                            bottom: 0,
+                            height: 0.5,
+                            backgroundColor: themeColors.black,
+                            opacity: 0.5,
+                          }}
+                        />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+              </ScrollView>
+            </View>
+          )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

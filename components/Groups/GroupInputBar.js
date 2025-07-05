@@ -10,7 +10,7 @@ import { PaperPlaneRight, X } from "phosphor-react-native";
 
 export default function GroupInputBar({
   input,
-  setInput,
+  setInput, // now this is handleInputChange
   sending,
   handleSend,
   replyToMessage,
@@ -82,7 +82,7 @@ export default function GroupInputBar({
       >
         <TextInput
           value={input}
-          onChangeText={setInput}
+          onChangeText={setInput} // now triggers mention logic
           placeholder={
             replyToMessage
               ? `Replying to ${getUserName(replyToMessage.uid)}...`
@@ -105,7 +105,6 @@ export default function GroupInputBar({
           returnKeyType="send"
           onSubmitEditing={handleSend}
           blurOnSubmit={false}
-          multiline={true}
           maxLength={200}
         />
         <TouchableOpacity
