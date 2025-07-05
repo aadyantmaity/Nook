@@ -29,7 +29,7 @@ export default function FindPeopleView({
       <View
         style={{
           flexDirection: "row",
-          marginTop: 24,
+          marginTop: 16,
           marginBottom: 8,
           alignSelf: "center",
           borderRadius: 24,
@@ -44,7 +44,6 @@ export default function FindPeopleView({
             alignItems: "center",
             justifyContent: "center",
             paddingVertical: 0,
-            height: 36,
             borderRadius: 20,
             backgroundColor:
               selectedTab === "studyGroups"

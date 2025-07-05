@@ -387,6 +387,7 @@ export default function StudyGroupsSection({ navigation }) {
               paddingVertical: 10,
               fontSize: 16,
               color: themeColors.black,
+              height: 44,
               fontFamily: "CarosSoft",
               backgroundColor: themeColors.white,
             }}
@@ -405,17 +406,6 @@ export default function StudyGroupsSection({ navigation }) {
           }}
           accessibilityLabel="Open Filters"
         >
-          <Text
-            style={{
-              color: themeColors.purple,
-              fontWeight: "bold",
-              fontSize: 14,
-              marginRight: 8,
-              fontFamily: "CarosSoft",
-            }}
-          >
-            Filters
-          </Text>
           <FadersHorizontal
             size={22}
             color={themeColors.purple}
