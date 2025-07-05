@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal, TouchableOpacity, View, Text, ScrollView } from "react-native";
+import { Modal, View, Text, TouchableOpacity, FlatList } from "react-native";
 
 export default function GroupMembersModal({
   visible,
@@ -11,7 +11,7 @@ export default function GroupMembersModal({
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="slide"
       onRequestClose={onClose}
     >
       <TouchableOpacity
@@ -46,10 +46,11 @@ export default function GroupMembersModal({
           >
             Group Members
           </Text>
-          <ScrollView style={{ width: "100%" }}>
-            {membersList.map((u) => (
+          <FlatList
+            data={membersList}
+            keyExtractor={(item) => item.uid}
+            renderItem={({ item: u }) => (
               <View
-                key={u.uid}
                 style={{
                   paddingVertical: 8,
                   borderBottomWidth: 1,
@@ -75,8 +76,9 @@ export default function GroupMembersModal({
                   {u.email}
                 </Text>
               </View>
-            ))}
-          </ScrollView>
+            )}
+            style={{ width: "100%" }}
+          />
           <TouchableOpacity
             onPress={onClose}
             style={{
