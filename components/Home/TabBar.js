@@ -62,7 +62,7 @@ export default function TabBar({
               accessible={true}
             >
               <Icon
-                size={24}
+                size={25}
                 color={
                   currentIndex === i ? themeColors.purple : themeColors.darkGray
                 }
@@ -74,7 +74,7 @@ export default function TabBar({
                     currentIndex === i
                       ? themeColors.purple
                       : themeColors.darkGray,
-                  fontSize: 11.5,
+                  fontSize: 12,
                   fontFamily: "CarosSoft",
                   marginTop: 2,
                 }}
