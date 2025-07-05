@@ -283,7 +283,6 @@ export default function HomeScreen({ navigation, route }) {
               paddingVertical: 10,
               alignItems: "center",
               justifyContent: "center",
-              minWidth: 48,
               marginRight: 0,
               height: 42,
               marginBottom: 0,
@@ -671,7 +670,7 @@ export default function HomeScreen({ navigation, route }) {
               accessibilityLabel="Open menu"
               accessible={true}
             >
-              <List size={24} color={themeColors.purple} weight="bold" />
+              <List size={28} color={themeColors.purple} weight="bold" />
             </TouchableOpacity>
           </View>
           {/* HamburgerMenu modal */}

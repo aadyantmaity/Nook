@@ -190,39 +190,49 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
         style={{
           width: "100%",
           marginBottom: 12,
-          marginTop: 8,
+          marginTop: 0, // Match group search input (remove marginTop)
         }}
       >
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
-            borderWidth: 1,
-            borderColor: themeColors.darkGray,
-            borderRadius: 12,
-            paddingHorizontal: 12,
-            backgroundColor: themeColors.white,
-            marginBottom: 8,
+            marginBottom: 12, // Match group search input
           }}
         >
-          <TextInput
-            placeholder="Share something with friends..."
-            value={postText}
-            onChangeText={setPostText}
+          <View
             style={{
               flex: 1,
+              flexDirection: "row",
+              alignItems: "center",
+              borderWidth: 1,
+              borderColor: themeColors.darkGray,
+              borderRadius: 12,
+              paddingHorizontal: 14, // Match group search input
+              backgroundColor: themeColors.white,
               height: 44,
-              fontSize: 16,
-              color: themeColors.black,
-              fontFamily: "CarosSoft",
             }}
-            editable={!posting}
-            placeholderTextColor={themeColors.darkGray}
-            maxLength={100}
-            returnKeyType="send"
-            onSubmitEditing={handlePost}
-            blurOnSubmit={true}
-          />
+          >
+            <TextInput
+              placeholder="Share something with friends..."
+              value={postText}
+              onChangeText={setPostText}
+              style={{
+                flex: 1,
+                height: 44,
+                fontSize: 16,
+                color: themeColors.black,
+                fontFamily: "CarosSoft",
+                paddingVertical: 0,
+              }}
+              editable={!posting}
+              placeholderTextColor={themeColors.darkGray}
+              maxLength={100}
+              returnKeyType="send"
+              onSubmitEditing={handlePost}
+              blurOnSubmit={true}
+            />
+          </View>
           <TouchableOpacity
             onPress={handlePost}
             disabled={posting || !postText.trim()}
@@ -230,6 +240,10 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
               marginLeft: 8,
               alignItems: "center",
               justifyContent: "center",
+              height: 44,
+              width: 44,
+              borderRadius: 12,
+              backgroundColor: themeColors.white,
             }}
             accessibilityLabel="Submit"
           >

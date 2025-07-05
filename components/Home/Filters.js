@@ -119,22 +119,8 @@ export default function Filters({
       ]}
       accessibilityLabel="Open Filters"
     >
-      {/* Replace text with icon */}
-      <Text
-        style={[
-          {
-            color: themeColors.purple,
-            fontWeight: "bold",
-            fontSize: 14,
-            marginRight: 8,
-            fontFamily: "CarosSoft",
-          },
-        ]}
-      >
-        Filters
-      </Text>
       <FadersHorizontal
-        size={22}
+        size={24}
         color={themeColors.purple}
         weight="bold"
         style={{}}
@@ -328,7 +314,7 @@ export default function Filters({
             >
               <Text
                 style={{
-                  color: themeColors.purple,
+                  color: themeColors.red,
                   fontSize: 16,
                   fontWeight: "bold",
                   fontFamily: "CarosSoft",

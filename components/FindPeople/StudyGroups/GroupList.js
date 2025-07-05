@@ -269,7 +269,6 @@ export default function GroupList({
                       fontFamily: "CarosSoft",
                     }}
                   >
-                    Members:{" "}
                     {Array.isArray(item.memberUids) && allUsers.length > 0
                       ? (() => {
                           const you = "You";
@@ -294,7 +293,7 @@ export default function GroupList({
                           }
                           return allNames.join(", ");
                         })()
-                      : item.memberUids.length}
+                      : ""}
                   </Text>
                 )}
               </View>
