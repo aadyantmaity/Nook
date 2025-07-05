@@ -1,31 +1,15 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
 import {
   View,
-  Text,
-  TouchableOpacity,
-  TextInput,
-  FlatList,
+  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  SafeAreaView,
   Alert,
-  Modal,
-  Image,
-  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  Text,
 } from "react-native";
-import {
-  ArrowLeft,
-  PaperPlaneRight,
-  DotsThreeVertical,
-  MapPin,
-  UsersThree,
-  ShareNetwork, // <-- This is the icon used for "Manage Sharing" in SpotDetailScreen
-  SignOut,
-  Trash,
-  Users,
-  Star,
-} from "phosphor-react-native";
 import { ThemeContext } from "../App";
 import { colors } from "../constants/colors";
 import { db, auth } from "../firebaseConfig";
@@ -42,16 +26,26 @@ import {
   updateDoc,
   deleteDoc,
 } from "firebase/firestore";
+import {
+  ArrowLeft,
+  PaperPlaneRight,
+  DotsThreeVertical,
+  MapPin,
+  UsersThree,
+  ShareNetwork, // <-- This is the icon used for "Manage Sharing" in SpotDetailScreen
+  SignOut,
+  Trash,
+  Users,
+  Star,
+} from "phosphor-react-native";
 import PrivateNookShareModal from "../components/SpotDetail/PrivateNookShareModal";
-import { LinearGradient } from "expo-linear-gradient";
-
-// --- New extracted components ---
 import GroupMembersModal from "../components/Groups/GroupMembersModal";
 import GroupMenuModal from "../components/Groups/GroupMenuModal";
-import ProfilePicture from "../components/Profile/ProfilePicture"; // <-- Add this import if not present
-import useFavorites from "../hooks/useFavorites"; // <-- Import useFavorites hook
+import GroupMessagesList from "../components/Groups/GroupMessagesList";
+import GroupInputBar from "../components/Groups/GroupInputBar";
+import GroupStarredNooksModal from "../components/Groups/GroupStarredNooksModal";
+import useFavorites from "../hooks/useFavorites";
 
-// --- Add state for Starred Nooks Modal and data ---
 export default function GroupDetailView({ navigation, route }) {
   const { groupId } = route.params;
   const themeCtx = useContext(ThemeContext);
@@ -82,6 +76,7 @@ export default function GroupDetailView({ navigation, route }) {
   const prevMembersRef = useRef(null); // Track previous members for system messages
   const hasSentJoinMessageRef = useRef(false); // Track if join message was sent for this session
   const { favoriteGroups, toggleFavoriteGroup } = useFavorites(); // <-- Get favoriteGroups state and toggle function
+  const [replyToMessage, setReplyToMessage] = useState(null); // <-- add state
 
   // Fetch group info (NO system message logic here anymore)
   useEffect(() => {
@@ -174,8 +169,16 @@ export default function GroupDetailView({ navigation, route }) {
         text: input.trim(),
         uid: auth.currentUser?.uid,
         createdAt: serverTimestamp(),
+        replyTo: replyToMessage
+          ? {
+              id: replyToMessage.id,
+              text: replyToMessage.text,
+              senderName: getUserName(replyToMessage.uid),
+            }
+          : null,
       });
       setInput("");
+      setReplyToMessage(null); // clear reply after sending
     } catch {}
     setSending(false);
   };
@@ -500,6 +503,46 @@ export default function GroupDetailView({ navigation, route }) {
     ]);
   };
 
+  // --- Helper to render reply preview above a message bubble ---
+  function renderReplyPreview(message) {
+    if (!message.replyTo) return null;
+    return (
+      <View
+        style={{
+          backgroundColor: themeColors.lightGray,
+          borderLeftWidth: 3,
+          borderLeftColor: themeColors.purple,
+          paddingVertical: 4,
+          paddingHorizontal: 10,
+          marginBottom: 4,
+          borderRadius: 8,
+        }}
+      >
+        <Text
+          style={{
+            color: themeColors.purple,
+            fontWeight: "bold",
+            fontSize: 12,
+            fontFamily: "CarosSoft",
+          }}
+          numberOfLines={1}
+        >
+          Replying to {message.replyTo.senderName || "User"}
+        </Text>
+        <Text
+          style={{
+            color: themeColors.darkGray,
+            fontSize: 11,
+            fontFamily: "CarosSoft",
+          }}
+          numberOfLines={1}
+        >
+          {message.replyTo.text}
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
       {/* Menu Modal */}
@@ -510,12 +553,12 @@ export default function GroupDetailView({ navigation, route }) {
         themeColors={themeColors}
         auth={auth}
         setShowShareModal={setShowShareModal}
-        setShowStarredModal={() => {}} // Remove starred nooks modal
-        setShowMembersModal={() => {}} // Remove members modal
-        fetchMembersList={() => {}} // Remove members modal
+        setShowStarredModal={setShowStarredModal}
+        setShowMembersModal={setShowMembersModal}
+        fetchMembersList={fetchMembersList}
         handleLeaveGroup={handleLeaveGroup}
         handleDeleteGroup={handleDeleteGroup}
-        navigation={navigation} // <-- add this line
+        navigation={navigation}
       />
       {/* Share Modal */}
       <PrivateNookShareModal
@@ -528,13 +571,26 @@ export default function GroupDetailView({ navigation, route }) {
         collectionName="studyGroups"
         fieldName="memberUids"
       />
-      {/* Remove Members Modal */}
-      {/* Remove Starred Nooks Modal */}
-      {/* Messages */}
+      {/* Members Modal */}
+      <GroupMembersModal
+        visible={showMembersModal}
+        onClose={() => setShowMembersModal(false)}
+        membersList={membersList}
+        themeColors={themeColors}
+      />
+      {/* Starred Nooks Modal */}
+      <GroupStarredNooksModal
+        visible={showStarredModal}
+        onClose={() => setShowStarredModal(false)}
+        starredNooksData={starredNooksData}
+        navigation={navigation}
+        themeColors={themeColors}
+      />
+      {/* Messages and Input */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0} // adjust as needed for your header
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
         {loading ? (
           <View
@@ -543,500 +599,36 @@ export default function GroupDetailView({ navigation, route }) {
             <ActivityIndicator color={themeColors.purple} />
           </View>
         ) : (
-          <FlatList
-            ref={flatListRef}
-            data={[...messages].reverse()} // reverse for inverted list
-            inverted
-            showsVerticalScrollIndicator={false}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={{
-              padding: 18,
-              paddingBottom: 24,
-              flexGrow: 1,
-              backgroundColor: themeColors.white,
-            }}
-            renderItem={({ item, index }) => {
-              const isMe = item.uid === auth.currentUser?.uid;
-
-              // Calculate the real index in the original (non-inverted) array
-              const realIndex = messages.length - 1 - index;
-              const nextItem = messages[realIndex - 1]; // Note: We look at the next item in the original array
-
-              // --- Date separator logic ---
-              let showDateSeparator = false;
-              let dateLabel = "";
-              if (item.createdAt && item.createdAt.seconds) {
-                const currentDate = new Date(item.createdAt.seconds * 1000);
-
-                // Show separator if:
-                // - This is the first message in the original array (realIndex === 0)
-                // - OR the next message is from a different day
-                if (
-                  realIndex === 0 ||
-                  !nextItem ||
-                  !nextItem.createdAt ||
-                  !nextItem.createdAt.seconds ||
-                  currentDate.getDate() !==
-                    new Date(nextItem.createdAt.seconds * 1000).getDate() ||
-                  currentDate.getMonth() !==
-                    new Date(nextItem.createdAt.seconds * 1000).getMonth() ||
-                  currentDate.getFullYear() !==
-                    new Date(nextItem.createdAt.seconds * 1000).getFullYear()
-                ) {
-                  dateLabel = currentDate.toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                  });
-                  showDateSeparator = true;
-                }
-              }
-
-              // --- Show profile picture logic ---
-              let showProfilePic = false;
-              if (!isMe) {
-                // Show profile pic if:
-                // - This is the last message in the original array (realIndex === messages.length - 1)
-                // - OR the next message is from a different user or is a system message
-                if (
-                  realIndex === messages.length - 1 ||
-                  nextItem?.uid !== item.uid ||
-                  nextItem?.type === "system" ||
-                  nextItem?.type === "nook_share"
-                ) {
-                  showProfilePic = true;
-                }
-              }
-              // --- System message (centered, darkGray, no timestamp, no user) ---
-              if (item.type === "system") {
-                return (
-                  <>
-                    {showDateSeparator && (
-                      <View style={{ alignItems: "center", marginBottom: 10 }}>
-                        <Text
-                          style={{
-                            color: themeColors.darkGray,
-                            fontSize: 13,
-                            fontFamily: "CarosSoft",
-                            backgroundColor: themeColors.lightGray,
-                            borderRadius: 8,
-                            paddingHorizontal: 12,
-                            paddingVertical: 2,
-                            marginBottom: 2,
-                          }}
-                        >
-                          {dateLabel}
-                        </Text>
-                      </View>
-                    )}
-                    <View style={{ alignItems: "center", marginVertical: 8 }}>
-                      <Text
-                        style={{
-                          color: themeColors.darkGray,
-                          fontSize: 14,
-                          fontFamily: "CarosSoft",
-                          textAlign: "center",
-                          fontStyle: "italic",
-                        }}
-                      >
-                        {item.text}
-                      </Text>
-                    </View>
-                  </>
-                );
-              }
-              // --- Nook Share Card ---
-              if (item.type === "nook_share") {
-                return (
-                  <>
-                    {showDateSeparator && (
-                      <View style={{ alignItems: "center", marginBottom: 10 }}>
-                        <Text
-                          style={{
-                            color: themeColors.darkGray,
-                            fontSize: 13,
-                            fontFamily: "CarosSoft",
-                            backgroundColor: themeColors.lightGray,
-                            borderRadius: 8,
-                            paddingHorizontal: 12,
-                            paddingVertical: 2,
-                            marginBottom: 2,
-                          }}
-                        >
-                          {dateLabel}
-                        </Text>
-                      </View>
-                    )}
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignSelf: "center",
-                        alignItems: "center",
-                        marginBottom: 30,
-                        marginTop: 30,
-                        maxWidth: "100%",
-                      }}
-                    >
-                      <TouchableOpacity
-                        onPress={() =>
-                          navigation.navigate("SpotDetail", {
-                            spotId: item.spotId,
-                          })
-                        }
-                        style={{
-                          maxWidth: 280,
-                          backgroundColor: themeColors.lightGray,
-                          borderRadius: 14,
-                          padding: 12,
-                          flexDirection: "row",
-                          alignItems: "center",
-                          shadowColor: "#000",
-                          shadowOffset: { width: 0, height: 2 },
-                          shadowOpacity: 0.1,
-                          shadowRadius: 4,
-                          elevation: 3,
-                          borderColor: themeColors.black,
-                          borderWidth: 0.5,
-                          elevation: 5,
-                        }}
-                      >
-                        {item.spotPhoto ? (
-                          <View
-                            style={{
-                              width: 48,
-                              height: 48,
-                              borderRadius: 8,
-                              overflow: "hidden",
-                              marginRight: 12,
-                            }}
-                          >
-                            <Image
-                              source={{ uri: item.spotPhoto }}
-                              style={{ width: "100%", height: "100%" }}
-                              resizeMode="cover"
-                            />
-                          </View>
-                        ) : (
-                          <View
-                            style={{
-                              width: 48,
-                              height: 48,
-                              borderRadius: 8,
-                              backgroundColor: themeColors.purple,
-                              alignItems: "center",
-                              justifyContent: "center",
-                              marginRight: 12,
-                            }}
-                          >
-                            <MapPin
-                              size={32}
-                              color={themeColors.white}
-                              weight="bold"
-                            />
-                          </View>
-                        )}
-                        <View style={{ flex: 1 }}>
-                          <Text
-                            style={{
-                              color: themeColors.purple,
-                              fontWeight: "bold",
-                              fontSize: 16,
-                              fontFamily: "CarosSoft",
-                            }}
-                            numberOfLines={1}
-                          >
-                            {item.spotName || "Nook"}
-                          </Text>
-                          <Text
-                            style={{
-                              color: themeColors.darkGray,
-                              fontSize: 13,
-                              fontFamily: "CarosSoft",
-                              marginTop: 2,
-                            }}
-                            numberOfLines={1}
-                          >
-                            {/* Shared by firstName lastInitial */}
-                            {"Shared by "}
-                            {item.senderFirstName
-                              ? item.senderFirstName +
-                                (item.senderLastName
-                                  ? " " + item.senderLastName.charAt(0)
-                                  : "")
-                              : item.senderName || "Someone"}
-                          </Text>
-                        </View>
-                        {/* --- Star button inside the card, at the end --- */}
-                        <TouchableOpacity
-                          onPress={() => toggleStarNook(item.spotId)}
-                          style={{
-                            padding: 4,
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <Star
-                            size={22}
-                            color={themeColors.purple}
-                            weight={
-                              starredNooks.includes(item.spotId)
-                                ? "fill"
-                                : "regular"
-                            }
-                          />
-                        </TouchableOpacity>
-                      </TouchableOpacity>
-                    </View>
-                  </>
-                );
-              }
-              // Regular message bubble
-              return (
-                <>
-                  {showDateSeparator && (
-                    <View style={{ alignItems: "center", marginBottom: 10 }}>
-                      <Text
-                        style={{
-                          color: themeColors.darkGray,
-                          fontSize: 13,
-                          fontFamily: "CarosSoft",
-                          backgroundColor: themeColors.lightGray,
-                          borderRadius: 8,
-                          paddingHorizontal: 12,
-                          paddingVertical: 2,
-                          marginBottom: 2,
-                        }}
-                      >
-                        {dateLabel}
-                      </Text>
-                    </View>
-                  )}
-                  {isMe ? (
-                    // My own message: right aligned, no profile picture
-                    <View
-                      style={{
-                        flexDirection: "row-reverse",
-                        alignItems: "flex-end",
-                        alignSelf: "flex-end",
-                        marginBottom: 10,
-                        maxWidth: "80%",
-                      }}
-                    >
-                      <View style={{ flexShrink: 1 }}>
-                        <TouchableOpacity
-                          activeOpacity={0.8}
-                          disabled={!isMe}
-                          onLongPress={() => {
-                            if (!isMe) return;
-                            Alert.alert(
-                              "Delete Message",
-                              "Do you want to delete this message?",
-                              [
-                                { text: "Cancel", style: "cancel" },
-                                {
-                                  text: "Delete",
-                                  style: "destructive",
-                                  onPress: () => handleDeleteMessage(item.id),
-                                },
-                              ]
-                            );
-                          }}
-                        >
-                          <View
-                            style={{
-                              backgroundColor: themeColors.purple,
-                              borderRadius: 14,
-                              paddingVertical: 10,
-                              paddingHorizontal: 16,
-                              shadowColor: "#000",
-                              shadowOffset: { width: 0, height: 1 },
-                              shadowOpacity: 0.06,
-                              shadowRadius: 2,
-                              elevation: 1,
-                              minWidth: 50,
-                              alignItems: "center",
-                              alignSelf: "flex-end",
-                            }}
-                          >
-                            <Text
-                              style={{
-                                color: themeColors.white,
-                                fontSize: 15,
-                                fontFamily: "CarosSoft",
-                              }}
-                            >
-                              {item.text}
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                        {/* --- Sender info row (no profile picture) --- */}
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            marginTop: 2,
-                            alignSelf: "flex-end",
-                          }}
-                        >
-                          <Text
-                            style={{
-                              color: themeColors.darkGray,
-                              fontSize: 11,
-                              marginLeft: 0,
-                              fontFamily: "CarosSoft",
-                              textAlign: "right",
-                            }}
-                          >
-                            {getUserName(item.uid)}
-                            {" · "}
-                            {item.createdAt && item.createdAt.seconds
-                              ? new Date(
-                                  item.createdAt.seconds * 1000
-                                ).toLocaleTimeString([], {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })
-                              : ""}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  ) : (
-                    // Other's message: profile picture left, bubble right, properly aligned
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "flex-start",
-                        marginBottom: 10,
-                        maxWidth: "80%",
-                      }}
-                    >
-                      {/* Only show profile picture for the first message in a sequence */}
-                      {showProfilePic ? (
-                        <View style={{ marginTop: 5, marginRight: 10 }}>
-                          <ProfilePicture
-                            profilePic={getUserProfilePic(item.uid)}
-                            themeColors={themeColors}
-                            size={28}
-                          />
-                        </View>
-                      ) : (
-                        <View style={{ width: 28, marginRight: 10 }} />
-                      )}
-                      <View style={{ flexShrink: 1 }}>
-                        <View
-                          style={{
-                            backgroundColor: themeColors.gray,
-                            borderRadius: 14,
-                            paddingVertical: 10,
-                            paddingHorizontal: 16,
-                            shadowColor: "#000",
-                            shadowOffset: { width: 0, height: 1 },
-                            shadowOpacity: 0.06,
-                            shadowRadius: 2,
-                            elevation: 1,
-                            minWidth: 50,
-                            alignItems: "center",
-                            alignSelf: "flex-start",
-                          }}
-                        >
-                          <Text
-                            style={{
-                              color: themeColors.black,
-                              fontSize: 15,
-                              fontFamily: "CarosSoft",
-                            }}
-                          >
-                            {item.text}
-                          </Text>
-                        </View>
-                        {/* Sender info row */}
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            marginTop: 2,
-                          }}
-                        >
-                          <Text
-                            style={{
-                              color: themeColors.darkGray,
-                              fontSize: 11,
-                              fontFamily: "CarosSoft",
-                            }}
-                          >
-                            {getUserName(item.uid)}
-                            {" · "}
-                            {item.createdAt && item.createdAt.seconds
-                              ? new Date(
-                                  item.createdAt.seconds * 1000
-                                ).toLocaleTimeString([], {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })
-                              : ""}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  )}
-                </>
-              );
-            }}
-            // Remove scrollToEnd logic for inverted list
-          />
-        )}
-        {/* Input Bar */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            paddingHorizontal: 12,
-            paddingBottom: 24,
-            paddingTop: 8,
-            borderTopWidth: 1,
-            borderTopColor: themeColors.gray,
-            backgroundColor: themeColors.white,
-          }}
-        >
-          <TextInput
-            value={input}
-            onChangeText={setInput}
-            placeholder="Type a message..."
-            placeholderTextColor={themeColors.darkGray}
-            style={{
-              flex: 1,
-              borderRadius: 20,
-              paddingHorizontal: 16,
-              paddingVertical: 10,
-              fontSize: 15,
-              color: themeColors.black,
-              fontFamily: "CarosSoft",
-              marginRight: 8,
-            }}
-            editable={!sending}
-            returnKeyType="send"
-            onSubmitEditing={handleSend}
-            blurOnSubmit={true}
-            maxLength={200}
-          />
-          <TouchableOpacity
-            onPress={handleSend}
-            disabled={sending || !input.trim()}
-            style={{
-              borderRadius: 20,
-              padding: 10,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            accessibilityLabel="Send"
-          >
-            <PaperPlaneRight
-              size={24}
-              color={themeColors.purple}
-              weight="bold"
+          <>
+            <GroupMessagesList
+              messages={messages}
+              group={group}
+              themeColors={themeColors}
+              auth={auth}
+              navigation={navigation}
+              starredNooks={starredNooks}
+              toggleStarNook={toggleStarNook}
+              userCache={userCache}
+              userPicCache={userPicCache}
+              getUserName={getUserName}
+              getUserProfilePic={getUserProfilePic}
+              handleDeleteMessage={handleDeleteMessage}
+              setReplyToMessage={setReplyToMessage}
+              replyToMessage={replyToMessage}
+              flatListRef={flatListRef}
             />
-          </TouchableOpacity>
-        </View>
+            <GroupInputBar
+              input={input}
+              setInput={setInput}
+              sending={sending}
+              handleSend={handleSend}
+              replyToMessage={replyToMessage}
+              setReplyToMessage={setReplyToMessage}
+              getUserName={getUserName}
+              themeColors={themeColors}
+            />
+          </>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Modal, TouchableOpacity, View, Text } from "react-native";
 import * as PhosphorIcons from "phosphor-react-native";
 
@@ -32,6 +32,23 @@ export default function IconPickerModal({
   setSelectedIcon,
   themeColors,
 }) {
+  // Local state for icon selection
+  const [localIcon, setLocalIcon] = useState(selectedIcon);
+
+  useEffect(() => {
+    if (visible) setLocalIcon(selectedIcon);
+  }, [visible, selectedIcon]);
+
+  const handleDone = () => {
+    setSelectedIcon(localIcon);
+    onClose();
+  };
+
+  const handleCancel = () => {
+    setLocalIcon(selectedIcon);
+    onClose();
+  };
+
   return (
     <Modal
       visible={visible}
@@ -82,14 +99,11 @@ export default function IconPickerModal({
             {GROUP_ICONS.map((iconName) => {
               const IconComponent =
                 PhosphorIcons[iconName] || PhosphorIcons.UsersThree;
-              const isSelected = selectedIcon === iconName;
+              const isSelected = localIcon === iconName;
               return (
                 <TouchableOpacity
                   key={iconName}
-                  onPress={() => {
-                    setSelectedIcon(iconName);
-                    onClose();
-                  }}
+                  onPress={() => setLocalIcon(iconName)}
                   style={{
                     width: 54,
                     height: 54,
@@ -103,13 +117,15 @@ export default function IconPickerModal({
                     borderWidth: isSelected ? 2 : 1,
                     borderColor: isSelected
                       ? themeColors.purple
-                      : themeColors.gray,
+                      : themeColors.darkGray,
                   }}
                 >
                   <IconComponent
                     size={28}
                     color={
-                      isSelected ? themeColors.purple : themeColors.darkGray
+                      isSelected
+                        ? themeColors.purple
+                        : themeColors.darkGray + "ff"
                     }
                     weight="fill"
                   />
@@ -117,27 +133,52 @@ export default function IconPickerModal({
               );
             })}
           </View>
-          <TouchableOpacity
-            onPress={onClose}
-            style={{
-              marginTop: 8,
-              backgroundColor: themeColors.purple,
-              borderRadius: 8,
-              paddingVertical: 10,
-              paddingHorizontal: 32,
-              alignItems: "center",
-            }}
-          >
-            <Text
+          <View style={{ flexDirection: "row", marginTop: 8 }}>
+            <TouchableOpacity
+              onPress={handleCancel}
               style={{
-                color: themeColors.white,
-                fontWeight: "bold",
-                fontFamily: "CarosSoft",
+                flex: 1,
+                backgroundColor: themeColors.white,
+                borderColor: themeColors.purple,
+                borderWidth: 1,
+                borderRadius: 8,
+                alignItems: "center",
+                paddingVertical: 10,
+                marginRight: 8,
               }}
             >
-              Close
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                Cancel
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleDone}
+              style={{
+                flex: 1,
+                backgroundColor: themeColors.purple,
+                borderRadius: 8,
+                alignItems: "center",
+                paddingVertical: 10,
+                marginLeft: 8,
+              }}
+            >
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                Done
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </TouchableOpacity>
     </Modal>

@@ -163,7 +163,9 @@ export default function CreateGroupModal({
                       borderRadius: 8,
                       paddingVertical: 8,
                       paddingHorizontal: 16,
+                      minWidth: 80,
                       alignItems: "center",
+                      justifyContent: "center",
                       marginRight: 8,
                     }}
                     accessibilityLabel="Choose Group Icon"
@@ -175,6 +177,7 @@ export default function CreateGroupModal({
                         fontWeight: "bold",
                         fontFamily: "CarosSoft",
                         fontSize: 14,
+                        textAlign: "center",
                       }}
                     >
                       Icon
@@ -187,7 +190,9 @@ export default function CreateGroupModal({
                       borderRadius: 8,
                       paddingVertical: 8,
                       paddingHorizontal: 16,
+                      minWidth: 80,
                       alignItems: "center",
+                      justifyContent: "center",
                     }}
                     disabled={uploadingPic}
                     accessibilityLabel="Upload Group Image"
@@ -199,6 +204,7 @@ export default function CreateGroupModal({
                         fontWeight: "bold",
                         fontFamily: "CarosSoft",
                         fontSize: 14,
+                        textAlign: "center",
                       }}
                     >
                       Upload
