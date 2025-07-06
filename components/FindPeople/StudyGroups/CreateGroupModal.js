@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import * as PhosphorIcons from "phosphor-react-native";
 import IconPickerModal from "./IconPickerModal";
+import * as ImagePicker from "expo-image-picker";
 
 export default function CreateGroupModal({
   visible,
@@ -34,6 +35,23 @@ export default function CreateGroupModal({
   handleCreateGroup,
   themeColors,
 }) {
+  // --- Add image picker handler ---
+  const onUploadImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setGroupProfilePic(result.assets[0].uri);
+      }
+    } catch (e) {
+      // Optionally handle error
+    }
+  };
+
   return (
     <Modal
       visible={visible}
@@ -184,7 +202,7 @@ export default function CreateGroupModal({
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    onPress={() => {}} // handled in parent
+                    onPress={onUploadImage}
                     style={{
                       backgroundColor: themeColors.purple,
                       borderRadius: 8,

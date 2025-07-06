@@ -289,7 +289,7 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
               data={feed}
               keyExtractor={(item) => item.id}
               style={{ width: "100%", flex: 1 }}
-              contentContainerStyle={{ paddingBottom: 8 }}
+              contentContainerStyle={{ paddingBottom: 60 }}
               showsVerticalScrollIndicator={false}
               renderItem={({ item }) => (
                 <View

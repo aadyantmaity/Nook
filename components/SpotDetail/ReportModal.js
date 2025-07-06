@@ -81,7 +81,7 @@ export default function ReportModal({
             onChangeText={setReportText}
             style={{
               borderWidth: 1,
-              borderColor: themeColors.gray,
+              borderColor: themeColors.darkGray,
               borderRadius: 8,
               padding: 12,
               width: "100%",

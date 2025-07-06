@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Modal, View, TouchableOpacity, Text } from "react-native";
 import {
   ExclamationMark,
@@ -7,6 +7,9 @@ import {
   User,
   UserPlus,
 } from "phosphor-react-native";
+import ProfilePicture from "../Profile/ProfilePicture";
+import { onSnapshot, doc } from "firebase/firestore";
+import { auth, db } from "../../firebaseConfig";
 
 export default function HamburgerMenu({
   isOpen,
@@ -18,6 +21,20 @@ export default function HamburgerMenu({
   themeColors,
   onAddFriend,
 }) {
+  // --- Add state for profile picture ---
+  const [profilePic, setProfilePic] = useState(null);
+
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+    const unsub = onSnapshot(doc(db, "users", user.uid), (userDoc) => {
+      if (userDoc.exists()) {
+        setProfilePic(userDoc.data().profilePic || null);
+      }
+    });
+    return () => unsub();
+  }, [isOpen]);
+
   return (
     <Modal
       visible={isOpen}
@@ -67,7 +84,13 @@ export default function HamburgerMenu({
               paddingHorizontal: 20,
             }}
           >
-            <User size={20} color={themeColors.purple} weight="bold" />
+            <ProfilePicture
+              profilePic={profilePic}
+              themeColors={themeColors}
+              size={22}
+              isTouchable={false}
+              isLoading={false}
+            />
             <Text
               style={{
                 marginLeft: 12,
