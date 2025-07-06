@@ -1450,7 +1450,7 @@ export default function SpotDetailScreen({ route, navigation }) {
         <View
           style={{
             position: "absolute",
-            bottom: 30,
+            bottom: 40,
             right: 16,
             zIndex: 20,
           }}

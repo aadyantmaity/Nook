@@ -197,7 +197,6 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
           style={{
             flexDirection: "row",
             alignItems: "center",
-            marginBottom: 12, // Match group search input
           }}
         >
           <View

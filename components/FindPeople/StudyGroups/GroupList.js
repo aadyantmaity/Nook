@@ -6,6 +6,7 @@ import {
   FlatList,
   Alert,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as PhosphorIcons from "phosphor-react-native";
@@ -34,7 +35,9 @@ export default function GroupList({
   const [isScrolled, setIsScrolled] = useState(false);
 
   if (loadingGroups) {
-    return <Text style={{ color: themeColors.purple }}>Loading...</Text>;
+    return (
+      <ActivityIndicator color={themeColors.purple} style={{ marginTop: 8 }} />
+    );
   }
 
   if (
