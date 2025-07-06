@@ -7,10 +7,9 @@ import {
   updateDoc,
   arrayUnion,
   arrayRemove,
-  onSnapshot, // <-- add this
+  onSnapshot,
 } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export function useProfileData(targetUid = null) {
   const [firstName, setFirstName] = useState("");
@@ -60,18 +59,33 @@ export function useProfileData(targetUid = null) {
     setIsFollowing(followers.includes(user.uid));
   }, [followers, targetUid, auth.currentUser]);
 
-  // Upload image to Firebase Storage and get download URL
-  const uploadProfilePicToStorage = async (imageUri, userId) => {
+  // Upload image to Cloudinary and get download URL
+  const uploadProfilePicToCloudinary = async (imageUri, userId) => {
     if (!imageUri || !userId) return null;
-    const storage = getStorage();
-    const response = await fetch(imageUri);
-    const blob = await response.blob();
-    const storageRef = ref(
-      storage,
-      `profile_pictures/${userId}_${Date.now()}.jpg`
-    );
-    await uploadBytes(storageRef, blob, { contentType: "image/jpeg" });
-    return await getDownloadURL(storageRef);
+    const formData = new FormData();
+    formData.append("file", {
+      uri: imageUri,
+      type: "image/jpeg",
+      name: `profile_${userId}_${Date.now()}.jpg`,
+    });
+    formData.append("upload_preset", "profilePictures");
+    formData.append("folder", "profilePictures");
+    const cloudinaryUrl =
+      "https://api.cloudinary.com/v1_1/dxnd4aryf/image/upload";
+    const response = await fetch(cloudinaryUrl, {
+      method: "POST",
+      body: formData,
+    });
+    const data = await response.json();
+    if (data.secure_url) {
+      // Optimize URL: resize to 256x256, auto format, quality auto
+      const parts = data.secure_url.split("/upload/");
+      if (parts.length === 2) {
+        return `${parts[0]}/upload/w_256,h_256,c_fill,f_auto,q_auto/${parts[1]}`;
+      }
+      return data.secure_url;
+    }
+    return null;
   };
 
   // Save profile edits (only for current user)
@@ -91,7 +105,7 @@ export function useProfileData(targetUid = null) {
           email: userEmail,
         };
         if (editedProfilePic && editedProfilePic !== profilePic) {
-          const downloadUrl = await uploadProfilePicToStorage(
+          const downloadUrl = await uploadProfilePicToCloudinary(
             editedProfilePic,
             user.uid
           );
