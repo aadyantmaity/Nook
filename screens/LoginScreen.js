@@ -19,9 +19,7 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = () => {
     signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        console.log("Login successful:", userCredential.user);
-      })
+      .then((userCredential) => {})
       .catch((error) => {
         console.error(error.message);
       });
