@@ -9,7 +9,7 @@ import {
   Animated,
 } from "react-native";
 import ProfilePicture from "../Profile/ProfilePicture";
-import { MapPin, Star, ExclamationMark } from "phosphor-react-native"; // <-- Use ExclamationMark from phosphor
+import { MapPin, Star } from "phosphor-react-native";
 import { PanGestureHandler, State } from "react-native-gesture-handler";
 
 export default function GroupMessagesList({
@@ -133,22 +133,6 @@ export default function GroupMessagesList({
     );
   }
 
-  function highlightMentions(text, mentionUsers) {
-    // Replace @Name with highlighted text
-    if (!text) return null;
-    const parts = text.split(/(@[\w\s]+)/g);
-    return parts.map((part, i) => {
-      if (part.startsWith("@")) {
-        return (
-          <Text key={i} style={{ color: "#7B61FF", fontWeight: "bold" }}>
-            {part}
-          </Text>
-        );
-      }
-      return <Text key={i}>{part}</Text>;
-    });
-  }
-
   return (
     <FlatList
       ref={flatListRef}
@@ -168,16 +152,16 @@ export default function GroupMessagesList({
 
         // Calculate the real index in the original (non-inverted) array
         const realIndex = messages.length - 1 - index;
-        const prevItem = messages[realIndex + 1]; // <-- previous message in original order
+        const prevItem = messages[realIndex + 1]; // Look at the previous message in the original array
 
-        // --- Show profile picture logic (show at last message in chain) ---
+        // --- Show profile picture logic ---
         let showProfilePic = false;
         if (!isMe) {
           // Show profile pic if:
-          // - This is the first message in the original array (realIndex === 0)
-          // - OR the previous message is from a different user or is a system/nook_share
+          // - This is the last message in the original array (realIndex === messages.length - 1)
+          // - OR the previous message is from a different user or is a system/nook_share message
           if (
-            realIndex === 0 ||
+            realIndex === messages.length - 1 ||
             !prevItem ||
             prevItem?.uid !== item.uid ||
             prevItem?.type === "system" ||
@@ -186,10 +170,24 @@ export default function GroupMessagesList({
             showProfilePic = true;
           }
         }
+
+        // --- Show sender info logic (name & date) only for last in chain ---
+        let showSenderInfo = false;
+        if (
+          realIndex === messages.length - 1 ||
+          !prevItem ||
+          prevItem?.uid !== item.uid ||
+          prevItem?.type === "system" ||
+          prevItem?.type === "nook_share"
+        ) {
+          showSenderInfo = true;
+        }
+
         // --- System message (centered, darkGray, no timestamp, no user) ---
         if (item.type === "system") {
           return (
             <>
+              {/* Date separator removed */}
               <View style={{ alignItems: "center", marginVertical: 8 }}>
                 <Text
                   style={{
@@ -210,6 +208,7 @@ export default function GroupMessagesList({
         if (item.type === "nook_share") {
           return (
             <>
+              {/* Date separator removed */}
               <View
                 style={{
                   flexDirection: "row",
@@ -333,167 +332,116 @@ export default function GroupMessagesList({
         }
         // Regular message bubble
         return (
-          <SwipeableMessage item={item}>
-            <>
-              {isMe ? (
-                // My own message: right aligned, no profile picture
-                <View
-                  style={{
-                    flexDirection: "row-reverse",
-                    alignItems: "flex-end",
-                    alignSelf: "flex-end",
-                    marginBottom: 3,
-                    maxWidth: "80%",
-                  }}
-                >
-                  <View style={{ flexShrink: 1 }}>
-                    {/* --- Show reply preview above bubble if this message is a reply --- */}
-                    {renderReplyPreview(item)}
+          <>
+            {/* Date separator removed */}
+            {isMe ? (
+              // My own message: right aligned, no profile picture
+              <View
+                style={{
+                  flexDirection: "row-reverse",
+                  alignItems: "flex-end",
+                  alignSelf: "flex-end",
+                  marginBottom: 10,
+                  maxWidth: "80%",
+                }}
+              >
+                <View style={{ flexShrink: 1 }}>
+                  {/* --- Show reply preview above bubble if this message is a reply --- */}
+                  {renderReplyPreview(item)}
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    disabled={!isMe}
+                    onLongPress={() => {
+                      if (!isMe) return;
+                      Alert.alert(
+                        "Delete Message",
+                        "Do you want to delete this message?",
+                        [
+                          { text: "Cancel", style: "cancel" },
+                          {
+                            text: "Delete",
+                            style: "destructive",
+                            onPress: () => handleDeleteMessage(item.id),
+                          },
+                        ]
+                      );
+                    }}
+                  >
                     <View
-                      style={{ flexDirection: "row", alignItems: "center" }}
+                      style={{
+                        backgroundColor: themeColors.purple,
+                        borderRadius: 14,
+                        paddingVertical: 10,
+                        paddingHorizontal: 16,
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: 0.06,
+                        shadowRadius: 2,
+                        elevation: 1,
+                        minWidth: 50,
+                        alignItems: "center",
+                        alignSelf: "flex-end",
+                      }}
                     >
-                      {/* --- ExclamationMark for mentions (left of bubble, vertically centered) --- */}
-                      {Array.isArray(item.mentions) &&
-                        item.mentions.length > 0 && (
-                          <View
-                            style={{
-                              justifyContent: "center",
-                              alignItems: "center",
-                              alignSelf: "stretch",
-                            }}
-                          >
-                            <ExclamationMark
-                              size={22}
-                              color={themeColors.red}
-                              weight="bold"
-                              style={{
-                                alignSelf: "center",
-                              }}
-                            />
-                          </View>
-                        )}
-                      <TouchableOpacity
-                        activeOpacity={0.8}
-                        disabled={!isMe}
-                        onLongPress={() => {
-                          if (!isMe) return;
-                          Alert.alert(
-                            "Delete Message",
-                            "Do you want to delete this message?",
-                            [
-                              { text: "Cancel", style: "cancel" },
-                              {
-                                text: "Delete",
-                                style: "destructive",
-                                onPress: () => handleDeleteMessage(item.id),
-                              },
-                            ]
-                          );
+                      <Text
+                        style={{
+                          color: themeColors.white,
+                          fontSize: 15,
+                          fontFamily: "CarosSoft",
                         }}
                       >
-                        <View
-                          style={{
-                            backgroundColor: themeColors.purple,
-                            borderRadius: 14,
-                            paddingVertical: 10,
-                            paddingHorizontal: 16,
-                            shadowColor: "#000",
-                            shadowOffset: { width: 0, height: 1 },
-                            shadowOpacity: 0.06,
-                            shadowRadius: 2,
-                            elevation: 1,
-                            minWidth: 50,
-                            alignItems: "center",
-                            alignSelf: "flex-end",
-                            flexDirection: "row",
-                          }}
-                        >
-                          <Text
-                            style={{
-                              color: themeColors.white,
-                              fontSize: 15,
-                              fontFamily: "CarosSoft",
-                            }}
-                          >
-                            {item.text}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
+                        {item.text}
+                      </Text>
                     </View>
-                    {/* --- Sender info row (no profile picture) --- */}
-                    {
-                      // Only show name/time for last message in chain (same logic as profile pic)
-                      (realIndex === 0 ||
-                        !prevItem ||
-                        prevItem?.uid !== item.uid ||
-                        prevItem?.type === "system" ||
-                        prevItem?.type === "nook_share") && (
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            marginTop: 2,
-                            alignSelf: "flex-end",
-                          }}
-                        >
-                          <Text
-                            style={{
-                              color: themeColors.darkGray,
-                              fontSize: 11,
-                              marginLeft: 0,
-                              fontFamily: "CarosSoft",
-                              textAlign: "right",
-                            }}
-                          >
-                            {getUserName(item.uid)}
-                            {" · "}
-                            {item.createdAt && item.createdAt.seconds
-                              ? new Date(
-                                  item.createdAt.seconds * 1000
-                                ).toLocaleTimeString([], {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })
-                              : ""}
-                          </Text>
-                        </View>
-                      )
-                    }
-                  </View>
+                  </TouchableOpacity>
+                  {/* --- Sender info row (no profile picture) --- */}
+                  {showSenderInfo && (
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        marginTop: 2,
+                        alignSelf: "flex-end",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: themeColors.darkGray,
+                          fontSize: 11,
+                          marginLeft: 0,
+                          fontFamily: "CarosSoft",
+                          textAlign: "right",
+                        }}
+                      >
+                        {getUserName(item.uid)}
+                        {" · "}
+                        {item.createdAt && item.createdAt.seconds
+                          ? new Date(
+                              item.createdAt.seconds * 1000
+                            ).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : ""}
+                      </Text>
+                    </View>
+                  )}
                 </View>
-              ) : (
-                // Other's message: profile picture left, bubble right, properly aligned
+              </View>
+            ) : (
+              // Other's message: profile picture left, bubble right, properly aligned
+              <SwipeableMessage item={item}>
                 <View
                   style={{
                     flexDirection: "row",
-                    alignItems: "center",
-                    marginBottom: 5,
+                    alignItems: "flex-start",
+                    marginBottom: 10,
                     maxWidth: "80%",
                   }}
                 >
-                  {/* Only show profile picture for the last message in a sequence */}
+                  {/* Only show profile picture for the first message in a sequence */}
                   {showProfilePic ? (
-                    <View
-                      style={{
-                        marginRight: 10,
-                        // Calculate line count and adjust marginTop accordingly
-                        marginTop: (() => {
-                          if (typeof item.text !== "string") return -5;
-                          const lineCount = item.text.split("\n").length;
-                          // Estimate wrapped lines for long lines (roughly 40 chars per line)
-                          const approxLines = item.text
-                            .split("\n")
-                            .map((line) => Math.ceil(line.length / 40))
-                            .reduce((a, b) => a + b, 0);
-                          const totalLines = Math.max(lineCount, approxLines);
-                          if (totalLines === 1) return -10;
-                          if (totalLines === 2) return 20;
-                          if (totalLines === 3) return 30;
-                          return 40 + totalLines * 10;
-                        })(),
-                      }}
-                    >
-                      {/* --- Profile picture --- */}
+                    <View style={{ marginTop: 5, marginRight: 10 }}>
                       <ProfilePicture
                         profilePic={getUserProfilePic(item.uid)}
                         themeColors={themeColors}
@@ -503,9 +451,8 @@ export default function GroupMessagesList({
                   ) : (
                     <View style={{ width: 28, marginRight: 10 }} />
                   )}
-                  {/* --- Message bubble and exclamation mark row --- */}
-                  <View style={{ flexShrink: 1, flexGrow: 1 }}>
-                    {/* --- Show reply preview above bubble if this message is a reply --- */}
+                  {/* --- Show reply preview above bubble if this message is a reply --- */}
+                  <View style={{ flex: 1 }}>
                     {renderReplyPreview(item)}
                     <View
                       style={{
@@ -514,60 +461,41 @@ export default function GroupMessagesList({
                         flexShrink: 1,
                       }}
                     >
-                      {/* --- Message bubble --- */}
-                      <View
-                        style={{
-                          backgroundColor: themeColors.gray,
-                          borderRadius: 14,
-                          paddingVertical: 10,
-                          paddingHorizontal: 16,
-                          shadowColor: "#000",
-                          shadowOffset: { width: 0, height: 1 },
-                          shadowOpacity: 0.06,
-                          shadowRadius: 2,
-                          elevation: 1,
-                          minWidth: 50,
-                          alignItems: "flex-start",
-                          alignSelf: "flex-start",
-                          maxWidth: "100%",
-                          flexShrink: 1,
-                        }}
-                      >
-                        <Text
+                      <View style={{ flexShrink: 1, flexGrow: 1 }}>
+                        <View
                           style={{
-                            color: themeColors.black,
-                            fontSize: 15,
-                            fontFamily: "CarosSoft",
-                            flexShrink: 1,
-                            flexWrap: "wrap",
+                            backgroundColor: themeColors.gray,
+                            borderRadius: 14,
+                            paddingVertical: 10,
+                            paddingHorizontal: 16,
+                            shadowColor: "#000",
+                            shadowOffset: { width: 0, height: 1 },
+                            shadowOpacity: 0.06,
+                            shadowRadius: 2,
+                            elevation: 1,
+                            minWidth: 50,
+                            alignItems: "flex-start",
+                            alignSelf: "flex-start",
+                            maxWidth: "100%",
                           }}
                         >
-                          {item.text}
-                        </Text>
-                      </View>
-                      {/* --- ExclamationMark for mentions (right of bubble, vertically centered) --- */}
-                      {Array.isArray(item.mentions) &&
-                        item.mentions.length > 0 && (
-                          <View
+                          <Text
                             style={{
-                              justifyContent: "center",
-                              alignItems: "center",
-                              alignSelf: "stretch",
+                              color: themeColors.black,
+                              fontSize: 15,
+                              fontFamily: "CarosSoft",
+                              flexShrink: 1,
+                              flexWrap: "wrap",
                             }}
                           >
-                            <ExclamationMark
-                              size={22}
-                              color={themeColors.red}
-                              weight="bold"
-                              style={{
-                                alignSelf: "center",
-                              }}
-                            />
-                          </View>
-                        )}
+                            {item.text}
+                          </Text>
+                        </View>
+                      </View>
+                      {/* --- REMOVE reply arrow button --- */}
                     </View>
-                    {/* Sender info row (name and time under the bubble, not next to exclamation mark) */}
-                    {showProfilePic && (
+                    {/* Sender info row */}
+                    {showSenderInfo && (
                       <View
                         style={{
                           flexDirection: "row",
@@ -597,9 +525,9 @@ export default function GroupMessagesList({
                     )}
                   </View>
                 </View>
-              )}
-            </>
-          </SwipeableMessage>
+              </SwipeableMessage>
+            )}
+          </>
         );
       }}
     />
