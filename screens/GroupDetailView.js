@@ -83,6 +83,8 @@ export default function GroupDetailView({ navigation, route }) {
   const [mentionPickerVisible, setMentionPickerVisible] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
   const [mentionUsers, setMentionUsers] = useState([]);
+  // --- Track mentioned users as selected from picker ---
+  const [mentionedUsers, setMentionedUsers] = useState([]); // <-- add this
   const [keyboardHeight, setKeyboardHeight] = useState(0); // <-- Add this state
 
   // Fetch group info (NO system message logic here anymore)
@@ -223,7 +225,7 @@ export default function GroupDetailView({ navigation, route }) {
     }
   };
 
-  // Insert mention at cursor
+  // Insert mention at cursor and track mentioned user
   const handleMentionSelect = (user) => {
     const atIdx = input.lastIndexOf("@");
     if (atIdx !== -1) {
@@ -232,22 +234,17 @@ export default function GroupDetailView({ navigation, route }) {
       setInput(before + "@" + user.name + " " + after);
     }
     setMentionPickerVisible(false);
+    // Add to mentionedUsers if not already present
+    setMentionedUsers((prev) =>
+      prev.includes(user.uid) ? prev : [...prev, user.uid]
+    );
   };
 
-  // Send message with mentions
+  // Send message with mentions from mentionedUsers state
   const handleSend = async () => {
     if (!input.trim() || sending) return;
     setSending(true);
     try {
-      // Extract mentioned user names from input
-      const mentionNames = Array.from(input.matchAll(/@([\w\s]+)/g), (m) =>
-        m[1].trim()
-      );
-      // Map names to UIDs
-      const mentionedUids = mentionUsers
-        .filter((u) => mentionNames.includes(u.name))
-        .map((u) => u.uid);
-
       await addDoc(collection(db, "studyGroups", groupId, "messages"), {
         text: input.trim(),
         uid: auth.currentUser?.uid,
@@ -259,10 +256,11 @@ export default function GroupDetailView({ navigation, route }) {
               senderName: getUserName(replyToMessage.uid),
             }
           : null,
-        mentions: mentionedUids, // <-- store mentioned UIDs
+        mentions: mentionedUsers, // <-- use tracked mentioned users
       });
       setInput("");
       setReplyToMessage(null);
+      setMentionedUsers([]); // <-- clear after send
     } catch {}
     setSending(false);
   };
