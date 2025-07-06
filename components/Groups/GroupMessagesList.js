@@ -7,8 +7,8 @@ import {
   Image,
   Animated,
   Alert,
-  Modal, // <-- Add Modal import
-  Pressable, // <-- Add Pressable import
+  Modal,
+  Pressable,
 } from "react-native";
 import ProfilePicture from "../Profile/ProfilePicture";
 import { MapPin, Star } from "phosphor-react-native";
@@ -178,6 +178,13 @@ export default function GroupMessagesList({
     setModalVisible(true);
   }
 
+  // --- Helper: check if message mentions the current user using mentions array ---
+  function isUserMentioned(message) {
+    if (!message || !Array.isArray(message.mentions) || !auth.currentUser?.uid)
+      return false;
+    return message.mentions.includes(auth.currentUser.uid);
+  }
+
   return (
     <>
       {/* --- Sender Info Modal --- */}
@@ -289,6 +296,9 @@ export default function GroupMessagesList({
           ) {
             showSenderInfo = true;
           }
+
+          // --- Detect if current user is mentioned in this message ---
+          const userMentioned = isUserMentioned(item);
 
           // --- System message (centered, darkGray, no timestamp, no user) ---
           if (item.type === "system") {
@@ -487,6 +497,16 @@ export default function GroupMessagesList({
                             minWidth: 50,
                             alignItems: "center",
                             alignSelf: "flex-end",
+                            // --- Highlight if user is mentioned ---
+                            ...(userMentioned
+                              ? {
+                                  borderWidth: 2,
+                                  borderColor: themeColors.yellow || "#FFD700",
+                                  shadowColor: themeColors.yellow || "#FFD700",
+                                  shadowOpacity: 0.25,
+                                  shadowRadius: 6,
+                                }
+                              : {}),
                           }}
                         >
                           <Text
@@ -595,6 +615,18 @@ export default function GroupMessagesList({
                                 alignItems: "flex-start",
                                 alignSelf: "flex-start",
                                 maxWidth: "100%",
+                                // --- Highlight if user is mentioned ---
+                                ...(userMentioned
+                                  ? {
+                                      borderWidth: 2,
+                                      borderColor:
+                                        themeColors.yellow || "#FFD700",
+                                      shadowColor:
+                                        themeColors.yellow || "#FFD700",
+                                      shadowOpacity: 0.25,
+                                      shadowRadius: 6,
+                                    }
+                                  : {}),
                               }}
                             >
                               <Text
