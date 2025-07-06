@@ -63,9 +63,7 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
-      console.log("onAuthStateChanged fired. User:", user);
       setIsAuthenticated(!!user);
-      console.log("onAuthStateChanged fired. User:", user);
     });
     return unsubscribe;
   }, []);
