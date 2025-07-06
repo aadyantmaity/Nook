@@ -63,7 +63,9 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
+      console.log("onAuthStateChanged fired. User:", user);
       setIsAuthenticated(!!user);
+      console.log("onAuthStateChanged fired. User:", user);
     });
     return unsubscribe;
   }, []);
@@ -91,8 +93,6 @@ export default function App() {
       <Stack.Screen name="EditSpot" component={EditSpotScreen} />
       <Stack.Screen name="GroupDetail" component={GroupDetailView} />
       <Stack.Screen name="GroupDetails" component={GroupDetailsScreen} />
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="SignUp" component={SignUpScreen} />
     </Stack.Navigator>
   );
 

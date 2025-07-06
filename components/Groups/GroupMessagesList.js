@@ -168,48 +168,20 @@ export default function GroupMessagesList({
 
         // Calculate the real index in the original (non-inverted) array
         const realIndex = messages.length - 1 - index;
-        const nextItem = messages[realIndex - 1]; // Note: We look at the next item in the original array
+        const prevItem = messages[realIndex + 1]; // <-- previous message in original order
 
-        // --- Date separator logic ---
-        let showDateSeparator = false;
-        let dateLabel = "";
-        if (item.createdAt && item.createdAt.seconds) {
-          const currentDate = new Date(item.createdAt.seconds * 1000);
-
-          // Show separator if:
-          // - This is the first message in the original array (realIndex === 0)
-          // - OR the next message is from a different day
-          if (
-            realIndex === 0 ||
-            !nextItem ||
-            !nextItem.createdAt ||
-            !nextItem.createdAt.seconds ||
-            currentDate.getDate() !==
-              new Date(nextItem.createdAt.seconds * 1000).getDate() ||
-            currentDate.getMonth() !==
-              new Date(nextItem.createdAt.seconds * 1000).getMonth() ||
-            currentDate.getFullYear() !==
-              new Date(nextItem.createdAt.seconds * 1000).getFullYear()
-          ) {
-            dateLabel = currentDate.toLocaleDateString(undefined, {
-              month: "short",
-              day: "numeric",
-            });
-            showDateSeparator = true;
-          }
-        }
-
-        // --- Show profile picture logic ---
+        // --- Show profile picture logic (show at last message in chain) ---
         let showProfilePic = false;
         if (!isMe) {
           // Show profile pic if:
-          // - This is the last message in the original array (realIndex === messages.length - 1)
-          // - OR the next message is from a different user or is a system message
+          // - This is the first message in the original array (realIndex === 0)
+          // - OR the previous message is from a different user or is a system/nook_share
           if (
-            realIndex === messages.length - 1 ||
-            nextItem?.uid !== item.uid ||
-            nextItem?.type === "system" ||
-            nextItem?.type === "nook_share"
+            realIndex === 0 ||
+            !prevItem ||
+            prevItem?.uid !== item.uid ||
+            prevItem?.type === "system" ||
+            prevItem?.type === "nook_share"
           ) {
             showProfilePic = true;
           }
@@ -218,24 +190,6 @@ export default function GroupMessagesList({
         if (item.type === "system") {
           return (
             <>
-              {showDateSeparator && (
-                <View style={{ alignItems: "center", marginBottom: 10 }}>
-                  <Text
-                    style={{
-                      color: themeColors.darkGray,
-                      fontSize: 13,
-                      fontFamily: "CarosSoft",
-                      backgroundColor: themeColors.lightGray,
-                      borderRadius: 8,
-                      paddingHorizontal: 12,
-                      paddingVertical: 2,
-                      marginBottom: 2,
-                    }}
-                  >
-                    {dateLabel}
-                  </Text>
-                </View>
-              )}
               <View style={{ alignItems: "center", marginVertical: 8 }}>
                 <Text
                   style={{
@@ -256,24 +210,6 @@ export default function GroupMessagesList({
         if (item.type === "nook_share") {
           return (
             <>
-              {showDateSeparator && (
-                <View style={{ alignItems: "center", marginBottom: 10 }}>
-                  <Text
-                    style={{
-                      color: themeColors.darkGray,
-                      fontSize: 13,
-                      fontFamily: "CarosSoft",
-                      backgroundColor: themeColors.lightGray,
-                      borderRadius: 8,
-                      paddingHorizontal: 12,
-                      paddingVertical: 2,
-                      marginBottom: 2,
-                    }}
-                  >
-                    {dateLabel}
-                  </Text>
-                </View>
-              )}
               <View
                 style={{
                   flexDirection: "row",
@@ -399,24 +335,6 @@ export default function GroupMessagesList({
         return (
           <SwipeableMessage item={item}>
             <>
-              {showDateSeparator && (
-                <View style={{ alignItems: "center", marginBottom: 10 }}>
-                  <Text
-                    style={{
-                      color: themeColors.darkGray,
-                      fontSize: 13,
-                      fontFamily: "CarosSoft",
-                      backgroundColor: themeColors.lightGray,
-                      borderRadius: 8,
-                      paddingHorizontal: 12,
-                      paddingVertical: 2,
-                      marginBottom: 2,
-                    }}
-                  >
-                    {dateLabel}
-                  </Text>
-                </View>
-              )}
               {isMe ? (
                 // My own message: right aligned, no profile picture
                 <View
@@ -424,7 +342,7 @@ export default function GroupMessagesList({
                     flexDirection: "row-reverse",
                     alignItems: "flex-end",
                     alignSelf: "flex-end",
-                    marginBottom: 10,
+                    marginBottom: 3,
                     maxWidth: "80%",
                   }}
                 >
@@ -447,7 +365,7 @@ export default function GroupMessagesList({
                             <ExclamationMark
                               size={22}
                               color={themeColors.red}
-                              weight="bold" // <-- Make the exclamation mark thicker
+                              weight="bold"
                               style={{
                                 alignSelf: "center",
                               }}
@@ -503,35 +421,44 @@ export default function GroupMessagesList({
                       </TouchableOpacity>
                     </View>
                     {/* --- Sender info row (no profile picture) --- */}
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        marginTop: 2,
-                        alignSelf: "flex-end",
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: themeColors.darkGray,
-                          fontSize: 11,
-                          marginLeft: 0,
-                          fontFamily: "CarosSoft",
-                          textAlign: "right",
-                        }}
-                      >
-                        {getUserName(item.uid)}
-                        {" · "}
-                        {item.createdAt && item.createdAt.seconds
-                          ? new Date(
-                              item.createdAt.seconds * 1000
-                            ).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : ""}
-                      </Text>
-                    </View>
+                    {
+                      // Only show name/time for last message in chain (same logic as profile pic)
+                      (realIndex === 0 ||
+                        !prevItem ||
+                        prevItem?.uid !== item.uid ||
+                        prevItem?.type === "system" ||
+                        prevItem?.type === "nook_share") && (
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginTop: 2,
+                            alignSelf: "flex-end",
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: themeColors.darkGray,
+                              fontSize: 11,
+                              marginLeft: 0,
+                              fontFamily: "CarosSoft",
+                              textAlign: "right",
+                            }}
+                          >
+                            {getUserName(item.uid)}
+                            {" · "}
+                            {item.createdAt && item.createdAt.seconds
+                              ? new Date(
+                                  item.createdAt.seconds * 1000
+                                ).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : ""}
+                          </Text>
+                        </View>
+                      )
+                    }
                   </View>
                 </View>
               ) : (
@@ -539,14 +466,34 @@ export default function GroupMessagesList({
                 <View
                   style={{
                     flexDirection: "row",
-                    alignItems: "flex-start",
-                    marginBottom: 10,
+                    alignItems: "center",
+                    marginBottom: 5,
                     maxWidth: "80%",
                   }}
                 >
-                  {/* Only show profile picture for the first message in a sequence */}
+                  {/* Only show profile picture for the last message in a sequence */}
                   {showProfilePic ? (
-                    <View style={{ marginTop: 5, marginRight: 10 }}>
+                    <View
+                      style={{
+                        marginRight: 10,
+                        // Calculate line count and adjust marginTop accordingly
+                        marginTop: (() => {
+                          if (typeof item.text !== "string") return -5;
+                          const lineCount = item.text.split("\n").length;
+                          // Estimate wrapped lines for long lines (roughly 40 chars per line)
+                          const approxLines = item.text
+                            .split("\n")
+                            .map((line) => Math.ceil(line.length / 40))
+                            .reduce((a, b) => a + b, 0);
+                          const totalLines = Math.max(lineCount, approxLines);
+                          if (totalLines === 1) return -10;
+                          if (totalLines === 2) return 20;
+                          if (totalLines === 3) return 30;
+                          return 40 + totalLines * 10;
+                        })(),
+                      }}
+                    >
+                      {/* --- Profile picture --- */}
                       <ProfilePicture
                         profilePic={getUserProfilePic(item.uid)}
                         themeColors={themeColors}
@@ -611,7 +558,7 @@ export default function GroupMessagesList({
                             <ExclamationMark
                               size={22}
                               color={themeColors.red}
-                              weight="bold" // <-- Make the exclamation mark thicker
+                              weight="bold"
                               style={{
                                 alignSelf: "center",
                               }}
@@ -620,32 +567,34 @@ export default function GroupMessagesList({
                         )}
                     </View>
                     {/* Sender info row (name and time under the bubble, not next to exclamation mark) */}
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        marginTop: 2,
-                      }}
-                    >
-                      <Text
+                    {showProfilePic && (
+                      <View
                         style={{
-                          color: themeColors.darkGray,
-                          fontSize: 11,
-                          fontFamily: "CarosSoft",
+                          flexDirection: "row",
+                          alignItems: "center",
+                          marginTop: 2,
                         }}
                       >
-                        {getUserName(item.uid)}
-                        {" · "}
-                        {item.createdAt && item.createdAt.seconds
-                          ? new Date(
-                              item.createdAt.seconds * 1000
-                            ).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : ""}
-                      </Text>
-                    </View>
+                        <Text
+                          style={{
+                            color: themeColors.darkGray,
+                            fontSize: 11,
+                            fontFamily: "CarosSoft",
+                          }}
+                        >
+                          {getUserName(item.uid)}
+                          {" · "}
+                          {item.createdAt && item.createdAt.seconds
+                            ? new Date(
+                                item.createdAt.seconds * 1000
+                              ).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : ""}
+                        </Text>
+                      </View>
+                    )}
                   </View>
                 </View>
               )}
