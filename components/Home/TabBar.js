@@ -54,7 +54,7 @@ export default function TabBar({
               style={{
                 flex: 1,
                 paddingTop: 12,
-                paddingBottom: 20,
+                paddingBottom: 30,
                 alignItems: "center",
 
                 backgroundColor: themeColors.white,
