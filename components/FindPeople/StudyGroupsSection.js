@@ -249,16 +249,36 @@ export default function StudyGroupsSection({ navigation }) {
     setCreating(true);
     let uploadedPicUrl = null;
     try {
-      // Upload group profile pic if selected
+      // --- Upload group profile pic to Cloudinary if selected ---
       if (groupProfilePic) {
         setUploadingPic(true);
-        const storage = getStorage();
-        const response = await fetch(groupProfilePic);
-        const blob = await response.blob();
-        const filename = `group_${user.uid}_${Date.now()}.jpg`;
-        const fileRef = storageRef(storage, `group_pictures/${filename}`);
-        await uploadBytes(fileRef, blob, { contentType: "image/jpeg" });
-        uploadedPicUrl = await getDownloadURL(fileRef);
+        // Prepare form data for Cloudinary unsigned upload
+        const formData = new FormData();
+        formData.append("file", {
+          uri: groupProfilePic,
+          type: "image/jpeg",
+          name: `group_${user.uid}_${Date.now()}.jpg`,
+        });
+        formData.append("upload_preset", "groupProfilePictures");
+        formData.append("folder", "groupPictures");
+        // Cloudinary unsigned upload endpoint
+        const cloudinaryUrl =
+          "https://api.cloudinary.com/v1_1/dxnd4aryf/image/upload";
+        const response = await fetch(cloudinaryUrl, {
+          method: "POST",
+          body: formData,
+        });
+        const data = await response.json();
+        if (data.secure_url) {
+          // Optimize URL: resize to 256x256, auto format, quality auto
+          // Example: https://res.cloudinary.com/dxnd4aryf/image/upload/w_256,h_256,c_fill,f_auto,q_auto/...
+          const parts = data.secure_url.split("/upload/");
+          if (parts.length === 2) {
+            uploadedPicUrl = `${parts[0]}/upload/w_256,h_256,c_fill,f_auto,q_auto/${parts[1]}`;
+          } else {
+            uploadedPicUrl = data.secure_url;
+          }
+        }
         setUploadingPic(false);
       }
       // Pick a random icon if none selected and no picture

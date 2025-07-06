@@ -207,20 +207,33 @@ export default function AddSpotScreen({ navigation, route }) {
     }
   };
 
-  const uploadImageToStorage = async (imageObj, spotId) => {
+  // Replace uploadImageToStorage with Cloudinary upload
+  const uploadImageToCloudinary = async (imageObj) => {
     if (!imageObj?.uri) return "";
-    const storage = getStorage();
-    const base64 = await FileSystem.readAsStringAsync(imageObj.uri, {
-      encoding: FileSystem.EncodingType.Base64,
+    const formData = new FormData();
+    formData.append("file", {
+      uri: imageObj.uri,
+      type: "image/jpeg",
+      name: imageObj.name || `spot_${Date.now()}.jpg`,
     });
-    const response = await fetch(`data:image/jpeg;base64,${base64}`);
-    const blob = await response.blob();
-    const storageRef = ref(
-      storage,
-      `custom_spot_images/${spotId || Date.now()}_${imageObj.name}`
-    );
-    await uploadBytes(storageRef, blob, { contentType: "image/jpeg" });
-    return await getDownloadURL(storageRef);
+    formData.append("upload_preset", "spotImages");
+    formData.append("folder", "spotImages");
+    const cloudinaryUrl =
+      "https://api.cloudinary.com/v1_1/dxnd4aryf/image/upload";
+    const response = await fetch(cloudinaryUrl, {
+      method: "POST",
+      body: formData,
+    });
+    const data = await response.json();
+    if (data.secure_url) {
+      // Optimize URL: resize to 512x256, auto format, quality auto
+      const parts = data.secure_url.split("/upload/");
+      if (parts.length === 2) {
+        return `${parts[0]}/upload/w_512,h_256,c_fill,f_auto,q_auto/${parts[1]}`;
+      }
+      return data.secure_url;
+    }
+    return "";
   };
 
   const handleSubmit = async () => {
@@ -282,13 +295,15 @@ export default function AddSpotScreen({ navigation, route }) {
       };
       const docRef = await addDoc(collection(db, "studySpots"), spotDetails);
 
+      // --- Cloudinary upload for main spot image ---
       if (
         (!isUWBuilding && customImage) ||
         (isUWBuilding && isAmaity && customImage)
       ) {
-        photoUrl = await uploadImageToStorage(customImage, docRef.id);
+        photoUrl = await uploadImageToCloudinary(customImage);
         await updateDoc(docRef, { photoUrl });
       }
+
       if (isFavorite && user) {
         const userRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userRef);
