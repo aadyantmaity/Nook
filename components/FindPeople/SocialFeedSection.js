@@ -236,11 +236,9 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
             onPress={handlePost}
             disabled={posting || !postText.trim()}
             style={{
-              marginLeft: 8,
+              marginLeft: 12.75,
               alignItems: "center",
               justifyContent: "center",
-              height: 44,
-              width: 44,
               borderRadius: 12,
               backgroundColor: themeColors.white,
             }}

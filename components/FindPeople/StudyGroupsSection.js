@@ -394,7 +394,7 @@ export default function StudyGroupsSection({ navigation }) {
           marginBottom: 12,
         }}
       >
-        <View style={{ flex: 1, marginRight: 8 }}>
+        <View style={{ flex: 1 }}>
           <TextInput
             placeholder="Search for a group..."
             value={groupSearch}
@@ -405,6 +405,7 @@ export default function StudyGroupsSection({ navigation }) {
               borderRadius: 12,
               paddingHorizontal: 14,
               paddingVertical: 10,
+              width: "100%",
               fontSize: 16,
               color: themeColors.black,
               height: 44,
@@ -417,8 +418,6 @@ export default function StudyGroupsSection({ navigation }) {
         <TouchableOpacity
           onPress={() => setFilterModalVisible(true)}
           style={{
-            backgroundColor: themeColors.white,
-            borderRadius: 25,
             paddingVertical: 10,
             paddingLeft: 14,
             alignItems: "center",
