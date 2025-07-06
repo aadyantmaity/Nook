@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useContext, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useContext,
+  useRef,
+  useCallback,
+} from "react";
 import {
   View,
   SafeAreaView,
@@ -288,25 +294,40 @@ export default function GroupDetailView({ navigation, route }) {
     return { name: "User", profilePic: null };
   };
 
-  // Get user display name (with caching)
-  const getUserName = (uid) => {
-    if (!uid) return "User";
-    if (uid === auth.currentUser?.uid) return "You";
-    if (userCache[uid]) return userCache[uid];
-    // Trigger fetch in background (non-blocking)
-    fetchUserNameAndPic(uid);
-    return "User";
-  };
+  // Memoize getUserName and getUserProfilePic for stable references
+  const getUserName = useCallback(
+    (uid) => {
+      if (!uid) return "User";
+      if (uid === auth.currentUser?.uid) return "You";
+      if (userCache[uid]) return userCache[uid];
+      fetchUserNameAndPic(uid);
+      return "User";
+    },
+    [userCache, auth.currentUser?.uid]
+  );
 
-  // Get user profile picture (with caching)
-  const getUserProfilePic = (uid) => {
-    if (!uid) return null;
-    if (uid === auth.currentUser?.uid) return null;
-    if (userPicCache[uid] !== undefined) return userPicCache[uid];
-    // Trigger fetch in background (non-blocking)
-    fetchUserNameAndPic(uid);
-    return null;
-  };
+  const getUserProfilePic = useCallback(
+    (uid) => {
+      if (!uid) return null;
+      if (uid === auth.currentUser?.uid) return null;
+      if (userPicCache[uid] !== undefined) return userPicCache[uid];
+      fetchUserNameAndPic(uid);
+      return null;
+    },
+    [userPicCache, auth.currentUser?.uid]
+  );
+
+  // Memoize handleDeleteMessage for stable reference
+  const handleDeleteMessage = useCallback(
+    async (messageId) => {
+      try {
+        await deleteDoc(doc(db, "studyGroups", groupId, "messages", messageId));
+      } catch (e) {
+        Alert.alert("Error", "Failed to delete message.");
+      }
+    },
+    [groupId]
+  );
 
   // Fetch member info for Members modal
   const fetchMembersList = async () => {
@@ -527,14 +548,6 @@ export default function GroupDetailView({ navigation, route }) {
     );
   };
 
-  // --- Delete a message ---
-  const handleDeleteMessage = async (messageId) => {
-    try {
-      await deleteDoc(doc(db, "studyGroups", groupId, "messages", messageId));
-    } catch (e) {
-      Alert.alert("Error", "Failed to delete message.");
-    }
-  };
   const handleLeaveGroup = async () => {
     if (!group || !auth.currentUser?.uid) return;
 
