@@ -299,7 +299,7 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
                     padding: 14,
                     marginBottom: 10,
                     borderWidth: 0.5,
-                    borderColor: themeColors.gray,
+                    borderColor: themeColors.darkGray,
                     flexDirection: "row",
                     alignItems: "flex-start",
                     position: "relative",

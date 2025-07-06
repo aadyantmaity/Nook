@@ -173,7 +173,7 @@ export default function GroupList({
                 shadowOpacity: 0.1,
                 shadowRadius: 4,
                 elevation: 3,
-                borderColor: themeColors.black,
+                borderColor: themeColors.darkGray,
                 borderWidth: 0.5,
                 position: "relative",
                 flexDirection: "row",
