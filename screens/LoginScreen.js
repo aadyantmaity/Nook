@@ -20,7 +20,7 @@ export default function LoginScreen({ navigation }) {
   const handleLogin = () => {
     signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
-        // Navigation is handled by auth state in App.js, so no manual navigation here
+        console.log("Login successful:", userCredential.user);
       })
       .catch((error) => {
         console.error(error.message);

@@ -563,10 +563,6 @@ export default function HomeScreen({ navigation, route }) {
   const handleBackToLogin = async () => {
     try {
       await auth.signOut();
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "Login" }],
-      });
     } catch {}
   };
 
