@@ -409,7 +409,7 @@ export default function HomeScreen({ navigation, route }) {
       <View
         style={{
           position: "absolute",
-          bottom: 75, // <-- move up to avoid tab bar overlap (was 25)
+          bottom: 85, // <-- move up to avoid tab bar overlap (was 25)
           right: 16,
           zIndex: 20,
         }}
