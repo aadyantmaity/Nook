@@ -11,13 +11,6 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import {
-  getStorage,
-  ref,
-  uploadBytes,
-  getDownloadURL,
-  deleteObject,
-} from "firebase/storage";
-import {
   collection,
   addDoc,
   onSnapshot,
@@ -30,6 +23,7 @@ import {
 import { db } from "../../firebaseConfig";
 import { Plus, Trash } from "phosphor-react-native";
 import { getAuth } from "firebase/auth";
+import * as FileSystem from "expo-file-system"; // <-- add for file size
 
 export default function SpotGallery({
   spotId,
@@ -61,7 +55,7 @@ export default function SpotGallery({
     return () => unsub();
   }, [spotId]);
 
-  // Upload image to subcollection
+  // Upload image to Cloudinary instead of Firebase Storage
   const handleAddGalleryImage = async () => {
     try {
       if (!user) {
@@ -85,14 +79,36 @@ export default function SpotGallery({
       }
       const asset = result.assets ? result.assets[0] : result;
       const uri = asset.uri;
-      // Upload to Firebase Storage
-      const storage = getStorage();
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      const filename = `gallery_${spotId}_${Date.now()}.jpg`;
-      const storageRef = ref(storage, `spot_galleries/${spotId}/${filename}`);
-      await uploadBytes(storageRef, blob, { contentType: "image/jpeg" });
-      const downloadUrl = await getDownloadURL(storageRef);
+
+      // --- Upload to Cloudinary ---
+      const formData = new FormData();
+      formData.append("file", {
+        uri,
+        type: "image/jpeg",
+        name: `gallery_${spotId}_${Date.now()}.jpg`,
+      });
+      formData.append("upload_preset", "galleryImages");
+      formData.append("folder", "spotImages/galleryImages");
+      const cloudinaryUrl =
+        "https://api.cloudinary.com/v1_1/dxnd4aryf/image/upload";
+      const response = await fetch(cloudinaryUrl, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+      let downloadUrl = "";
+      if (data.secure_url) {
+        // Optionally optimize: resize to 512x256, auto format, quality auto
+        const parts = data.secure_url.split("/upload/");
+        if (parts.length === 2) {
+          downloadUrl = `${parts[0]}/upload/w_512,h_256,c_fill,f_auto,q_auto/${parts[1]}`;
+        } else {
+          downloadUrl = data.secure_url;
+        }
+      } else {
+        throw new Error("Cloudinary upload failed");
+      }
+
       // Add to Firestore subcollection
       const imagesRef = collection(db, "galleryImages", spotId, "images");
       await addDoc(imagesRef, {
@@ -100,7 +116,8 @@ export default function SpotGallery({
         authorId: user.uid,
         authorName: user.displayName || user.email || "Unknown",
         createdAt: Date.now(),
-        storagePath: `spot_galleries/${spotId}/${filename}`,
+        // storagePath: not needed for Cloudinary
+        cloudinaryUrl: downloadUrl,
       });
       setIsUploading(false);
     } catch (e) {
@@ -130,14 +147,6 @@ export default function SpotGallery({
               imgObj.id
             );
             await deleteDoc(imgDocRef);
-            // Delete from Storage
-            if (imgObj.storagePath) {
-              try {
-                const storage = getStorage();
-                const fileRef = ref(storage, imgObj.storagePath);
-                await deleteObject(fileRef);
-              } catch (_) {}
-            }
             setShowModal(false);
           } catch (e) {
             console.error("Gallery image delete error:", e);
@@ -162,6 +171,52 @@ export default function SpotGallery({
       hour: "2-digit",
       minute: "2-digit",
     });
+  }
+
+  // Helper to log image info (dimensions, size, uri)
+  async function logImageInfo(img) {
+    try {
+      if (!img?.url) return;
+      // Get dimensions
+      const getImageSize = (uri) =>
+        new Promise((resolve, reject) => {
+          Image.getSize(
+            uri,
+            (width, height) => resolve({ width, height }),
+            (error) => resolve({ width: null, height: null })
+          );
+        });
+      const { width, height } = await getImageSize(img.url);
+
+      // Get file size (download to cache if remote)
+      let size = null;
+      let localUri = img.url;
+      if (!img.url.startsWith("file://")) {
+        // Download to cache
+        const downloadResumable = FileSystem.createDownloadResumable(
+          img.url,
+          FileSystem.cacheDirectory + "temp_gallery_img"
+        );
+        const { uri } = await downloadResumable.downloadAsync();
+        localUri = uri;
+      }
+      const fileInfo = await FileSystem.getInfoAsync(localUri);
+      size = fileInfo.size || null;
+
+      // Format size
+      let sizeStr = "";
+      if (size != null) {
+        if (size < 1024) sizeStr = `${size} bytes`;
+        else if (size < 1024 * 1024)
+          sizeStr = `${(size / 1024).toFixed(1)} KB`;
+        else sizeStr = `${(size / (1024 * 1024)).toFixed(2)} MB`;
+      }
+      console.log(
+        `[Gallery Image Info] uri: ${img.url}, width: ${width}, height: ${height}, size: ${sizeStr}`
+      );
+    } catch (e) {
+      console.log("[Gallery Image Info] Error:", e);
+    }
   }
 
   if (!spotId) return null;
@@ -320,9 +375,10 @@ export default function SpotGallery({
           {images.map((img) => (
             <TouchableOpacity
               key={img.id}
-              onPress={() => {
+              onPress={async () => {
                 setSelectedImage(img);
                 setShowModal(true);
+                await logImageInfo(img); // <-- log info on tap
               }}
               activeOpacity={0.85}
             >
