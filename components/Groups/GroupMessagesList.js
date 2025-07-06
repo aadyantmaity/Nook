@@ -341,7 +341,7 @@ export default function GroupMessagesList({
                   flexDirection: "row-reverse",
                   alignItems: "flex-end",
                   alignSelf: "flex-end",
-                  marginBottom: 10,
+                  marginBottom: 5,
                   maxWidth: "80%",
                 }}
               >
@@ -435,7 +435,7 @@ export default function GroupMessagesList({
                   style={{
                     flexDirection: "row",
                     alignItems: "flex-start",
-                    marginBottom: 10,
+                    marginBottom: 5,
                     maxWidth: "80%",
                   }}
                 >
