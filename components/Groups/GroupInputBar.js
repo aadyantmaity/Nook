@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   TextInput,
@@ -7,6 +7,7 @@ import {
   Animated,
 } from "react-native";
 import { PaperPlaneRight, X } from "phosphor-react-native";
+import PollModal from "./PollModal";
 
 export default function GroupInputBar({
   input,
@@ -17,7 +18,14 @@ export default function GroupInputBar({
   setReplyToMessage,
   getUserName,
   themeColors,
+  onSendPoll, // <-- add this prop
 }) {
+  // --- Poll modal state ---
+  const [showPollModal, setShowPollModal] = useState(false);
+
+  // --- New: Only show poll button if input is /poll ---
+  const isPollCommand = input.trim() === "/poll";
+
   return (
     <View style={{ backgroundColor: themeColors.white }}>
       {replyToMessage && (
@@ -107,9 +115,39 @@ export default function GroupInputBar({
           blurOnSubmit={false}
           maxLength={200}
         />
+        {/* Show poll button if input is exactly "/poll" */}
+        {isPollCommand && (
+          <TouchableOpacity
+            onPress={() => {
+              setShowPollModal(true);
+              setInput(""); // clear input after opening modal
+            }}
+            style={{
+              marginRight: 8,
+              backgroundColor: themeColors.purple,
+              borderRadius: 20,
+              paddingVertical: 8,
+              paddingHorizontal: 16,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            accessibilityLabel="Create Poll"
+          >
+            <Text
+              style={{
+                color: themeColors.white,
+                fontWeight: "bold",
+                fontFamily: "CarosSoft",
+                fontSize: 14,
+              }}
+            >
+              Create Poll
+            </Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           onPress={handleSend}
-          disabled={sending || !input.trim()}
+          disabled={sending || !input.trim() || isPollCommand}
           style={{
             width: 40,
             height: 40,
@@ -122,6 +160,12 @@ export default function GroupInputBar({
           <PaperPlaneRight size={22} color={themeColors.purple} weight="bold" />
         </TouchableOpacity>
       </View>
+      <PollModal
+        visible={showPollModal}
+        onClose={() => setShowPollModal(false)}
+        onSubmit={onSendPoll}
+        themeColors={themeColors}
+      />
     </View>
   );
 }
