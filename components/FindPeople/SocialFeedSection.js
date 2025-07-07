@@ -1,13 +1,5 @@
 import React, { useContext } from "react";
-import {
-  View,
-  TextInput,
-  FlatList,
-  Text,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import { View, ActivityIndicator, Text } from "react-native";
 import { db, auth } from "../../firebaseConfig";
 import {
   collection,
@@ -23,9 +15,12 @@ import {
 } from "firebase/firestore";
 import { colors } from "../../constants/colors";
 import { ThemeContext } from "../../App";
-import { PaperPlaneRight, Trash } from "phosphor-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
+import ReplyPreview from "./SocialFeedSection/ReplyPreview";
+import InputBar from "./SocialFeedSection/InputBar";
+import MentionPicker from "./SocialFeedSection/MentionPicker";
+import FeedList from "./SocialFeedSection/FeedList";
 
 export default function SocialFeedSection({ navigation: propNavigation }) {
   const [postText, setPostText] = React.useState("");
@@ -39,6 +34,13 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
   const navigation = propNavigation || useNavigation();
 
   const [myFollowing, setMyFollowing] = React.useState([]);
+  // --- Add for reply and mentions ---
+  const [replyToPost, setReplyToPost] = React.useState(null);
+  const [mentionPickerVisible, setMentionPickerVisible] = React.useState(false);
+  const [mentionQuery, setMentionQuery] = React.useState("");
+  const [mentionUsers, setMentionUsers] = React.useState([]);
+  const [mentionedUsers, setMentionedUsers] = React.useState([]);
+  const [mutualFriends, setMutualFriends] = React.useState([]);
 
   React.useEffect(() => {
     let unsubUser = null;
@@ -53,6 +55,35 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
       if (unsubUser) unsubUser();
     };
   }, [auth.currentUser]);
+
+  // --- Fetch mutual friends for mention suggestions ---
+  React.useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const usersSnap = await getDocs(query(collection(db, "users")));
+      const me = usersSnap.docs.find((d) => d.id === user.uid);
+      if (!me) return setMutualFriends([]);
+      const followers = me.data().followers || [];
+      const following = me.data().following || [];
+      const mutualUids = followers.filter((uid) => following.includes(uid));
+      const users = usersSnap.docs
+        .filter((d) => mutualUids.includes(d.id))
+        .map((d) => {
+          const data = d.data();
+          return {
+            uid: d.id,
+            name:
+              (data.firstName && data.lastName
+                ? `${data.firstName} ${data.lastName.charAt(0)}`
+                : data.firstName) || "User",
+            email: data.email || "",
+            profilePic: data.profilePic || null,
+          };
+        });
+      setMentionUsers(users);
+      setMutualFriends(users);
+    })();
+  }, [user]);
 
   React.useEffect(() => {
     setFeedLoading(true);
@@ -135,6 +166,32 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
     return () => unsub();
   }, [myFollowing]);
 
+  // --- Detect "@" and show mention picker ---
+  const handleInputChange = (text) => {
+    setPostText(text);
+    const match = text.match(/@(\w*)$/);
+    if (match) {
+      setMentionQuery(match[1]);
+      setMentionPickerVisible(true);
+    } else {
+      setMentionPickerVisible(false);
+    }
+  };
+
+  // --- Insert mention at cursor and track mentioned user ---
+  const handleMentionSelect = (userObj) => {
+    const atIdx = postText.lastIndexOf("@");
+    if (atIdx !== -1) {
+      const before = postText.slice(0, atIdx);
+      const after = postText.slice(atIdx).replace(/@\w*$/, "");
+      setPostText(before + "@" + userObj.name + " " + after);
+    }
+    setMentionPickerVisible(false);
+    setMentionedUsers((prev) =>
+      prev.includes(userObj.uid) ? prev : [...prev, userObj.uid]
+    );
+  };
+
   const handlePost = async () => {
     if (!postText.trim() || posting) return;
     setPosting(true);
@@ -145,11 +202,75 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
         uid: user.uid,
         message: postText.trim(),
         createdAt: serverTimestamp(),
+        mentions: mentionedUsers,
+        replyTo: replyToPost
+          ? {
+              id: replyToPost.id,
+              text: replyToPost.message,
+              senderName: replyToPost.userName,
+            }
+          : null,
       });
       setPostText("");
+      setReplyToPost(null);
+      setMentionedUsers([]);
     } catch {}
     setPosting(false);
   };
+
+  // --- Highlight mentions in feed messages ---
+  function renderMessageWithMentions(item) {
+    if (
+      !item.mentions ||
+      !Array.isArray(item.mentions) ||
+      !mutualFriends.length
+    )
+      return item.message;
+    // Find all mentioned user names in the message
+    let msg = item.message;
+    let parts = [];
+    let lastIdx = 0;
+    // Build a map of uid->name for fast lookup
+    const uidToName = {};
+    mutualFriends.forEach((u) => {
+      uidToName[u.uid] = u.name;
+    });
+    // Find all @Name in the message that match a mentioned user
+    const regex = /@([A-Za-z0-9_ ]+)/g;
+    let match;
+    let mentionedUids = item.mentions;
+    while ((match = regex.exec(msg))) {
+      const name = match[1].trim();
+      const uid = mutualFriends.find((u) => u.name === name)?.uid;
+      if (uid && mentionedUids.includes(uid)) {
+        // Push text before mention
+        if (match.index > lastIdx) {
+          parts.push(msg.slice(lastIdx, match.index));
+        }
+        // Push highlighted mention
+        parts.push(
+          <Text
+            key={match.index}
+            style={{
+              color: themeColors.purple,
+              fontWeight: "bold",
+              backgroundColor: themeColors.yellow || "#FFF8DC",
+              borderRadius: 4,
+              paddingHorizontal: 2,
+              fontFamily: "CarosSoft",
+            }}
+          >
+            @{name}
+          </Text>
+        );
+        lastIdx = match.index + match[0].length;
+      }
+    }
+    if (lastIdx < msg.length) {
+      parts.push(msg.slice(lastIdx));
+    }
+    return parts.length > 0 ? parts : msg;
+  }
 
   const handleDeletePost = async (postId) => {
     try {
@@ -186,68 +307,30 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
         flex: 1,
       }}
     >
-      <View
-        style={{
-          width: "100%",
-          marginBottom: 12,
-          marginTop: 0, // Match group search input (remove marginTop)
-        }}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-          }}
-        >
-          <View
-            style={{
-              flex: 1,
-              flexDirection: "row",
-              alignItems: "center",
-              borderWidth: 1,
-              borderColor: themeColors.darkGray,
-              borderRadius: 12,
-              paddingHorizontal: 14, // Match group search input
-              backgroundColor: themeColors.white,
-              height: 44,
-            }}
-          >
-            <TextInput
-              placeholder="Share something with friends..."
-              value={postText}
-              onChangeText={setPostText}
-              style={{
-                flex: 1,
-                height: 44,
-                fontSize: 16,
-                color: themeColors.black,
-                fontFamily: "CarosSoft",
-                paddingVertical: 0,
-              }}
-              editable={!posting}
-              placeholderTextColor={themeColors.darkGray}
-              maxLength={100}
-              returnKeyType="send"
-              onSubmitEditing={handlePost}
-              blurOnSubmit={true}
-            />
-          </View>
-          <TouchableOpacity
-            onPress={handlePost}
-            disabled={posting || !postText.trim()}
-            style={{
-              marginLeft: 12.75,
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 12,
-              backgroundColor: themeColors.white,
-            }}
-            accessibilityLabel="Submit"
-          >
-            <PaperPlaneRight size={24} color={themeColors.purple} />
-          </TouchableOpacity>
-        </View>
-      </View>
+      {/* --- Reply Preview --- */}
+      <ReplyPreview
+        replyToPost={replyToPost}
+        setReplyToPost={setReplyToPost}
+        themeColors={themeColors}
+      />
+      {/* --- Input Bar --- */}
+      <InputBar
+        postText={postText}
+        setPostText={setPostText}
+        posting={posting}
+        handleInputChange={handleInputChange}
+        handlePost={handlePost}
+        themeColors={themeColors}
+      />
+      {/* --- Mention Picker --- */}
+      <MentionPicker
+        visible={mentionPickerVisible}
+        mentionUsers={mentionUsers}
+        mentionQuery={mentionQuery}
+        handleMentionSelect={handleMentionSelect}
+        themeColors={themeColors}
+      />
+      {/* --- Feed List --- */}
       {feedLoading ? (
         <ActivityIndicator
           color={themeColors.purple}
@@ -265,197 +348,18 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
           Your friends haven't posted yet.
         </Text>
       ) : (
-        <View style={{ width: "100%", flex: 1 }}>
-          <View style={{ flex: 1, position: "relative" }}>
-            {feed.length > 0 && isScrolled && (
-              <LinearGradient
-                colors={[themeColors.white + "FF", themeColors.white + "00"]}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: 24,
-                  zIndex: 2,
-                  pointerEvents: "none",
-                }}
-                pointerEvents="none"
-              />
-            )}
-            <FlatList
-              data={feed}
-              keyExtractor={(item) => item.id}
-              style={{ width: "100%", flex: 1 }}
-              contentContainerStyle={{ paddingBottom: 60 }}
-              showsVerticalScrollIndicator={false}
-              renderItem={({ item }) => (
-                <View
-                  style={{
-                    backgroundColor: themeColors.lightGray,
-                    borderRadius: 10,
-                    padding: 14,
-                    marginBottom: 10,
-                    borderWidth: 0.5,
-                    borderColor: themeColors.darkGray,
-                    flexDirection: "row",
-                    alignItems: "flex-start",
-                    position: "relative",
-                  }}
-                >
-                  <View style={{ flex: 1 }}>
-                    <View
-                      style={{ flexDirection: "row", alignItems: "center" }}
-                    >
-                      <TouchableOpacity
-                        onPress={() => {
-                          if (item.uid) {
-                            navigation.navigate("Profile", { uid: item.uid });
-                          }
-                        }}
-                        activeOpacity={0.7}
-                        style={{ flex: 1 }}
-                      >
-                        <Text
-                          style={{
-                            color: themeColors.purple,
-                            fontWeight: "bold",
-                            fontSize: 15,
-                            fontFamily: "CarosSoft",
-                          }}
-                        >
-                          {item.userName || "Unknown"}
-                        </Text>
-                      </TouchableOpacity>
-                      {user && item.uid === user.uid ? (
-                        <TouchableOpacity
-                          onPress={() => confirmDeletePost(item.id)}
-                          style={{
-                            marginLeft: 10,
-                            borderRadius: 6,
-                            padding: 6,
-                            alignItems: "center",
-                            justifyContent: "center",
-                            height: 32,
-                            width: 32,
-                          }}
-                          accessibilityLabel="Delete post"
-                        >
-                          <Trash
-                            size={18}
-                            color={themeColors.red}
-                            weight="bold"
-                          />
-                        </TouchableOpacity>
-                      ) : null}
-                    </View>
-                    <Text
-                      style={{
-                        color: themeColors.black,
-                        fontSize: 15,
-                        marginTop: 2,
-                        fontFamily: "CarosSoft",
-                      }}
-                    >
-                      {(() => {
-                        if (
-                          item.type === "checkin" &&
-                          item.isOwnPost &&
-                          item.message &&
-                          item.message.startsWith("Checked in at")
-                        ) {
-                          let baseMsg = item.message.replace(/ with .*!$/, "!");
-                          if (item.taggedNames && item.taggedNames.length > 0) {
-                            const others = item.taggedNames.filter(
-                              (n) => n !== "you"
-                            );
-                            let tagString = "";
-                            if (others.length === 1) {
-                              tagString = " with " + others[0];
-                            } else if (others.length === 2) {
-                              tagString =
-                                " with " + others[0] + " and " + others[1];
-                            } else if (others.length > 2) {
-                              tagString =
-                                " with " +
-                                others.slice(0, -1).join(", ") +
-                                ", and " +
-                                others[others.length - 1];
-                            }
-                            return (
-                              <>
-                                {baseMsg.replace(/!$/, "")}
-                                {others.length > 0 ? tagString : ""}
-                              </>
-                            );
-                          } else {
-                            return item.message;
-                          }
-                        }
-                        return (
-                          <>
-                            {item.message}
-                            {item.taggedNames &&
-                              item.taggedNames.length > 0 &&
-                              !item.message.includes(
-                                "with " + item.taggedNames[0]
-                              ) && (
-                                <Text
-                                  style={{
-                                    color: themeColors.black,
-                                    fontFamily: "CarosSoft",
-                                  }}
-                                >
-                                  {" with "}
-                                  {item.taggedNames.join(", ")}
-                                </Text>
-                              )}
-                          </>
-                        );
-                      })()}
-                    </Text>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        marginTop: 6,
-                      }}
-                    >
-                      <View style={{ flex: 1 }} />
-                      <Text
-                        style={{
-                          color: themeColors.darkGray,
-                          fontSize: 12,
-                          textAlign: "right",
-                          fontFamily: "CarosSoft",
-                        }}
-                      >
-                        {item.createdAt && item.createdAt.seconds
-                          ? (() => {
-                              const d = new Date(item.createdAt.seconds * 1000);
-                              return (
-                                d.toLocaleDateString() +
-                                ", " +
-                                d.toLocaleTimeString([], {
-                                  hour: "numeric",
-                                  minute: "2-digit",
-                                  hour12: true,
-                                })
-                              );
-                            })()
-                          : ""}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              )}
-              onScroll={(e) => {
-                const offsetY = e.nativeEvent.contentOffset.y;
-                setIsScrolled(offsetY > 2);
-              }}
-              scrollEventThrottle={16}
-            />
-          </View>
-        </View>
+        <FeedList
+          feed={feed}
+          isScrolled={isScrolled}
+          setIsScrolled={setIsScrolled}
+          navigation={navigation}
+          user={user}
+          themeColors={themeColors}
+          setReplyToPost={setReplyToPost}
+          confirmDeletePost={confirmDeletePost}
+          mutualFriends={mutualFriends}
+          renderMessageWithMentions={renderMessageWithMentions}
+        />
       )}
     </View>
   );
