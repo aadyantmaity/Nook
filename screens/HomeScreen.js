@@ -652,7 +652,7 @@ export default function HomeScreen({ navigation, route }) {
             Nook
           </Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            {/* Hamburger icon button */}
+            {/* Profile picture button to open hamburger menu */}
             <TouchableOpacity
               onPress={() => setMenuOpen(true)}
               style={{
@@ -662,11 +662,22 @@ export default function HomeScreen({ navigation, route }) {
                 justifyContent: "center",
                 elevation: 2,
                 marginLeft: 8,
+                width: 34,
+                height: 34,
+                overflow: "hidden",
+                borderWidth: 1,
+                borderColor: themeColors.purple,
               }}
               accessibilityLabel="Open menu"
               accessible={true}
             >
-              <List size={28} color={themeColors.purple} weight="bold" />
+              <ProfilePicture
+                profilePic={profilePic}
+                themeColors={themeColors}
+                size={34}
+                isTouchable={false}
+                isLoading={isProfilePicLoading}
+              />
             </TouchableOpacity>
           </View>
           {/* HamburgerMenu modal */}

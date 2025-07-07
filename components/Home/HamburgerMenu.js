@@ -84,13 +84,22 @@ export default function HamburgerMenu({
               paddingHorizontal: 20,
             }}
           >
-            <ProfilePicture
-              profilePic={profilePic}
-              themeColors={themeColors}
-              size={22}
-              isTouchable={false}
-              isLoading={false}
-            />
+            <View
+              style={{
+                borderWidth: 1,
+                borderColor: themeColors.purple,
+                borderRadius: 50,
+                padding: 0,
+              }}
+            >
+              <ProfilePicture
+                profilePic={profilePic}
+                themeColors={themeColors}
+                size={22}
+                isTouchable={false}
+                isLoading={false}
+              />
+            </View>
             <Text
               style={{
                 marginLeft: 12,
