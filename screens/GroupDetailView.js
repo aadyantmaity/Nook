@@ -53,6 +53,7 @@ import GroupMenuModal from "../components/Groups/GroupMenuModal";
 import GroupMessagesList from "../components/Groups/GroupMessagesList";
 import GroupInputBar from "../components/Groups/GroupInputBar";
 import GroupStarredNooksModal from "../components/Groups/GroupStarredNooksModal";
+import PollModal from "../components/Groups/PollModal";
 import useFavorites from "../hooks/useFavorites";
 
 export default function GroupDetailView({ navigation, route }) {
@@ -269,6 +270,27 @@ export default function GroupDetailView({ navigation, route }) {
       setMentionedUsers([]); // <-- clear after send
     } catch {}
     setSending(false);
+  };
+
+  // Add poll sending handler
+  const handleSendPoll = async ({ question, options }) => {
+    if (!groupId || !question || !options || options.length < 2) return;
+    try {
+      const { addDoc, collection, serverTimestamp } = await import(
+        "firebase/firestore"
+      );
+      const { db, auth } = await import("../firebaseConfig");
+      await addDoc(collection(db, "studyGroups", groupId, "messages"), {
+        type: "poll",
+        poll: {
+          question,
+          options,
+          votes: {},
+        },
+        uid: auth.currentUser?.uid,
+        createdAt: serverTimestamp(),
+      });
+    } catch {}
   };
 
   // Helper to fetch and cache user info (name and profilePic)
@@ -735,6 +757,7 @@ export default function GroupDetailView({ navigation, route }) {
               setReplyToMessage={setReplyToMessage}
               getUserName={getUserName}
               themeColors={themeColors}
+              onSendPoll={handleSendPoll}
             />
           </>
         )}

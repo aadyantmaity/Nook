@@ -13,6 +13,8 @@ import {
 import ProfilePicture from "../Profile/ProfilePicture";
 import { MapPin, Star } from "phosphor-react-native";
 import { PanGestureHandler, State } from "react-native-gesture-handler";
+import { db, auth } from "../../firebaseConfig";
+import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 
 // --- Memoized System Message ---
 const SystemMessage = memo(({ item, themeColors }) => (
@@ -372,6 +374,115 @@ const OtherMessageBubble = memo(
   )
 );
 
+// --- Memoized Poll Message ---
+const PollMessage = memo(({ item, themeColors, groupId, userUid }) => {
+  const [selected, setSelected] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const votes = item.poll?.votes || {};
+  const totalVotes = Object.values(votes).length;
+  const userVote = Object.entries(votes).find(([uid]) => uid === userUid)?.[1];
+
+  const handleVote = async (idx) => {
+    // Allow changing vote: only block if submitting
+    if (submitting) return;
+    // Only update if the vote is different
+    if (userVote === idx) return;
+    setSubmitting(true);
+    try {
+      const msgRef = doc(db, "studyGroups", groupId, "messages", item.id);
+      await updateDoc(msgRef, {
+        [`poll.votes.${userUid}`]: idx,
+      });
+      setSelected(idx);
+    } catch {}
+    setSubmitting(false);
+  };
+
+  return (
+    <View
+      style={{
+        backgroundColor: themeColors.lightGray,
+        borderRadius: 14,
+        padding: 14,
+        marginVertical: 10,
+        alignSelf: "center",
+        width: "95%",
+        borderWidth: 1,
+        borderColor: themeColors.purple,
+      }}
+    >
+      <Text
+        style={{
+          color: themeColors.purple,
+          fontWeight: "bold",
+          fontSize: 16,
+          fontFamily: "CarosSoft",
+          marginBottom: 8,
+        }}
+      >
+        {item.poll?.question}
+      </Text>
+      {item.poll?.options?.map((opt, idx) => {
+        const count = Object.values(votes).filter((v) => v === idx).length;
+        const percent =
+          totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+        const voted = userVote === idx;
+        return (
+          <TouchableOpacity
+            key={idx}
+            onPress={() => handleVote(idx)}
+            style={{
+              backgroundColor: voted ? themeColors.purple : themeColors.white,
+              borderRadius: 8,
+              padding: 10,
+              marginBottom: 6,
+              borderWidth: 1,
+              borderColor: themeColors.purple,
+              opacity: submitting ? 0.6 : 1, // Only dim if submitting
+            }}
+            disabled={submitting}
+          >
+            <Text
+              style={{
+                color: voted ? themeColors.white : themeColors.purple,
+                fontWeight: "bold",
+                fontFamily: "CarosSoft",
+              }}
+            >
+              {opt}
+            </Text>
+            {userVote !== undefined && (
+              <Text
+                style={{
+                  color: voted ? themeColors.white : themeColors.purple,
+                  fontSize: 13,
+                  marginTop: 2,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                {count} vote{count !== 1 ? "s" : ""} ({percent}%)
+              </Text>
+            )}
+          </TouchableOpacity>
+        );
+      })}
+      {userVote !== undefined && (
+        <Text
+          style={{
+            color: themeColors.darkGray,
+            fontSize: 12,
+            marginTop: 6,
+            fontFamily: "CarosSoft",
+            textAlign: "right",
+          }}
+        >
+          You voted
+        </Text>
+      )}
+    </View>
+  );
+});
+
 // --- Main GroupMessagesList Memoized ---
 const GroupMessagesList = memo(
   ({
@@ -599,6 +710,16 @@ const GroupMessagesList = memo(
             />
           );
         }
+        if (item.type === "poll") {
+          return (
+            <PollMessage
+              item={item}
+              themeColors={themeColors}
+              groupId={group?.id}
+              userUid={auth.currentUser?.uid}
+            />
+          );
+        }
         if (isMe) {
           return (
             <MyMessageBubble
@@ -639,6 +760,7 @@ const GroupMessagesList = memo(
         renderReplyPreview,
         getUserProfilePic,
         SwipeableMessage,
+        group?.id,
       ]
     );
 
