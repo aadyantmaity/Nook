@@ -438,6 +438,25 @@ export default function GroupDetailsScreen({ route, navigation }) {
     </View>
   );
 
+  // Add this function to handle starring/un-starring nooks
+  const toggleStarNook = async (spotId) => {
+    if (!groupId || !spotId) return;
+    const groupRef = doc(db, "studyGroups", groupId);
+    try {
+      if (starredNooks.includes(spotId)) {
+        await updateDoc(groupRef, {
+          starredNooks: starredNooks.filter((id) => id !== spotId),
+        });
+      } else {
+        await updateDoc(groupRef, {
+          starredNooks: [...starredNooks, spotId],
+        });
+      }
+    } catch (e) {
+      Alert.alert("Error", "Failed to update starred nooks.");
+    }
+  };
+
   // --- Compose leaderboard and starred nooks section for FlatList footer ---
   const listFooter = (
     <View style={{ paddingHorizontal: 24 }}>
@@ -635,9 +654,9 @@ export default function GroupDetailsScreen({ route, navigation }) {
                   minWidth: 180,
                 }}
               >
-                {item.photoURL ? (
+                {item.photoUrl ? (
                   <Image
-                    source={{ uri: item.photoURL }}
+                    source={{ uri: item.photoUrl }}
                     style={{
                       width: 48,
                       height: 48,
@@ -674,12 +693,16 @@ export default function GroupDetailsScreen({ route, navigation }) {
                     {item.buildingName || item.name || "Nook"}
                   </Text>
                 </View>
-                <Star
-                  size={22}
-                  color={themeColors.purple}
-                  weight="fill"
-                  style={{ marginLeft: 12 }}
-                />
+                <TouchableOpacity
+                  onPress={() => toggleStarNook(item.id)}
+                  style={{ padding: 4, marginLeft: 8 }}
+                >
+                  <Star
+                    size={22}
+                    color={themeColors.purple}
+                    weight={starredNooks.includes(item.id) ? "fill" : "regular"}
+                  />
+                </TouchableOpacity>
               </TouchableOpacity>
             )}
           />
