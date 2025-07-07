@@ -6,7 +6,7 @@ import {
   Text,
   Animated,
 } from "react-native";
-import { PaperPlaneRight, X } from "phosphor-react-native";
+import { PaperPlaneRight, X, Plus } from "phosphor-react-native";
 import PollModal from "./PollModal";
 
 export default function GroupInputBar({
@@ -115,7 +115,26 @@ export default function GroupInputBar({
           blurOnSubmit={false}
           maxLength={200}
         />
-        {/* Show poll button if input is exactly "/poll" */}
+        {/* Always show a sleek poll icon button */}
+        <TouchableOpacity
+          onPress={() => {
+            setShowPollModal(true);
+            if (input.trim() === "/poll") setInput(""); // clear input if /poll
+          }}
+          style={{
+            backgroundColor: themeColors.lightGray,
+            borderRadius: 16,
+            padding: 6,
+            alignItems: "center",
+            justifyContent: "center",
+            opacity: isPollCommand ? 0.5 : 1, // subtle fade if /poll is typed
+          }}
+          accessibilityLabel="Create Poll"
+          disabled={isPollCommand}
+        >
+          <Plus size={22} color={themeColors.purple} weight="bold" />
+        </TouchableOpacity>
+        {/* Show poll button with text if input is exactly "/poll" */}
         {isPollCommand && (
           <TouchableOpacity
             onPress={() => {

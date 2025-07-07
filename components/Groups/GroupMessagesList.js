@@ -383,9 +383,7 @@ const PollMessage = memo(({ item, themeColors, groupId, userUid }) => {
   const userVote = Object.entries(votes).find(([uid]) => uid === userUid)?.[1];
 
   const handleVote = async (idx) => {
-    // Allow changing vote: only block if submitting
     if (submitting) return;
-    // Only update if the vote is different
     if (userVote === idx) return;
     setSubmitting(true);
     try {
@@ -401,24 +399,31 @@ const PollMessage = memo(({ item, themeColors, groupId, userUid }) => {
   return (
     <View
       style={{
-        backgroundColor: themeColors.lightGray,
-        borderRadius: 14,
-        padding: 14,
-        marginVertical: 10,
+        backgroundColor: themeColors.lightGray + "CC",
+        borderRadius: 12,
+        padding: 10,
+        marginVertical: 8,
         alignSelf: "center",
-        width: "95%",
+        width: "96%",
         borderWidth: 1,
-        borderColor: themeColors.purple,
+        borderColor: themeColors.purple + "33",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 2,
+        elevation: 1,
       }}
     >
       <Text
         style={{
           color: themeColors.purple,
           fontWeight: "bold",
-          fontSize: 16,
+          fontSize: 15,
           fontFamily: "CarosSoft",
-          marginBottom: 8,
+          marginBottom: 6,
+          marginLeft: 2,
         }}
+        numberOfLines={2}
       >
         {item.poll?.question}
       </Text>
@@ -433,34 +438,78 @@ const PollMessage = memo(({ item, themeColors, groupId, userUid }) => {
             onPress={() => handleVote(idx)}
             style={{
               backgroundColor: voted ? themeColors.purple : themeColors.white,
-              borderRadius: 8,
-              padding: 10,
-              marginBottom: 6,
-              borderWidth: 1,
-              borderColor: themeColors.purple,
-              opacity: submitting ? 0.6 : 1, // Only dim if submitting
+              borderRadius: 7,
+              paddingVertical: 8,
+              paddingHorizontal: 10,
+              marginBottom: 5,
+              borderWidth: voted ? 1.5 : 1,
+              borderColor: voted
+                ? themeColors.purple
+                : themeColors.purple + "22",
+              opacity: submitting ? 0.6 : 1,
+              minHeight: 32,
+              justifyContent: "center",
             }}
             disabled={submitting}
+            activeOpacity={0.85}
           >
-            <Text
-              style={{
-                color: voted ? themeColors.white : themeColors.purple,
-                fontWeight: "bold",
-                fontFamily: "CarosSoft",
-              }}
-            >
-              {opt}
-            </Text>
+            {/* Progress bar background */}
             {userVote !== undefined && (
+              <View
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: `${percent}%`,
+                  backgroundColor: voted
+                    ? themeColors.purple + "55"
+                    : themeColors.purple + "18",
+                  borderRadius: 7,
+                  zIndex: 0,
+                }}
+              />
+            )}
+            <View
+              style={{ flexDirection: "row", alignItems: "center", zIndex: 1 }}
+            >
               <Text
                 style={{
                   color: voted ? themeColors.white : themeColors.purple,
-                  fontSize: 13,
-                  marginTop: 2,
+                  fontWeight: "bold",
                   fontFamily: "CarosSoft",
+                  fontSize: 14,
+                  flex: 1,
+                  flexWrap: "wrap",
+                }}
+                numberOfLines={1}
+              >
+                {opt}
+              </Text>
+              {userVote !== undefined && (
+                <Text
+                  style={{
+                    color: voted ? themeColors.white : themeColors.purple,
+                    fontSize: 12,
+                    marginLeft: 8,
+                    fontFamily: "CarosSoft",
+                  }}
+                >
+                  {percent}%
+                </Text>
+              )}
+            </View>
+            {userVote !== undefined && (
+              <Text
+                style={{
+                  color: voted ? themeColors.white : themeColors.darkGray,
+                  fontSize: 11,
+                  marginTop: 1,
+                  fontFamily: "CarosSoft",
+                  textAlign: "right",
                 }}
               >
-                {count} vote{count !== 1 ? "s" : ""} ({percent}%)
+                {count} vote{count !== 1 ? "s" : ""}
               </Text>
             )}
           </TouchableOpacity>
@@ -470,8 +519,8 @@ const PollMessage = memo(({ item, themeColors, groupId, userUid }) => {
         <Text
           style={{
             color: themeColors.darkGray,
-            fontSize: 12,
-            marginTop: 6,
+            fontSize: 11,
+            marginTop: 4,
             fontFamily: "CarosSoft",
             textAlign: "right",
           }}
