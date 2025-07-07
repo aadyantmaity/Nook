@@ -18,6 +18,7 @@ import {
   ScrollView,
   Image,
   Keyboard, // <-- Add Keyboard import
+  TouchableWithoutFeedback, // <-- Add this import
 } from "react-native";
 import { ThemeContext } from "../App";
 import { colors } from "../constants/colors";
@@ -718,161 +719,171 @@ export default function GroupDetailView({ navigation, route }) {
         themeColors={themeColors}
       />
       {/* Messages and Input */}
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-      >
-        {loading ? (
-          <View
-            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-          >
-            <ActivityIndicator color={themeColors.purple} />
-          </View>
-        ) : (
-          <>
-            <GroupMessagesList
-              messages={messages}
-              group={group}
-              themeColors={themeColors}
-              auth={auth}
-              navigation={navigation}
-              starredNooks={starredNooks}
-              toggleStarNook={toggleStarNook}
-              userCache={userCache}
-              userPicCache={userPicCache}
-              getUserName={getUserName}
-              getUserProfilePic={getUserProfilePic}
-              handleDeleteMessage={handleDeleteMessage}
-              setReplyToMessage={setReplyToMessage}
-              replyToMessage={replyToMessage}
-              flatListRef={flatListRef}
-            />
-            <GroupInputBar
-              input={input}
-              setInput={handleInputChange}
-              sending={sending}
-              handleSend={handleSend}
-              replyToMessage={replyToMessage}
-              setReplyToMessage={setReplyToMessage}
-              getUserName={getUserName}
-              themeColors={themeColors}
-              onSendPoll={handleSendPoll}
-            />
-          </>
-        )}
-        {mentionPickerVisible &&
-          mentionUsers.filter((u) =>
-            u.name.toLowerCase().includes(mentionQuery.toLowerCase())
-          ).length > 0 && (
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+        >
+          {loading ? (
             <View
               style={{
-                position: "absolute",
-                left: 12,
-                right: 12,
-                // Dynamically position above keyboard
-                bottom: keyboardHeight + 12,
-                backgroundColor: themeColors.white,
-                zIndex: 1000,
-                maxHeight: 220,
-                borderRadius: 14,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.15,
-                shadowRadius: 8,
-                elevation: 8,
-                borderWidth: 1,
-                borderColor: themeColors.lightGray,
-                paddingHorizontal: 0,
-                overflow: "hidden",
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
               }}
             >
-              <ScrollView
-                keyboardShouldPersistTaps="always"
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{
-                  paddingVertical: 4,
+              <ActivityIndicator color={themeColors.purple} />
+            </View>
+          ) : (
+            <>
+              <GroupMessagesList
+                messages={messages}
+                group={group}
+                themeColors={themeColors}
+                auth={auth}
+                navigation={navigation}
+                starredNooks={starredNooks}
+                toggleStarNook={toggleStarNook}
+                userCache={userCache}
+                userPicCache={userPicCache}
+                getUserName={getUserName}
+                getUserProfilePic={getUserProfilePic}
+                handleDeleteMessage={handleDeleteMessage}
+                setReplyToMessage={setReplyToMessage}
+                replyToMessage={replyToMessage}
+                flatListRef={flatListRef}
+              />
+              <GroupInputBar
+                input={input}
+                setInput={handleInputChange}
+                sending={sending}
+                handleSend={handleSend}
+                replyToMessage={replyToMessage}
+                setReplyToMessage={setReplyToMessage}
+                getUserName={getUserName}
+                themeColors={themeColors}
+                onSendPoll={handleSendPoll}
+              />
+            </>
+          )}
+          {mentionPickerVisible &&
+            mentionUsers.filter((u) =>
+              u.name.toLowerCase().includes(mentionQuery.toLowerCase())
+            ).length > 0 && (
+              <View
+                style={{
+                  position: "absolute",
+                  left: 12,
+                  right: 12,
+                  // Dynamically position above keyboard
+                  bottom: keyboardHeight + 12,
+                  backgroundColor: themeColors.white,
+                  zIndex: 1000,
+                  maxHeight: 220,
+                  borderRadius: 14,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 8,
+                  elevation: 8,
+                  borderWidth: 1,
+                  borderColor: themeColors.lightGray,
                   paddingHorizontal: 0,
+                  overflow: "hidden",
                 }}
               >
-                {mentionUsers
-                  .filter((u) =>
-                    u.name.toLowerCase().includes(mentionQuery.toLowerCase())
-                  )
-                  .map((u, idx, arr) => (
-                    <TouchableOpacity
-                      key={u.uid}
-                      onPress={() => handleMentionSelect(u)}
-                      activeOpacity={0.7}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        paddingVertical: 12,
-                        paddingHorizontal: 18,
-                        backgroundColor: themeColors.white,
-                      }}
-                    >
-                      <View
+                <ScrollView
+                  keyboardShouldPersistTaps="always"
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{
+                    paddingVertical: 4,
+                    paddingHorizontal: 0,
+                  }}
+                >
+                  {mentionUsers
+                    .filter((u) =>
+                      u.name.toLowerCase().includes(mentionQuery.toLowerCase())
+                    )
+                    .map((u, idx, arr) => (
+                      <TouchableOpacity
+                        key={u.uid}
+                        onPress={() => handleMentionSelect(u)}
+                        activeOpacity={0.7}
                         style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: 16,
-                          backgroundColor: themeColors.purple,
+                          flexDirection: "row",
                           alignItems: "center",
-                          justifyContent: "center",
-                          marginRight: 12,
-                          overflow: "hidden",
+                          paddingVertical: 12,
+                          paddingHorizontal: 18,
+                          backgroundColor: themeColors.white,
                         }}
                       >
-                        {u.profilePic ? (
-                          <Image
-                            source={{ uri: u.profilePic }}
-                            style={{ width: 32, height: 32, borderRadius: 16 }}
-                            resizeMode="cover"
-                          />
-                        ) : (
-                          <Text
-                            style={{
-                              color: themeColors.white,
-                              fontWeight: "bold",
-                              fontSize: 16,
-                              fontFamily: "CarosSoft",
-                            }}
-                          >
-                            {u.name.charAt(0).toUpperCase()}
-                          </Text>
-                        )}
-                      </View>
-                      <Text
-                        style={{
-                          color: themeColors.purple,
-                          fontFamily: "CarosSoft",
-                          fontSize: 16,
-                          fontWeight: "bold",
-                        }}
-                      >
-                        {u.name}
-                      </Text>
-                      {/* Add bottom border with padding */}
-                      {idx !== arr.length - 1 && (
                         <View
                           style={{
-                            position: "absolute",
-                            left: 32 + 18 + 12,
-                            right: 18,
-                            bottom: 0,
-                            height: 0.5,
-                            backgroundColor: themeColors.black,
-                            opacity: 0.5,
+                            width: 32,
+                            height: 32,
+                            borderRadius: 16,
+                            backgroundColor: themeColors.purple,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginRight: 12,
+                            overflow: "hidden",
                           }}
-                        />
-                      )}
-                    </TouchableOpacity>
-                  ))}
-              </ScrollView>
-            </View>
-          )}
-      </KeyboardAvoidingView>
+                        >
+                          {u.profilePic ? (
+                            <Image
+                              source={{ uri: u.profilePic }}
+                              style={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: 16,
+                              }}
+                              resizeMode="cover"
+                            />
+                          ) : (
+                            <Text
+                              style={{
+                                color: themeColors.white,
+                                fontWeight: "bold",
+                                fontSize: 16,
+                                fontFamily: "CarosSoft",
+                              }}
+                            >
+                              {u.name.charAt(0).toUpperCase()}
+                            </Text>
+                          )}
+                        </View>
+                        <Text
+                          style={{
+                            color: themeColors.purple,
+                            fontFamily: "CarosSoft",
+                            fontSize: 16,
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {u.name}
+                        </Text>
+                        {/* Add bottom border with padding */}
+                        {idx !== arr.length - 1 && (
+                          <View
+                            style={{
+                              position: "absolute",
+                              left: 32 + 18 + 12,
+                              right: 18,
+                              bottom: 0,
+                              height: 0.5,
+                              backgroundColor: themeColors.black,
+                              opacity: 0.5,
+                            }}
+                          />
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                </ScrollView>
+              </View>
+            )}
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 }

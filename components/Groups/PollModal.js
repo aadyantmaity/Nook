@@ -78,6 +78,7 @@ export default function PollModal({ visible, onClose, onSubmit, themeColors }) {
             shadowOpacity: 0.18,
             shadowRadius: 12,
             elevation: 8,
+            marginBottom: 250, // <-- move modal up by 60px
           }}
           onStartShouldSetResponder={() => true}
         >

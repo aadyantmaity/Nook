@@ -15,7 +15,7 @@ import { auth, db } from "../../firebaseConfig";
 import * as Location from "expo-location";
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 // Remove MaterialCommunityIcons import and use Phosphor instead:
-import { PencilSimple } from "phosphor-react-native";
+import { PencilSimple, Info, MapPinLine } from "phosphor-react-native";
 
 // Helper: Haversine distance in meters
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -280,6 +280,19 @@ export default function StudySpotsMapView({
     buildingName: "",
     spots: [],
   });
+
+  // --- Helper to open building modal or single-spot modal ---
+  const handlePinPress = (pin) => {
+    if (pin.spots.length === 1) {
+      setSelectedPin(pin);
+    } else {
+      setBuildingModal({
+        visible: true,
+        buildingName: pin.buildingName,
+        spots: pin.spots,
+      });
+    }
+  };
 
   return (
     <>
@@ -596,7 +609,7 @@ export default function StudySpotsMapView({
                 longitude: pin.longitude,
               }}
               pinColor={themeColors.orange}
-              onPress={() => setSelectedPin(pin)}
+              onPress={() => handlePinPress(pin)}
             />
           ))}
         </MapView>
@@ -759,15 +772,8 @@ export default function StudySpotsMapView({
                   )
                 )
                 .map((spot) => (
-                  <TouchableOpacity
+                  <View
                     key={spot.id}
-                    onPress={() => {
-                      setBuildingModal((prev) => ({ ...prev, visible: false }));
-                      navigation.navigate("SpotDetail", {
-                        spotId: spot.id,
-                        view: "map",
-                      });
-                    }}
                     style={{
                       paddingVertical: 12,
                       borderBottomWidth: 1,
@@ -776,29 +782,119 @@ export default function StudySpotsMapView({
                       alignItems: "center",
                     }}
                   >
-                    <Text
+                    {/* Floor/name text and private label */}
+                    <View style={{ flex: 1, flexDirection: "column" }}>
+                      <Text
+                        style={{
+                          color: themeColors.purple,
+                          fontWeight: "bold",
+                          fontFamily: "CarosSoft",
+                          fontSize: 16,
+                        }}
+                      >
+                        {spot.roomNumber
+                          ? `Floor ${spot.roomNumber}`
+                          : spot.name || "Nook"}
+                      </Text>
+                      <Text
+                        style={{
+                          color: themeColors.darkGray,
+                          fontSize: 13,
+                          fontFamily: "CarosSoft",
+                        }}
+                      >
+                        {spot.privateNook ? "Private" : ""}
+                      </Text>
+                    </View>
+                    {/* Button group to the right, horizontally aligned with labels below icons */}
+                    <View
                       style={{
-                        color: themeColors.purple,
-                        fontWeight: "bold",
-                        fontFamily: "CarosSoft",
-                        fontSize: 16,
-                        flex: 1,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        marginLeft: 8,
+                        gap: 18,
                       }}
                     >
-                      {spot.roomNumber
-                        ? `Floor ${spot.roomNumber}`
-                        : spot.name || "Nook"}
-                    </Text>
-                    <Text
-                      style={{
-                        color: themeColors.darkGray,
-                        fontSize: 13,
-                        fontFamily: "CarosSoft",
-                      }}
-                    >
-                      {spot.privateNook ? "Private" : ""}
-                    </Text>
-                  </TouchableOpacity>
+                      <View style={{ alignItems: "center" }}>
+                        <TouchableOpacity
+                          style={{
+                            backgroundColor: themeColors.purple,
+                            borderRadius: 50,
+                            padding: 10,
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                          onPress={() => {
+                            setBuildingModal((prev) => ({
+                              ...prev,
+                              visible: false,
+                            }));
+                            navigation.navigate("SpotDetail", {
+                              spotId: spot.id,
+                              view: "map",
+                            });
+                          }}
+                          accessibilityLabel="View Details"
+                        >
+                          <Info
+                            size={22}
+                            color={themeColors.white}
+                            weight="bold"
+                          />
+                        </TouchableOpacity>
+                        <Text
+                          style={{
+                            color: themeColors.purple,
+                            fontSize: 11,
+                            fontFamily: "CarosSoft",
+                            marginTop: 2,
+                          }}
+                        >
+                          Details
+                        </Text>
+                      </View>
+                      <View style={{ alignItems: "center" }}>
+                        <TouchableOpacity
+                          style={{
+                            backgroundColor: themeColors.orange,
+                            borderRadius: 50,
+                            padding: 10,
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                          onPress={() => {
+                            setBuildingModal((prev) => ({
+                              ...prev,
+                              visible: false,
+                            }));
+                            const coords = spot.coordinates;
+                            const url = Platform.select({
+                              ios: `http://maps.apple.com/?daddr=${coords.latitude},${coords.longitude}`,
+                              android: `http://maps.google.com/?daddr=${coords.latitude},${coords.longitude}`,
+                            });
+                            Linking.openURL(url);
+                          }}
+                          accessibilityLabel="Get Directions"
+                        >
+                          <MapPinLine
+                            size={22}
+                            color={themeColors.white}
+                            weight="bold"
+                          />
+                        </TouchableOpacity>
+                        <Text
+                          style={{
+                            color: themeColors.orange,
+                            fontSize: 11,
+                            fontFamily: "CarosSoft",
+                            marginTop: 2,
+                          }}
+                        >
+                          Directions
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
                 ))}
             </ScrollView>
             <TouchableOpacity
@@ -828,6 +924,7 @@ export default function StudySpotsMapView({
           </View>
         </TouchableOpacity>
       </Modal>
+      {/* --- Single Pin Modal (for single spot in a building) --- */}
       <Modal
         visible={!!selectedPin}
         transparent
@@ -873,74 +970,80 @@ export default function StudySpotsMapView({
             >
               {selectedPin?.buildingName}
             </Text>
-            <View style={{ flexDirection: "row", gap: 12, marginTop: 10 }}>
-              <TouchableOpacity
-                style={{
-                  backgroundColor: themeColors.purple,
-                  borderRadius: 8,
-                  paddingVertical: 10,
-                  paddingHorizontal: 24,
-                  alignItems: "center",
-                }}
-                onPress={() => {
-                  setSelectedPin(null);
-                  setBuildingModal((prev) => ({ ...prev, visible: false }));
-                  setMapRefreshKey((k) => k + 1);
-                  setTimeout(() => {
-                    navigation.navigate("SpotDetail", {
-                      spotId: selectedPin.spots[0].id,
-                      view: "map",
-                    });
-                  }, 250);
-                }}
-              >
+            <View style={{ flexDirection: "row", gap: 70, marginVertical: 10 }}>
+              <View style={{ alignItems: "center" }}>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: themeColors.purple,
+                    borderRadius: 50,
+                    padding: 14,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  onPress={() => {
+                    setSelectedPin(null);
+                    setBuildingModal((prev) => ({ ...prev, visible: false }));
+                    setMapRefreshKey((k) => k + 1);
+                    setTimeout(() => {
+                      navigation.navigate("SpotDetail", {
+                        spotId: selectedPin.spots[0].id,
+                        view: "map",
+                      });
+                    }, 250);
+                  }}
+                  accessibilityLabel="View Details"
+                >
+                  <Info size={26} color={themeColors.white} weight="bold" />
+                </TouchableOpacity>
                 <Text
                   style={{
-                    color: themeColors.white,
-                    fontWeight: "bold",
-                    fontSize: 16,
+                    color: themeColors.purple,
+                    fontSize: 12,
                     fontFamily: "CarosSoft",
+                    marginTop: 2,
                   }}
                 >
                   Details
                 </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{
-                  backgroundColor: themeColors.orange,
-                  borderRadius: 8,
-                  paddingVertical: 10,
-                  paddingHorizontal: 24,
-                  alignItems: "center",
-                }}
-                onPress={() => {
-                  setSelectedPin(null);
-                  setBuildingModal((prev) => ({ ...prev, visible: false }));
-                  const coords =
-                    selectedPin.spots.length === 1
-                      ? selectedPin.spots[0].coordinates
-                      : {
-                          latitude: selectedPin.latitude,
-                          longitude: selectedPin.longitude,
-                        };
-                  const url = Platform.select({
-                    ios: `http://maps.apple.com/?daddr=${coords.latitude},${coords.longitude}`,
-                    android: `http://maps.google.com/?daddr=${coords.latitude},${coords.longitude}`,
-                  });
-                  Linking.openURL(url);
-                }}
-              >
+              </View>
+              <View style={{ alignItems: "center" }}>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: themeColors.orange,
+                    borderRadius: 50,
+                    padding: 14,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  onPress={() => {
+                    setSelectedPin(null);
+                    setBuildingModal((prev) => ({ ...prev, visible: false }));
+                    const coords = selectedPin.spots[0].coordinates;
+                    const url = Platform.select({
+                      ios: `http://maps.apple.com/?daddr=${coords.latitude},${coords.longitude}`,
+                      android: `http://maps.google.com/?daddr=${coords.latitude},${coords.longitude}`,
+                    });
+                    Linking.openURL(url);
+                  }}
+                  accessibilityLabel="Get Directions"
+                >
+                  <MapPinLine
+                    size={26}
+                    color={themeColors.white}
+                    weight="bold"
+                  />
+                </TouchableOpacity>
                 <Text
                   style={{
-                    color: themeColors.white,
-                    fontWeight: "bold",
-                    fontSize: 16,
+                    color: themeColors.orange,
+                    fontSize: 12,
                     fontFamily: "CarosSoft",
+                    marginTop: 2,
                   }}
                 >
                   Directions
                 </Text>
-              </TouchableOpacity>
+              </View>
             </View>
             <TouchableOpacity
               onPress={() => {
