@@ -22,7 +22,7 @@ export default function MentionPicker({
         position: "absolute",
         left: 0,
         right: 0,
-        top: 54,
+        top: 80,
         backgroundColor: themeColors.white,
         zIndex: 1000,
         maxHeight: 220,

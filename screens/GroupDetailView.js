@@ -53,8 +53,6 @@ import GroupMembersModal from "../components/Groups/GroupMembersModal";
 import GroupMenuModal from "../components/Groups/GroupMenuModal";
 import GroupMessagesList from "../components/Groups/GroupMessagesList";
 import GroupInputBar from "../components/Groups/GroupInputBar";
-import GroupStarredNooksModal from "../components/Groups/GroupStarredNooksModal";
-import PollModal from "../components/Groups/PollModal";
 import useFavorites from "../hooks/useFavorites";
 
 export default function GroupDetailView({ navigation, route }) {
@@ -75,17 +73,12 @@ export default function GroupDetailView({ navigation, route }) {
   const [membersList, setMembersList] = useState([]);
   const [starredNooks, setStarredNooks] = useState([]);
   const [starredNooksData, setStarredNooksData] = useState([]);
-  const [showLeftGradient, setShowLeftGradient] = useState(false);
-  const [showRightGradient, setShowRightGradient] = useState(false);
   const [showStarredModal, setShowStarredModal] = useState(false); // --- Add this line to fix the error ---
   const flatListRef = useRef();
   const starredListRef = useRef(null);
   const unsubGroupRef = useRef(null);
   const unsubMessagesRef = useRef(null);
-  const [starredListWidth, setStarredListWidth] = useState(0);
-  const [starredContentWidth, setStarredContentWidth] = useState(0);
   const prevMembersRef = useRef(null); // Track previous members for system messages
-  const hasSentJoinMessageRef = useRef(false); // Track if join message was sent for this session
   const { favoriteGroups, toggleFavoriteGroup } = useFavorites(); // <-- Get favoriteGroups state and toggle function
   const [replyToMessage, setReplyToMessage] = useState(null); // ensure this is defined
   const [mentionPickerVisible, setMentionPickerVisible] = useState(false);
@@ -212,7 +205,9 @@ export default function GroupDetailView({ navigation, route }) {
               email: data.email || "",
               profilePic: data.profilePic || null, // <-- Add profilePic here
             };
-          });
+          })
+          // Exclude current user from mentionUsers
+          .filter((u) => u.uid !== auth.currentUser?.uid);
         setMentionUsers(users);
       } catch {
         setMentionUsers([]);
@@ -708,14 +703,6 @@ export default function GroupDetailView({ navigation, route }) {
         visible={showMembersModal}
         onClose={() => setShowMembersModal(false)}
         membersList={membersList}
-        themeColors={themeColors}
-      />
-      {/* Starred Nooks Modal */}
-      <GroupStarredNooksModal
-        visible={showStarredModal}
-        onClose={() => setShowStarredModal(false)}
-        starredNooksData={starredNooksData}
-        navigation={navigation}
         themeColors={themeColors}
       />
       {/* Messages and Input */}
