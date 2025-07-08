@@ -488,22 +488,6 @@ export default function StudyGroupsSection({ navigation }) {
     fetchFollowing();
   }, [fetchFollowing]);
 
-  // Follow logic for suggested users
-  const handleFollow = async (targetUid) => {
-    if (!user?.uid || !targetUid) return;
-    setFollowLoading((prev) => ({ ...prev, [targetUid]: true }));
-    try {
-      await updateDoc(doc(db, "users", user.uid), {
-        following: arrayUnion(targetUid),
-      });
-      await updateDoc(doc(db, "users", targetUid), {
-        followers: arrayUnion(user.uid),
-      });
-      setFollowingIds((prev) => [...prev, targetUid]);
-    } catch {}
-    setFollowLoading((prev) => ({ ...prev, [targetUid]: false }));
-  };
-
   const [joiningGroups, setJoiningGroups] = useState({});
 
   return (
@@ -669,24 +653,24 @@ export default function StudyGroupsSection({ navigation }) {
         </View>
       )}
       {/* --- Suggested Users and Groups Dropdown --- */}
-      <SuggestedPeopleAndGroups
-        suggestedExpanded={suggestedExpanded}
-        setSuggestedExpanded={setSuggestedExpanded}
-        fetchFollowing={fetchFollowing}
-        refreshSuggested={refreshSuggested}
-        suggestedWithPics={suggestedWithPics}
-        suggestedGroups={suggestedGroups}
-        suggestedLoading={suggestedLoading}
-        suggestedGroupsLoading={suggestedGroupsLoading}
-        followingIds={followingIds}
-        followLoading={followLoading}
-        handleFollow={handleFollow}
-        navigation={navigation}
-        themeColors={themeColors}
-        joiningGroups={joiningGroups}
-        setJoiningGroups={setJoiningGroups}
-        user={user}
-      />
+      {groupSearch.length === 0 && (
+        <SuggestedPeopleAndGroups
+          suggestedExpanded={suggestedExpanded}
+          setSuggestedExpanded={setSuggestedExpanded}
+          fetchFollowing={fetchFollowing}
+          refreshSuggested={refreshSuggested}
+          suggestedWithPics={suggestedWithPics}
+          suggestedGroups={suggestedGroups}
+          suggestedLoading={suggestedLoading}
+          suggestedGroupsLoading={suggestedGroupsLoading}
+          followingIds={followingIds}
+          navigation={navigation}
+          themeColors={themeColors}
+          joiningGroups={joiningGroups}
+          setJoiningGroups={setJoiningGroups}
+          user={user}
+        />
+      )}
       {/* --- Main group list */}
       <GroupList
         loadingGroups={loadingGroups}

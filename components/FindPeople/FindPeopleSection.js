@@ -6,7 +6,6 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
-  Image,
 } from "react-native";
 import { db, auth } from "../../firebaseConfig";
 import {
@@ -19,20 +18,15 @@ import {
 } from "firebase/firestore";
 import { colors } from "../../constants/colors";
 import { ThemeContext } from "../../App";
-import { MagnifyingGlass, Plus, Minus } from "phosphor-react-native";
+import { MagnifyingGlass } from "phosphor-react-native";
 import ProfilePicture from "../Profile/ProfilePicture";
 
 export default function FindPeopleSection({ navigation, onNavigateToProfile }) {
   const [search, setSearch] = React.useState("");
   const [results, setResults] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
-  const [suggested, setSuggested] = React.useState([]);
-  const [suggestedLoading, setSuggestedLoading] = React.useState(true);
   const [followingIds, setFollowingIds] = React.useState([]);
   const [followLoading, setFollowLoading] = React.useState({});
-  const [suggestedExpanded, setSuggestedExpanded] = React.useState(false);
-  const [suggestedPicsLoading, setSuggestedPicsLoading] = React.useState(true);
-  const [suggestedWithPics, setSuggestedWithPics] = React.useState([]);
   const themeCtx = useContext(ThemeContext);
   const themeColors = themeCtx?.themeColors ?? colors;
   const debounceTimer = React.useRef(null);
@@ -54,107 +48,7 @@ export default function FindPeopleSection({ navigation, onNavigateToProfile }) {
     // eslint-disable-next-line
   }, [search]);
 
-  // Extracted function to fetch suggested users
-  const refreshSuggested = React.useCallback(async () => {
-    setSuggestedLoading(true);
-    setSuggestedPicsLoading(true);
-    try {
-      const q = query(collection(db, "users"));
-      const snap = await getDocs(q);
-      // Exclude current user and users already followed
-      const users = snap.docs
-        .map((doc) => ({ uid: doc.id, ...doc.data() }))
-        .filter(
-          (u) =>
-            u.uid !== auth.currentUser?.uid &&
-            !(Array.isArray(followingIds) && followingIds.includes(u.uid))
-        );
-      // Shuffle and pick up to 8 users
-      for (let i = users.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [users[i], users[j]] = [users[j], users[i]];
-      }
-      const picked = users.slice(0, 8);
-      // --- Preload profile pictures ---
-      const withPics = await Promise.all(
-        picked.map(async (u) => {
-          if (!u.profilePic) return { ...u, _profilePicLoaded: true };
-          try {
-            await Image.prefetch(u.profilePic);
-            return { ...u, _profilePicLoaded: true };
-          } catch {
-            return { ...u, _profilePicLoaded: false };
-          }
-        })
-      );
-      setSuggestedWithPics(withPics);
-      setSuggested(picked);
-      setSuggestedPicsLoading(false);
-    } catch {
-      setSuggested([]);
-      setSuggestedWithPics([]);
-      setSuggestedPicsLoading(false);
-    }
-    setSuggestedLoading(false);
-  }, [followingIds]);
-
-  React.useEffect(() => {
-    let isMounted = true;
-    async function fetchSuggested() {
-      setSuggestedLoading(true);
-      setSuggestedPicsLoading(true);
-      try {
-        const q = query(collection(db, "users"));
-        const snap = await getDocs(q);
-        // Exclude current user and users already followed
-        const users = snap.docs
-          .map((doc) => ({ uid: doc.id, ...doc.data() }))
-          .filter(
-            (u) =>
-              u.uid !== auth.currentUser?.uid &&
-              !(Array.isArray(followingIds) && followingIds.includes(u.uid))
-          );
-        // Shuffle and pick up to 8 users
-        for (let i = users.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [users[i], users[j]] = [users[j], users[i]];
-        }
-        const picked = users.slice(0, 8);
-        // --- Preload profile pictures ---
-        const withPics = await Promise.all(
-          picked.map(async (u) => {
-            // If no profilePic, just return as is
-            if (!u.profilePic) return { ...u, _profilePicLoaded: true };
-            // Try to prefetch the image
-            try {
-              await Image.prefetch(u.profilePic);
-              return { ...u, _profilePicLoaded: true };
-            } catch {
-              return { ...u, _profilePicLoaded: false };
-            }
-          })
-        );
-        if (isMounted) {
-          setSuggestedWithPics(withPics);
-          setSuggested(picked);
-          setSuggestedPicsLoading(false);
-        }
-      } catch {
-        if (isMounted) {
-          setSuggested([]);
-          setSuggestedWithPics([]);
-          setSuggestedPicsLoading(false);
-        }
-      }
-      if (isMounted) setSuggestedLoading(false);
-    }
-    fetchSuggested();
-    return () => {
-      isMounted = false;
-    };
-  }, [followingIds]);
-
-  // Fetch current user's following list for suggested users
+  // Fetch current user's following list for follow button state
   const fetchFollowing = React.useCallback(async () => {
     try {
       const userDoc = await getDocs(query(collection(db, "users")));
@@ -198,7 +92,7 @@ export default function FindPeopleSection({ navigation, onNavigateToProfile }) {
     }
   };
 
-  // Follow logic for suggested users
+  // Follow logic for search results
   const handleFollow = async (targetUid) => {
     if (!auth.currentUser?.uid || !targetUid) return;
     setFollowLoading((prev) => ({ ...prev, [targetUid]: true }));
@@ -228,155 +122,6 @@ export default function FindPeopleSection({ navigation, onNavigateToProfile }) {
         alignItems: "center",
       }}
     >
-      {/* Suggested Users Dropdown */}
-      <View style={{ width: "100%", marginBottom: 8 }}>
-        <TouchableOpacity
-          onPress={async () => {
-            if (!suggestedExpanded) {
-              await fetchFollowing(); // Always refresh followingIds before refreshing suggestions
-              setSuggestedExpanded(true);
-              refreshSuggested();
-            } else {
-              setSuggestedExpanded(false);
-            }
-          }}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            paddingVertical: 8,
-            paddingHorizontal: 4,
-            borderRadius: 8,
-            backgroundColor: themeColors.lightGray,
-            marginBottom: suggestedExpanded ? 8 : 0,
-          }}
-          accessibilityLabel={
-            suggestedExpanded
-              ? "Collapse suggested users"
-              : "Expand suggested users"
-          }
-        >
-          <Text
-            style={{
-              fontSize: 17,
-              fontWeight: "bold",
-              color: themeColors.purple,
-              fontFamily: "CarosSoft",
-              flex: 1,
-            }}
-          >
-            Suggested
-          </Text>
-          {suggestedExpanded ? (
-            <Minus size={22} color={themeColors.purple} weight="bold" />
-          ) : (
-            <Plus size={22} color={themeColors.purple} weight="bold" />
-          )}
-        </TouchableOpacity>
-        {suggestedExpanded && (
-          <View style={{ marginTop: 0 }}>
-            {/* Only show suggestions or empty text, no ActivityIndicator */}
-            {suggestedWithPics.length === 0 ? (
-              <Text
-                style={{
-                  color: themeColors.darkGray,
-                  fontSize: 15,
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                No suggestions available.
-              </Text>
-            ) : (
-              <FlatList
-                data={suggestedWithPics}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(item) => item.uid}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    onPress={() => {
-                      navigation.navigate("Profile", { uid: item.uid });
-                      if (onNavigateToProfile) onNavigateToProfile();
-                    }}
-                    style={{
-                      backgroundColor: themeColors.lightGray,
-                      borderRadius: 10,
-                      padding: 12,
-                      marginRight: 10,
-                      alignItems: "center",
-                      minWidth: 140,
-                      maxWidth: 180,
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    {/* --- Show profile picture above name --- */}
-                    <ProfilePicture
-                      profilePic={item.profilePic}
-                      themeColors={themeColors}
-                      size={48}
-                      isLoading={!item._profilePicLoaded}
-                    />
-                    <Text
-                      style={{
-                        color: themeColors.black,
-                        fontWeight: "bold",
-                        fontSize: 15,
-                        fontFamily: "CarosSoft",
-                        textAlign: "center",
-                        marginTop: 8,
-                      }}
-                      numberOfLines={1}
-                    >
-                      {item.firstName} {item.lastName}
-                    </Text>
-                    <Text
-                      style={{
-                        color: themeColors.darkGray,
-                        fontSize: 13,
-                        fontFamily: "CarosSoft",
-                        textAlign: "center",
-                      }}
-                    >
-                      {item.email}
-                    </Text>
-                    <TouchableOpacity
-                      style={{
-                        marginTop: 8,
-                        backgroundColor: followingIds.includes(item.uid)
-                          ? themeColors.gray
-                          : themeColors.purple,
-                        borderRadius: 6,
-                        paddingVertical: 6,
-                        paddingHorizontal: 16,
-                      }}
-                      onPress={() => handleFollow(item.uid)}
-                      disabled={
-                        followingIds.includes(item.uid) ||
-                        followLoading[item.uid]
-                      }
-                    >
-                      <Text
-                        style={{
-                          color: themeColors.white,
-                          fontWeight: "bold",
-                          fontSize: 14,
-                          fontFamily: "CarosSoft",
-                        }}
-                      >
-                        {followLoading[item.uid]
-                          ? "Following..."
-                          : followingIds.includes(item.uid)
-                          ? "Following"
-                          : "Follow"}
-                      </Text>
-                    </TouchableOpacity>
-                  </TouchableOpacity>
-                )}
-                style={{ minHeight: 60 }}
-              />
-            )}
-          </View>
-        )}
-      </View>
       {/* Search Bar */}
       <View style={{ width: "100%", marginBottom: 12, marginTop: 8 }}>
         <View
@@ -479,6 +224,37 @@ export default function FindPeopleSection({ navigation, onNavigateToProfile }) {
             >
               {item.email}
             </Text>
+            <TouchableOpacity
+              style={{
+                marginTop: 8,
+                backgroundColor: followingIds.includes(item.uid)
+                  ? themeColors.gray
+                  : themeColors.purple,
+                borderRadius: 6,
+                paddingVertical: 6,
+                paddingHorizontal: 16,
+                alignSelf: "flex-start",
+              }}
+              onPress={() => handleFollow(item.uid)}
+              disabled={
+                followingIds.includes(item.uid) || followLoading[item.uid]
+              }
+            >
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontSize: 14,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                {followLoading[item.uid]
+                  ? "Following..."
+                  : followingIds.includes(item.uid)
+                  ? "Following"
+                  : "Follow"}
+              </Text>
+            </TouchableOpacity>
           </TouchableOpacity>
         )}
         ListEmptyComponent={null}
