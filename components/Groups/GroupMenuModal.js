@@ -49,6 +49,13 @@ export default function GroupMenuModal({
             borderColor: themeColors.black,
             borderWidth: 0.5,
             elevation: 5,
+            borderWidth: 1,
+            borderColor: themeColors.black,
+            shadowColor: themeColors.black,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 5,
           }}
           onStartShouldSetResponder={() => true}
         >

@@ -7,7 +7,13 @@ import {
   Animated,
   Modal,
 } from "react-native";
-import { PaperPlaneRight, X, Plus, ListChecks } from "phosphor-react-native";
+import {
+  PaperPlaneRight,
+  X,
+  Plus,
+  ListChecks,
+  ChartBar,
+} from "phosphor-react-native";
 import PollModal from "./PollModal";
 import GroupTaskModal from "./GroupTaskModal"; // <-- import
 
@@ -207,9 +213,30 @@ export default function GroupInputBar({
               width: "80%",
               maxWidth: 340,
               alignItems: "center",
+              borderWidth: 1,
+              borderColor: themeColors.black,
+              shadowColor: themeColors.black,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+              elevation: 5,
             }}
             onStartShouldSetResponder={() => true}
           >
+            {/* Close X button */}
+            <TouchableOpacity
+              onPress={() => setShowChooseModal(false)}
+              style={{
+                position: "absolute",
+                top: 12,
+                right: 12,
+                zIndex: 2,
+                padding: 4,
+              }}
+              accessibilityLabel="Close create menu"
+            >
+              <X size={22} color={themeColors.purple} weight="bold" />
+            </TouchableOpacity>
             <Text
               style={{
                 fontSize: 18,
@@ -238,7 +265,7 @@ export default function GroupInputBar({
                 justifyContent: "center",
               }}
             >
-              <ListChecks
+              <ChartBar
                 size={22}
                 color={themeColors.white}
                 weight="bold"

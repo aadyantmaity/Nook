@@ -73,6 +73,11 @@ export default function GroupFiltersModal({
             width: "88%",
             maxWidth: 400,
             alignItems: "center",
+            shadowColor: themeColors.black,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 5,
           }}
           onStartShouldSetResponder={() => true}
         >

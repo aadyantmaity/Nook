@@ -1,6 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
-import { CheckCircle, Circle } from "phosphor-react-native";
+import {
+  CheckCircle,
+  Circle,
+  CaretDown,
+  CaretRight,
+} from "phosphor-react-native";
 
 export default function GroupTaskPinned({
   task,
@@ -10,6 +15,8 @@ export default function GroupTaskPinned({
   checked,
   loading,
 }) {
+  const [expanded, setExpanded] = useState(true);
+
   if (!task) return null;
   const total = members.length || 1;
   const checkedCount = Array.isArray(task.checkedOff)
@@ -45,54 +52,70 @@ export default function GroupTaskPinned({
         )}
       </TouchableOpacity>
       <View style={{ flex: 1 }}>
-        <Text
-          style={{
-            color: themeColors.purple,
-            fontWeight: "bold",
-            fontSize: 16,
-            fontFamily: "CarosSoft",
-            marginBottom: 2,
-          }}
+        <TouchableOpacity
+          onPress={() => setExpanded((prev) => !prev)}
+          style={{ flexDirection: "row", alignItems: "center" }}
+          accessibilityLabel={
+            expanded ? "Collapse group task" : "Expand group task"
+          }
         >
-          Group Task
-        </Text>
-        <Text
-          style={{
-            color: themeColors.black,
-            fontSize: 15,
-            fontFamily: "CarosSoft",
-            marginBottom: 6,
-          }}
-        >
-          {task.text}
-        </Text>
-        <View
-          style={{
-            height: 8,
-            backgroundColor: themeColors.gray + "33",
-            borderRadius: 4,
-            overflow: "hidden",
-            marginBottom: 2,
-          }}
-        >
-          <View
+          <Text
             style={{
-              width: `${percent}%`,
-              height: 8,
-              backgroundColor: themeColors.purple,
-              borderRadius: 4,
+              color: themeColors.purple,
+              fontWeight: "bold",
+              fontSize: 16,
+              fontFamily: "CarosSoft",
+              marginBottom: 2,
+              flex: 1,
             }}
-          />
-        </View>
-        <Text
-          style={{
-            color: themeColors.darkGray,
-            fontSize: 13,
-            fontFamily: "CarosSoft",
-          }}
-        >
-          {checkedCount} of {total} checked off ({percent}%)
-        </Text>
+          >
+            {task.text}
+          </Text>
+          {expanded ? (
+            <CaretDown
+              size={20}
+              color={themeColors.purple}
+              style={{ marginLeft: 8, marginBottom: 2 }}
+            />
+          ) : (
+            <CaretRight
+              size={20}
+              color={themeColors.purple}
+              style={{ marginLeft: 8, marginBottom: 2 }}
+            />
+          )}
+        </TouchableOpacity>
+        {expanded && (
+          <>
+            <View
+              style={{
+                height: 8,
+                backgroundColor: themeColors.gray + "33",
+                borderRadius: 4,
+                overflow: "hidden",
+                marginBottom: 2,
+              }}
+            >
+              <View
+                style={{
+                  width: `${percent}%`,
+                  height: 8,
+                  backgroundColor: themeColors.purple,
+                  borderRadius: 4,
+                }}
+              />
+            </View>
+            <Text
+              style={{
+                color: themeColors.darkGray,
+                fontSize: 13,
+                fontFamily: "CarosSoft",
+              }}
+            >
+              {checkedCount} of {total} checked off ({percent}%)
+            </Text>
+          </>
+        )}
       </View>
     </View>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   View,
@@ -8,7 +8,17 @@ import {
   Alert,
 } from "react-native";
 import { db, auth } from "../../firebaseConfig";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  doc,
+  getDoc,
+  query,
+  orderBy,
+  limit,
+  getDocs,
+} from "firebase/firestore";
 
 export default function GroupTaskModal({
   visible,
@@ -18,10 +28,50 @@ export default function GroupTaskModal({
 }) {
   const [taskText, setTaskText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [groupOwner, setGroupOwner] = useState(null);
+  const [hasTask, setHasTask] = useState(false);
+
+  // Fetch group owner and check if a task exists
+  useEffect(() => {
+    if (!groupId) return;
+    // Fetch group owner
+    const fetchGroupOwner = async () => {
+      try {
+        const groupDoc = await getDoc(doc(db, "studyGroups", groupId));
+        if (groupDoc.exists()) {
+          setGroupOwner(groupDoc.data().createdBy);
+        }
+      } catch {}
+    };
+    // Check if a task exists (latest task)
+    const fetchLatestTask = async () => {
+      try {
+        const qTasks = query(
+          collection(db, "studyGroups", groupId, "tasks"),
+          orderBy("createdAt", "desc"),
+          limit(1)
+        );
+        const snap = await getDocs(qTasks);
+        setHasTask(!snap.empty);
+      } catch {
+        setHasTask(false);
+      }
+    };
+    fetchGroupOwner();
+    fetchLatestTask();
+  }, [groupId, visible]);
 
   const handleSubmit = async () => {
     if (!taskText.trim()) {
       Alert.alert("Please enter a task.");
+      return;
+    }
+    // Prevent non-owner from creating a new task if one exists
+    if (hasTask && groupOwner && auth.currentUser?.uid !== groupOwner) {
+      Alert.alert(
+        "Task Already Exists",
+        "Only the group owner can override the current group task."
+      );
       return;
     }
     setSubmitting(true);
@@ -65,6 +115,13 @@ export default function GroupTaskModal({
             width: "85%",
             maxWidth: 400,
             alignItems: "center",
+            borderWidth: 1,
+            borderColor: themeColors.black,
+            shadowColor: themeColors.black,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 5,
           }}
           onStartShouldSetResponder={() => true}
         >
