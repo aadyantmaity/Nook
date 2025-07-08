@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -14,7 +14,15 @@ import ProfilePicture from "../Profile/ProfilePicture";
 import { MapPin, Star } from "phosphor-react-native";
 import { PanGestureHandler, State } from "react-native-gesture-handler";
 import { db, auth } from "../../firebaseConfig";
-import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+import {
+  doc,
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
+  collection,
+  onSnapshot,
+} from "firebase/firestore";
+import GroupTaskPinned from "./GroupTaskPinned";
 
 // --- Memoized System Message ---
 const SystemMessage = memo(({ item, themeColors }) => (
@@ -550,6 +558,8 @@ const GroupMessagesList = memo(
     setReplyToMessage,
     replyToMessage,
     flatListRef,
+    groupId, // <-- add this prop
+    members, // <-- add this prop
   }) => {
     const [modalVisible, setModalVisible] = useState(false);
     const [modalInfo, setModalInfo] = useState({
@@ -557,6 +567,46 @@ const GroupMessagesList = memo(
       time: "",
       date: "",
     });
+
+    // --- Group Task State ---
+    const [latestTask, setLatestTask] = useState(null);
+    const [taskLoading, setTaskLoading] = useState(true);
+    const [taskCheckLoading, setTaskCheckLoading] = useState(false);
+
+    // Listen for latest group task
+    useEffect(() => {
+      if (!groupId) return;
+      setTaskLoading(true);
+      const q = collection(db, "studyGroups", groupId, "tasks");
+      const unsub = onSnapshot(q, (snap) => {
+        const tasks = snap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .sort(
+            (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)
+          );
+        setLatestTask(tasks[0] || null);
+        setTaskLoading(false);
+      });
+      return () => unsub();
+    }, [groupId]);
+
+    // Toggle check/uncheck for current user
+    const handleCheckToggle = async () => {
+      if (!latestTask || !auth.currentUser?.uid) return;
+      setTaskCheckLoading(true);
+      const taskRef = doc(db, "studyGroups", groupId, "tasks", latestTask.id);
+      const checked =
+        Array.isArray(latestTask.checkedOff) &&
+        latestTask.checkedOff.includes(auth.currentUser.uid);
+      try {
+        await updateDoc(taskRef, {
+          checkedOff: checked
+            ? arrayRemove(auth.currentUser.uid)
+            : arrayUnion(auth.currentUser.uid),
+        });
+      } catch {}
+      setTaskCheckLoading(false);
+    };
 
     // Memoized reply preview
     const renderReplyPreview = useCallback(
@@ -825,6 +875,21 @@ const GroupMessagesList = memo(
 
     return (
       <>
+        {/* --- Pinned Group Task --- */}
+        <GroupTaskPinned
+          task={latestTask}
+          members={members}
+          onCheckToggle={handleCheckToggle}
+          themeColors={themeColors}
+          checked={
+            !!(
+              latestTask &&
+              Array.isArray(latestTask.checkedOff) &&
+              latestTask.checkedOff.includes(auth.currentUser?.uid)
+            )
+          }
+          loading={taskCheckLoading}
+        />
         <Modal
           visible={modalVisible}
           transparent

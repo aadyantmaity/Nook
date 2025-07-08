@@ -5,23 +5,31 @@ import {
   TouchableOpacity,
   Text,
   Animated,
+  Modal,
 } from "react-native";
-import { PaperPlaneRight, X, Plus } from "phosphor-react-native";
+import { PaperPlaneRight, X, Plus, ListChecks } from "phosphor-react-native";
 import PollModal from "./PollModal";
+import GroupTaskModal from "./GroupTaskModal"; // <-- import
 
 export default function GroupInputBar({
   input,
-  setInput, // now this is handleInputChange
+  setInput,
   sending,
   handleSend,
   replyToMessage,
   setReplyToMessage,
   getUserName,
   themeColors,
-  onSendPoll, // <-- add this prop
+  onSendPoll,
+  onSendTask, // <-- add this prop
+  groupId, // <-- add this prop
 }) {
   // --- Poll modal state ---
   const [showPollModal, setShowPollModal] = useState(false);
+  // --- Task modal state ---
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  // --- Modal to choose Poll or Task ---
+  const [showChooseModal, setShowChooseModal] = useState(false);
 
   // --- New: Only show poll button if input is /poll ---
   const isPollCommand = input.trim() === "/poll";
@@ -115,22 +123,17 @@ export default function GroupInputBar({
           blurOnSubmit={false}
           maxLength={200}
         />
-        {/* Always show a sleek poll icon button */}
+        {/* Always show a sleek plus icon button */}
         <TouchableOpacity
-          onPress={() => {
-            setShowPollModal(true);
-            if (input.trim() === "/poll") setInput(""); // clear input if /poll
-          }}
+          onPress={() => setShowChooseModal(true)}
           style={{
             backgroundColor: themeColors.lightGray,
             borderRadius: 16,
             padding: 6,
             alignItems: "center",
             justifyContent: "center",
-            opacity: isPollCommand ? 0.5 : 1, // subtle fade if /poll is typed
           }}
-          accessibilityLabel="Create Poll"
-          disabled={isPollCommand}
+          accessibilityLabel="Create Poll or Task"
         >
           <Plus size={22} color={themeColors.purple} weight="bold" />
         </TouchableOpacity>
@@ -179,10 +182,125 @@ export default function GroupInputBar({
           <PaperPlaneRight size={22} color={themeColors.purple} weight="bold" />
         </TouchableOpacity>
       </View>
+      {/* --- Choose Modal --- */}
+      <Modal
+        visible={showChooseModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowChooseModal(false)}
+      >
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.3)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          activeOpacity={1}
+          onPressOut={() => setShowChooseModal(false)}
+        >
+          <View
+            style={{
+              backgroundColor: themeColors.white,
+              borderRadius: 16,
+              padding: 24,
+              width: "80%",
+              maxWidth: 340,
+              alignItems: "center",
+            }}
+            onStartShouldSetResponder={() => true}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "bold",
+                color: themeColors.purple,
+                marginBottom: 12,
+                fontFamily: "CarosSoft",
+              }}
+            >
+              Create...
+            </Text>
+            <TouchableOpacity
+              onPress={() => {
+                setShowChooseModal(false);
+                setShowPollModal(true);
+              }}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: themeColors.purple,
+                borderRadius: 8,
+                paddingVertical: 12,
+                paddingHorizontal: 24,
+                marginBottom: 12,
+                width: "100%",
+                justifyContent: "center",
+              }}
+            >
+              <ListChecks
+                size={22}
+                color={themeColors.white}
+                weight="bold"
+                style={{ marginRight: 10 }}
+              />
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                  fontSize: 16,
+                }}
+              >
+                Poll
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                setShowChooseModal(false);
+                setShowTaskModal(true);
+              }}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: themeColors.purple,
+                borderRadius: 8,
+                paddingVertical: 12,
+                paddingHorizontal: 24,
+                width: "100%",
+                justifyContent: "center",
+              }}
+            >
+              <ListChecks
+                size={22}
+                color={themeColors.white}
+                weight="bold"
+                style={{ marginRight: 10 }}
+              />
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                  fontSize: 16,
+                }}
+              >
+                Task
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
       <PollModal
         visible={showPollModal}
         onClose={() => setShowPollModal(false)}
         onSubmit={onSendPoll}
+        themeColors={themeColors}
+      />
+      <GroupTaskModal
+        visible={showTaskModal}
+        onClose={() => setShowTaskModal(false)}
+        groupId={groupId}
         themeColors={themeColors}
       />
     </View>
