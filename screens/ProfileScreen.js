@@ -22,6 +22,7 @@ import {
   CaretDown,
   CaretRight,
   User,
+  Flag,
 } from "phosphor-react-native";
 import { ThemeContext } from "../App";
 import * as ImagePicker from "expo-image-picker";
@@ -41,6 +42,7 @@ import FollowingModal from "../components/Profile/FollowingModal";
 import UnfollowConfirmModal from "../components/Profile/UnfollowConfirmModal";
 import { auth } from "../firebaseConfig";
 import { FlatList } from "react-native-gesture-handler";
+import GeneralReportModal from "../components/Home/GeneralReportModal";
 
 export default function ProfileScreen({ navigation, route }) {
   const themeCtx = useContext(ThemeContext);
@@ -100,6 +102,7 @@ export default function ProfileScreen({ navigation, route }) {
   const [listLoading, setListLoading] = useState(false);
   const [unfollowingUid, setUnfollowingUid] = useState(null);
   const [unfollowConfirmVisible, setUnfollowConfirmVisible] = useState(false);
+  const [showGeneralReport, setShowGeneralReport] = useState(false);
 
   // Refresh handler
   const onRefresh = async () => {
@@ -297,6 +300,22 @@ export default function ProfileScreen({ navigation, route }) {
     <View
       style={{ flex: 1, backgroundColor: themeColors.white, paddingTop: 48 }}
     >
+      {/* --- Add flag icon button at top right --- */}
+      <TouchableOpacity
+        style={{
+          position: "absolute",
+          top: 54,
+          right: 18,
+          zIndex: 10,
+          padding: 8,
+          borderRadius: 16,
+        }}
+        onPress={() => setShowGeneralReport(true)}
+        accessibilityLabel="Suggestion or Report"
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Flag size={22} color={themeColors.purple} />
+      </TouchableOpacity>
       {/* Logout Modal */}
       <LogoutModal
         visible={logoutModalVisible}
@@ -756,6 +775,12 @@ export default function ProfileScreen({ navigation, route }) {
         visible={unfollowConfirmVisible}
         onClose={() => setUnfollowConfirmVisible(false)}
         onConfirm={confirmUnfollow}
+        themeColors={themeColors}
+      />
+      {/* --- Add GeneralReportModal at the end --- */}
+      <GeneralReportModal
+        visible={showGeneralReport}
+        onClose={() => setShowGeneralReport(false)}
         themeColors={themeColors}
       />
     </View>

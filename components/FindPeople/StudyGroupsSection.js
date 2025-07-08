@@ -1,10 +1,13 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useRef } from "react";
 import {
   View,
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
   Text,
+  FlatList,
+  Image,
+  Alert, // <-- add Alert import
 } from "react-native";
 import { db, auth } from "../../firebaseConfig";
 import {
@@ -22,11 +25,18 @@ import {
 } from "firebase/firestore";
 import { ThemeContext } from "../../App";
 import { colors } from "../../constants/colors";
-import { FadersHorizontal, Plus } from "phosphor-react-native";
+import {
+  FadersHorizontal,
+  Plus,
+  Minus,
+  MagnifyingGlass,
+} from "phosphor-react-native";
 import useFavorites from "../../hooks/useFavorites";
 import GroupFiltersModal from "./GroupFiltersModal";
 import GroupList from "./StudyGroups/GroupList";
 import CreateGroupModal from "./StudyGroups/CreateGroupModal";
+import ProfilePicture from "../Profile/ProfilePicture";
+import SuggestedPeopleAndGroups from "./SuggestedPeopleAndGroups";
 
 function getMutualFriends(users, currentUser) {
   // Show all friends: users who are both in my followers and following
@@ -114,6 +124,20 @@ export default function StudyGroupsSection({ navigation }) {
   // Icon selection state
   const [selectedIcon, setSelectedIcon] = useState(null); // <-- icon state
   const [showIconModal, setShowIconModal] = useState(false); // <-- icon modal state
+
+  // --- Friend search and suggested users state ---
+  const [friendSearch, setFriendSearch] = useState("");
+  const [friendResults, setFriendResults] = useState([]);
+  const [friendLoading, setFriendLoading] = useState(false);
+  const [suggested, setSuggested] = useState([]);
+  const [suggestedGroups, setSuggestedGroups] = useState([]); // <-- add this
+  const [suggestedLoading, setSuggestedLoading] = useState(true);
+  const [suggestedGroupsLoading, setSuggestedGroupsLoading] = useState(true); // <-- add this
+  const [followingIds, setFollowingIds] = useState([]);
+  const [followLoading, setFollowLoading] = useState({});
+  const [suggestedExpanded, setSuggestedExpanded] = useState(false);
+  const [suggestedWithPics, setSuggestedWithPics] = useState([]);
+  const debounceTimer = useRef(null);
 
   // Fetch groups: public for all, private only if user is a member
   useEffect(() => {
@@ -340,24 +364,34 @@ export default function StudyGroupsSection({ navigation }) {
     }
   };
 
-  // --- Filter groups by search (fuzzy: name or description, case-insensitive) ---
+  // --- Filter groups and friends by search (fuzzy: name or description, case-insensitive) ---
+  const [friendSearchResults, setFriendSearchResults] = useState([]);
   useEffect(() => {
     // Always use allGroups for filtering, since it contains all public groups
     const sourceGroups = allGroups.length > 0 ? allGroups : groups;
-    let filtered = filterGroups(sourceGroups);
+    let filteredGroups = filterGroups(sourceGroups);
+    let filteredFriends = [];
     if (!groupSearch.trim()) {
-      setGroupSearchResults(filtered);
+      setGroupSearchResults(filteredGroups);
+      setFriendSearchResults([]);
       return;
     }
     const s = groupSearch.trim().toLowerCase();
     setGroupSearchResults(
-      filtered.filter(
+      filteredGroups.filter(
         (g) =>
           (g.name && g.name.toLowerCase().includes(s)) ||
           (g.description && g.description.toLowerCase().includes(s))
       )
     );
-  }, [groupSearch, groups, allGroups, selectedFilter]);
+    // --- Friend search: search mutual friends by name or email ---
+    filteredFriends = mutualFriends.filter(
+      (u) =>
+        (u.email && u.email.toLowerCase().includes(s)) ||
+        `${u.firstName} ${u.lastName}`.toLowerCase().includes(s)
+    );
+    setFriendSearchResults(filteredFriends);
+  }, [groupSearch, groups, allGroups, selectedFilter, mutualFriends]);
 
   // --- Sort groups: favorite groups first for current user ---
   const sortedGroups = [
@@ -372,12 +406,114 @@ export default function StudyGroupsSection({ navigation }) {
     return (a.name || "").localeCompare(b.name || "");
   });
 
+  // --- Suggested users and groups logic ---
+  const refreshSuggested = React.useCallback(async () => {
+    setSuggestedLoading(true);
+    setSuggestedGroupsLoading(true);
+    try {
+      // --- Suggested users ---
+      const q = collection(db, "users");
+      const snap = await getDocs(q);
+      // Exclude current user and users already followed
+      const users = snap.docs
+        .map((doc) => ({ uid: doc.id, ...doc.data() }))
+        .filter(
+          (u) =>
+            u.uid !== user?.uid &&
+            !(Array.isArray(followingIds) && followingIds.includes(u.uid))
+        );
+      // Shuffle and pick up to 8 users
+      for (let i = users.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [users[i], users[j]] = [users[j], users[i]];
+      }
+      const picked = users.slice(0, 8);
+      // --- Preload profile pictures ---
+      const withPics = await Promise.all(
+        picked.map(async (u) => {
+          if (!u.profilePic) return { ...u, _profilePicLoaded: true };
+          try {
+            await Image.prefetch(u.profilePic);
+            return { ...u, _profilePicLoaded: true };
+          } catch {
+            return { ...u, _profilePicLoaded: false };
+          }
+        })
+      );
+      setSuggestedWithPics(withPics);
+      setSuggested(picked);
+      setSuggestedLoading(false);
+
+      // --- Suggested groups: public groups user is NOT a member of ---
+      const groupsSnap = await getDocs(
+        query(collection(db, "studyGroups"), where("isPrivate", "==", false))
+      );
+      const notInGroups = groupsSnap.docs
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .filter(
+          (g) =>
+            Array.isArray(g.memberUids) && !g.memberUids.includes(user?.uid)
+        );
+      // Shuffle and pick up to 8 groups
+      for (let i = notInGroups.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [notInGroups[i], notInGroups[j]] = [notInGroups[j], notInGroups[i]];
+      }
+      setSuggestedGroups(notInGroups.slice(0, 8));
+      setSuggestedGroupsLoading(false);
+    } catch {
+      setSuggested([]);
+      setSuggestedWithPics([]);
+      setSuggestedGroups([]);
+      setSuggestedLoading(false);
+      setSuggestedGroupsLoading(false);
+    }
+  }, [followingIds, user?.uid]);
+
+  // Fetch current user's following list for suggested users
+  const fetchFollowing = React.useCallback(async () => {
+    try {
+      const q = collection(db, "users");
+      const snap = await getDocs(q);
+      const me = snap.docs.find((d) => d.id === user?.uid);
+      if (me) {
+        setFollowingIds(me.data().following || []);
+      }
+    } catch {
+      setFollowingIds([]);
+    }
+  }, [user?.uid]);
+
+  useEffect(() => {
+    fetchFollowing();
+  }, [fetchFollowing]);
+
+  // Follow logic for suggested users
+  const handleFollow = async (targetUid) => {
+    if (!user?.uid || !targetUid) return;
+    setFollowLoading((prev) => ({ ...prev, [targetUid]: true }));
+    try {
+      await updateDoc(doc(db, "users", user.uid), {
+        following: arrayUnion(targetUid),
+      });
+      await updateDoc(doc(db, "users", targetUid), {
+        followers: arrayUnion(user.uid),
+      });
+      setFollowingIds((prev) => [...prev, targetUid]);
+    } catch {}
+    setFollowLoading((prev) => ({ ...prev, [targetUid]: false }));
+  };
+
+  const [joiningGroups, setJoiningGroups] = useState({});
+
   return (
     <View
       style={{
         backgroundColor: themeColors.white,
         borderRadius: 16,
-        padding: 24,
+        paddingBottom: 24,
+        paddingTop: 16,
+        paddingHorizontal: 24,
         marginHorizontal: 0,
         width: "100%",
         marginTop: -8,
@@ -396,7 +532,7 @@ export default function StudyGroupsSection({ navigation }) {
       >
         <View style={{ flex: 1 }}>
           <TextInput
-            placeholder="Search for a group..."
+            placeholder="Search for a group or person..."
             value={groupSearch}
             onChangeText={setGroupSearch}
             style={{
@@ -469,7 +605,89 @@ export default function StudyGroupsSection({ navigation }) {
         handleCreateGroup={handleCreateGroup}
         themeColors={themeColors}
       />
-      {/* Main group list */}
+      {/* --- Friend Search Results (above group list) --- */}
+      {groupSearch.length > 0 && friendSearchResults.length > 0 && (
+        <View style={{ width: "100%", marginBottom: 8 }}>
+          <Text
+            style={{
+              color: themeColors.purple,
+              fontWeight: "bold",
+              fontSize: 16,
+              fontFamily: "CarosSoft",
+              marginBottom: 4,
+            }}
+          >
+            Friends
+          </Text>
+          <FlatList
+            data={friendSearchResults}
+            keyExtractor={(item) => item.uid}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                onPress={() => {
+                  navigation.navigate("Profile", { uid: item.uid });
+                }}
+                style={{
+                  backgroundColor: themeColors.white,
+                  borderRadius: 12,
+                  padding: 14,
+                  marginBottom: 10,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 3,
+                  elevation: 1,
+                  borderWidth: 0.5,
+                  borderColor: themeColors.darkGray,
+                }}
+              >
+                <Text
+                  style={{
+                    color: themeColors.black,
+                    fontSize: 17,
+                    fontWeight: "600",
+                    fontFamily: "CarosSoft",
+                  }}
+                >
+                  {item.firstName} {item.lastName}
+                </Text>
+                <Text
+                  style={{
+                    color: themeColors.darkGray,
+                    marginTop: 4,
+                    fontFamily: "CarosSoft",
+                  }}
+                >
+                  {item.email}
+                </Text>
+              </TouchableOpacity>
+            )}
+            style={{ width: "100%" }}
+            ListEmptyComponent={null}
+            scrollEnabled={false}
+          />
+        </View>
+      )}
+      {/* --- Suggested Users and Groups Dropdown --- */}
+      <SuggestedPeopleAndGroups
+        suggestedExpanded={suggestedExpanded}
+        setSuggestedExpanded={setSuggestedExpanded}
+        fetchFollowing={fetchFollowing}
+        refreshSuggested={refreshSuggested}
+        suggestedWithPics={suggestedWithPics}
+        suggestedGroups={suggestedGroups}
+        suggestedLoading={suggestedLoading}
+        suggestedGroupsLoading={suggestedGroupsLoading}
+        followingIds={followingIds}
+        followLoading={followLoading}
+        handleFollow={handleFollow}
+        navigation={navigation}
+        themeColors={themeColors}
+        joiningGroups={joiningGroups}
+        setJoiningGroups={setJoiningGroups}
+        user={user}
+      />
+      {/* --- Main group list */}
       <GroupList
         loadingGroups={loadingGroups}
         groupSearch={groupSearch}
