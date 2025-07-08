@@ -740,6 +740,8 @@ export default function GroupDetailView({ navigation, route }) {
                 setReplyToMessage={setReplyToMessage}
                 replyToMessage={replyToMessage}
                 flatListRef={flatListRef}
+                groupId={group?.id}
+                members={group?.memberUids || []}
               />
               <GroupInputBar
                 input={input}
@@ -751,6 +753,7 @@ export default function GroupDetailView({ navigation, route }) {
                 getUserName={getUserName}
                 themeColors={themeColors}
                 onSendPoll={handleSendPoll}
+                groupId={group?.id}
               />
             </>
           )}
