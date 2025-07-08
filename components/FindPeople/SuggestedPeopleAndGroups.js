@@ -22,7 +22,9 @@ import {
   updateDoc,
   orderBy,
   serverTimestamp,
+  arrayUnion,
 } from "firebase/firestore";
+import { db, auth } from "../../firebaseConfig";
 
 export default function SuggestedPeopleAndGroups({
   suggestedExpanded,
@@ -35,13 +37,33 @@ export default function SuggestedPeopleAndGroups({
   suggestedGroupsLoading,
   followingIds,
   followLoading,
-  handleFollow,
   navigation,
   themeColors,
   joiningGroups,
   setJoiningGroups,
   user,
 }) {
+  // --- Local follow loading state ---
+  const [localFollowLoading, setLocalFollowLoading] = React.useState({});
+
+  // --- Local follow handler that updates Firestore for both users ---
+  const handleFollow = async (targetUid) => {
+    if (!user?.uid || !targetUid) return;
+    setLocalFollowLoading((prev) => ({ ...prev, [targetUid]: true }));
+    try {
+      // Use the same logic as ProfileScreen
+      await updateDoc(doc(db, "users", user.uid), {
+        following: arrayUnion(targetUid),
+      });
+      await updateDoc(doc(db, "users", targetUid), {
+        followers: arrayUnion(user.uid),
+      });
+      // Optionally update UI immediately (parent should also update followingIds)
+      // But for now, just rely on parent to refresh
+    } catch {}
+    setLocalFollowLoading((prev) => ({ ...prev, [targetUid]: false }));
+  };
+
   return (
     <View style={{ width: "100%", marginBottom: 8 }}>
       <TouchableOpacity
@@ -74,7 +96,7 @@ export default function SuggestedPeopleAndGroups({
             fontWeight: "bold",
             color: themeColors.purple,
             fontFamily: "CarosSoft",
-            flex: 1,
+            marginRight: 6,
           }}
         >
           Suggested
@@ -102,8 +124,12 @@ export default function SuggestedPeopleAndGroups({
           ) : (
             <FlatList
               data={[
-                ...suggestedWithPics.slice(0, 4).map((u) => ({ ...u, _type: "person" })),
-                ...suggestedGroups.slice(0, 4).map((g) => ({ ...g, _type: "group" })),
+                ...suggestedWithPics
+                  .slice(0, 4)
+                  .map((u) => ({ ...u, _type: "person" })),
+                ...suggestedGroups
+                  .slice(0, 4)
+                  .map((g) => ({ ...g, _type: "group" })),
               ]}
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -179,7 +205,7 @@ export default function SuggestedPeopleAndGroups({
                           onPress={() => handleFollow(item.uid)}
                           disabled={
                             followingIds.includes(item.uid) ||
-                            followLoading[item.uid]
+                            localFollowLoading[item.uid]
                           }
                         >
                           <Text
@@ -190,7 +216,7 @@ export default function SuggestedPeopleAndGroups({
                               fontFamily: "CarosSoft",
                             }}
                           >
-                            {followLoading[item.uid]
+                            {localFollowLoading[item.uid]
                               ? "Following..."
                               : followingIds.includes(item.uid)
                               ? "Following"
@@ -234,7 +260,9 @@ export default function SuggestedPeopleAndGroups({
                               await getDoc(groupRef).then(async (snap) => {
                                 if (snap.exists()) {
                                   const data = snap.data();
-                                  const memberUids = Array.isArray(data.memberUids)
+                                  const memberUids = Array.isArray(
+                                    data.memberUids
+                                  )
                                     ? data.memberUids
                                     : [];
                                   if (memberUids.length >= 32) {
@@ -267,7 +295,8 @@ export default function SuggestedPeopleAndGroups({
                                       userDoc && userDoc.exists()
                                         ? (userDoc.data().firstName || "User") +
                                           (userDoc.data().lastName
-                                            ? " " + userDoc.data().lastName.charAt(0)
+                                            ? " " +
+                                              userDoc.data().lastName.charAt(0)
                                             : "")
                                         : "User";
                                     await addDoc(
