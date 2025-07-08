@@ -14,8 +14,6 @@ import {
   ListChecks,
   ChartBar,
 } from "phosphor-react-native";
-import PollModal from "./PollModal";
-import GroupTaskModal from "./GroupTaskModal"; // <-- import
 
 export default function GroupInputBar({
   input,
@@ -26,19 +24,13 @@ export default function GroupInputBar({
   setReplyToMessage,
   getUserName,
   themeColors,
-  onSendPoll,
-  onSendTask, // <-- add this prop
-  groupId, // <-- add this prop
+  onShowPollModal, // <-- add
+  onShowTaskModal, // <-- add
 }) {
-  // --- Poll modal state ---
-  const [showPollModal, setShowPollModal] = useState(false);
-  // --- Task modal state ---
-  const [showTaskModal, setShowTaskModal] = useState(false);
-  // --- Modal to choose Poll or Task ---
   const [showChooseModal, setShowChooseModal] = useState(false);
 
-  // --- New: Only show poll button if input is /poll ---
   const isPollCommand = input.trim() === "/poll";
+  const isTaskCommand = input.trim() === "/task";
 
   return (
     <View style={{ backgroundColor: themeColors.white }}>
@@ -129,25 +121,11 @@ export default function GroupInputBar({
           blurOnSubmit={false}
           maxLength={200}
         />
-        {/* Always show a sleek plus icon button */}
-        <TouchableOpacity
-          onPress={() => setShowChooseModal(true)}
-          style={{
-            backgroundColor: themeColors.lightGray,
-            borderRadius: 16,
-            padding: 6,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          accessibilityLabel="Create Poll or Task"
-        >
-          <Plus size={22} color={themeColors.purple} weight="bold" />
-        </TouchableOpacity>
         {/* Show poll button with text if input is exactly "/poll" */}
         {isPollCommand && (
           <TouchableOpacity
             onPress={() => {
-              setShowPollModal(true);
+              onShowPollModal?.();
               setInput(""); // clear input after opening modal
             }}
             style={{
@@ -173,9 +151,54 @@ export default function GroupInputBar({
             </Text>
           </TouchableOpacity>
         )}
+        {/* Show task button with text if input is exactly "/task" */}
+        {isTaskCommand && (
+          <TouchableOpacity
+            onPress={() => {
+              onShowTaskModal?.();
+              setInput(""); // clear input after opening modal
+            }}
+            style={{
+              marginRight: 8,
+              backgroundColor: themeColors.purple,
+              borderRadius: 20,
+              paddingVertical: 8,
+              paddingHorizontal: 16,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            accessibilityLabel="Create Task"
+          >
+            <Text
+              style={{
+                color: themeColors.white,
+                fontWeight: "bold",
+                fontFamily: "CarosSoft",
+                fontSize: 14,
+              }}
+            >
+              Create Task
+            </Text>
+          </TouchableOpacity>
+        )}
+        {/* Always show a sleek plus icon button */}
+        <TouchableOpacity
+          onPress={() => setShowChooseModal(true)}
+          style={{
+            backgroundColor: themeColors.lightGray,
+            borderRadius: 16,
+            padding: 6,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          accessibilityLabel="Create Poll or Task"
+        >
+          <Plus size={22} color={themeColors.purple} weight="bold" />
+        </TouchableOpacity>
+
         <TouchableOpacity
           onPress={handleSend}
-          disabled={sending || !input.trim() || isPollCommand}
+          disabled={sending || !input.trim() || isPollCommand || isTaskCommand}
           style={{
             width: 40,
             height: 40,
@@ -251,7 +274,7 @@ export default function GroupInputBar({
             <TouchableOpacity
               onPress={() => {
                 setShowChooseModal(false);
-                setShowPollModal(true);
+                setTimeout(() => onShowPollModal?.(), 100);
               }}
               style={{
                 flexDirection: "row",
@@ -285,7 +308,7 @@ export default function GroupInputBar({
             <TouchableOpacity
               onPress={() => {
                 setShowChooseModal(false);
-                setShowTaskModal(true);
+                setTimeout(() => onShowTaskModal?.(), 100);
               }}
               style={{
                 flexDirection: "row",
@@ -318,18 +341,6 @@ export default function GroupInputBar({
           </View>
         </TouchableOpacity>
       </Modal>
-      <PollModal
-        visible={showPollModal}
-        onClose={() => setShowPollModal(false)}
-        onSubmit={onSendPoll}
-        themeColors={themeColors}
-      />
-      <GroupTaskModal
-        visible={showTaskModal}
-        onClose={() => setShowTaskModal(false)}
-        groupId={groupId}
-        themeColors={themeColors}
-      />
     </View>
   );
 }

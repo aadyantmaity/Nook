@@ -122,6 +122,7 @@ export default function GroupTaskModal({
             shadowOpacity: 0.25,
             shadowRadius: 4,
             elevation: 5,
+            marginTop: -50, // Move modal 50px up
           }}
           onStartShouldSetResponder={() => true}
         >

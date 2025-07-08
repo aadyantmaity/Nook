@@ -650,24 +650,6 @@ export default function HomeScreen({ navigation, route }) {
             Nook
           </Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            {/* Dark mode toggle button */}
-            <TouchableOpacity
-              onPress={() => setIsDarkMode && setIsDarkMode(!isDarkMode)}
-              style={{
-                marginLeft: 8,
-                backgroundColor: themeColors.white,
-                borderRadius: 50,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              accessibilityLabel={isDarkMode ? "Light Mode" : "Dark Mode"}
-            >
-              {isDarkMode ? (
-                <Sun size={29} color={themeColors.purple} />
-              ) : (
-                <Moon size={29} color={themeColors.purple} />
-              )}
-            </TouchableOpacity>
             {/* Profile picture button to open hamburger menu */}
             <TouchableOpacity
               onPress={() => navigation.navigate("Profile")}

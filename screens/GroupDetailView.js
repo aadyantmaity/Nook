@@ -54,6 +54,8 @@ import GroupMenuModal from "../components/Groups/GroupMenuModal";
 import GroupMessagesList from "../components/Groups/GroupMessagesList";
 import GroupInputBar from "../components/Groups/GroupInputBar";
 import useFavorites from "../hooks/useFavorites";
+import PollModal from "../components/Groups/PollModal";
+import GroupTaskModal from "../components/Groups/GroupTaskModal";
 
 export default function GroupDetailView({ navigation, route }) {
   const { groupId } = route.params;
@@ -87,6 +89,9 @@ export default function GroupDetailView({ navigation, route }) {
   // --- Track mentioned users as selected from picker ---
   const [mentionedUsers, setMentionedUsers] = useState([]); // <-- add this
   const [keyboardHeight, setKeyboardHeight] = useState(0); // <-- Add this state
+  // --- Modal state for Poll and Task ---
+  const [showPollModal, setShowPollModal] = useState(false);
+  const [showTaskModal, setShowTaskModal] = useState(false);
 
   // Fetch group info (NO system message logic here anymore)
   useEffect(() => {
@@ -671,209 +676,282 @@ export default function GroupDetailView({ navigation, route }) {
   }, []);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
-      {/* Menu Modal */}
-      <GroupMenuModal
-        visible={showMenu}
-        onClose={() => setShowMenu(false)}
-        group={group}
-        themeColors={themeColors}
-        auth={auth}
-        setShowShareModal={setShowShareModal}
-        setShowStarredModal={setShowStarredModal}
-        setShowMembersModal={setShowMembersModal}
-        fetchMembersList={fetchMembersList}
-        handleLeaveGroup={handleLeaveGroup}
-        handleDeleteGroup={handleDeleteGroup}
-        navigation={navigation}
-      />
-      {/* Share Modal */}
-      <PrivateNookShareModal
-        visible={showShareModal}
-        onClose={() => setShowShareModal(false)}
-        spotId={groupId}
-        themeColors={themeColors}
-        ownerUid={group?.createdBy}
-        isGroup
-        collectionName="studyGroups"
-        fieldName="memberUids"
-      />
-      {/* Members Modal */}
-      <GroupMembersModal
-        visible={showMembersModal}
-        onClose={() => setShowMembersModal(false)}
-        membersList={membersList}
-        themeColors={themeColors}
-      />
-      {/* Messages and Input */}
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-        >
-          {loading ? (
-            <View
-              style={{
-                flex: 1,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
+    <>
+      <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
+        {/* Menu Modal */}
+        <GroupMenuModal
+          visible={showMenu}
+          onClose={() => setShowMenu(false)}
+          group={group}
+          themeColors={themeColors}
+          auth={auth}
+          setShowShareModal={setShowShareModal}
+          setShowStarredModal={setShowStarredModal}
+          setShowMembersModal={setShowMembersModal}
+          fetchMembersList={fetchMembersList}
+          handleLeaveGroup={handleLeaveGroup}
+          handleDeleteGroup={handleDeleteGroup}
+          navigation={navigation}
+        />
+        {/* Share Modal */}
+        <PrivateNookShareModal
+          visible={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          spotId={groupId}
+          themeColors={themeColors}
+          ownerUid={group?.createdBy}
+          isGroup
+          collectionName="studyGroups"
+          fieldName="memberUids"
+        />
+        {/* Members Modal */}
+        <GroupMembersModal
+          visible={showMembersModal}
+          onClose={() => setShowMembersModal(false)}
+          membersList={membersList}
+          themeColors={themeColors}
+        />
+        {/* Poll Modal */}
+        <PollModal
+          visible={showPollModal}
+          onClose={() => setShowPollModal(false)}
+          onSubmit={handleSendPoll}
+          themeColors={themeColors}
+        />
+        {/* Task Modal */}
+        <GroupTaskModal
+          visible={showTaskModal}
+          onClose={() => setShowTaskModal(false)}
+          groupId={groupId}
+          themeColors={themeColors}
+        />
+        {/* Messages and Input */}
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          {/* Only use KeyboardAvoidingView if no modal is open */}
+          {!(showPollModal || showTaskModal) ? (
+            <KeyboardAvoidingView
+              style={{ flex: 1 }}
+              behavior={Platform.OS === "ios" ? "padding" : undefined}
+              keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
             >
-              <ActivityIndicator color={themeColors.purple} />
-            </View>
-          ) : (
-            <>
-              <GroupMessagesList
-                messages={messages}
-                group={group}
-                themeColors={themeColors}
-                auth={auth}
-                navigation={navigation}
-                starredNooks={starredNooks}
-                toggleStarNook={toggleStarNook}
-                userCache={userCache}
-                userPicCache={userPicCache}
-                getUserName={getUserName}
-                getUserProfilePic={getUserProfilePic}
-                handleDeleteMessage={handleDeleteMessage}
-                setReplyToMessage={setReplyToMessage}
-                replyToMessage={replyToMessage}
-                flatListRef={flatListRef}
-                groupId={group?.id}
-                members={group?.memberUids || []}
-              />
-              <GroupInputBar
-                input={input}
-                setInput={handleInputChange}
-                sending={sending}
-                handleSend={handleSend}
-                replyToMessage={replyToMessage}
-                setReplyToMessage={setReplyToMessage}
-                getUserName={getUserName}
-                themeColors={themeColors}
-                onSendPoll={handleSendPoll}
-                groupId={group?.id}
-              />
-            </>
-          )}
-          {mentionPickerVisible &&
-            mentionUsers.filter((u) =>
-              u.name.toLowerCase().includes(mentionQuery.toLowerCase())
-            ).length > 0 && (
-              <View
-                style={{
-                  position: "absolute",
-                  left: 12,
-                  right: 12,
-                  // Dynamically position above keyboard
-                  bottom: keyboardHeight + 12,
-                  backgroundColor: themeColors.white,
-                  zIndex: 1000,
-                  maxHeight: 220,
-                  borderRadius: 14,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.15,
-                  shadowRadius: 8,
-                  elevation: 8,
-                  borderWidth: 1,
-                  borderColor: themeColors.lightGray,
-                  paddingHorizontal: 0,
-                  overflow: "hidden",
-                }}
-              >
-                <ScrollView
-                  keyboardShouldPersistTaps="always"
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={{
-                    paddingVertical: 4,
-                    paddingHorizontal: 0,
+              {loading ? (
+                <View
+                  style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    alignItems: "center",
                   }}
                 >
-                  {mentionUsers
-                    .filter((u) =>
-                      u.name.toLowerCase().includes(mentionQuery.toLowerCase())
-                    )
-                    .map((u, idx, arr) => (
-                      <TouchableOpacity
-                        key={u.uid}
-                        onPress={() => handleMentionSelect(u)}
-                        activeOpacity={0.7}
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          paddingVertical: 12,
-                          paddingHorizontal: 18,
-                          backgroundColor: themeColors.white,
-                        }}
-                      >
-                        <View
-                          style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 16,
-                            backgroundColor: themeColors.purple,
-                            alignItems: "center",
-                            justifyContent: "center",
-                            marginRight: 12,
-                            overflow: "hidden",
-                          }}
-                        >
-                          {u.profilePic ? (
-                            <Image
-                              source={{ uri: u.profilePic }}
+                  <ActivityIndicator color={themeColors.purple} />
+                </View>
+              ) : (
+                <>
+                  <GroupMessagesList
+                    messages={messages}
+                    group={group}
+                    themeColors={themeColors}
+                    auth={auth}
+                    navigation={navigation}
+                    starredNooks={starredNooks}
+                    toggleStarNook={toggleStarNook}
+                    userCache={userCache}
+                    userPicCache={userPicCache}
+                    getUserName={getUserName}
+                    getUserProfilePic={getUserProfilePic}
+                    handleDeleteMessage={handleDeleteMessage}
+                    setReplyToMessage={setReplyToMessage}
+                    replyToMessage={replyToMessage}
+                    flatListRef={flatListRef}
+                    groupId={group?.id}
+                    members={group?.memberUids || []}
+                  />
+                  <GroupInputBar
+                    input={input}
+                    setInput={handleInputChange}
+                    sending={sending}
+                    handleSend={handleSend}
+                    replyToMessage={replyToMessage}
+                    setReplyToMessage={setReplyToMessage}
+                    getUserName={getUserName}
+                    themeColors={themeColors}
+                    onShowPollModal={() => setShowPollModal(true)}
+                    onShowTaskModal={() => setShowTaskModal(true)}
+                    groupId={group?.id}
+                  />
+                </>
+              )}
+              {mentionPickerVisible &&
+                mentionUsers.filter((u) =>
+                  u.name.toLowerCase().includes(mentionQuery.toLowerCase())
+                ).length > 0 && (
+                  <View
+                    style={{
+                      position: "absolute",
+                      left: 12,
+                      right: 12,
+                      // Dynamically position above keyboard
+                      bottom: keyboardHeight + 12,
+                      backgroundColor: themeColors.white,
+                      zIndex: 1000,
+                      maxHeight: 220,
+                      borderRadius: 14,
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.15,
+                      shadowRadius: 8,
+                      elevation: 8,
+                      borderWidth: 1,
+                      borderColor: themeColors.lightGray,
+                      paddingHorizontal: 0,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <ScrollView
+                      keyboardShouldPersistTaps="always"
+                      showsVerticalScrollIndicator={false}
+                      contentContainerStyle={{
+                        paddingVertical: 4,
+                        paddingHorizontal: 0,
+                      }}
+                    >
+                      {mentionUsers
+                        .filter((u) =>
+                          u.name
+                            .toLowerCase()
+                            .includes(mentionQuery.toLowerCase())
+                        )
+                        .map((u, idx, arr) => (
+                          <TouchableOpacity
+                            key={u.uid}
+                            onPress={() => handleMentionSelect(u)}
+                            activeOpacity={0.7}
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              paddingVertical: 12,
+                              paddingHorizontal: 18,
+                              backgroundColor: themeColors.white,
+                            }}
+                          >
+                            <View
                               style={{
                                 width: 32,
                                 height: 32,
                                 borderRadius: 16,
-                              }}
-                              resizeMode="cover"
-                            />
-                          ) : (
-                            <Text
-                              style={{
-                                color: themeColors.white,
-                                fontWeight: "bold",
-                                fontSize: 16,
-                                fontFamily: "CarosSoft",
+                                backgroundColor: themeColors.purple,
+                                alignItems: "center",
+                                justifyContent: "center",
+                                marginRight: 12,
+                                overflow: "hidden",
                               }}
                             >
-                              {u.name.charAt(0).toUpperCase()}
+                              {u.profilePic ? (
+                                <Image
+                                  source={{ uri: u.profilePic }}
+                                  style={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: 16,
+                                  }}
+                                  resizeMode="cover"
+                                />
+                              ) : (
+                                <Text
+                                  style={{
+                                    color: themeColors.white,
+                                    fontWeight: "bold",
+                                    fontSize: 16,
+                                    fontFamily: "CarosSoft",
+                                  }}
+                                >
+                                  {u.name.charAt(0).toUpperCase()}
+                                </Text>
+                              )}
+                            </View>
+                            <Text
+                              style={{
+                                color: themeColors.purple,
+                                fontFamily: "CarosSoft",
+                                fontSize: 16,
+                                fontWeight: "bold",
+                              }}
+                            >
+                              {u.name}
                             </Text>
-                          )}
-                        </View>
-                        <Text
-                          style={{
-                            color: themeColors.purple,
-                            fontFamily: "CarosSoft",
-                            fontSize: 16,
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {u.name}
-                        </Text>
-                        {/* Add bottom border with padding */}
-                        {idx !== arr.length - 1 && (
-                          <View
-                            style={{
-                              position: "absolute",
-                              left: 32 + 18 + 12,
-                              right: 18,
-                              bottom: 0,
-                              height: 0.5,
-                              backgroundColor: themeColors.black,
-                              opacity: 0.5,
-                            }}
-                          />
-                        )}
-                      </TouchableOpacity>
-                    ))}
-                </ScrollView>
-              </View>
-            )}
-        </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
-    </SafeAreaView>
+                            {/* Add bottom border with padding */}
+                            {idx !== arr.length - 1 && (
+                              <View
+                                style={{
+                                  position: "absolute",
+                                  left: 32 + 18 + 12,
+                                  right: 18,
+                                  bottom: 0,
+                                  height: 0.5,
+                                  backgroundColor: themeColors.black,
+                                  opacity: 0.5,
+                                }}
+                              />
+                            )}
+                          </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                  </View>
+                )}
+            </KeyboardAvoidingView>
+          ) : (
+            // When modal is open, render the chat area without KeyboardAvoidingView
+            <View style={{ flex: 1 }}>
+              {loading ? (
+                <View
+                  style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <ActivityIndicator color={themeColors.purple} />
+                </View>
+              ) : (
+                <>
+                  <GroupMessagesList
+                    messages={messages}
+                    group={group}
+                    themeColors={themeColors}
+                    auth={auth}
+                    navigation={navigation}
+                    starredNooks={starredNooks}
+                    toggleStarNook={toggleStarNook}
+                    userCache={userCache}
+                    userPicCache={userPicCache}
+                    getUserName={getUserName}
+                    getUserProfilePic={getUserProfilePic}
+                    handleDeleteMessage={handleDeleteMessage}
+                    setReplyToMessage={setReplyToMessage}
+                    replyToMessage={replyToMessage}
+                    flatListRef={flatListRef}
+                    groupId={group?.id}
+                    members={group?.memberUids || []}
+                  />
+                  <GroupInputBar
+                    input={input}
+                    setInput={handleInputChange}
+                    sending={sending}
+                    handleSend={handleSend}
+                    replyToMessage={replyToMessage}
+                    setReplyToMessage={setReplyToMessage}
+                    getUserName={getUserName}
+                    themeColors={themeColors}
+                    onShowPollModal={() => setShowPollModal(true)}
+                    onShowTaskModal={() => setShowTaskModal(true)}
+                    groupId={group?.id}
+                  />
+                </>
+              )}
+              {/* Don't show mention picker when modal is open */}
+            </View>
+          )}
+        </TouchableWithoutFeedback>
+      </SafeAreaView>
+    </>
   );
 }
