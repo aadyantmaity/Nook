@@ -879,6 +879,8 @@ const GroupMessagesList = memo(
         <GroupTaskPinned
           task={latestTask}
           members={members}
+          ownerUid={group?.createdBy}
+          currentUserId={auth.currentUser?.uid}
           onCheckToggle={handleCheckToggle}
           themeColors={themeColors}
           checked={
@@ -889,6 +891,44 @@ const GroupMessagesList = memo(
             )
           }
           loading={taskCheckLoading}
+          onDeleteTask={async () => {
+            if (!latestTask) return;
+            // Only allow group creator to delete
+            if (group?.createdBy !== auth.currentUser?.uid) {
+              Alert.alert("Only the group creator can delete this task.");
+              return;
+            }
+            Alert.alert(
+              "Delete Task",
+              "Are you sure you want to delete this group task?",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Delete",
+                  style: "destructive",
+                  onPress: async () => {
+                    try {
+                      await import("firebase/firestore").then(
+                        ({ deleteDoc, doc }) =>
+                          deleteDoc(
+                            doc(
+                              db,
+                              "studyGroups",
+                              groupId,
+                              "tasks",
+                              latestTask.id
+                            )
+                          )
+                      );
+                    } catch (e) {
+                      console.error("Failed to delete task:", e);
+                      Alert.alert("Error", "Failed to delete task.");
+                    }
+                  },
+                },
+              ]
+            );
+          }}
         />
         <Modal
           visible={modalVisible}

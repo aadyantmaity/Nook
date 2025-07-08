@@ -5,6 +5,7 @@ import {
   Circle,
   CaretDown,
   CaretRight,
+  Trash,
 } from "phosphor-react-native";
 
 export default function GroupTaskPinned({
@@ -14,6 +15,9 @@ export default function GroupTaskPinned({
   themeColors,
   checked,
   loading,
+  currentUserId, // <-- add this prop
+  ownerUid, // <-- add this prop
+  onDeleteTask, // <-- add this prop
 }) {
   const [expanded, setExpanded] = useState(true);
 
@@ -84,6 +88,16 @@ export default function GroupTaskPinned({
               style={{ marginLeft: 8, marginBottom: 2 }}
             />
           )}
+          {/* Show delete button if current user is group owner */}
+          {currentUserId === ownerUid ? (
+            <TouchableOpacity
+              onPress={onDeleteTask}
+              style={{ marginLeft: 10, padding: 4 }}
+              accessibilityLabel="Delete group task"
+            >
+              <Trash size={20} color={themeColors.red} weight="bold" />
+            </TouchableOpacity>
+          ) : null}
         </TouchableOpacity>
         {expanded && (
           <>
