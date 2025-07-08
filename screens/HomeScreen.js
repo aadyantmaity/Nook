@@ -61,7 +61,6 @@ import Filters from "../components/Home/Filters"; // Import Filters component
 import StudySpotsList from "../components/Home/StudySpotsList";
 import StudySpotsMapView from "../components/Home/StudySpotsMapView"; // <-- new component
 import { FocusTimerView } from "../components/Home/FocusTimer"; // <-- Use correct import
-import HamburgerMenu from "../components/Home/HamburgerMenu"; // Import HamburgerMenu component
 import AlertsModal from "../components/Home/AlertsModal"; // Import AlertsModal component
 import TabBar from "../components/Home/TabBar"; // Import TabBar component
 import GeneralReportModal from "../components/Home/GeneralReportModal"; // Import GeneralReportModal component
@@ -97,7 +96,6 @@ export default function HomeScreen({ navigation, route }) {
   const [showAlertsModal, setShowAlertsModal] = useState(false);
   const [currentAlerts, setCurrentAlerts] = useState([]);
   const [showMapView, setShowMapView] = useState(false);
-  const [hamburgerOpen, setHamburgerOpen] = useState(false);
   const [findPeopleModalVisible, setFindPeopleModalVisible] = useState(false); // <-- add modal state
 
   // Social tab selectedTab state
@@ -697,22 +695,6 @@ export default function HomeScreen({ navigation, route }) {
               />
             </TouchableOpacity>
           </View>
-          {/* HamburgerMenu modal */}
-          <HamburgerMenu
-            isOpen={menuOpen}
-            onClose={() => setMenuOpen(false)}
-            onReportPress={() => {
-              setMenuOpen(false);
-              setTimeout(() => setShowGeneralReport(true), 250);
-            }}
-            onProfilePress={() => {
-              setShowGeneralReport(false);
-              setMenuOpen(false);
-              setTimeout(() => navigation.navigate("Profile"), 250);
-            }}
-            isDarkMode={isDarkMode}
-            themeColors={themeColors}
-          />
         </View>
 
         {/* Main Content */}

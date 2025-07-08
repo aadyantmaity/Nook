@@ -66,7 +66,6 @@ import ShareNookToGroupModal from "../components/SpotDetail/ShareNookToGroupModa
 
 // Hooks
 import useSpotDetails from "../hooks/useSpotDetails";
-import useSpotImageCache from "../hooks/useSpotImageCache";
 import useOverallRatings from "../hooks/useOverallRatings";
 import QRCode from "react-native-qrcode-svg";
 
@@ -98,7 +97,6 @@ export default function SpotDetailScreen({ route, navigation }) {
   // Hooks
   const { spot, addedByName, isLoading, setSpot } = useSpotDetails(spotId);
   const isOwner = !!user && !!spot && spot.addedBy === user.uid;
-  const cachedPhotoUri = useSpotImageCache(spotId, spot?.photoUrl);
   const {
     userOverallRating,
     averageOverallRating,
