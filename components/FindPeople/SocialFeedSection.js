@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { View, ActivityIndicator, Text } from "react-native";
+import { View, ActivityIndicator, Text, Alert } from "react-native";
 import { db, auth } from "../../firebaseConfig";
 import {
   collection,

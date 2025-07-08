@@ -1,25 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { Modal, View, TouchableOpacity, Text } from "react-native";
-import {
-  ExclamationMark,
-  Sun,
-  Moon,
-  User,
-  UserPlus,
-} from "phosphor-react-native";
-import ProfilePicture from "../Profile/ProfilePicture";
 import { onSnapshot, doc } from "firebase/firestore";
 import { auth, db } from "../../firebaseConfig";
 
 export default function HamburgerMenu({
   isOpen,
   onClose,
-  onReportPress,
   onThemeToggle,
   onProfilePress,
   isDarkMode,
   themeColors,
-  onAddFriend,
 }) {
   // --- Add state for profile picture ---
   const [profilePic, setProfilePic] = useState(null);
@@ -71,48 +61,6 @@ export default function HamburgerMenu({
           }}
           onStartShouldSetResponder={() => true}
         >
-          {/* Profile */}
-          <TouchableOpacity
-            onPress={() => {
-              onClose();
-              setTimeout(onProfilePress, 150);
-            }}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingVertical: 12,
-              paddingHorizontal: 20,
-            }}
-          >
-            <View
-              style={{
-                borderWidth: 1,
-                borderColor: themeColors.purple,
-                borderRadius: 50,
-                padding: 0,
-              }}
-            >
-              <ProfilePicture
-                profilePic={profilePic}
-                themeColors={themeColors}
-                size={22}
-                isTouchable={false}
-                isLoading={false}
-              />
-            </View>
-            <Text
-              style={{
-                marginLeft: 12,
-                color: themeColors.purple,
-                fontWeight: "bold",
-                fontSize: 16,
-                fontFamily: "CarosSoft",
-              }}
-            >
-              Profile
-            </Text>
-          </TouchableOpacity>
-          {/* Divider */}
           <View
             style={{
               height: 1,
@@ -120,109 +68,7 @@ export default function HamburgerMenu({
               marginHorizontal: 10,
             }}
           />
-          {/* Add Friend */}
-          <TouchableOpacity
-            onPress={() => {
-              onClose();
-              setTimeout(onAddFriend, 150);
-            }}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingVertical: 12,
-              paddingHorizontal: 20,
-            }}
-          >
-            <UserPlus size={20} color={themeColors.purple} weight="bold" />
-            <Text
-              style={{
-                marginLeft: 12,
-                color: themeColors.purple,
-                fontWeight: "bold",
-                fontSize: 16,
-                fontFamily: "CarosSoft",
-              }}
-            >
-              Add Friend
-            </Text>
-          </TouchableOpacity>
-
-          {/* Divider */}
-          <View
-            style={{
-              height: 1,
-              backgroundColor: themeColors.lightGrayBorder || "#eee",
-              marginHorizontal: 10,
-            }}
-          />
-          {/* Theme toggle */}
-          <TouchableOpacity
-            onPress={() => {
-              onClose();
-              setTimeout(onThemeToggle, 150);
-            }}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingVertical: 12,
-              paddingHorizontal: 20,
-            }}
-          >
-            {isDarkMode ? (
-              <Sun size={22} color={themeColors.purple} weight="bold" />
-            ) : (
-              <Moon size={22} color={themeColors.purple} weight="bold" />
-            )}
-            <Text
-              style={{
-                marginLeft: 12,
-                color: themeColors.purple,
-                fontWeight: "bold",
-                fontSize: 16,
-                fontFamily: "CarosSoft",
-              }}
-            >
-              {isDarkMode ? "Light Mode" : "Dark Mode"}
-            </Text>
-          </TouchableOpacity>
-          {/* Divider */}
-          <View
-            style={{
-              height: 1,
-              backgroundColor: themeColors.lightGrayBorder || "#eee",
-              marginHorizontal: 10,
-            }}
-          />
-          {/* Report */}
-          <TouchableOpacity
-            onPress={() => {
-              onClose();
-              setTimeout(onReportPress, 150);
-            }}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingVertical: 12,
-              paddingHorizontal: 20,
-            }}
-          >
-            <ExclamationMark
-              size={22}
-              color={themeColors.purple}
-              weight="bold"
-            />
-            <Text
-              style={{
-                marginLeft: 12,
-                color: themeColors.purple,
-                fontWeight: "bold",
-                fontSize: 16,
-                fontFamily: "CarosSoft",
-              }}
-            >
-              Suggestion / Report
-            </Text>
-          </TouchableOpacity>
+          {/* No changes needed here for suggestion/report button. */}
         </View>
       </TouchableOpacity>
     </Modal>

@@ -67,7 +67,7 @@ import TabBar from "../components/Home/TabBar"; // Import TabBar component
 import GeneralReportModal from "../components/Home/GeneralReportModal"; // Import GeneralReportModal component
 import HomeLoadingScreen from "../components/Home/HomeLoadingScreen"; // <-- Import the new component
 import ProfilePicture from "../components/Profile/ProfilePicture";
-import FindPeopleSection from "../components/FindPeople/FindPeopleSection"; // <-- import FindPeopleSection
+import FindPeopleSection from "../components/FindPeople/FindPeopleSection"; // <-- REMOVE this import
 import EmailVerificationModal from "../components/Auth/EmailVerificationModal"; // <-- Import EmailVerificationModal
 
 //hook imports
@@ -652,9 +652,27 @@ export default function HomeScreen({ navigation, route }) {
             Nook
           </Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            {/* Dark mode toggle button */}
+            <TouchableOpacity
+              onPress={() => setIsDarkMode && setIsDarkMode(!isDarkMode)}
+              style={{
+                marginLeft: 8,
+                backgroundColor: themeColors.white,
+                borderRadius: 50,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              accessibilityLabel={isDarkMode ? "Light Mode" : "Dark Mode"}
+            >
+              {isDarkMode ? (
+                <Sun size={29} color={themeColors.purple} />
+              ) : (
+                <Moon size={29} color={themeColors.purple} />
+              )}
+            </TouchableOpacity>
             {/* Profile picture button to open hamburger menu */}
             <TouchableOpacity
-              onPress={() => setMenuOpen(true)}
+              onPress={() => navigation.navigate("Profile")}
               style={{
                 borderRadius: 20,
                 backgroundColor: themeColors.white,
@@ -668,8 +686,7 @@ export default function HomeScreen({ navigation, route }) {
                 borderWidth: 1,
                 borderColor: themeColors.purple,
               }}
-              accessibilityLabel="Open menu"
-              accessible={true}
+              accessibilityLabel="Go to Profile"
             >
               <ProfilePicture
                 profilePic={profilePic}
@@ -688,7 +705,6 @@ export default function HomeScreen({ navigation, route }) {
               setMenuOpen(false);
               setTimeout(() => setShowGeneralReport(true), 250);
             }}
-            onThemeToggle={() => setIsDarkMode && setIsDarkMode(!isDarkMode)}
             onProfilePress={() => {
               setShowGeneralReport(false);
               setMenuOpen(false);
@@ -696,7 +712,6 @@ export default function HomeScreen({ navigation, route }) {
             }}
             isDarkMode={isDarkMode}
             themeColors={themeColors}
-            onAddFriend={() => setFindPeopleModalVisible(true)} // <-- pass handler
           />
         </View>
 
@@ -758,13 +773,15 @@ export default function HomeScreen({ navigation, route }) {
           animationType="slide"
           onRequestClose={() => setFindPeopleModalVisible(false)}
         >
-          <View
+          <TouchableOpacity
             style={{
               flex: 1,
               backgroundColor: "rgba(0,0,0,0.3)",
               justifyContent: "center",
               alignItems: "center",
             }}
+            activeOpacity={1}
+            onPressOut={() => setFindPeopleModalVisible(false)}
           >
             <View
               style={{
@@ -782,6 +799,7 @@ export default function HomeScreen({ navigation, route }) {
                 shadowRadius: 4,
                 elevation: 5,
               }}
+              onStartShouldSetResponder={() => true}
             >
               <FindPeopleSection
                 navigation={navigation}
@@ -811,7 +829,7 @@ export default function HomeScreen({ navigation, route }) {
                 </Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </TouchableOpacity>
         </Modal>
       </View>
     </View>
