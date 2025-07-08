@@ -23,6 +23,9 @@ import {
   CaretRight,
   User,
   Flag,
+  DotsThreeVertical,
+  Moon,
+  Sun,
 } from "phosphor-react-native";
 import { ThemeContext } from "../App";
 import * as ImagePicker from "expo-image-picker";
@@ -47,6 +50,8 @@ import GeneralReportModal from "../components/Home/GeneralReportModal";
 export default function ProfileScreen({ navigation, route }) {
   const themeCtx = useContext(ThemeContext);
   const themeColors = themeCtx?.themeColors ?? colors;
+  const isDarkMode = themeCtx?.isDarkMode ?? false;
+  const setIsDarkMode = themeCtx?.setIsDarkMode;
 
   // --- Use uid from route.params if present ---
   const targetUid = route?.params?.uid || null;
@@ -103,6 +108,7 @@ export default function ProfileScreen({ navigation, route }) {
   const [unfollowingUid, setUnfollowingUid] = useState(null);
   const [unfollowConfirmVisible, setUnfollowConfirmVisible] = useState(false);
   const [showGeneralReport, setShowGeneralReport] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
 
   // Refresh handler
   const onRefresh = async () => {
@@ -300,22 +306,173 @@ export default function ProfileScreen({ navigation, route }) {
     <View
       style={{ flex: 1, backgroundColor: themeColors.white, paddingTop: 48 }}
     >
-      {/* --- Add flag icon button at top right --- */}
-      <TouchableOpacity
+      {/* --- Header Row: Back Arrow and Profile Menu --- */}
+      <View
         style={{
-          position: "absolute",
-          top: 54,
-          right: 18,
-          zIndex: 10,
-          padding: 8,
-          borderRadius: 16,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: 8,
+          marginBottom: 8,
         }}
-        onPress={() => setShowGeneralReport(true)}
-        accessibilityLabel="Suggestion or Report"
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <Flag size={22} color={themeColors.purple} />
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.backButton,
+            { position: "relative", top: 0, left: 0, padding: 8 },
+          ]}
+          onPress={() => navigation.goBack()}
+        >
+          <ArrowLeft size={24} color={themeColors.purple} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{
+            padding: 8,
+            borderRadius: 16,
+          }}
+          onPress={() => setMenuVisible(true)}
+          accessibilityLabel="Profile Menu"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <DotsThreeVertical
+            size={26}
+            color={themeColors.purple}
+            weight="bold"
+          />
+        </TouchableOpacity>
+      </View>
+      {/* Profile Menu Modal */}
+      {menuVisible && (
+        <TouchableOpacity
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.18)",
+            zIndex: 100,
+            justifyContent: "flex-start",
+            alignItems: "flex-end",
+          }}
+          activeOpacity={1}
+          onPressOut={() => setMenuVisible(false)}
+        >
+          <View
+            style={{
+              marginTop: 54 + 36,
+              marginRight: 18,
+              backgroundColor: themeColors.white,
+              borderRadius: 12,
+              minWidth: 180,
+              elevation: 8,
+              borderWidth: 1,
+              borderColor: themeColors.gray,
+              shadowColor: themeColors.black,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.18,
+              shadowRadius: 8,
+              paddingVertical: 4,
+            }}
+            onStartShouldSetResponder={() => true}
+          >
+            {/* Report Option */}
+            <TouchableOpacity
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingVertical: 12,
+                paddingHorizontal: 18,
+              }}
+              onPress={() => {
+                setMenuVisible(false);
+                setShowGeneralReport(true);
+              }}
+            >
+              <Flag
+                size={20}
+                color={themeColors.purple}
+                style={{ marginRight: 10 }}
+              />
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontFamily: "CarosSoft",
+                  fontSize: 16,
+                }}
+              >
+                Report
+              </Text>
+            </TouchableOpacity>
+            {/* Dark Mode Toggle */}
+            <TouchableOpacity
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingVertical: 12,
+                paddingHorizontal: 18,
+              }}
+              onPress={() => {
+                setMenuVisible(false);
+                setIsDarkMode && setIsDarkMode(!isDarkMode);
+              }}
+            >
+              {isDarkMode ? (
+                <Sun
+                  size={20}
+                  color={themeColors.purple}
+                  style={{ marginRight: 10 }}
+                />
+              ) : (
+                <Moon
+                  size={20}
+                  color={themeColors.purple}
+                  style={{ marginRight: 10 }}
+                />
+              )}
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontFamily: "CarosSoft",
+                  fontSize: 16,
+                }}
+              >
+                {isDarkMode ? "Light Mode" : "Dark Mode"}
+              </Text>
+            </TouchableOpacity>
+            {/* Log Out */}
+            {isOwnProfile && (
+              <TouchableOpacity
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 12,
+                  paddingHorizontal: 18,
+                }}
+                onPress={() => {
+                  setMenuVisible(false);
+                  handleLogout();
+                }}
+              >
+                <SignOut
+                  size={20}
+                  color={themeColors.red}
+                  style={{ marginRight: 10 }}
+                />
+                <Text
+                  style={{
+                    color: themeColors.red,
+                    fontFamily: "CarosSoft",
+                    fontSize: 16,
+                  }}
+                >
+                  Log Out
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </TouchableOpacity>
+      )}
       {/* Logout Modal */}
       <LogoutModal
         visible={logoutModalVisible}
@@ -331,15 +488,6 @@ export default function ProfileScreen({ navigation, route }) {
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Back Button */}
-        <View style={{ flex: 0.2, marginTop: -8 }}>
-          <TouchableOpacity
-            style={[styles.backButton, { top: 8 }]}
-            onPress={() => navigation.goBack()}
-          >
-            <ArrowLeft size={24} color={themeColors.purple} />
-          </TouchableOpacity>
-        </View>
         {/* Profile Picture */}
         <View
           style={[
@@ -661,7 +809,7 @@ export default function ProfileScreen({ navigation, route }) {
           )}
         </View>
         {/* Buttons */}
-        {isOwnProfile && !isLoading && (
+        {/* {isOwnProfile && !isLoading && (
           <View style={styles.optionsContainer}>
             <View style={styles.buttonRow}>
               <TouchableOpacity
@@ -695,38 +843,34 @@ export default function ProfileScreen({ navigation, route }) {
                 <PencilSimple size={20} color={themeColors.white} />
               </TouchableOpacity>
             </View>
-            {/* --- Remove "Following" button for own profile --- */}
           </View>
-        )}
-        {/* --- Add Follow/Unfollow button for other users --- */}
-        {!isOwnProfile && !isLoading && (
+        )} */}
+        {/* Only show edit button */}
+        {isOwnProfile && !isLoading && (
           <View style={styles.optionsContainer}>
-            <TouchableOpacity
-              style={[
-                styles.editButton,
-                {
-                  backgroundColor: themeColors.purple,
-                  marginTop: 8,
-                  width: 160,
-                  alignSelf: "center",
-                },
-              ]}
-              onPress={
-                isFollowing
-                  ? handleUnfollowButton // show confirmation before unfollow
-                  : followUser
-              }
-            >
-              <Text
-                style={{
-                  color: themeColors.white,
-                  fontWeight: "bold",
-                  fontSize: 16,
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={[
+                  styles.editButton,
+                  { backgroundColor: themeColors.purple, width: "100%" },
+                ]}
+                onPress={() => {
+                  setEditedFirstName(
+                    firstName !== "No First Name" ? firstName : ""
+                  );
+                  setEditedLastName(
+                    lastName !== "No Last Name" ? lastName : ""
+                  );
+                  setEditedGradYear(
+                    userGradYear !== "No Grad Year" ? userGradYear : ""
+                  );
+                  setIsModalVisible(true);
+                  setTimeout(() => setEditedProfilePic(null), 0);
                 }}
               >
-                {isFollowing ? "Unfollow" : "Follow"}
-              </Text>
-            </TouchableOpacity>
+                <PencilSimple size={20} color={themeColors.white} />
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       </ScrollView>

@@ -102,9 +102,9 @@ export default function SuggestedPeopleAndGroups({
           Suggested
         </Text>
         {suggestedExpanded ? (
-          <Minus size={22} color={themeColors.purple} />
+          <Minus size={18} color={themeColors.purple} weight="bold" />
         ) : (
-          <Plus size={22} color={themeColors.purple} />
+          <Plus size={18} color={themeColors.purple} weight="bold" />
         )}
       </TouchableOpacity>
       {suggestedExpanded && (
@@ -117,6 +117,8 @@ export default function SuggestedPeopleAndGroups({
                 color: themeColors.darkGray,
                 fontSize: 15,
                 fontFamily: "CarosSoft",
+                marginBottom: 16,
+                marginTop: -8,
               }}
             >
               No suggestions available.
