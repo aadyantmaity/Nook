@@ -291,9 +291,10 @@ const GroupMessagesList = memo(
     // Memoized content container style
     const contentContainerStyle = useMemo(
       () => ({
-        padding: 18,
-        flexGrow: 1,
-        backgroundColor: themeColors.white,
+        paddingHorizontal: 10,
+        paddingTop: 10,
+        justifyContent: "flex-end", // this is key for inverted lists to put nonfull at top
+        padding: 10,
       }),
       [themeColors.white]
     );
