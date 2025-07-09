@@ -15,7 +15,7 @@ export const MyMessageBubble = memo(
     renderReplyPreview,
     showSenderInfo,
     getUserName,
-    onDoubleTap, // <-- add this prop
+    onDoubleTap,
   }) => {
     // Double tap logic
     const lastTap = useRef(0);
@@ -37,60 +37,65 @@ export const MyMessageBubble = memo(
           marginRight: -5,
         }}
       >
-        <View style={{ flexShrink: 1 }}>
+        {/* No profile picture for my message, but keep spacing for symmetry */}
+        <View style={{ marginLeft: 5 }} />
+        <View style={{ flex: 1 }}>
           {renderReplyPreview(item)}
-          <TouchableOpacity
-            activeOpacity={1}
-            onLongPress={openSenderInfoModal}
-            delayLongPress={400}
-            onPress={handlePress}
+          <View
+            style={{
+              flexDirection: "column",
+              alignItems: "flex-end",
+              flexShrink: 1,
+            }}
           >
-            <View
-              style={{
-                backgroundColor: themeColors.purple,
-                borderRadius: 14,
-                paddingVertical: 10,
-                paddingHorizontal: 16,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.06,
-                shadowRadius: 2,
-                elevation: 1,
-                minWidth: 50,
-                alignItems: "center",
-                alignSelf: "flex-end",
-                ...(userMentioned
-                  ? {
-                      borderWidth: 2,
-                      borderColor: themeColors.yellow || "#FFD700",
-                      shadowColor: themeColors.yellow || "#FFD700",
-                      shadowOpacity: 0.25,
-                      shadowRadius: 6,
-                    }
-                  : {}),
-              }}
-            >
-              <Text
-                style={{
-                  color: themeColors.white,
-                  fontSize: 15,
-                  fontFamily: "CarosSoft",
-                }}
+            <View style={{ flexShrink: 1, flexGrow: 1, alignSelf: "stretch" }}>
+              <TouchableOpacity
+                activeOpacity={1}
+                onLongPress={openSenderInfoModal}
+                delayLongPress={400}
+                onPress={handlePress}
               >
-                {item.text}
-              </Text>
+                <View
+                  style={{
+                    backgroundColor: themeColors.purple,
+                    borderRadius: 14,
+                    paddingVertical: 10,
+                    paddingHorizontal: 16,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.06,
+                    shadowRadius: 2,
+                    elevation: 1,
+                    minWidth: 50,
+                    alignItems: "flex-end",
+                    alignSelf: "flex-end",
+                    maxWidth: "100%",
+                    ...(userMentioned
+                      ? {
+                          borderWidth: 2,
+                          borderColor: themeColors.yellow || "#FFD700",
+                          shadowColor: themeColors.yellow || "#FFD700",
+                          shadowOpacity: 0.25,
+                          shadowRadius: 6,
+                        }
+                      : {}),
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: themeColors.white,
+                      fontSize: 15,
+                      fontFamily: "CarosSoft",
+                      flexShrink: 1,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    {item.text}
+                  </Text>
+                </View>
+              </TouchableOpacity>
             </View>
-          </TouchableOpacity>
-          {showSenderInfo && (
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginTop: 2,
-                alignSelf: "flex-end",
-              }}
-            ></View>
-          )}
+          </View>
         </View>
       </View>
     );
