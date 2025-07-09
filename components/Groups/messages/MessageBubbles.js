@@ -49,12 +49,7 @@ export const MyMessageBubble = memo(
             }}
           >
             <View style={{ flexShrink: 1, flexGrow: 1, alignSelf: "stretch" }}>
-              <TouchableOpacity
-                activeOpacity={1}
-                onLongPress={openSenderInfoModal}
-                delayLongPress={400}
-                onPress={handlePress}
-              >
+              <TouchableOpacity activeOpacity={1} onPress={handlePress}>
                 <View
                   style={{
                     backgroundColor: themeColors.purple,
@@ -156,12 +151,7 @@ export const OtherMessageBubble = memo(
             }}
           >
             <View style={{ flexShrink: 1, flexGrow: 1, alignSelf: "stretch" }}>
-              <TouchableOpacity
-                activeOpacity={1}
-                onLongPress={openSenderInfoModal}
-                delayLongPress={400}
-                onPress={handlePress}
-              >
+              <TouchableOpacity activeOpacity={1} onPress={handlePress}>
                 <View
                   style={{
                     backgroundColor: themeColors.gray,
@@ -232,126 +222,156 @@ export const OtherMessageBubble = memo(
 
 // --- SystemMessage ---
 export const SystemMessage = memo(({ item, themeColors }) => (
-  <View style={{ alignItems: "center", marginTop: 8, marginBottom: 10 }}>
-    <Text
+  <TouchableOpacity activeOpacity={1}>
+    <View
       style={{
-        color: themeColors.darkGray,
-        fontSize: 14,
-        fontFamily: "CarosSoft",
-        textAlign: "center",
-        fontStyle: "italic",
+        alignItems: "center",
+        marginBottom: 5,
+        maxWidth: "80%",
+        alignSelf: "center",
       }}
     >
-      {item.text}
-    </Text>
-  </View>
+      <View
+        style={{
+          borderRadius: 14,
+          paddingVertical: 10,
+          paddingHorizontal: 16,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.06,
+          shadowRadius: 2,
+          elevation: 1,
+          minWidth: 50,
+          alignItems: "center",
+          alignSelf: "center",
+          maxWidth: "100%",
+        }}
+      >
+        <Text
+          style={{
+            color: themeColors.darkGray,
+            fontSize: 14,
+            fontFamily: "CarosSoft",
+            textAlign: "center",
+            fontStyle: "italic",
+          }}
+        >
+          {item.text}
+        </Text>
+      </View>
+    </View>
+  </TouchableOpacity>
 ));
 
 // --- NookShareMessage ---
 export const NookShareMessage = memo(
   ({ item, themeColors, navigation, starredNooks, toggleStarNook }) => (
-    <View
-      style={{
-        flexDirection: "row",
-        alignSelf: "center",
-        alignItems: "center",
-        marginBottom: 30,
-        marginTop: 30,
-        maxWidth: "100%",
-      }}
-    >
-      <TouchableOpacity
-        onPress={() =>
-          navigation.navigate("SpotDetail", { spotId: item.spotId })
-        }
+    <TouchableOpacity activeOpacity={1}>
+      <View
         style={{
-          maxWidth: 280,
-          backgroundColor: themeColors.lightGray,
-          borderRadius: 14,
-          padding: 12,
           flexDirection: "row",
+          alignSelf: "center",
           alignItems: "center",
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          elevation: 3,
-          borderColor: themeColors.black,
-          borderWidth: 0.5,
-          elevation: 5,
+          marginBottom: 30,
+          marginTop: 30,
+          maxWidth: "100%",
         }}
       >
-        {item.spotPhoto ? (
-          <View
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: 8,
-              overflow: "hidden",
-              marginRight: 12,
-            }}
-          >
-            <Image
-              source={{ uri: item.spotPhoto }}
-              style={{ width: "100%", height: "100%" }}
-              resizeMode="cover"
-            />
-          </View>
-        ) : (
-          <View
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: 8,
-              backgroundColor: themeColors.purple,
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: 12,
-            }}
-          >
-            <MapPin size={32} color={themeColors.white} weight="bold" />
-          </View>
-        )}
-        <View style={{ flex: 1 }}>
-          <Text
-            style={{
-              color: themeColors.purple,
-              fontWeight: "bold",
-              fontSize: 16,
-              fontFamily: "CarosSoft",
-            }}
-            numberOfLines={1}
-          >
-            {item.spotName || "Nook"}
-          </Text>
-          <Text
-            style={{
-              color: themeColors.darkGray,
-              fontSize: 13,
-              fontFamily: "CarosSoft",
-              marginTop: 2,
-            }}
-            numberOfLines={1}
-          >
-            {"Shared by "}
-            {item.senderFirstName
-              ? item.senderFirstName +
-                (item.senderLastName ? " " + item.senderLastName.charAt(0) : "")
-              : item.senderName || "Someone"}
-          </Text>
-        </View>
         <TouchableOpacity
-          onPress={() => toggleStarNook(item.spotId)}
-          style={{ padding: 4 }}
+          onPress={() =>
+            navigation.navigate("SpotDetail", { spotId: item.spotId })
+          }
+          style={{
+            maxWidth: 280,
+            backgroundColor: themeColors.lightGray,
+            borderRadius: 14,
+            padding: 12,
+            flexDirection: "row",
+            alignItems: "center",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+            elevation: 3,
+            borderColor: themeColors.black,
+            borderWidth: 0.5,
+            elevation: 5,
+          }}
         >
-          <Star
-            size={22}
-            color={themeColors.purple}
-            weight={starredNooks.includes(item.spotId) ? "fill" : "regular"}
-          />
+          {item.spotPhoto ? (
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 8,
+                overflow: "hidden",
+                marginRight: 12,
+              }}
+            >
+              <Image
+                source={{ uri: item.spotPhoto }}
+                style={{ width: "100%", height: "100%" }}
+                resizeMode="cover"
+              />
+            </View>
+          ) : (
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 8,
+                backgroundColor: themeColors.purple,
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 12,
+              }}
+            >
+              <MapPin size={32} color={themeColors.white} weight="bold" />
+            </View>
+          )}
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                color: themeColors.purple,
+                fontWeight: "bold",
+                fontSize: 16,
+                fontFamily: "CarosSoft",
+              }}
+              numberOfLines={1}
+            >
+              {item.spotName || "Nook"}
+            </Text>
+            <Text
+              style={{
+                color: themeColors.darkGray,
+                fontSize: 13,
+                fontFamily: "CarosSoft",
+                marginTop: 2,
+              }}
+              numberOfLines={1}
+            >
+              {"Shared by "}
+              {item.senderFirstName
+                ? item.senderFirstName +
+                  (item.senderLastName
+                    ? " " + item.senderLastName.charAt(0)
+                    : "")
+                : item.senderName || "Someone"}
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => toggleStarNook(item.spotId)}
+            style={{ padding: 4 }}
+          >
+            <Star
+              size={22}
+              color={themeColors.purple}
+              weight={starredNooks.includes(item.spotId) ? "fill" : "regular"}
+            />
+          </TouchableOpacity>
         </TouchableOpacity>
-      </TouchableOpacity>
-    </View>
+      </View>
+    </TouchableOpacity>
   )
 );
 
@@ -378,136 +398,142 @@ export const PollMessage = memo(({ item, themeColors, groupId, userUid }) => {
   };
 
   return (
-    <View
-      style={{
-        backgroundColor: themeColors.lightGray + "CC",
-        borderRadius: 12,
-        padding: 10,
-        marginVertical: 8,
-        alignSelf: "center",
-        width: "96%",
-        borderWidth: 1,
-        borderColor: themeColors.purple + "33",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.04,
-        shadowRadius: 2,
-        elevation: 1,
-      }}
-    >
-      <Text
+    <TouchableOpacity activeOpacity={1}>
+      <View
         style={{
-          color: themeColors.purple,
-          fontWeight: "bold",
-          fontSize: 15,
-          fontFamily: "CarosSoft",
-          marginBottom: 6,
-          marginLeft: 2,
+          backgroundColor: themeColors.lightGray + "CC",
+          borderRadius: 12,
+          padding: 10,
+          marginVertical: 8,
+          alignSelf: "center",
+          width: "96%",
+          borderWidth: 1,
+          borderColor: themeColors.purple + "33",
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.04,
+          shadowRadius: 2,
+          elevation: 1,
         }}
-        numberOfLines={2}
       >
-        {item.poll?.question}
-      </Text>
-      {item.poll?.options?.map((opt, idx) => {
-        const count = Object.values(votes).filter((v) => v === idx).length;
-        const percent =
-          totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
-        const voted = userVote === idx;
-        return (
-          <TouchableOpacity
-            key={idx}
-            onPress={() => handleVote(idx)}
-            style={{
-              backgroundColor: voted ? themeColors.purple : themeColors.white,
-              borderRadius: 7,
-              paddingVertical: 8,
-              paddingHorizontal: 10,
-              marginBottom: 5,
-              borderWidth: voted ? 1.5 : 1,
-              borderColor: voted
-                ? themeColors.purple
-                : themeColors.purple + "22",
-              opacity: submitting ? 0.6 : 1,
-              minHeight: 32,
-              justifyContent: "center",
-            }}
-            disabled={submitting}
-            activeOpacity={0.85}
-          >
-            {userVote !== undefined && (
+        <Text
+          style={{
+            color: themeColors.purple,
+            fontWeight: "bold",
+            fontSize: 15,
+            fontFamily: "CarosSoft",
+            marginBottom: 6,
+            marginLeft: 2,
+          }}
+          numberOfLines={2}
+        >
+          {item.poll?.question}
+        </Text>
+        {item.poll?.options?.map((opt, idx) => {
+          const count = Object.values(votes).filter((v) => v === idx).length;
+          const percent =
+            totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+          const voted = userVote === idx;
+          return (
+            <TouchableOpacity
+              key={idx}
+              onPress={() => handleVote(idx)}
+              style={{
+                backgroundColor: voted ? themeColors.purple : themeColors.white,
+                borderRadius: 7,
+                paddingVertical: 8,
+                paddingHorizontal: 10,
+                marginBottom: 5,
+                borderWidth: voted ? 1.5 : 1,
+                borderColor: voted
+                  ? themeColors.purple
+                  : themeColors.purple + "22",
+                opacity: submitting ? 0.6 : 1,
+                minHeight: 32,
+                justifyContent: "center",
+              }}
+              disabled={submitting}
+              activeOpacity={0.85}
+            >
+              {userVote !== undefined && (
+                <View
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: `${percent}%`,
+                    backgroundColor: voted
+                      ? themeColors.purple + "55"
+                      : themeColors.purple + "18",
+                    borderRadius: 7,
+                    zIndex: 0,
+                  }}
+                />
+              )}
               <View
                 style={{
-                  position: "absolute",
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  width: `${percent}%`,
-                  backgroundColor: voted
-                    ? themeColors.purple + "55"
-                    : themeColors.purple + "18",
-                  borderRadius: 7,
-                  zIndex: 0,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  zIndex: 1,
                 }}
-              />
-            )}
-            <View
-              style={{ flexDirection: "row", alignItems: "center", zIndex: 1 }}
-            >
-              <Text
-                style={{
-                  color: voted ? themeColors.white : themeColors.purple,
-                  fontWeight: "bold",
-                  fontFamily: "CarosSoft",
-                  fontSize: 14,
-                  flex: 1,
-                  flexWrap: "wrap",
-                }}
-                numberOfLines={1}
               >
-                {opt}
-              </Text>
-              {userVote !== undefined && (
                 <Text
                   style={{
                     color: voted ? themeColors.white : themeColors.purple,
-                    fontSize: 12,
-                    marginLeft: 8,
+                    fontWeight: "bold",
                     fontFamily: "CarosSoft",
+                    fontSize: 14,
+                    flex: 1,
+                    flexWrap: "wrap",
+                  }}
+                  numberOfLines={1}
+                >
+                  {opt}
+                </Text>
+                {userVote !== undefined && (
+                  <Text
+                    style={{
+                      color: voted ? themeColors.white : themeColors.purple,
+                      fontSize: 12,
+                      marginLeft: 8,
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    {percent}%
+                  </Text>
+                )}
+              </View>
+              {userVote !== undefined && (
+                <Text
+                  style={{
+                    color: voted ? themeColors.white : themeColors.darkGray,
+                    fontSize: 11,
+                    marginTop: 1,
+                    fontFamily: "CarosSoft",
+                    textAlign: "right",
                   }}
                 >
-                  {percent}%
+                  {count} vote{count !== 1 ? "s" : ""}
                 </Text>
               )}
-            </View>
-            {userVote !== undefined && (
-              <Text
-                style={{
-                  color: voted ? themeColors.white : themeColors.darkGray,
-                  fontSize: 11,
-                  marginTop: 1,
-                  fontFamily: "CarosSoft",
-                  textAlign: "right",
-                }}
-              >
-                {count} vote{count !== 1 ? "s" : ""}
-              </Text>
-            )}
-          </TouchableOpacity>
-        );
-      })}
-      {userVote !== undefined && (
-        <Text
-          style={{
-            color: themeColors.darkGray,
-            fontSize: 11,
-            marginTop: 4,
-            fontFamily: "CarosSoft",
-            textAlign: "right",
-          }}
-        >
-          You voted
-        </Text>
-      )}
-    </View>
+            </TouchableOpacity>
+          );
+        })}
+        {userVote !== undefined && (
+          <Text
+            style={{
+              color: themeColors.darkGray,
+              fontSize: 11,
+              marginTop: 4,
+              fontFamily: "CarosSoft",
+              textAlign: "right",
+            }}
+          >
+            You voted
+          </Text>
+        )}
+      </View>
+    </TouchableOpacity>
   );
 });
