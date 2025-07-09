@@ -11,7 +11,7 @@ import {
   Pressable,
 } from "react-native";
 import ProfilePicture from "../Profile/ProfilePicture";
-import { MapPin, Star } from "phosphor-react-native";
+import { MapPin, Star, Trash } from "phosphor-react-native";
 import { PanGestureHandler, State } from "react-native-gesture-handler";
 import { db, auth } from "../../firebaseConfig";
 import {
@@ -156,7 +156,6 @@ const MyMessageBubble = memo(
     themeColors,
     userMentioned,
     openSenderInfoModal,
-    handleLongPressDelete,
     renderReplyPreview,
     showSenderInfo,
   }) => (
@@ -174,50 +173,44 @@ const MyMessageBubble = memo(
         {renderReplyPreview(item)}
         <TouchableOpacity
           activeOpacity={1}
-          onLongPress={handleLongPressDelete}
+          onLongPress={openSenderInfoModal}
           delayLongPress={400}
         >
-          <TouchableOpacity
-            activeOpacity={1}
-            onLongPress={openSenderInfoModal}
-            delayLongPress={400}
+          <View
+            style={{
+              backgroundColor: themeColors.purple,
+              borderRadius: 14,
+              paddingVertical: 10,
+              paddingHorizontal: 16,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.06,
+              shadowRadius: 2,
+              elevation: 1,
+              minWidth: 50,
+              alignItems: "center",
+              alignSelf: "flex-end",
+              ...(userMentioned
+                ? {
+                    borderWidth: 2,
+                    borderColor: themeColors.yellow || "#FFD700",
+                    shadowColor: themeColors.yellow || "#FFD700",
+                    shadowOpacity: 0.25,
+                    shadowRadius: 6,
+                  }
+                : {}),
+            }}
           >
-            <View
+            <Text
               style={{
-                backgroundColor: themeColors.purple,
-                borderRadius: 14,
-                paddingVertical: 10,
-                paddingHorizontal: 16,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.06,
-                shadowRadius: 2,
-                elevation: 1,
-                minWidth: 50,
-                alignItems: "center",
-                alignSelf: "flex-end",
-                ...(userMentioned
-                  ? {
-                      borderWidth: 2,
-                      borderColor: themeColors.yellow || "#FFD700",
-                      shadowColor: themeColors.yellow || "#FFD700",
-                      shadowOpacity: 0.25,
-                      shadowRadius: 6,
-                    }
-                  : {}),
+                color: themeColors.white,
+                fontSize: 15,
+                fontFamily: "CarosSoft",
               }}
             >
-              <Text
-                style={{
-                  color: themeColors.white,
-                  fontSize: 15,
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                {item.text}
-              </Text>
-            </View>
-          </TouchableOpacity>
+              {item.text}
+            </Text>
+          </View>
         </TouchableOpacity>
         {showSenderInfo && (
           <View
@@ -559,13 +552,15 @@ const GroupMessagesList = memo(
     replyToMessage,
     flatListRef,
     groupId, // <-- add this prop
-    members, // <-- add this prop
+    members, // <-- add this prop-- add this prop
   }) => {
     const [modalVisible, setModalVisible] = useState(false);
     const [modalInfo, setModalInfo] = useState({
       name: "",
       time: "",
       date: "",
+      canDelete: false,
+      messageId: null,
     });
 
     // --- Group Task State ---
@@ -750,29 +745,17 @@ const GroupMessagesList = memo(
           });
           date = d.toLocaleDateString();
         }
-        setModalInfo({ name, time, date });
+        // Only allow delete if it's your own message
+        setModalInfo({
+          name,
+          time,
+          date,
+          canDelete: item.uid === auth.currentUser?.uid,
+          messageId: item.id,
+        });
         setModalVisible(true);
       },
       [auth.currentUser?.uid, getUserName]
-    );
-
-    // Memoized long press delete
-    const handleLongPressDelete = useCallback(
-      (item) => {
-        Alert.alert(
-          "Delete Message",
-          "Are you sure you want to delete this message?",
-          [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Delete",
-              style: "destructive",
-              onPress: () => handleDeleteMessage(item.id),
-            },
-          ]
-        );
-      },
-      [handleDeleteMessage]
     );
 
     // Memoized renderItem
@@ -826,7 +809,6 @@ const GroupMessagesList = memo(
               themeColors={themeColors}
               userMentioned={userMentioned}
               openSenderInfoModal={() => openSenderInfoModal(item)}
-              handleLongPressDelete={() => handleLongPressDelete(item)}
               renderReplyPreview={renderReplyPreview}
               showSenderInfo={showSenderInfo}
             />
@@ -855,7 +837,6 @@ const GroupMessagesList = memo(
         toggleStarNook,
         isUserMentioned,
         openSenderInfoModal,
-        handleLongPressDelete,
         renderReplyPreview,
         getUserProfilePic,
         SwipeableMessage,
@@ -959,6 +940,40 @@ const GroupMessagesList = memo(
                 elevation: 8,
               }}
             >
+              {/* Trash icon button in top right */}
+              {modalInfo.canDelete && (
+                <TouchableOpacity
+                  style={{
+                    position: "absolute",
+                    top: 12,
+                    right: 12,
+                    borderRadius: 20,
+                    padding: 8,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 2,
+                  }}
+                  onPress={() => {
+                    setModalVisible(false);
+                    Alert.alert(
+                      "Delete Message",
+                      "Are you sure you want to delete this message?",
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Delete",
+                          style: "destructive",
+                          onPress: () =>
+                            handleDeleteMessage(modalInfo.messageId),
+                        },
+                      ]
+                    );
+                  }}
+                  accessibilityLabel="Delete message"
+                >
+                  <Trash size={20} color={themeColors.red} weight="bold" />
+                </TouchableOpacity>
+              )}
               <Text
                 style={{
                   fontSize: 18,
@@ -989,6 +1004,7 @@ const GroupMessagesList = memo(
               >
                 {modalInfo.date}
               </Text>
+              {/* Remove old delete button at the bottom */}
             </View>
           </Pressable>
         </Modal>
@@ -1010,6 +1026,10 @@ const GroupMessagesList = memo(
           maxToRenderPerBatch={5}
           windowSize={5}
           updateCellsBatchingPeriod={50}
+          maintainVisibleContentPosition={{
+            minIndexForVisible: 0,
+            autoscrollToTopThreshold: 20,
+          }}
         />
       </>
     );

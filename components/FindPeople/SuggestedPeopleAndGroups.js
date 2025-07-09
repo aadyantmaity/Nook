@@ -35,7 +35,7 @@ export default function SuggestedPeopleAndGroups({
   suggestedGroups,
   suggestedLoading,
   suggestedGroupsLoading,
-  followingIds,
+  followingIds: parentFollowingIds,
   followLoading,
   navigation,
   themeColors,
@@ -45,21 +45,41 @@ export default function SuggestedPeopleAndGroups({
 }) {
   // --- Local follow loading state ---
   const [localFollowLoading, setLocalFollowLoading] = React.useState({});
+  // --- Local followingIds state synced with Firestore ---
+  const [followingIds, setFollowingIds] = React.useState(
+    parentFollowingIds || []
+  );
+
+  // --- Subscribe to current user's following array for real-time updates ---
+  React.useEffect(() => {
+    if (!user?.uid) return;
+    const unsub = onSnapshot(doc(db, "users", user.uid), (userDoc) => {
+      if (userDoc.exists()) {
+        setFollowingIds(userDoc.data().following || []);
+      }
+    });
+    return () => unsub();
+  }, [user?.uid]);
+
+  // If parentFollowingIds changes (e.g. on first mount), update local state
+  React.useEffect(() => {
+    if (Array.isArray(parentFollowingIds) && parentFollowingIds.length > 0) {
+      setFollowingIds(parentFollowingIds);
+    }
+  }, [parentFollowingIds]);
 
   // --- Local follow handler that updates Firestore for both users ---
   const handleFollow = async (targetUid) => {
     if (!user?.uid || !targetUid) return;
     setLocalFollowLoading((prev) => ({ ...prev, [targetUid]: true }));
     try {
-      // Use the same logic as ProfileScreen
       await updateDoc(doc(db, "users", user.uid), {
         following: arrayUnion(targetUid),
       });
       await updateDoc(doc(db, "users", targetUid), {
         followers: arrayUnion(user.uid),
       });
-      // Optionally update UI immediately (parent should also update followingIds)
-      // But for now, just rely on parent to refresh
+      // UI will update via onSnapshot
     } catch {}
     setLocalFollowLoading((prev) => ({ ...prev, [targetUid]: false }));
   };
@@ -184,16 +204,6 @@ export default function SuggestedPeopleAndGroups({
                         >
                           {item.firstName} {item.lastName}
                         </Text>
-                        <Text
-                          style={{
-                            color: themeColors.darkGray,
-                            fontSize: 13,
-                            fontFamily: "CarosSoft",
-                            textAlign: "center",
-                          }}
-                        >
-                          {item.email}
-                        </Text>
                         <TouchableOpacity
                           style={{
                             marginTop: 8,
@@ -205,10 +215,7 @@ export default function SuggestedPeopleAndGroups({
                             paddingHorizontal: 16,
                           }}
                           onPress={() => handleFollow(item.uid)}
-                          disabled={
-                            followingIds.includes(item.uid) ||
-                            localFollowLoading[item.uid]
-                          }
+                          disabled={followingIds.includes(item.uid)}
                         >
                           <Text
                             style={{
@@ -218,9 +225,7 @@ export default function SuggestedPeopleAndGroups({
                               fontFamily: "CarosSoft",
                             }}
                           >
-                            {localFollowLoading[item.uid]
-                              ? "Following..."
-                              : followingIds.includes(item.uid)
+                            {followingIds.includes(item.uid)
                               ? "Following"
                               : "Follow"}
                           </Text>

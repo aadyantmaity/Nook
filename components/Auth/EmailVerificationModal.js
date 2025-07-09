@@ -142,6 +142,19 @@ export default function EmailVerificationModal({
                 >
                   Please verify your email address to continue using Nook.
                 </Text>
+                {/* Add spam folder reminder */}
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontFamily: "CarosSoft",
+                    textAlign: "center",
+                    color: colors.darkGray,
+                    marginTop: 4,
+                    marginBottom: 2,
+                  }}
+                >
+                  Make sure to check your spam/junk folder.
+                </Text>
               </View>
               <View style={{ marginBottom: 4 }}>
                 {errorMessage && (
