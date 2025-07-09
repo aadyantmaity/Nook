@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
+import { auth } from "../../../firebaseConfig"; // <-- import auth
 
 export function LocationPickerModal({
   visible,
@@ -16,6 +17,24 @@ export function LocationPickerModal({
   isRunning,
   themeColors,
 }) {
+  // Filter spots to only those the user has access to
+  const user = auth.currentUser;
+  const filteredSpots = Array.isArray(studySpots)
+    ? studySpots.filter((spot) => {
+        // Public spot (not private)
+        if (!spot.privateNook) return true;
+        // Private: owned by user
+        if (spot.addedBy === user?.uid) return true;
+        // Private: shared with user
+        if (
+          Array.isArray(spot.sharedWith) &&
+          spot.sharedWith.includes(user?.uid)
+        )
+          return true;
+        return false;
+      })
+    : [];
+
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View
@@ -54,7 +73,7 @@ export function LocationPickerModal({
             Select Location
           </Text>
           <FlatList
-            data={studySpots}
+            data={filteredSpots}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <TouchableOpacity
