@@ -488,6 +488,22 @@ export default function StudyGroupsSection({ navigation }) {
     fetchFollowing();
   }, [fetchFollowing]);
 
+  // --- Listen to followingIds in real-time ---
+  useEffect(() => {
+    if (!user?.uid) return;
+    const unsub = require("firebase/firestore").onSnapshot(
+      require("firebase/firestore").doc(db, "users", user.uid),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          setFollowingIds(docSnap.data().following || []);
+        } else {
+          setFollowingIds([]);
+        }
+      }
+    );
+    return () => unsub();
+  }, [user?.uid]);
+
   const [joiningGroups, setJoiningGroups] = useState({});
 
   return (

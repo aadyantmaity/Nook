@@ -53,8 +53,8 @@ export default function TabBar({
               onPress={() => jumpTo(route.key)}
               style={{
                 flex: 1,
-                paddingTop: 12,
-                paddingBottom: 30,
+                paddingTop: 5,
+                paddingBottom: 20,
                 alignItems: "center",
 
                 backgroundColor: themeColors.white,
@@ -69,7 +69,7 @@ export default function TabBar({
                 }
                 weight={currentIndex === i ? "fill" : "regular"}
               />
-              {/* <Text
+              <Text
                 style={{
                   color:
                     currentIndex === i
@@ -78,10 +78,11 @@ export default function TabBar({
                   fontSize: 12,
                   fontFamily: "CarosSoft",
                   marginTop: 2,
+                  fontWeight: currentIndex === i ? "bold" : "normal",
                 }}
               >
                 {TAB_LABELS[route.key]}
-              </Text> */}
+              </Text>
             </TouchableOpacity>
           );
         })}

@@ -82,13 +82,13 @@ export default function LiveUpdateSliders({
       const spotLat = spot.coordinates.latitude;
       const spotLon = spot.coordinates.longitude;
       const distance = getDistanceMeters(userLat, userLon, spotLat, spotLon);
-      if (distance > 30.48) {
-        Alert.alert(
-          "Too Far",
-          "You must be within 100 feet of this Nook to submit a live update."
-        );
-        return;
-      }
+      // if (distance > 30.48) {
+      //   Alert.alert(
+      //     "Too Far",
+      //     "You must be within 100 feet of this Nook to submit a live update."
+      //   );
+      //   return;
+      // }
     }
     // Call original submit handler
     onSubmit && onSubmit();

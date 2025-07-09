@@ -26,6 +26,7 @@ import {
   DotsThreeVertical,
   Moon,
   Sun,
+  Gear, // <-- Add this import
 } from "phosphor-react-native";
 import { ThemeContext } from "../App";
 import * as ImagePicker from "expo-image-picker";
@@ -334,10 +335,9 @@ export default function ProfileScreen({ navigation, route }) {
           accessibilityLabel="Profile Menu"
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <DotsThreeVertical
+          <Gear // <-- Replace DotsThreeVertical with Gear
             size={26}
             color={themeColors.purple}
-            weight="bold"
           />
         </TouchableOpacity>
       </View>
@@ -870,6 +870,52 @@ export default function ProfileScreen({ navigation, route }) {
               >
                 <PencilSimple size={20} color={themeColors.white} />
               </TouchableOpacity>
+            </View>
+          </View>
+        )}
+        {/* Show follow/unfollow button for other users' profiles */}
+        {!isOwnProfile && !isLoading && (
+          <View style={styles.optionsContainer}>
+            <View style={styles.buttonRow}>
+              {isFollowing ? (
+                <TouchableOpacity
+                  style={[
+                    styles.editButton,
+                    { backgroundColor: themeColors.red, width: "100%" },
+                  ]}
+                  onPress={handleUnfollowButton}
+                >
+                  <Text
+                    style={{
+                      color: themeColors.white,
+                      fontWeight: "bold",
+                      fontSize: 16,
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    Unfollow
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[
+                    styles.editButton,
+                    { backgroundColor: themeColors.purple, width: "100%" },
+                  ]}
+                  onPress={followUser}
+                >
+                  <Text
+                    style={{
+                      color: themeColors.white,
+                      fontWeight: "bold",
+                      fontSize: 16,
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    Follow
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         )}
