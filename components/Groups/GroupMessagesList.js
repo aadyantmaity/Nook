@@ -198,13 +198,42 @@ const GroupMessagesList = memo(
       [auth.currentUser?.uid, getUserName]
     );
 
-    // Memoized renderItem
+    // --- Date separator helper ---
+    const getDateString = (item) => {
+      if (!item?.createdAt) return "";
+      let d;
+      if (item.createdAt.seconds) {
+        d = new Date(item.createdAt.seconds * 1000);
+      } else if (typeof item.createdAt === "number") {
+        d = new Date(item.createdAt);
+      } else {
+        return "";
+      }
+      return d.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    };
+
+    // Memoized renderItem with date separators
     const renderItem = useCallback(
       ({ item, index }) => {
         const isMe = item.uid === auth.currentUser?.uid;
-        const realIndex = messages.length - 1 - index;
-        const nextItem = messages[realIndex + 1];
+        // FlatList is inverted and data is [...messages].reverse()
+        // So index 0 is the most recent message, index N is the oldest
+        // To get the "next" message in chronological order:
+        const nextItem = messages[messages.length - 2 - index];
         const userMentioned = isUserMentioned(item);
+
+        // --- Date separator logic ---
+        let showDateSeparator = false;
+        const thisDate = getDateString(item);
+        const nextDate = nextItem ? getDateString(nextItem) : null;
+        // Show separator if this is the first message or the next message is a different date
+        if (!nextItem || thisDate !== nextDate) {
+          showDateSeparator = true;
+        }
 
         const showProfilePic =
           !isMe &&
@@ -218,11 +247,45 @@ const GroupMessagesList = memo(
           nextItem?.type === "system" ||
           nextItem?.type === "nook_share";
 
+        // --- Render date separator if needed ---
+        const dateSeparator = showDateSeparator ? (
+          <View
+            style={{
+              alignItems: "center",
+              marginVertical: 12,
+              marginBottom: 8,
+            }}
+          >
+            <View
+              style={{
+                borderRadius: 8,
+                paddingHorizontal: 14,
+                paddingVertical: 4,
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: 0.85,
+              }}
+            >
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontWeight: "bold",
+                  fontSize: 13,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                {thisDate}
+              </Text>
+            </View>
+          </View>
+        ) : null;
+
+        // --- Message rendering ---
+        let messageNode = null;
         if (item.type === "system") {
-          return <SystemMessage item={item} themeColors={themeColors} />;
-        }
-        if (item.type === "nook_share") {
-          return (
+          messageNode = <SystemMessage item={item} themeColors={themeColors} />;
+        } else if (item.type === "nook_share") {
+          messageNode = (
             <NookShareMessage
               item={item}
               themeColors={themeColors}
@@ -231,9 +294,8 @@ const GroupMessagesList = memo(
               toggleStarNook={toggleStarNook}
             />
           );
-        }
-        if (item.type === "poll") {
-          return (
+        } else if (item.type === "poll") {
+          messageNode = (
             <PollMessage
               item={item}
               themeColors={themeColors}
@@ -241,34 +303,42 @@ const GroupMessagesList = memo(
               userUid={auth.currentUser?.uid}
             />
           );
-        }
-        if (isMe) {
-          return (
+        } else if (isMe) {
+          messageNode = (
             <MyMessageBubble
               item={item}
               themeColors={themeColors}
               userMentioned={userMentioned}
-              openSenderInfoModal={() => openSenderInfoModal(item)}
+              openSenderInfoModal={undefined}
               renderReplyPreview={renderReplyPreview}
               showSenderInfo={showSenderInfo}
               getUserName={getUserName}
               onDoubleTap={() => handleDoubleTap(item)}
             />
           );
+        } else {
+          messageNode = (
+            <OtherMessageBubble
+              item={item}
+              themeColors={themeColors}
+              userMentioned={userMentioned}
+              openSenderInfoModal={undefined}
+              showProfilePic={showProfilePic}
+              getUserProfilePic={getUserProfilePic}
+              showSenderInfo={showSenderInfo}
+              renderReplyPreview={renderReplyPreview}
+              getUserName={getUserName}
+              onDoubleTap={() => handleDoubleTap(item)}
+            />
+          );
         }
+
+        // --- Render date separator BEFORE the message node ---
         return (
-          <OtherMessageBubble
-            item={item}
-            themeColors={themeColors}
-            userMentioned={userMentioned}
-            openSenderInfoModal={() => openSenderInfoModal(item)}
-            showProfilePic={showProfilePic}
-            getUserProfilePic={getUserProfilePic}
-            showSenderInfo={showSenderInfo}
-            renderReplyPreview={renderReplyPreview}
-            getUserName={getUserName}
-            onDoubleTap={() => handleDoubleTap(item)}
-          />
+          <>
+            {messageNode}
+            {dateSeparator}
+          </>
         );
       },
       [
@@ -279,7 +349,6 @@ const GroupMessagesList = memo(
         starredNooks,
         toggleStarNook,
         isUserMentioned,
-        openSenderInfoModal,
         renderReplyPreview,
         getUserProfilePic,
         group?.id,
