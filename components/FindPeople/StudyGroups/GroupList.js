@@ -264,41 +264,6 @@ export default function GroupList({
                     {item.description}
                   </Text>
                 )}
-                {item.isPrivate && (
-                  <Text
-                    style={{
-                      color: themeColors.darkGray,
-                      fontSize: 13,
-                      fontFamily: "CarosSoft",
-                    }}
-                  >
-                    {Array.isArray(item.memberUids) && allUsers.length > 0
-                      ? (() => {
-                          const you = "You";
-                          const others = item.memberUids
-                            .filter((uid) => uid !== user.uid)
-                            .map((uid) => {
-                              const u = allUsers.find(
-                                (user) => user.uid === uid
-                              );
-                              if (!u) return "User";
-                              const first = u.firstName || "";
-                              const lastInitial = u.lastName
-                                ? ` ${u.lastName.charAt(0)}`
-                                : "";
-                              return `${first}${lastInitial}`.trim();
-                            });
-                          const allNames = [you, ...others];
-                          if (allNames.length > 5) {
-                            return (
-                              allNames.slice(0, 5).join(", ") + ", ...more"
-                            );
-                          }
-                          return allNames.join(", ");
-                        })()
-                      : ""}
-                  </Text>
-                )}
               </View>
             </TouchableOpacity>
           );

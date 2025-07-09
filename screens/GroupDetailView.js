@@ -147,13 +147,6 @@ export default function GroupDetailView({ navigation, route }) {
             }))
           );
           setLoading(false);
-          setTimeout(() => {
-            // For inverted FlatList, offset 0 is the bottom (most recent)
-            flatListRef.current?.scrollToOffset?.({
-              offset: 0,
-              animated: false,
-            });
-          }, 100);
         },
         (error) => {
           // Permission denied or group deleted

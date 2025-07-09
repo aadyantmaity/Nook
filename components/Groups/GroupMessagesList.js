@@ -158,6 +158,7 @@ const MyMessageBubble = memo(
     openSenderInfoModal,
     renderReplyPreview,
     showSenderInfo,
+    getUserName, // <-- add this prop
   }) => (
     <View
       style={{
@@ -220,27 +221,7 @@ const MyMessageBubble = memo(
               marginTop: 2,
               alignSelf: "flex-end",
             }}
-          >
-            <Text
-              style={{
-                color: themeColors.darkGray,
-                fontSize: 11,
-                marginLeft: 0,
-                fontFamily: "CarosSoft",
-                textAlign: "right",
-              }}
-            >
-              {item.createdAt && item.createdAt.seconds
-                ? new Date(item.createdAt.seconds * 1000).toLocaleTimeString(
-                    [],
-                    {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    }
-                  )
-                : ""}
-            </Text>
-          </View>
+          ></View>
         )}
       </View>
     </View>
@@ -259,6 +240,7 @@ const OtherMessageBubble = memo(
     showSenderInfo,
     renderReplyPreview,
     SwipeableMessage,
+    getUserName, // <-- add this prop
   }) => (
     <SwipeableMessage item={item}>
       <View
@@ -350,21 +332,17 @@ const OtherMessageBubble = memo(
                   marginTop: 2,
                 }}
               >
+                {/* --- Add sender name before time --- */}
                 <Text
                   style={{
                     color: themeColors.darkGray,
+                    fontWeight: "bold",
                     fontSize: 11,
+                    marginRight: 2,
                     fontFamily: "CarosSoft",
                   }}
                 >
-                  {item.createdAt && item.createdAt.seconds
-                    ? new Date(
-                        item.createdAt.seconds * 1000
-                      ).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : ""}
+                  {getUserName ? getUserName(item.uid) : "User"}
                 </Text>
               </View>
             )}
@@ -551,8 +529,8 @@ const GroupMessagesList = memo(
     setReplyToMessage,
     replyToMessage,
     flatListRef,
-    groupId, // <-- add this prop
-    members, // <-- add this prop-- add this prop
+    groupId,
+    members,
   }) => {
     const [modalVisible, setModalVisible] = useState(false);
     const [modalInfo, setModalInfo] = useState({
@@ -811,6 +789,7 @@ const GroupMessagesList = memo(
               openSenderInfoModal={() => openSenderInfoModal(item)}
               renderReplyPreview={renderReplyPreview}
               showSenderInfo={showSenderInfo}
+              getUserName={getUserName} // <-- pass prop
             />
           );
         }
@@ -825,6 +804,7 @@ const GroupMessagesList = memo(
             showSenderInfo={showSenderInfo}
             renderReplyPreview={renderReplyPreview}
             SwipeableMessage={SwipeableMessage}
+            getUserName={getUserName} // <-- pass prop
           />
         );
       },
@@ -841,6 +821,7 @@ const GroupMessagesList = memo(
         getUserProfilePic,
         SwipeableMessage,
         group?.id,
+        getUserName, // <-- add dependency
       ]
     );
 
