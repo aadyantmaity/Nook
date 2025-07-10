@@ -21,12 +21,34 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState("");
   const [resetInfo, setResetInfo] = useState(""); // Info message for reset
   const [resetLoading, setResetLoading] = useState(false);
+  const [error, setError] = useState(""); // Add error state
+
+  const getFriendlyError = (error) => {
+    if (!error?.code) return "An unexpected error occurred. Please try again.";
+    switch (error.code) {
+      case "auth/invalid-email":
+        return "Please enter a valid email address.";
+      case "auth/user-disabled":
+        return "This account has been disabled.";
+      case "auth/user-not-found":
+        return "No account found with this email.";
+      case "auth/wrong-password":
+        return "Incorrect password. Please try again.";
+      case "auth/too-many-requests":
+        return "Too many failed attempts. Please try again later.";
+      case "auth/invalid-credential":
+        return "Invalid email or password. Please try again.";
+      default:
+        return error.message || "An error occurred. Please try again.";
+    }
+  };
 
   const handleLogin = () => {
+    setError("");
     signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {})
       .catch((error) => {
-        console.error(error.message);
+        setError(getFriendlyError(error));
       });
   };
 
@@ -45,7 +67,9 @@ export default function LoginScreen({ navigation }) {
         return;
       }
       await sendPasswordResetEmail(auth, email);
-      setResetInfo("Password reset email sent!");
+      setResetInfo(
+        "Password reset email sent! Make sure to check your spam folder."
+      );
     } catch (e) {
       setResetInfo("Failed to send reset email.");
     }
@@ -57,20 +81,38 @@ export default function LoginScreen({ navigation }) {
     <SafeAreaView
       style={[styles.container, { backgroundColor: themeColors.white }]}
     >
-      <Text
-        style={[
-          styles.title,
-          { color: themeColors.black, fontFamily: "CarosSoft" },
-        ]}
-      >
-        Login
-      </Text>
       <View style={styles.formContainer}>
+        {/* Show error message */}
+        {error ? (
+          <Text
+            style={{
+              color: themeColors.red,
+              marginBottom: 8,
+              textAlign: "center",
+              fontFamily: "CarosSoft",
+            }}
+          >
+            {error}
+          </Text>
+        ) : null}
+        <Text
+          style={[
+            styles.title,
+            {
+              color: themeColors.black,
+              fontFamily: "CarosSoft",
+              textAlign: "center",
+            },
+          ]}
+        >
+          Login
+        </Text>
+
         <TextInput
           style={[
             styles.input,
             {
-              borderColor: themeColors.gray,
+              borderColor: themeColors.darkGray,
               backgroundColor: themeColors.white,
               color: themeColors.black,
             },
@@ -84,7 +126,7 @@ export default function LoginScreen({ navigation }) {
           style={[
             styles.input,
             {
-              borderColor: themeColors.gray,
+              borderColor: themeColors.darkGray,
               backgroundColor: themeColors.white,
               color: themeColors.black,
             },
@@ -106,11 +148,9 @@ export default function LoginScreen({ navigation }) {
               color: themeColors.purple,
               fontFamily: "CarosSoft",
               fontSize: 14,
-              textDecorationLine: "underline",
-              opacity: resetLoading ? 0.7 : 1,
             }}
           >
-            {resetLoading ? "Sending..." : "Forgot Password?"}
+            {"Forgot Password?"}
           </Text>
         </TouchableOpacity>
         {/* Show info message */}
@@ -127,30 +167,70 @@ export default function LoginScreen({ navigation }) {
             {resetInfo}
           </Text>
         ) : null}
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: themeColors.purple }]}
-          onPress={handleLogin}
+        {/* Buttons side by side */}
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 12,
+            marginTop: 8,
+            justifyContent: "center",
+          }}
         >
-          <Text
+          <TouchableOpacity
             style={[
-              styles.buttonText,
-              { color: themeColors.white, fontFamily: "CarosSoft" },
+              styles.button,
+              {
+                backgroundColor: themeColors.purple,
+                flex: 0.375,
+                marginVertical: 0,
+                marginTop: 0,
+                justifyContent: "center",
+                alignItems: "center",
+              },
             ]}
+            onPress={handleLogin}
           >
-            {/* Use black for button text */}
-            Login
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.secondaryButton} onPress={handleSignUp}>
-          <Text
+            <Text
+              style={[
+                styles.buttonText,
+                {
+                  color: themeColors.white,
+                  textAlign: "center",
+                  textAlignVertical: "center",
+                },
+              ]}
+            >
+              Login
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[
-              styles.secondaryButtonText,
-              { color: themeColors.purple, fontFamily: "CarosSoft" },
+              styles.button,
+              {
+                backgroundColor: themeColors.white,
+                flex: 0.375,
+                marginVertical: 0,
+                marginTop: 0,
+                justifyContent: "center",
+                alignItems: "center",
+              },
             ]}
+            onPress={handleSignUp}
           >
-            Sign Up
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={[
+                styles.buttonText,
+                {
+                  color: themeColors.purple,
+                  textAlign: "center",
+                  textAlignVertical: "center",
+                },
+              ]}
+            >
+              Sign Up
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -159,7 +239,6 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
   },
   title: {
@@ -171,6 +250,7 @@ const styles = StyleSheet.create({
   formContainer: {
     width: "100%",
     paddingHorizontal: 24, // Add padding around the form elements
+    paddingTop: 120,
   },
   input: {
     width: "100%",
@@ -182,7 +262,7 @@ const styles = StyleSheet.create({
   },
   button: {
     width: "100%",
-    padding: 16,
+    padding: 12,
     borderRadius: 8,
     alignItems: "center",
     marginVertical: 8,

@@ -29,6 +29,22 @@ export default function SignUpScreen({ navigation }) {
   const [error, setError] = useState(""); // Add error state
   const [info, setInfo] = useState(""); // Info message (for verification)
 
+  const getFriendlyError = (error) => {
+    if (!error?.code) return "An unexpected error occurred. Please try again.";
+    switch (error.code) {
+      case "auth/email-already-in-use":
+        return "This email is already in use. Try logging in.";
+      case "auth/invalid-email":
+        return "Please enter a valid email address.";
+      case "auth/weak-password":
+        return "Password should be at least 6 characters.";
+      case "auth/missing-password":
+        return "Please enter a password.";
+      default:
+        return error.message || "An error occurred. Please try again.";
+    }
+  };
+
   const handleSignUp = async () => {
     setError("");
     setInfo("");
@@ -50,12 +66,13 @@ export default function SignUpScreen({ navigation }) {
         followers: [],
         following: [],
         requireEmailVerification: true, // Add this field
+        onboarded: false, // <-- Add this field
       });
 
       // Send email verification
       await sendEmailVerification(user);
     } catch (error) {
-      setError(error.message);
+      setError(getFriendlyError(error));
     }
   };
 
@@ -63,31 +80,77 @@ export default function SignUpScreen({ navigation }) {
     <SafeAreaView
       style={[styles.container, { backgroundColor: themeColors.white }]}
     >
-      {/* Remove dark mode toggle button */}
-      {error ? (
-        <Text
-          style={{
-            color: themeColors.red,
-            marginBottom: 8,
-            textAlign: "center",
-          }}
-        >
-          {error}
-        </Text>
-      ) : null}
-      {info ? (
-        <Text
-          style={{
-            color: themeColors.green,
-            marginBottom: 8,
-            textAlign: "center",
-          }}
-        >
-          {info}
-        </Text>
-      ) : null}
-      <Text style={[styles.title, { color: themeColors.black }]}>Sign Up</Text>
       <View style={styles.formContainer}>
+        {/* Remove dark mode toggle button */}
+        {error ? (
+          <Text
+            style={{
+              color: themeColors.red,
+              marginBottom: 8,
+              textAlign: "center",
+            }}
+          >
+            {error}
+          </Text>
+        ) : null}
+        {info ? (
+          <Text
+            style={{
+              color: themeColors.green,
+              marginBottom: 8,
+              textAlign: "center",
+            }}
+          >
+            {info}
+          </Text>
+        ) : null}
+        <Text
+          style={[
+            styles.title,
+            {
+              color: themeColors.black,
+              textAlign: "center",
+              fontFamily: "CarosSoft",
+            },
+          ]}
+        >
+          Sign Up
+        </Text>
+        {/* First Name and Last Name side by side */}
+        <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
+          <TextInput
+            style={[
+              styles.input,
+              {
+                flex: 1,
+                marginBottom: 0,
+                borderColor: themeColors.darkGray,
+                backgroundColor: themeColors.white,
+                color: themeColors.black,
+              },
+            ]}
+            placeholder="First Name"
+            placeholderTextColor={themeColors.darkGray}
+            value={firstName}
+            onChangeText={setFirstName}
+          />
+          <TextInput
+            style={[
+              styles.input,
+              {
+                flex: 1,
+                marginBottom: 0,
+                borderColor: themeColors.darkGray,
+                backgroundColor: themeColors.white,
+                color: themeColors.black,
+              },
+            ]}
+            placeholder="Last Name"
+            placeholderTextColor={themeColors.darkGray}
+            value={lastName}
+            onChangeText={setLastName}
+          />
+        </View>
         <TextInput
           style={[
             styles.input,
@@ -127,34 +190,6 @@ export default function SignUpScreen({ navigation }) {
               color: themeColors.black,
             },
           ]}
-          placeholder="First Name"
-          placeholderTextColor={themeColors.darkGray}
-          value={firstName}
-          onChangeText={setFirstName}
-        />
-        <TextInput
-          style={[
-            styles.input,
-            {
-              borderColor: themeColors.darkGray,
-              backgroundColor: themeColors.white,
-              color: themeColors.black,
-            },
-          ]}
-          placeholder="Last Name"
-          placeholderTextColor={themeColors.darkGray}
-          value={lastName}
-          onChangeText={setLastName}
-        />
-        <TextInput
-          style={[
-            styles.input,
-            {
-              borderColor: themeColors.darkGray,
-              backgroundColor: themeColors.white,
-              color: themeColors.black,
-            },
-          ]}
           placeholder="Graduation Year"
           placeholderTextColor={themeColors.darkGray}
           value={gradYear}
@@ -162,24 +197,70 @@ export default function SignUpScreen({ navigation }) {
           keyboardType="numeric" // Ensure numeric input
         />
 
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: themeColors.purple }]}
-          onPress={handleSignUp}
+        {/* Buttons side by side */}
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 12,
+            marginTop: 8,
+            justifyContent: "center",
+          }}
         >
-          <Text style={[styles.buttonText, { color: themeColors.white }]}>
-            Sign Up
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => navigation.navigate("Login")}
-        >
-          <Text
-            style={[styles.secondaryButtonText, { color: themeColors.purple }]}
+          <TouchableOpacity
+            style={[
+              styles.button,
+              {
+                backgroundColor: themeColors.purple,
+                flex: 0.375,
+                marginVertical: 0,
+                marginTop: 0,
+                justifyContent: "center",
+                alignItems: "center",
+              },
+            ]}
+            onPress={handleSignUp}
           >
-            Back to Login
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={[
+                styles.buttonText,
+                {
+                  color: themeColors.white,
+                  textAlign: "center",
+                  textAlignVertical: "center",
+                },
+              ]}
+            >
+              Sign Up
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.button,
+              {
+                backgroundColor: themeColors.white,
+                flex: 0.375,
+                marginVertical: 0,
+                marginTop: 0,
+                justifyContent: "center",
+                alignItems: "center",
+              },
+            ]}
+            onPress={() => navigation.navigate("Login")}
+          >
+            <Text
+              style={[
+                styles.buttonText,
+                {
+                  color: themeColors.purple,
+                  textAlign: "center",
+                  textAlignVertical: "center",
+                },
+              ]}
+            >
+              Login
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -188,7 +269,6 @@ export default function SignUpScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
   },
   title: {
@@ -199,50 +279,33 @@ const styles = StyleSheet.create({
   formContainer: {
     width: "100%",
     paddingHorizontal: 24,
+    paddingTop: 120,
   },
   input: {
     width: "100%",
     borderWidth: 0.5,
     borderRadius: 8,
     padding: 12,
-    marginBottom: 16,
+    marginBottom: 12,
     fontFamily: "CarosSoft",
   },
   button: {
     width: "100%",
-    padding: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: 8,
     alignItems: "center",
-    marginVertical: 8,
   },
   buttonText: {
-    fontWeight: "bold",
+    fontFamily: "CarosSoft",
     fontSize: 16,
-  },
-  profilePictureButton: {
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  profilePictureButtonText: {
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  profilePicturePreview: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignSelf: "center",
-    marginBottom: 16,
-    borderWidth: 0.5,
   },
   secondaryButton: {
     marginTop: 16,
     alignItems: "center",
   },
   secondaryButtonText: {
-    fontWeight: "bold",
+    fontFamily: "CarosSoft",
     fontSize: 16,
   },
 });

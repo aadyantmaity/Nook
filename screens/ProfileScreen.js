@@ -309,7 +309,9 @@ export default function ProfileScreen({ navigation, route }) {
     setResetPasswordInfo("");
     try {
       await sendPasswordResetEmail(auth, userEmail);
-      setResetPasswordInfo("Password reset email sent!");
+      setResetPasswordInfo(
+        "Password reset email sent! Make sure to check your spam folder."
+      );
     } catch (e) {
       setResetPasswordInfo("Failed to send reset email.");
     }
@@ -483,7 +485,7 @@ export default function ProfileScreen({ navigation, route }) {
                     fontSize: 16,
                   }}
                 >
-                  {resetPasswordLoading ? "Sending..." : "Reset Password"}
+                  {"Reset Password"}
                 </Text>
               </TouchableOpacity>
             )}
