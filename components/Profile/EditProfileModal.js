@@ -68,7 +68,7 @@ export default function EditProfileModal({
             onPress={onClose}
             hitSlop={10}
           >
-            <X size={22} color={themeColors.purple} weight="bold" />
+            <X size={22} color={themeColors.purple} />
           </TouchableOpacity>
           <Text
             style={{
@@ -123,7 +123,7 @@ export default function EditProfileModal({
                     borderColor: themeColors.gray,
                   }}
                 >
-                  <User size={32} color={themeColors.white} weight="bold" />
+                  <User size={32} color={themeColors.white} />
                 </View>
               )}
             </View>
@@ -162,7 +162,7 @@ export default function EditProfileModal({
                     borderColor: themeColors.black,
                   }}
                 >
-                  <User size={32} color={themeColors.purple} weight="bold" />
+                  <User size={32} color={themeColors.purple} />
                 </View>
               )}
             </View>

@@ -149,7 +149,6 @@ export function FocusStatsDropdown({
                     <CaretRight
                       size={20}
                       color={themeColors.purple}
-                      weight="bold"
                       style={{
                         transform: [{ rotate: isOpen ? "90deg" : "0deg" }],
                       }}
@@ -253,11 +252,7 @@ export function FocusStatsDropdown({
                                   }}
                                   accessibilityLabel="Delete session"
                                 >
-                                  <Trash
-                                    size={18}
-                                    color={themeColors.red}
-                                    weight="bold"
-                                  />
+                                  <Trash size={18} color={themeColors.red} />
                                 </TouchableOpacity>
                               </TouchableOpacity>
                             ))}

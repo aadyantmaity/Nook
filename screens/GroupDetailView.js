@@ -501,11 +501,7 @@ export default function GroupDetailView({ navigation, route }) {
             style={{ paddingHorizontal: 16, paddingVertical: 8 }}
             accessibilityLabel="More"
           >
-            <DotsThreeVertical
-              size={26}
-              color={themeColors.purple}
-              weight="bold"
-            />
+            <DotsThreeVertical size={26} color={themeColors.purple} />
           </TouchableOpacity>
         </View>
       ),

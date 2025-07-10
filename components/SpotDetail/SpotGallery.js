@@ -207,8 +207,7 @@ export default function SpotGallery({
       let sizeStr = "";
       if (size != null) {
         if (size < 1024) sizeStr = `${size} bytes`;
-        else if (size < 1024 * 1024)
-          sizeStr = `${(size / 1024).toFixed(1)} KB`;
+        else if (size < 1024 * 1024) sizeStr = `${(size / 1024).toFixed(1)} KB`;
         else sizeStr = `${(size / (1024 * 1024)).toFixed(2)} MB`;
       }
       console.log(
@@ -265,7 +264,7 @@ export default function SpotGallery({
                 accessibilityLabel="Delete image"
                 disabled={isDeleting}
               >
-                <Trash size={22} color={themeColors.red} weight="bold" />
+                <Trash size={22} color={themeColors.red} />
               </TouchableOpacity>
             )}
             {selectedImage && (
@@ -352,7 +351,7 @@ export default function SpotGallery({
           }}
           disabled={isUploading}
         >
-          <Plus size={20} color={themeColors.white} weight="bold" />
+          <Plus size={20} color={themeColors.white} />
         </TouchableOpacity>
         {isUploading && (
           <ActivityIndicator

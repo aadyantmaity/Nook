@@ -113,7 +113,6 @@ export default function UserFocusStatsDropdown({
         <CaretRight
           size={22}
           color={themeColors.purple}
-          weight="bold"
           style={{
             transform: [{ rotate: expanded ? "90deg" : "0deg" }],
           }}

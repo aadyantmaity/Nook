@@ -119,11 +119,7 @@ export default function FollowingModal({
                         flexDirection: "row",
                       }}
                     >
-                      <UserMinus
-                        size={18}
-                        color={themeColors.white}
-                        weight="bold"
-                      />
+                      <UserMinus size={18} color={themeColors.white} />
                       <Text
                         style={{
                           marginLeft: 6,

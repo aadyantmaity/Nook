@@ -94,7 +94,7 @@ export default function FavoriteSpotCard({
             marginRight: 14,
           }}
         >
-          <MapPin size={45} color={themeColors.white} weight="bold" />
+          <MapPin size={45} color={themeColors.white} />
         </View>
       )}
       <View style={{ flex: 1 }}>

@@ -175,7 +175,6 @@ export default function ShareNookToGroupModal({
                   <UsersThree
                     size={22}
                     color={themeColors.purple}
-                    weight="bold"
                     style={{ marginRight: 12 }}
                   />
                   <Text

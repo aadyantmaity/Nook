@@ -112,7 +112,7 @@ export default function PollModal({ visible, onClose, onSubmit, themeColors }) {
               borderRadius: 20,
             }}
           >
-            <X size={24} color={themeColors.purple} weight="bold" />
+            <X size={24} color={themeColors.purple} />
           </TouchableOpacity>
           <Text
             style={{
@@ -208,7 +208,7 @@ export default function PollModal({ visible, onClose, onSubmit, themeColors }) {
               alignSelf: "flex-start",
             }}
           >
-            <Plus size={20} color={themeColors.purple} weight="bold" />
+            <Plus size={20} color={themeColors.purple} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={handleSubmit}

@@ -585,7 +585,7 @@ export default function StudySpotsMapView({
             }}
             onPress={() => setRegionPickerVisible(true)}
           >
-            <PencilSimple size={18} color={themeColors.white} weight="bold" />
+            <PencilSimple size={18} color={themeColors.white} />
           </TouchableOpacity>
         </View>
         <MapView
@@ -836,11 +836,7 @@ export default function StudySpotsMapView({
                           }}
                           accessibilityLabel="View Details"
                         >
-                          <Info
-                            size={22}
-                            color={themeColors.white}
-                            weight="bold"
-                          />
+                          <Info size={22} color={themeColors.white} />
                         </TouchableOpacity>
                         <Text
                           style={{
@@ -876,11 +872,7 @@ export default function StudySpotsMapView({
                           }}
                           accessibilityLabel="Get Directions"
                         >
-                          <MapPinLine
-                            size={22}
-                            color={themeColors.white}
-                            weight="bold"
-                          />
+                          <MapPinLine size={22} color={themeColors.white} />
                         </TouchableOpacity>
                         <Text
                           style={{
@@ -993,7 +985,7 @@ export default function StudySpotsMapView({
                   }}
                   accessibilityLabel="View Details"
                 >
-                  <Info size={26} color={themeColors.white} weight="bold" />
+                  <Info size={26} color={themeColors.white} />
                 </TouchableOpacity>
                 <Text
                   style={{
@@ -1027,11 +1019,7 @@ export default function StudySpotsMapView({
                   }}
                   accessibilityLabel="Get Directions"
                 >
-                  <MapPinLine
-                    size={26}
-                    color={themeColors.white}
-                    weight="bold"
-                  />
+                  <MapPinLine size={26} color={themeColors.white} />
                 </TouchableOpacity>
                 <Text
                   style={{

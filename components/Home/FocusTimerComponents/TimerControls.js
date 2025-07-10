@@ -58,7 +58,7 @@ export function TimerControls({
           accessibilityLabel="Pomodoro Settings"
           disabled={isRunning} // <-- disable when running
         >
-          <Timer size={22} color={themeColors.purple} weight="bold" />
+          <Timer size={22} color={themeColors.purple} />
         </TouchableOpacity>
       </View>
       <Text

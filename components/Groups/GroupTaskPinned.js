@@ -52,7 +52,7 @@ export default function GroupTaskPinned({
         {checked ? (
           <CheckCircle size={28} color={themeColors.purple} weight="fill" />
         ) : (
-          <Circle size={28} color={themeColors.purple} weight="bold" />
+          <Circle size={28} color={themeColors.purple} />
         )}
       </TouchableOpacity>
       <View style={{ flex: 1 }}>
@@ -95,7 +95,7 @@ export default function GroupTaskPinned({
               style={{ marginLeft: 10, padding: 4 }}
               accessibilityLabel="Delete group task"
             >
-              <Trash size={20} color={themeColors.red} weight="bold" />
+              <Trash size={20} color={themeColors.red} />
             </TouchableOpacity>
           ) : null}
         </TouchableOpacity>

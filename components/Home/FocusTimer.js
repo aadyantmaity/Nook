@@ -1315,7 +1315,7 @@ export function FocusTimerView({ navigation }) {
               }}
               accessibilityLabel="Select Location"
             >
-              <MapPin size={22} color={themeColors.purple} weight="bold" />
+              <MapPin size={22} color={themeColors.purple} />
               <Text
                 style={{
                   color: themeColors.purple,

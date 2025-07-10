@@ -56,7 +56,7 @@ export default function ReplyPreview({
         }}
         accessibilityLabel="Cancel reply"
       >
-        <X size={20} color={themeColors.purple} weight="bold" />
+        <X size={20} color={themeColors.purple} />
       </TouchableOpacity>
     </View>
   );

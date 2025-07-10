@@ -561,11 +561,7 @@ export default function StudyGroupsSection({ navigation }) {
           }}
           accessibilityLabel="Open Filters"
         >
-          <FadersHorizontal
-            size={22}
-            color={themeColors.purple}
-            weight="bold"
-          />
+          <FadersHorizontal size={25} color={themeColors.purple} />
         </TouchableOpacity>
       </View>
       {/* --- Filters Modal --- */}

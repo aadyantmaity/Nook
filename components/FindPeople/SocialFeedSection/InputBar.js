@@ -15,7 +15,7 @@ export default function InputBar({
       style={{
         width: "100%",
         marginBottom: 12,
-        marginTop: 0,
+        marginTop: -8,
       }}
     >
       <View
@@ -69,7 +69,7 @@ export default function InputBar({
           }}
           accessibilityLabel="Submit"
         >
-          <PaperPlaneRight size={24} color={themeColors.purple} />
+          <PaperPlaneRight size={25} color={themeColors.purple} />
         </TouchableOpacity>
       </View>
     </View>

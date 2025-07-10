@@ -7,7 +7,10 @@ import {
   SafeAreaView,
   StyleSheet,
 } from "react-native";
-import { signInWithEmailAndPassword } from "firebase/auth"; // Import Firebase Auth
+import {
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from "firebase/auth"; // Import Firebase Auth and sendPasswordResetEmail
 import { colors } from "../constants/colors";
 import { auth } from "../firebaseConfig"; // Import the initialized auth
 
@@ -16,6 +19,8 @@ export default function LoginScreen({ navigation }) {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [resetInfo, setResetInfo] = useState(""); // Info message for reset
+  const [resetLoading, setResetLoading] = useState(false);
 
   const handleLogin = () => {
     signInWithEmailAndPassword(auth, email, password)
@@ -28,6 +33,24 @@ export default function LoginScreen({ navigation }) {
   const handleSignUp = () => {
     // Navigate to the Sign Up screen
     navigation.navigate("SignUp");
+  };
+
+  const handleForgotPassword = async () => {
+    setResetInfo("");
+    setResetLoading(true);
+    try {
+      if (!email) {
+        setResetInfo("Enter your email above first.");
+        setResetLoading(false);
+        return;
+      }
+      await sendPasswordResetEmail(auth, email);
+      setResetInfo("Password reset email sent!");
+    } catch (e) {
+      setResetInfo("Failed to send reset email.");
+    }
+    setResetLoading(false);
+    setTimeout(() => setResetInfo(""), 4000);
   };
 
   return (
@@ -72,6 +95,38 @@ export default function LoginScreen({ navigation }) {
           value={password}
           onChangeText={setPassword}
         />
+        {/* Forgot Password link */}
+        <TouchableOpacity
+          style={{ alignSelf: "flex-end", marginBottom: 8 }}
+          onPress={handleForgotPassword}
+          disabled={resetLoading}
+        >
+          <Text
+            style={{
+              color: themeColors.purple,
+              fontFamily: "CarosSoft",
+              fontSize: 14,
+              textDecorationLine: "underline",
+              opacity: resetLoading ? 0.7 : 1,
+            }}
+          >
+            {resetLoading ? "Sending..." : "Forgot Password?"}
+          </Text>
+        </TouchableOpacity>
+        {/* Show info message */}
+        {resetInfo ? (
+          <Text
+            style={{
+              color: themeColors.purple,
+              fontFamily: "CarosSoft",
+              fontSize: 14,
+              marginBottom: 8,
+              textAlign: "center",
+            }}
+          >
+            {resetInfo}
+          </Text>
+        ) : null}
         <TouchableOpacity
           style={[styles.button, { backgroundColor: themeColors.purple }]}
           onPress={handleLogin}

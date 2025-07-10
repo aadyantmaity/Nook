@@ -89,7 +89,7 @@ export default function FeedList({
                       }}
                       accessibilityLabel="Delete post"
                     >
-                      <Trash size={18} color={themeColors.red} weight="bold" />
+                      <Trash size={18} color={themeColors.red} />
                     </TouchableOpacity>
                   ) : (
                     <TouchableOpacity
@@ -105,11 +105,7 @@ export default function FeedList({
                       }}
                       accessibilityLabel="Reply"
                     >
-                      <ArrowBendUpLeft
-                        size={18}
-                        color={themeColors.purple}
-                        weight="bold"
-                      />
+                      <ArrowBendUpLeft size={18} color={themeColors.purple} />
                     </TouchableOpacity>
                   )}
                 </View>

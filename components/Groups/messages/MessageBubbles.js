@@ -333,7 +333,7 @@ export const NookShareMessage = memo(
                 marginRight: 12,
               }}
             >
-              <MapPin size={32} color={themeColors.white} weight="bold" />
+              <MapPin size={32} color={themeColors.white} />
             </View>
           )}
           <View style={{ flex: 1 }}>
