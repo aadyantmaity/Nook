@@ -13,9 +13,12 @@ export const MyMessageBubble = memo(
     userMentioned,
     openSenderInfoModal,
     renderReplyPreview,
-    showSenderInfo,
     getUserName,
     onDoubleTap,
+    onLongPress, // <-- add this prop
+    showProfilePic,
+    profilePic,
+    userName,
   }) => {
     // Double tap logic
     const lastTap = useRef(0);
@@ -37,8 +40,6 @@ export const MyMessageBubble = memo(
           marginRight: -5,
         }}
       >
-        {/* No profile picture for my message, but keep spacing for symmetry */}
-        <View style={{ marginLeft: 5 }} />
         <View style={{ flex: 1 }}>
           {renderReplyPreview(item)}
           <View
@@ -49,7 +50,12 @@ export const MyMessageBubble = memo(
             }}
           >
             <View style={{ flexShrink: 1, flexGrow: 1, alignSelf: "stretch" }}>
-              <TouchableOpacity activeOpacity={1} onPress={handlePress}>
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={handlePress}
+                onLongPress={onLongPress}
+                delayLongPress={350}
+              >
                 <View
                   style={{
                     backgroundColor: themeColors.purple,
@@ -109,8 +115,8 @@ export const OtherMessageBubble = memo(
     showSenderInfo,
     renderReplyPreview,
     getUserName,
-    onDoubleTap, // <-- add this prop
-    onProfilePicPress, // <-- add this prop
+    onDoubleTap,
+    onProfilePicPress,
   }) => {
     // Double tap logic
     const lastTap = useRef(0);
@@ -134,7 +140,7 @@ export const OtherMessageBubble = memo(
         {showProfilePic ? (
           <View style={{ marginRight: 10 }}>
             <ProfilePicture
-              profilePic={getUserProfilePic(item.uid)}
+              profilePic={getUserProfilePic()}
               themeColors={themeColors}
               size={28}
               isTouchable={!!onProfilePicPress}
@@ -216,7 +222,7 @@ export const OtherMessageBubble = memo(
                     fontFamily: "CarosSoft",
                   }}
                 >
-                  {getUserName ? getUserName(item.uid) : "User"}
+                  {getUserName()}
                 </Text>
               </View>
             )}
@@ -383,131 +389,210 @@ export const NookShareMessage = memo(
 );
 
 // --- PollMessage ---
-export const PollMessage = memo(({ item, themeColors, groupId, userUid }) => {
-  const [selected, setSelected] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  const votes = item.poll?.votes || {};
-  const totalVotes = Object.values(votes).length;
-  const userVote = Object.entries(votes).find(([uid]) => uid === userUid)?.[1];
+export const PollMessage = memo(
+  ({
+    item,
+    themeColors,
+    groupId,
+    userUid,
+    isMe,
+    showProfilePic,
+    getUserProfilePic,
+    onProfilePicPress,
+    showSenderInfo,
+    getUserName,
+  }) => {
+    const [selected, setSelected] = useState(null);
+    const [submitting, setSubmitting] = useState(false);
+    const votes = item.poll?.votes || {};
+    const totalVotes = Object.values(votes).length;
+    const userVote = Object.entries(votes).find(
+      ([uid]) => uid === userUid
+    )?.[1];
 
-  const handleVote = async (idx) => {
-    if (submitting) return;
-    if (userVote === idx) return;
-    setSubmitting(true);
-    try {
-      const msgRef = doc(db, "studyGroups", groupId, "messages", item.id);
-      await updateDoc(msgRef, {
-        [`poll.votes.${userUid}`]: idx,
-      });
-      setSelected(idx);
-    } catch {}
-    setSubmitting(false);
-  };
+    const handleVote = async (idx) => {
+      if (submitting) return;
+      if (userVote === idx) return;
+      setSubmitting(true);
+      try {
+        const msgRef = doc(db, "studyGroups", groupId, "messages", item.id);
+        await updateDoc(msgRef, {
+          [`poll.votes.${userUid}`]: idx,
+        });
+        setSelected(idx);
+      } catch {}
+      setSubmitting(false);
+    };
 
-  return (
-    <TouchableOpacity activeOpacity={1}>
-      <View
-        style={{
-          backgroundColor: themeColors.lightGray + "CC",
-          borderRadius: 12,
-          padding: 10,
-          marginVertical: 8,
-          alignSelf: "center",
-          width: "96%",
-          borderWidth: 1,
-          borderColor: themeColors.purple + "33",
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.04,
-          shadowRadius: 2,
-          elevation: 1,
-        }}
-      >
-        <Text
-          style={{
-            color: themeColors.purple,
-            fontWeight: "bold",
-            fontSize: 15,
-            fontFamily: "CarosSoft",
-            marginBottom: 6,
-            marginLeft: 2,
-          }}
-          numberOfLines={2}
-        >
-          {item.poll?.question}
-        </Text>
-        {item.poll?.options?.map((opt, idx) => {
-          const count = Object.values(votes).filter((v) => v === idx).length;
-          const voted = userVote === idx;
-          return (
-            <TouchableOpacity
-              key={idx}
-              onPress={() => handleVote(idx)}
+    // Alignment and margin logic
+    const containerStyle = isMe
+      ? {
+          flexDirection: "row-reverse",
+          alignItems: "flex-end",
+          alignSelf: "flex-end",
+          marginBottom: 5,
+          maxWidth: "80%",
+          marginRight: -5,
+        }
+      : {
+          flexDirection: "row",
+          alignItems: "flex-end",
+          marginBottom: 5,
+          maxWidth: "80%",
+          marginLeft: -5,
+        };
+
+    return (
+      <TouchableOpacity activeOpacity={1}>
+        <View style={containerStyle}>
+          {isMe ? null : showProfilePic ? (
+            <View style={{ marginRight: 10 }}>
+              <ProfilePicture
+                profilePic={getUserProfilePic()}
+                themeColors={themeColors}
+                size={28}
+                isTouchable={!!onProfilePicPress}
+                onPick={
+                  onProfilePicPress
+                    ? () => onProfilePicPress(item.uid)
+                    : undefined
+                }
+              />
+            </View>
+          ) : (
+            <View style={{ width: 28, marginRight: 10 }} />
+          )}
+          <View style={{ flex: 1 }}>
+            <View
               style={{
-                backgroundColor: voted ? themeColors.purple : themeColors.white,
-                borderRadius: 7,
-                paddingVertical: 8,
-                paddingHorizontal: 10,
-                marginBottom: 5,
-                borderWidth: voted ? 1.5 : 1,
-                borderColor: voted
-                  ? themeColors.purple
-                  : themeColors.purple + "22",
-                opacity: submitting ? 0.6 : 1,
-                minHeight: 32,
-                justifyContent: "center",
+                backgroundColor: themeColors.lightGray + "CC",
+                borderRadius: 12,
+                padding: 10,
+                marginVertical: 8,
+                alignSelf: "stretch",
+                width: "100%",
+                borderWidth: 1,
+                borderColor: themeColors.purple + "33",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.04,
+                shadowRadius: 2,
+                elevation: 1,
               }}
-              disabled={submitting}
-              activeOpacity={0.85}
             >
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontWeight: "bold",
+                  fontSize: 15,
+                  fontFamily: "CarosSoft",
+                  marginBottom: 6,
+                  marginLeft: 2,
+                }}
+                numberOfLines={2}
+              >
+                {item.poll?.question}
+              </Text>
+              {item.poll?.options?.map((opt, idx) => {
+                const count = Object.values(votes).filter(
+                  (v) => v === idx
+                ).length;
+                const voted = userVote === idx;
+                return (
+                  <TouchableOpacity
+                    key={idx}
+                    onPress={() => handleVote(idx)}
+                    style={{
+                      backgroundColor: voted
+                        ? themeColors.purple
+                        : themeColors.white,
+                      borderRadius: 7,
+                      paddingVertical: 8,
+                      paddingHorizontal: 10,
+                      marginBottom: 5,
+                      borderWidth: voted ? 1.5 : 1,
+                      borderColor: voted
+                        ? themeColors.purple
+                        : themeColors.purple + "22",
+                      opacity: submitting ? 0.6 : 1,
+                      minHeight: 32,
+                      justifyContent: "center",
+                    }}
+                    disabled={submitting}
+                    activeOpacity={0.85}
+                  >
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        zIndex: 1,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: voted ? themeColors.white : themeColors.purple,
+                          fontWeight: "bold",
+                          fontFamily: "CarosSoft",
+                          fontSize: 14,
+                          flex: 1,
+                          flexWrap: "wrap",
+                        }}
+                        numberOfLines={1}
+                      >
+                        {opt}
+                      </Text>
+                      <Text
+                        style={{
+                          color: voted ? themeColors.white : themeColors.purple,
+                          fontSize: 12,
+                          marginLeft: 8,
+                          fontFamily: "CarosSoft",
+                        }}
+                      >
+                        {count} vote{count !== 1 ? "s" : ""}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+              {userVote !== undefined && (
+                <Text
+                  style={{
+                    color: themeColors.darkGray,
+                    fontSize: 11,
+                    marginTop: 4,
+                    fontFamily: "CarosSoft",
+                    textAlign: "right",
+                  }}
+                >
+                  You voted
+                </Text>
+              )}
+            </View>
+            {showSenderInfo && (
               <View
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
-                  zIndex: 1,
+                  marginTop: 2,
                 }}
               >
                 <Text
                   style={{
-                    color: voted ? themeColors.white : themeColors.purple,
+                    color: themeColors.darkGray,
                     fontWeight: "bold",
-                    fontFamily: "CarosSoft",
-                    fontSize: 14,
-                    flex: 1,
-                    flexWrap: "wrap",
-                  }}
-                  numberOfLines={1}
-                >
-                  {opt}
-                </Text>
-                <Text
-                  style={{
-                    color: voted ? themeColors.white : themeColors.purple,
-                    fontSize: 12,
-                    marginLeft: 8,
+                    fontSize: 11,
+                    marginRight: 2,
                     fontFamily: "CarosSoft",
                   }}
                 >
-                  {count} vote{count !== 1 ? "s" : ""}
+                  {getUserName()}
                 </Text>
               </View>
-            </TouchableOpacity>
-          );
-        })}
-        {userVote !== undefined && (
-          <Text
-            style={{
-              color: themeColors.darkGray,
-              fontSize: 11,
-              marginTop: 4,
-              fontFamily: "CarosSoft",
-              textAlign: "right",
-            }}
-          >
-            You voted
-          </Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
-});
+            )}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  }
+);

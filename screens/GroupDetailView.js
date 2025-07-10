@@ -246,6 +246,24 @@ export default function GroupDetailView({ navigation, route }) {
     if (!input.trim() || sending) return;
     setSending(true);
     try {
+      // Fetch sender info
+      let senderName = "";
+      let senderProfilePic = null;
+      try {
+        const userDoc = await getDoc(doc(db, "users", auth.currentUser?.uid));
+        if (userDoc.exists()) {
+          const d = userDoc.data();
+          const first = d.firstName || "";
+          const last = d.lastName || "";
+          senderName =
+            first && last
+              ? `${first} ${last.charAt(0)}`
+              : first
+              ? first
+              : "User";
+          senderProfilePic = d.profilePic || null;
+        }
+      } catch {}
       await addDoc(collection(db, "studyGroups", groupId, "messages"), {
         text: input.trim(),
         uid: auth.currentUser?.uid,
@@ -258,6 +276,8 @@ export default function GroupDetailView({ navigation, route }) {
             }
           : null,
         mentions: mentionedUsers, // <-- use tracked mentioned users
+        senderName,
+        senderProfilePic,
       });
       setInput("");
       setReplyToMessage(null);
@@ -270,10 +290,24 @@ export default function GroupDetailView({ navigation, route }) {
   const handleSendPoll = async ({ question, options }) => {
     if (!groupId || !question || !options || options.length < 2) return;
     try {
-      const { addDoc, collection, serverTimestamp } = await import(
-        "firebase/firestore"
-      );
-      const { db, auth } = await import("../firebaseConfig");
+      // Fetch sender info
+      let senderName = "";
+      let senderProfilePic = null;
+      try {
+        const userDoc = await getDoc(doc(db, "users", auth.currentUser?.uid));
+        if (userDoc.exists()) {
+          const d = userDoc.data();
+          const first = d.firstName || "";
+          const last = d.lastName || "";
+          senderName =
+            first && last
+              ? `${first} ${last.charAt(0)}`
+              : first
+              ? first
+              : "User";
+          senderProfilePic = d.profilePic || null;
+        }
+      } catch {}
       await addDoc(collection(db, "studyGroups", groupId, "messages"), {
         type: "poll",
         poll: {
@@ -283,6 +317,8 @@ export default function GroupDetailView({ navigation, route }) {
         },
         uid: auth.currentUser?.uid,
         createdAt: serverTimestamp(),
+        senderName,
+        senderProfilePic,
       });
     } catch {}
   };
@@ -290,7 +326,7 @@ export default function GroupDetailView({ navigation, route }) {
   // Helper to fetch and cache user info (name and profilePic)
   const fetchUserNameAndPic = async (uid) => {
     if (!uid) return { name: "User", profilePic: null };
-    if (uid === auth.currentUser?.uid) return { name: "You", profilePic: null };
+    if (uid === auth.currentUser?.uid) return { name: "", profilePic: null };
     if (userCache[uid] && userPicCache[uid] !== undefined)
       return { name: userCache[uid], profilePic: userPicCache[uid] };
     try {
@@ -314,10 +350,9 @@ export default function GroupDetailView({ navigation, route }) {
   const getUserName = useCallback(
     (uid) => {
       if (!uid) return "User";
-      if (uid === auth.currentUser?.uid) return "You";
+      if (uid === auth.currentUser?.uid) return "";
       if (userCache[uid]) return userCache[uid];
       fetchUserNameAndPic(uid);
-      return "User";
     },
     [userCache, auth.currentUser?.uid]
   );

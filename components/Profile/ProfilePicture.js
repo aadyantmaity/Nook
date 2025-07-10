@@ -34,7 +34,7 @@ export default function ProfilePicture({
             width: size,
             height: size,
             borderRadius: size / 2,
-            backgroundColor: themeColors.purple,
+            // backgroundColor: themeColors.purple,
             alignItems: "center",
             justifyContent: "center",
             overflow: "hidden",
@@ -56,9 +56,9 @@ export default function ProfilePicture({
             />
           )}
           {/* Always show fallback icon until image is loaded */}
-          {(!profilePic || !imageLoaded) && (
+          {/* {(!profilePic || !imageLoaded) && (
             <User size={size * 0.8} color={themeColors.white} />
-          )}
+          )} */}
         </View>
       </TouchableOpacity>
     );

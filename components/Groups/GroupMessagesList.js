@@ -171,9 +171,9 @@ const GroupMessagesList = memo(
       (item) => {
         let name = "";
         if (item.uid === auth.currentUser?.uid) {
-          name = getUserName(item.uid) || "You";
+          name = getUserName(item.uid);
         } else {
-          name = getUserName(item.uid) || "User";
+          name = getUserName(item.uid);
         }
         let time = "";
         let date = "";
@@ -224,28 +224,43 @@ const GroupMessagesList = memo(
         // So index 0 is the most recent message, index N is the oldest
         // To get the "next" message in chronological order:
         const nextItem = messages[messages.length - 2 - index];
+        // --- NEW: Get previous item in reversed array (i.e., visually next message up) ---
+        const reversedMessages = [...messages].reverse();
+        // Find the next "real" message above (not system/nook_share)
+        let prevItem = null;
+        for (let i = index - 1; i >= 0; i--) {
+          const candidate = reversedMessages[i];
+          if (candidate && !["nook_share", "system"].includes(candidate.type)) {
+            prevItem = candidate;
+            break;
+          }
+        }
         const userMentioned = isUserMentioned(item);
 
         // --- Date separator logic ---
         let showDateSeparator = false;
         const thisDate = getDateString(item);
         const nextDate = nextItem ? getDateString(nextItem) : null;
-        // Show separator if this is the first message or the next message is a different date
         if (!nextItem || thisDate !== nextDate) {
           showDateSeparator = true;
         }
 
+        // --- Show profile pic and name for my message if next is not mine or this is most recent ---
+        let showMyProfilePic = false;
+        let showMySenderInfo = false;
+        if (isMe) {
+          if (!nextItem || nextItem.uid !== item.uid) {
+            showMyProfilePic = true;
+            showMySenderInfo = true;
+          }
+        }
+
+        // --- CHANGED: Show profile pic and sender info for others, after their last message in chain ---
+        // Use prevItem (visually next message up) and skip only nook_share/system
         const showProfilePic =
-          !isMe &&
-          (!nextItem ||
-            nextItem?.uid !== item.uid ||
-            nextItem?.type === "system" ||
-            nextItem?.type === "nook_share");
+          !isMe && (!prevItem || prevItem.uid !== item.uid);
         const showSenderInfo =
-          !nextItem ||
-          nextItem?.uid !== item.uid ||
-          nextItem?.type === "system" ||
-          nextItem?.type === "nook_share";
+          !isMe && (!prevItem || prevItem.uid !== item.uid);
 
         // --- Render date separator if needed ---
         const dateSeparator = showDateSeparator ? (
@@ -280,7 +295,6 @@ const GroupMessagesList = memo(
           </View>
         ) : null;
 
-        // --- Message rendering ---
         let messageNode = null;
         if (item.type === "system") {
           messageNode = <SystemMessage item={item} themeColors={themeColors} />;
@@ -295,12 +309,33 @@ const GroupMessagesList = memo(
             />
           );
         } else if (item.type === "poll") {
+          // --- Only show profile pic/sender info if visually most bottom message from user ---
+          let pollShowProfilePic, pollShowSenderInfo;
+          if (isMe) {
+            pollShowProfilePic = showMyProfilePic;
+            pollShowSenderInfo = showMySenderInfo;
+          } else {
+            pollShowProfilePic = showProfilePic;
+            pollShowSenderInfo = showSenderInfo;
+          }
           messageNode = (
             <PollMessage
               item={item}
               themeColors={themeColors}
               groupId={group?.id}
               userUid={auth.currentUser?.uid}
+              isMe={isMe}
+              showProfilePic={pollShowProfilePic}
+              getUserProfilePic={() =>
+                item.senderProfilePic || getUserProfilePic(item.uid)
+              }
+              onProfilePicPress={(uid) => {
+                if (uid) {
+                  navigation.navigate("Profile", { uid });
+                }
+              }}
+              showSenderInfo={pollShowSenderInfo}
+              getUserName={() => item.senderName || getUserName(item.uid)}
             />
           );
         } else if (isMe) {
@@ -311,30 +346,58 @@ const GroupMessagesList = memo(
               userMentioned={userMentioned}
               openSenderInfoModal={undefined}
               renderReplyPreview={renderReplyPreview}
-              showSenderInfo={showSenderInfo}
-              getUserName={getUserName}
+              getUserName={() => item.senderName || getUserName(item.uid)}
               onDoubleTap={() => handleDoubleTap(item)}
+              showProfilePic={showMyProfilePic}
+              profilePic={
+                item.senderProfilePic ||
+                getUserProfilePic(auth.currentUser?.uid)
+              }
+              userName={item.senderName || getUserName(auth.currentUser?.uid)}
+              // --- Add onLongPress for delete ---
+              onLongPress={() => {
+                Alert.alert(
+                  "Delete Message",
+                  "Are you sure you want to delete this message?",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Delete",
+                      style: "destructive",
+                      onPress: () => handleDeleteMessage(item.id),
+                    },
+                  ]
+                );
+              }}
             />
           );
         } else {
+          // --- Add marginTop if previous message is from a different user ---
+          const addGap = prevItem && prevItem.uid !== item.uid ? 20 : 0; // adjust gap as needed
           messageNode = (
-            <OtherMessageBubble
-              item={item}
-              themeColors={themeColors}
-              userMentioned={userMentioned}
-              openSenderInfoModal={undefined}
-              showProfilePic={showProfilePic}
-              getUserProfilePic={getUserProfilePic}
-              showSenderInfo={showSenderInfo}
-              renderReplyPreview={renderReplyPreview}
-              getUserName={getUserName}
-              onDoubleTap={() => handleDoubleTap(item)}
-              onProfilePicPress={(uid) => {
-                if (uid) {
-                  navigation.navigate("Profile", { uid });
+            <View style={{ marginBottom: addGap }}>
+              <OtherMessageBubble
+                item={item}
+                themeColors={themeColors}
+                userMentioned={userMentioned}
+                openSenderInfoModal={undefined}
+                showProfilePic={showProfilePic}
+                getUserProfilePic={() =>
+                  item.senderProfilePic || getUserProfilePic(item.uid)
                 }
-              }}
-            />
+                showSenderInfo={showSenderInfo}
+                renderReplyPreview={renderReplyPreview}
+                getUserName={() => item.senderName || getUserName(item.uid)}
+                onDoubleTap={() => handleDoubleTap(item)}
+                onProfilePicPress={(uid) => {
+                  if (uid) {
+                    navigation.navigate("Profile", { uid });
+                  }
+                }}
+                // --- Only allow long press for own messages ---
+                onLongPress={undefined}
+              />
+            </View>
           );
         }
 
@@ -459,40 +522,6 @@ const GroupMessagesList = memo(
                 elevation: 8,
               }}
             >
-              {/* Trash icon button in top right */}
-              {modalInfo.canDelete && (
-                <TouchableOpacity
-                  style={{
-                    position: "absolute",
-                    top: 12,
-                    right: 12,
-                    borderRadius: 20,
-                    padding: 8,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    zIndex: 2,
-                  }}
-                  onPress={() => {
-                    setModalVisible(false);
-                    Alert.alert(
-                      "Delete Message",
-                      "Are you sure you want to delete this message?",
-                      [
-                        { text: "Cancel", style: "cancel" },
-                        {
-                          text: "Delete",
-                          style: "destructive",
-                          onPress: () =>
-                            handleDeleteMessage(modalInfo.messageId),
-                        },
-                      ]
-                    );
-                  }}
-                  accessibilityLabel="Delete message"
-                >
-                  <Trash size={20} color={themeColors.red} />
-                </TouchableOpacity>
-              )}
               <Text
                 style={{
                   fontSize: 18,
@@ -523,7 +552,6 @@ const GroupMessagesList = memo(
               >
                 {modalInfo.date}
               </Text>
-              {/* Remove old delete button at the bottom */}
             </View>
           </Pressable>
         </Modal>
