@@ -110,6 +110,7 @@ export const OtherMessageBubble = memo(
     renderReplyPreview,
     getUserName,
     onDoubleTap, // <-- add this prop
+    onProfilePicPress, // <-- add this prop
   }) => {
     // Double tap logic
     const lastTap = useRef(0);
@@ -136,6 +137,12 @@ export const OtherMessageBubble = memo(
               profilePic={getUserProfilePic(item.uid)}
               themeColors={themeColors}
               size={28}
+              isTouchable={!!onProfilePicPress}
+              onPick={
+                onProfilePicPress
+                  ? () => onProfilePicPress(item.uid)
+                  : undefined
+              }
             />
           </View>
         ) : (
@@ -431,8 +438,6 @@ export const PollMessage = memo(({ item, themeColors, groupId, userUid }) => {
         </Text>
         {item.poll?.options?.map((opt, idx) => {
           const count = Object.values(votes).filter((v) => v === idx).length;
-          const percent =
-            totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
           const voted = userVote === idx;
           return (
             <TouchableOpacity
@@ -455,22 +460,6 @@ export const PollMessage = memo(({ item, themeColors, groupId, userUid }) => {
               disabled={submitting}
               activeOpacity={0.85}
             >
-              {userVote !== undefined && (
-                <View
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: `${percent}%`,
-                    backgroundColor: voted
-                      ? themeColors.purple + "55"
-                      : themeColors.purple + "18",
-                    borderRadius: 7,
-                    zIndex: 0,
-                  }}
-                />
-              )}
               <View
                 style={{
                   flexDirection: "row",
@@ -491,32 +480,17 @@ export const PollMessage = memo(({ item, themeColors, groupId, userUid }) => {
                 >
                   {opt}
                 </Text>
-                {userVote !== undefined && (
-                  <Text
-                    style={{
-                      color: voted ? themeColors.white : themeColors.purple,
-                      fontSize: 12,
-                      marginLeft: 8,
-                      fontFamily: "CarosSoft",
-                    }}
-                  >
-                    {percent}%
-                  </Text>
-                )}
-              </View>
-              {userVote !== undefined && (
                 <Text
                   style={{
-                    color: voted ? themeColors.white : themeColors.darkGray,
-                    fontSize: 11,
-                    marginTop: 1,
+                    color: voted ? themeColors.white : themeColors.purple,
+                    fontSize: 12,
+                    marginLeft: 8,
                     fontFamily: "CarosSoft",
-                    textAlign: "right",
                   }}
                 >
                   {count} vote{count !== 1 ? "s" : ""}
                 </Text>
-              )}
+              </View>
             </TouchableOpacity>
           );
         })}

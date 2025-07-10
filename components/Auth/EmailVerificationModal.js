@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  Linking,
 } from "react-native";
 import { Check, X, Warning, Flag } from "phosphor-react-native"; // <-- import Flag icon
 import { colors } from "../../constants/colors";
@@ -23,6 +24,9 @@ export default function EmailVerificationModal({
   const [showReport, setShowReport] = useState(false);
   const [reportText, setReportText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // --- Privacy Policy checkbox state ---
+  const [privacyChecked, setPrivacyChecked] = useState(false);
 
   // --- Handler for submitting report ---
   const handleSubmitReport = async () => {
@@ -74,7 +78,7 @@ export default function EmailVerificationModal({
         >
           <View
             style={{
-              backgroundColor: "white",
+              backgroundColor: colors.white,
               borderRadius: 16,
               paddingTop: 0,
               paddingHorizontal: 0,
@@ -140,7 +144,7 @@ export default function EmailVerificationModal({
                     lineHeight: 19,
                   }}
                 >
-                  Please verify your email address to continue using Nook.
+                  Please verify your email address to continue.
                 </Text>
                 {/* Add spam folder reminder */}
                 <Text
@@ -156,6 +160,75 @@ export default function EmailVerificationModal({
                   Make sure to check your spam/junk folder.
                 </Text>
               </View>
+              {/* --- Privacy Policy Checkbox --- */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 10,
+                  marginTop: 16,
+                  width: "100%",
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <TouchableOpacity
+                    onPress={() => setPrivacyChecked((v) => !v)}
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: 5,
+                      borderWidth: 1.5,
+                      borderColor: colors.purple,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: 8,
+                      backgroundColor: privacyChecked
+                        ? colors.purple
+                        : colors.white,
+                    }}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: privacyChecked }}
+                  >
+                    {privacyChecked && (
+                      <Check size={16} color={colors.white} weight="bold" />
+                    )}
+                  </TouchableOpacity>
+                  <Text
+                    style={{
+                      fontFamily: "CarosSoft",
+                      fontSize: 13,
+                      color: colors.black,
+                      flexShrink: 1,
+                      flexWrap: "wrap",
+                      textAlign: "left",
+                    }}
+                  >
+                    I agree to the{" "}
+                    <Text
+                      style={{
+                        color: colors.purple,
+                        textDecorationLine: "underline",
+                      }}
+                      onPress={() =>
+                        Linking.openURL(
+                          "https://www.privacypolicies.com/live/35744bc7-0942-485b-bd9d-d9880ae92163"
+                        )
+                      }
+                    >
+                      Privacy Policy
+                    </Text>
+                    .
+                  </Text>
+                </View>
+              </View>
+              {/* --- End Privacy Policy Checkbox --- */}
               <View style={{ marginBottom: 4 }}>
                 {errorMessage && (
                   <Text
@@ -200,9 +273,11 @@ export default function EmailVerificationModal({
                       alignSelf: "center",
                       marginBottom: 0,
                       flex: 1,
+                      opacity: privacyChecked ? 1 : 0.5,
                     }}
                     onPress={onCheckVerification}
-                    activeOpacity={0.85}
+                    activeOpacity={privacyChecked ? 0.85 : 1}
+                    disabled={!privacyChecked}
                   >
                     <View
                       style={{
@@ -218,7 +293,7 @@ export default function EmailVerificationModal({
                           fontSize: 15,
                           fontWeight: "500",
                           marginLeft: 4,
-                          color: "white",
+                          color: colors.white,
                         }}
                       >
                         I've Verified

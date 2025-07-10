@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   View,
@@ -14,6 +14,18 @@ export default function PollModal({ visible, onClose, onSubmit, themeColors }) {
   const [question, setQuestion] = useState("");
   const [options, setOptions] = useState(["", ""]);
   const [submitting, setSubmitting] = useState(false);
+  const [pendingPoll, setPendingPoll] = useState(null); // store poll to send after close
+
+  // When modal closes and there's a pending poll, send it
+  useEffect(() => {
+    if (!visible && pendingPoll) {
+      // Wait for modal to fully close (next tick)
+      setTimeout(() => {
+        onSubmit(pendingPoll);
+        setPendingPoll(null);
+      }, 0);
+    }
+  }, [visible, pendingPoll, onSubmit]);
 
   const handleOptionChange = (idx, val) => {
     setOptions((prev) => {
@@ -38,7 +50,7 @@ export default function PollModal({ visible, onClose, onSubmit, themeColors }) {
       return;
     }
     setSubmitting(true);
-    await onSubmit({
+    setPendingPoll({
       question: question.trim(),
       options: options.map((o) => o.trim()).filter(Boolean),
     });
