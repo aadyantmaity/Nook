@@ -157,8 +157,47 @@ export default function SpotDetailScreen({ route, navigation }) {
 
   const canCheckIn = !lastCheckIn || Date.now() - lastCheckIn > 60 * 60 * 1000;
 
+  // --- Live Update Cooldown State ---
+  const [lastLiveUpdate, setLastLiveUpdate] = useState(0);
+
+  // Track last live update time (per user, from Firestore)
+  useEffect(() => {
+    if (!user) return;
+    const userRef = doc(db, "users", user.uid);
+    const unsub = onSnapshot(userRef, (userDoc) => {
+      if (userDoc.exists()) {
+        setLastLiveUpdate(userDoc.data().lastLiveUpdate || 0);
+      }
+    });
+    return () => unsub();
+  }, [user]);
+
+  // Helper: can submit live update (30 min cooldown)
+  function canSubmitLiveUpdate() {
+    return !lastLiveUpdate || Date.now() - lastLiveUpdate > 30 * 60 * 1000;
+  }
+
   // Submit handler for live update
   const handleLiveUpdate = async () => {
+    if (!canSubmitLiveUpdate()) {
+      Alert.alert(
+        "Cooldown",
+        "You can only submit a live update every 30 minutes."
+      );
+      return;
+    }
+    // Disable if no options selected
+    if (
+      liveNoise === -2 ||
+      liveCrowd === -2 ||
+      (isOdegaard && tableAvailability === null)
+    ) {
+      Alert.alert(
+        "Select an option",
+        "Please select all required live update options."
+      );
+      return;
+    }
     setIsSubmittingLive(true);
     try {
       const ratingData = {
@@ -167,11 +206,14 @@ export default function SpotDetailScreen({ route, navigation }) {
         crowd: liveCrowd,
         timestamp: serverTimestamp(),
       };
-      // Only add tableAvailability for Odegaard
       if (isOdegaard && tableAvailability !== null) {
         ratingData.tableAvailability = tableAvailability;
       }
       await addDoc(collection(db, "ratings"), ratingData);
+      // Set cooldown in user doc
+      const userRef = doc(db, "users", user.uid);
+      await updateDoc(userRef, { lastLiveUpdate: Date.now() });
+      setLastLiveUpdate(Date.now());
     } catch (e) {
       Alert.alert("Error", "Failed to submit live update.");
     }
@@ -783,7 +825,9 @@ export default function SpotDetailScreen({ route, navigation }) {
                   showTableAvailability={isOdegaard}
                   tableAvailability={tableAvailability}
                   setTableAvailability={setTableAvailability}
-                  spot={spot} // <-- Pass spot for geofence
+                  spot={spot}
+                  canSubmitLiveUpdate={canSubmitLiveUpdate()}
+                  lastLiveUpdate={lastLiveUpdate}
                 />
               </View>
             )}
@@ -1238,7 +1282,9 @@ export default function SpotDetailScreen({ route, navigation }) {
                   showTableAvailability={isOdegaard}
                   tableAvailability={tableAvailability}
                   setTableAvailability={setTableAvailability}
-                  spot={spot} // <-- Pass spot for geofence
+                  spot={spot}
+                  canSubmitLiveUpdate={canSubmitLiveUpdate()}
+                  lastLiveUpdate={lastLiveUpdate}
                 />
               </View>
             )}

@@ -4,7 +4,7 @@ export const colors = {
   white: "#FFFaf4", // Fix: set white to actual white
   black: "#000000", // Use for high-contrast text/icons
   gray: "#F0F0F0",
-  darkGray: "#aaaaaa",
+  darkGray: "#b0b0b0",
   darkBackground: "#121212", // Dark mode background
   darkCard: "#1E1E1E", // Dark mode card background
   lightText: "#b7a57a", // Light text for dark mode

@@ -40,6 +40,8 @@ export default function LiveUpdateSliders({
   tableAvailability,
   setTableAvailability,
   spot,
+  canSubmitLiveUpdate = true,
+  lastLiveUpdate = 0,
 }) {
   // Helper: Haversine distance in meters
   function getDistanceMeters(lat1, lon1, lat2, lon2) {
@@ -92,7 +94,28 @@ export default function LiveUpdateSliders({
     }
     // Call original submit handler
     onSubmit && onSubmit();
+    // Reset choices after submit
+    setLiveNoise(-2);
+    setLiveCrowd(-2);
+    if (showTableAvailability) setTableAvailability(null);
   };
+
+  // Disable submit unless all options selected
+  const noOptionsSelected =
+    liveNoise === -2 ||
+    liveCrowd === -2 ||
+    (showTableAvailability && tableAvailability === null);
+
+  // Helper: format cooldown time left
+  function getCooldownLabel() {
+    if (!lastLiveUpdate) return "";
+    const msLeft = 30 * 60 * 1000 - (Date.now() - lastLiveUpdate);
+    if (msLeft > 0) {
+      const min = Math.ceil(msLeft / 60000);
+      return `You can submit again in ${min} min`;
+    }
+    return "";
+  }
 
   return (
     <View
@@ -326,7 +349,10 @@ export default function LiveUpdateSliders({
         <TouchableOpacity
           onPress={handleGeofencedSubmit}
           style={{
-            backgroundColor: themeColors.purple,
+            backgroundColor:
+              canSubmitLiveUpdate && !noOptionsSelected
+                ? themeColors.purple
+                : themeColors.gray,
             borderRadius: 8,
             paddingVertical: 8,
             paddingHorizontal: 18,
@@ -335,16 +361,25 @@ export default function LiveUpdateSliders({
             justifyContent: "center",
             opacity: isSubmittingLive ? 0.7 : 1,
           }}
-          disabled={isSubmittingLive}
+          disabled={
+            isSubmittingLive || !canSubmitLiveUpdate || noOptionsSelected
+          }
         >
           <Check
             size={16}
-            color={themeColors.white}
+            color={
+              !canSubmitLiveUpdate || noOptionsSelected
+                ? themeColors.darkGray
+                : themeColors.white
+            }
             style={{ marginRight: 6 }}
           />
           <Text
             style={{
-              color: themeColors.white,
+              color:
+                !canSubmitLiveUpdate || noOptionsSelected
+                  ? themeColors.darkGray
+                  : themeColors.white,
               fontWeight: "bold",
               fontSize: 13,
               fontFamily: "CarosSoft",
@@ -354,6 +389,34 @@ export default function LiveUpdateSliders({
           </Text>
         </TouchableOpacity>
       </View>
+      {/* Show cooldown message if needed */}
+      {!canSubmitLiveUpdate && (
+        <Text
+          style={{
+            color: themeColors.red,
+            fontSize: 13,
+            marginTop: 6,
+            textAlign: "center",
+            fontFamily: "CarosSoft",
+          }}
+        >
+          {getCooldownLabel()}
+        </Text>
+      )}
+      {/* Show message if no options selected */}
+      {noOptionsSelected && canSubmitLiveUpdate && (
+        <Text
+          style={{
+            color: themeColors.darkGray,
+            fontSize: 13,
+            marginTop: 6,
+            textAlign: "center",
+            fontFamily: "CarosSoft",
+          }}
+        >
+          Please select all required options.
+        </Text>
+      )}
     </View>
   );
 }
