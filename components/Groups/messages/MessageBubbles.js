@@ -37,7 +37,6 @@ export const MyMessageBubble = memo(
           alignSelf: "flex-end",
           marginBottom: 5,
           maxWidth: "80%",
-          marginRight: -5,
         }}
       >
         <View style={{ flex: 1 }}>
@@ -278,114 +277,156 @@ export const SystemMessage = memo(({ item, themeColors }) => (
 
 // --- NookShareMessage ---
 export const NookShareMessage = memo(
-  ({ item, themeColors, navigation, starredNooks, toggleStarNook }) => (
-    <TouchableOpacity activeOpacity={1}>
-      <View
-        style={{
+  ({
+    item,
+    themeColors,
+    navigation,
+    starredNooks,
+    toggleStarNook,
+    isMe,
+    showProfilePic,
+    getUserProfilePic,
+    showSenderInfo,
+    getUserName,
+    addGap = 0,
+  }) => {
+    // Alignment and margin logic (same as MyMessageBubble for isMe)
+    const containerStyle = isMe
+      ? {
+          flexDirection: "row-reverse",
+          alignItems: "flex-end",
+          alignSelf: "flex-end",
+          marginBottom: 5 + addGap,
+          maxWidth: "80%",
+        }
+      : {
           flexDirection: "row",
-          alignSelf: "center",
-          alignItems: "center",
-          marginBottom: 30,
-          marginTop: 30,
-          maxWidth: "100%",
-        }}
-      >
-        <TouchableOpacity
-          onPress={() =>
-            navigation.navigate("SpotDetail", { spotId: item.spotId })
-          }
-          style={{
-            maxWidth: 280,
-            backgroundColor: themeColors.lightGray,
-            borderRadius: 14,
-            padding: 12,
-            flexDirection: "row",
-            alignItems: "center",
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-            elevation: 3,
-            borderColor: themeColors.black,
-            borderWidth: 0.5,
-            elevation: 5,
-          }}
-        >
-          {item.spotPhoto ? (
-            <View
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 8,
-                overflow: "hidden",
-                marginRight: 12,
-              }}
+          alignItems: "flex-end",
+          alignSelf: "flex-start",
+          marginBottom: 5 + addGap,
+          maxWidth: "80%",
+          marginLeft: -5,
+        };
+
+    return (
+      <View style={containerStyle}>
+        {isMe ? null : showProfilePic ? (
+          <View style={{ marginRight: 10 }}>
+            <ProfilePicture
+              profilePic={getUserProfilePic()}
+              themeColors={themeColors}
+              size={28}
+              isTouchable={!!onProfilePicPress}
+              onPick={
+                onProfilePicPress
+                  ? () => onProfilePicPress(item.uid)
+                  : undefined
+              }
+            />
+          </View>
+        ) : (
+          <View style={{ width: 28, marginRight: 10 }} />
+        )}
+        <View style={{ flex: 1 }}>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("SpotDetail", { spotId: item.spotId })
+            }
+            style={{
+              backgroundColor: themeColors.lightGray,
+              borderRadius: 14,
+              padding: 12,
+              flexDirection: "row",
+              alignItems: "center",
+              borderWidth: 1,
+              borderColor: themeColors.purple + "44",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.04,
+              shadowRadius: 2,
+              elevation: 1,
+            }}
+          >
+            {item.spotPhoto ? (
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  marginRight: 12,
+                }}
+              >
+                <Image
+                  source={{ uri: item.spotPhoto }}
+                  style={{ width: "100%", height: "100%" }}
+                  resizeMode="cover"
+                />
+              </View>
+            ) : (
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 8,
+                  backgroundColor: themeColors.purple,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 12,
+                }}
+              >
+                <MapPin size={32} color={themeColors.white} />
+              </View>
+            )}
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontWeight: "bold",
+                  fontSize: 16,
+                  fontFamily: "CarosSoft",
+                }}
+                numberOfLines={1}
+              >
+                {item.spotName || "Nook"}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => toggleStarNook(item.spotId)}
+              style={{ padding: 4 }}
             >
-              <Image
-                source={{ uri: item.spotPhoto }}
-                style={{ width: "100%", height: "100%" }}
-                resizeMode="cover"
+              <Star
+                size={22}
+                color={themeColors.purple}
+                weight={starredNooks.includes(item.spotId) ? "fill" : "regular"}
               />
-            </View>
-          ) : (
+            </TouchableOpacity>
+          </TouchableOpacity>
+          {!isMe && showSenderInfo && (
             <View
               style={{
-                width: 48,
-                height: 48,
-                borderRadius: 8,
-                backgroundColor: themeColors.purple,
+                flexDirection: "row",
                 alignItems: "center",
-                justifyContent: "center",
-                marginRight: 12,
-              }}
-            >
-              <MapPin size={32} color={themeColors.white} />
-            </View>
-          )}
-          <View style={{ flex: 1 }}>
-            <Text
-              style={{
-                color: themeColors.purple,
-                fontWeight: "bold",
-                fontSize: 16,
-                fontFamily: "CarosSoft",
-              }}
-              numberOfLines={1}
-            >
-              {item.spotName || "Nook"}
-            </Text>
-            <Text
-              style={{
-                color: themeColors.darkGray,
-                fontSize: 13,
-                fontFamily: "CarosSoft",
                 marginTop: 2,
               }}
-              numberOfLines={1}
             >
-              {"Shared by "}
-              {item.senderFirstName
-                ? item.senderFirstName +
-                  (item.senderLastName
-                    ? " " + item.senderLastName.charAt(0)
-                    : "")
-                : item.senderName || "Someone"}
-            </Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => toggleStarNook(item.spotId)}
-            style={{ padding: 4 }}
-          >
-            <Star
-              size={22}
-              color={themeColors.purple}
-              weight={starredNooks.includes(item.spotId) ? "fill" : "regular"}
-            />
-          </TouchableOpacity>
-        </TouchableOpacity>
+              <Text
+                style={{
+                  color: themeColors.darkGray,
+                  fontWeight: "bold",
+                  fontSize: 11,
+                  marginRight: 2,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                {getUserName()}
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
-    </TouchableOpacity>
-  )
+    );
+  }
 );
 
 // --- PollMessage ---
@@ -432,7 +473,6 @@ export const PollMessage = memo(
           alignSelf: "flex-end",
           marginBottom: 5,
           maxWidth: "80%",
-          marginRight: -5,
         }
       : {
           flexDirection: "row",
@@ -472,7 +512,7 @@ export const PollMessage = memo(
                 alignSelf: "stretch",
                 width: "100%",
                 borderWidth: 1,
-                borderColor: themeColors.purple + "33",
+                borderColor: themeColors.purple + "44",
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 1 },
                 shadowOpacity: 0.04,
@@ -596,3 +636,5 @@ export const PollMessage = memo(
     );
   }
 );
+
+// No changes needed, already uses item.senderName and item.senderProfilePic

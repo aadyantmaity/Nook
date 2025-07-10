@@ -640,15 +640,6 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
                         >
                           {user.name}
                         </Text>
-                        <Text
-                          style={{
-                            color: themeColors.darkGray,
-                            fontSize: 12,
-                            fontFamily: "CarosSoft",
-                          }}
-                        >
-                          {user.email}
-                        </Text>
                         {recentlyCheckedInUids.includes(user.uid) &&
                           !isSelected && (
                             <Text

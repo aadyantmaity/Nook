@@ -444,6 +444,7 @@ export default function GroupDetailView({ navigation, route }) {
               ...nookDoc.data(),
               sharedBy: shareMsg?.senderName,
               sharedByUid: shareMsg?.uid,
+              sharedByProfilePic: shareMsg?.senderProfilePic,
               spotPhoto: shareMsg?.spotPhoto,
               spotName: shareMsg?.spotName,
             });

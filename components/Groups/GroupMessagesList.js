@@ -299,6 +299,17 @@ const GroupMessagesList = memo(
         if (item.type === "system") {
           messageNode = <SystemMessage item={item} themeColors={themeColors} />;
         } else if (item.type === "nook_share") {
+          // --- Treat nook_share like poll: alignment, sender info, profile pic ---
+          let nookShowProfilePic, nookShowSenderInfo;
+          if (isMe) {
+            nookShowProfilePic = showMyProfilePic;
+            nookShowSenderInfo = false; // <-- Don't show sender info for own nook_share
+          } else {
+            nookShowProfilePic = showProfilePic;
+            nookShowSenderInfo = showSenderInfo;
+          }
+          // Add gap if previous message is from a different user
+          const addGap = prevItem && prevItem.uid !== item.uid ? 20 : 0;
           messageNode = (
             <NookShareMessage
               item={item}
@@ -306,6 +317,14 @@ const GroupMessagesList = memo(
               navigation={navigation}
               starredNooks={starredNooks}
               toggleStarNook={toggleStarNook}
+              isMe={isMe}
+              showProfilePic={nookShowProfilePic}
+              getUserProfilePic={() =>
+                item.senderProfilePic || getUserProfilePic(item.uid)
+              }
+              showSenderInfo={nookShowSenderInfo}
+              getUserName={() => item.senderName || getUserName(item.uid)}
+              addGap={addGap}
             />
           );
         } else if (item.type === "poll") {
@@ -373,7 +392,7 @@ const GroupMessagesList = memo(
           );
         } else {
           // --- Add marginTop if previous message is from a different user ---
-          const addGap = prevItem && prevItem.uid !== item.uid ? 20 : 0; // adjust gap as needed
+          const addGap = prevItem && prevItem.uid !== item.uid ? 20 : 0;
           messageNode = (
             <View style={{ marginBottom: addGap }}>
               <OtherMessageBubble
