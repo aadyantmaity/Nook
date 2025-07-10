@@ -329,6 +329,11 @@ const GroupMessagesList = memo(
               renderReplyPreview={renderReplyPreview}
               getUserName={getUserName}
               onDoubleTap={() => handleDoubleTap(item)}
+              onProfilePicPress={(uid) => {
+                if (uid) {
+                  navigation.navigate("Profile", { uid });
+                }
+              }}
             />
           );
         }
