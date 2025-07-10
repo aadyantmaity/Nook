@@ -111,12 +111,12 @@ export default function SpotDetailScreen({ route, navigation }) {
   const [liveNoise, setLiveNoise] = useState(
     spot?.ratings?.noise === "N/A" || spot?.ratings?.noise === "No rating yet"
       ? 0
-      : Number(spot?.ratings?.noise) || 0
+      : Number(spot?.ratings?.noise) || -2
   );
   const [liveCrowd, setLiveCrowd] = useState(
     spot?.ratings?.crowd === "N/A" || spot?.ratings?.crowd === "No rating yet"
       ? 0
-      : Number(spot?.ratings?.crowd) || 0
+      : Number(spot?.ratings?.crowd) || -2
   );
   // Table availability state for Odegaard
   const [tableAvailability, setTableAvailability] = useState(null);

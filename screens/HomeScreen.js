@@ -68,6 +68,7 @@ import HomeLoadingScreen from "../components/Home/HomeLoadingScreen"; // <-- Imp
 import ProfilePicture from "../components/Profile/ProfilePicture";
 import FindPeopleSection from "../components/FindPeople/FindPeopleSection"; // <-- REMOVE this import
 import EmailVerificationModal from "../components/Auth/EmailVerificationModal"; // <-- Import EmailVerificationModal
+import OnboardingModal from "../components/Auth/OnboardingModal"; // <-- Add this import
 
 //hook imports
 import useStudySpots from "../hooks/useStudySpots";
@@ -562,6 +563,40 @@ export default function HomeScreen({ navigation, route }) {
     } catch {}
   };
 
+  // --- Onboarding Modal State ---
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [checkingOnboarded, setCheckingOnboarded] = useState(true);
+
+  // Track onboarded flag from user doc
+  const [userOnboarded, setUserOnboarded] = useState(undefined);
+
+  // Subscribe to user's onboarded field for instant updates
+  useEffect(() => {
+    if (!user) return;
+    setCheckingOnboarded(true);
+    const unsub = onSnapshot(doc(db, "users", user.uid), (userDoc) => {
+      if (userDoc.exists()) {
+        setUserOnboarded(userDoc.data().onboarded === true);
+        setShowOnboarding(userDoc.data().onboarded !== true);
+      } else {
+        setUserOnboarded(false);
+        setShowOnboarding(true);
+      }
+      setCheckingOnboarded(false);
+    });
+    return () => unsub();
+  }, [user]);
+
+  // Handler to finish onboarding
+  const handleFinishOnboarding = async () => {
+    if (!user) return;
+    setShowOnboarding(false);
+    setUserOnboarded(true);
+    try {
+      await updateDoc(doc(db, "users", user.uid), { onboarded: true });
+    } catch {}
+  };
+
   // Wait for font to load before rendering (move this before any other return)
   if (!fontsLoaded) {
     return null;
@@ -586,6 +621,20 @@ export default function HomeScreen({ navigation, route }) {
           onBackToLogin={handleBackToLogin} // <-- add this prop
         />
       </>
+    );
+  }
+
+  // --- Show onboarding modal if user is not onboarded ---
+  if (checkingOnboarded || (user && userOnboarded === undefined)) {
+    return null;
+  }
+  if (user && !userOnboarded && showOnboarding) {
+    return (
+      <OnboardingModal
+        visible={true}
+        onFinish={handleFinishOnboarding}
+        themeColors={themeColors}
+      />
     );
   }
 

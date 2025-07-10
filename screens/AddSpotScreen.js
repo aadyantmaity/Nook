@@ -356,6 +356,7 @@ export default function AddSpotScreen({ navigation, route }) {
           backgroundColor: themeColors.white,
         }}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         <View
           style={{ flex: 1, padding: 16, backgroundColor: themeColors.white }}
