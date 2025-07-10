@@ -113,7 +113,6 @@ export default function SuggestedPeopleAndGroups({
         <Text
           style={{
             fontSize: 17,
-            fontWeight: "bold",
             color: themeColors.purple,
             fontFamily: "CarosSoft",
             marginRight: 6,
@@ -122,9 +121,9 @@ export default function SuggestedPeopleAndGroups({
           Suggested
         </Text>
         {suggestedExpanded ? (
-          <Minus size={18} color={themeColors.purple} weight="bold" />
+          <Minus size={18} color={themeColors.purple} />
         ) : (
-          <Plus size={18} color={themeColors.purple} weight="bold" />
+          <Plus size={18} color={themeColors.purple} />
         )}
       </TouchableOpacity>
       {suggestedExpanded && (

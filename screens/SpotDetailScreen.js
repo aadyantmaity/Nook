@@ -401,11 +401,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                     marginRight: -16,
                   }}
                 >
-                  <DotsThreeVertical
-                    size={27}
-                    color={themeColors.purple}
-                    weight="bold"
-                  />
+                  <DotsThreeVertical size={27} color={themeColors.purple} />
                 </TouchableOpacity>
                 {/* Add Alert Button with Text */}
 
@@ -464,7 +460,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                           <UsersThree
                             size={18}
                             color={themeColors.purple}
-                            weight="bold"
                             style={{ marginRight: 10 }}
                           />
                           <Text
@@ -502,7 +497,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                         <Flag
                           size={18}
                           color={themeColors.purple}
-                          weight="bold"
                           style={{ marginRight: 10 }}
                         />
                         <Text
@@ -542,7 +536,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                           <UsersThree
                             size={18}
                             color={themeColors.purple}
-                            weight="bold"
                             style={{ marginRight: 10 }}
                           />
                           <Text
@@ -581,7 +574,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                           <PencilSimple
                             size={18}
                             color={themeColors.purple}
-                            weight="bold"
                             style={{ marginRight: 10 }}
                           />
                           <Text
@@ -624,7 +616,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                           <Trash
                             size={18}
                             color={themeColors.red}
-                            weight="bold"
                             style={{ marginRight: 10 }}
                           />
                           <Text
@@ -907,11 +898,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                     marginRight: -16,
                   }}
                 >
-                  <DotsThreeVertical
-                    size={27}
-                    color={themeColors.purple}
-                    weight="bold"
-                  />
+                  <DotsThreeVertical size={27} color={themeColors.purple} />
                 </TouchableOpacity>
                 {/* Add Alert Button with Text */}
 
@@ -965,7 +952,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                         <Flag
                           size={18}
                           color={themeColors.purple}
-                          weight="bold"
                           style={{ marginRight: 10 }}
                         />
                         <Text
@@ -1005,7 +991,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                           <UsersThree
                             size={18}
                             color={themeColors.purple}
-                            weight="bold"
                             style={{ marginRight: 10 }}
                           />
                           <Text
@@ -1044,7 +1029,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                           <PencilSimple
                             size={18}
                             color={themeColors.purple}
-                            weight="bold"
                             style={{ marginRight: 10 }}
                           />
                           <Text
@@ -1087,7 +1071,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                           <Trash
                             size={18}
                             color={themeColors.red}
-                            weight="bold"
                             style={{ marginRight: 10 }}
                           />
                           <Text

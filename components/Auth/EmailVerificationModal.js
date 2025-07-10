@@ -196,9 +196,7 @@ export default function EmailVerificationModal({
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked: privacyChecked }}
                   >
-                    {privacyChecked && (
-                      <Check size={16} color={colors.white} weight="bold" />
-                    )}
+                    {privacyChecked && <Check size={16} color={colors.white} />}
                   </TouchableOpacity>
                   <Text
                     style={{

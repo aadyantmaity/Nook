@@ -349,11 +349,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
               }}
               accessibilityLabel="Edit Group"
             >
-              <PencilSimple
-                size={20}
-                color={themeColors.purple}
-                weight="bold"
-              />
+              <PencilSimple size={20} color={themeColors.purple} />
             </TouchableOpacity>
           )}
         </View>
@@ -413,12 +409,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
               }}
               accessibilityLabel="Manage Members"
             >
-              <PlusMinus
-                size={22}
-                color={themeColors.purple}
-                weight="bold"
-                style={{}}
-              />
+              <PlusMinus size={22} color={themeColors.purple} style={{}} />
             </TouchableOpacity>
           )}
         </View>
@@ -676,7 +667,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
                       marginRight: 12,
                     }}
                   >
-                    <MapPin size={32} color={themeColors.white} weight="bold" />
+                    <MapPin size={32} color={themeColors.white} />
                   </View>
                 )}
                 <View style={{ flex: 1 }}>

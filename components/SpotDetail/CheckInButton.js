@@ -744,7 +744,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
             <ActivityIndicator color={themeColors.white} />
           ) : (
             <>
-              <MapPin size={20} color={themeColors.white} weight="bold" />
+              <MapPin size={20} color={themeColors.white} />
               <Text
                 style={{
                   color: themeColors.white,
@@ -778,7 +778,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
             <ActivityIndicator color={themeColors.white} />
           ) : (
             <>
-              <MapPin size={20} color={themeColors.white} weight="bold" />
+              <MapPin size={20} color={themeColors.white} />
               <Text
                 style={{
                   color: themeColors.white,

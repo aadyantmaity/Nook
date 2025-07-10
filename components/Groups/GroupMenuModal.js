@@ -102,7 +102,6 @@ export default function GroupMenuModal({
             <SignOut
               size={20}
               color={themeColors.red}
-              weight="bold"
               style={{ marginRight: 10 }}
             />
             <Text
@@ -132,7 +131,6 @@ export default function GroupMenuModal({
               <Trash
                 size={20}
                 color={themeColors.red}
-                weight="bold"
                 style={{ marginRight: 10 }}
               />
               <Text

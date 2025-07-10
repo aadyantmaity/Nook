@@ -82,7 +82,7 @@ export default function GroupInputBar({
             }}
             accessibilityLabel="Cancel reply"
           >
-            <X size={18} color={themeColors.purple} weight="bold" />
+            <X size={18} color={themeColors.purple} />
           </TouchableOpacity>
         </View>
       )}
@@ -193,7 +193,7 @@ export default function GroupInputBar({
           }}
           accessibilityLabel="Create Poll or Task"
         >
-          <Plus size={22} color={themeColors.purple} weight="bold" />
+          <Plus size={22} color={themeColors.purple} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -208,7 +208,7 @@ export default function GroupInputBar({
           }}
           accessibilityLabel="Send"
         >
-          <PaperPlaneRight size={22} color={themeColors.purple} weight="bold" />
+          <PaperPlaneRight size={22} color={themeColors.purple} />
         </TouchableOpacity>
       </View>
       {/* --- Choose Modal --- */}
@@ -258,7 +258,7 @@ export default function GroupInputBar({
               }}
               accessibilityLabel="Close create menu"
             >
-              <X size={22} color={themeColors.purple} weight="bold" />
+              <X size={22} color={themeColors.purple} />
             </TouchableOpacity>
             <Text
               style={{
@@ -291,7 +291,6 @@ export default function GroupInputBar({
               <ChartBar
                 size={22}
                 color={themeColors.white}
-                weight="bold"
                 style={{ marginRight: 10 }}
               />
               <Text
@@ -324,7 +323,6 @@ export default function GroupInputBar({
               <ListChecks
                 size={22}
                 color={themeColors.white}
-                weight="bold"
                 style={{ marginRight: 10 }}
               />
               <Text

@@ -490,7 +490,7 @@ const GroupMessagesList = memo(
                   }}
                   accessibilityLabel="Delete message"
                 >
-                  <Trash size={20} color={themeColors.red} weight="bold" />
+                  <Trash size={20} color={themeColors.red} />
                 </TouchableOpacity>
               )}
               <Text

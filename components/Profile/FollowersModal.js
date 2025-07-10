@@ -117,11 +117,7 @@ export default function FollowersModal({
                         flexDirection: "row",
                       }}
                     >
-                      <Trash
-                        size={18}
-                        color={themeColors.white}
-                        weight="bold"
-                      />
+                      <Trash size={18} color={themeColors.white} />
                       <Text
                         style={{
                           color: themeColors.white,

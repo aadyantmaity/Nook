@@ -235,7 +235,6 @@ export default function HomeScreen({ navigation, route }) {
               <Rows
                 size={22}
                 color={!showMapView ? themeColors.white : themeColors.purple}
-                weight="bold"
               />
             </TouchableOpacity>
             <TouchableOpacity
@@ -256,7 +255,6 @@ export default function HomeScreen({ navigation, route }) {
               <MapTrifold
                 size={22}
                 color={showMapView ? themeColors.white : themeColors.purple}
-                weight="bold"
               />
             </TouchableOpacity>
           </View>

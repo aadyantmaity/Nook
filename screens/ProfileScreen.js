@@ -10,7 +10,7 @@ import {
   Image,
   ActivityIndicator,
 } from "react-native";
-import { signOut } from "firebase/auth";
+import { signOut, sendPasswordResetEmail } from "firebase/auth";
 import { colors } from "../constants/colors";
 import {
   ArrowLeft,
@@ -110,6 +110,8 @@ export default function ProfileScreen({ navigation, route }) {
   const [unfollowConfirmVisible, setUnfollowConfirmVisible] = useState(false);
   const [showGeneralReport, setShowGeneralReport] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
+  const [resetPasswordInfo, setResetPasswordInfo] = useState(""); // Info message
 
   // Refresh handler
   const onRefresh = async () => {
@@ -301,6 +303,20 @@ export default function ProfileScreen({ navigation, route }) {
     // No need to call fetchUserData, live updates now
   };
 
+  // --- Reset Password Handler ---
+  const handleResetPassword = async () => {
+    setResetPasswordLoading(true);
+    setResetPasswordInfo("");
+    try {
+      await sendPasswordResetEmail(auth, userEmail);
+      setResetPasswordInfo("Password reset email sent!");
+    } catch (e) {
+      setResetPasswordInfo("Failed to send reset email.");
+    }
+    setResetPasswordLoading(false);
+    setTimeout(() => setResetPasswordInfo(""), 4000);
+  };
+
   if (isLoading) return null;
 
   return (
@@ -440,6 +456,37 @@ export default function ProfileScreen({ navigation, route }) {
                 {isDarkMode ? "Light Mode" : "Dark Mode"}
               </Text>
             </TouchableOpacity>
+            {/* Reset Password */}
+            {isOwnProfile && (
+              <TouchableOpacity
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 12,
+                  paddingHorizontal: 18,
+                }}
+                onPress={async () => {
+                  setMenuVisible(false);
+                  await handleResetPassword();
+                }}
+                disabled={resetPasswordLoading}
+              >
+                <User
+                  size={20}
+                  color={themeColors.purple}
+                  style={{ marginRight: 10 }}
+                />
+                <Text
+                  style={{
+                    color: themeColors.purple,
+                    fontFamily: "CarosSoft",
+                    fontSize: 16,
+                  }}
+                >
+                  {resetPasswordLoading ? "Sending..." : "Reset Password"}
+                </Text>
+              </TouchableOpacity>
+            )}
             {/* Log Out */}
             {isOwnProfile && (
               <TouchableOpacity
@@ -480,7 +527,14 @@ export default function ProfileScreen({ navigation, route }) {
         onConfirm={confirmLogout}
         themeColors={themeColors}
       />
-
+      {/* Show info message for reset password */}
+      {resetPasswordInfo ? (
+        <View style={{ alignItems: "center", marginTop: 8 }}>
+          <Text style={{ color: themeColors.purple, fontFamily: "CarosSoft" }}>
+            {resetPasswordInfo}
+          </Text>
+        </View>
+      ) : null}
       <ScrollView
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -694,13 +748,9 @@ export default function ProfileScreen({ navigation, route }) {
               }
             >
               {favoritesExpanded ? (
-                <CaretDown size={22} color={themeColors.purple} weight="bold" />
+                <CaretDown size={22} color={themeColors.purple} />
               ) : (
-                <CaretRight
-                  size={22}
-                  color={themeColors.purple}
-                  weight="bold"
-                />
+                <CaretRight size={22} color={themeColors.purple} />
               )}
             </TouchableOpacity>
           </View>

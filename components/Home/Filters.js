@@ -119,12 +119,7 @@ export default function Filters({
       ]}
       accessibilityLabel="Open Filters"
     >
-      <FadersHorizontal
-        size={24}
-        color={themeColors.purple}
-        weight="bold"
-        style={{}}
-      />
+      <FadersHorizontal size={24} color={themeColors.purple} style={{}} />
 
       <Modal
         visible={modalVisible}

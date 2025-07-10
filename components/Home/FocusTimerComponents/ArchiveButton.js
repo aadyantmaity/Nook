@@ -250,7 +250,7 @@ export function ArchiveButton({
           accessibilityLabel="Open Focus Archive"
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Archive size={24} color={themeColors.purple} weight="bold" />
+          <Archive size={24} color={themeColors.purple} />
           <Text
             style={{
               color: themeColors.purple,
@@ -399,7 +399,6 @@ export function ArchiveButton({
                                 <CaretRight
                                   size={18}
                                   color={themeColors.purple}
-                                  weight="bold"
                                   style={{
                                     transform: [
                                       {
@@ -458,7 +457,6 @@ export function ArchiveButton({
                                             <CaretRight
                                               size={16}
                                               color={themeColors.purple}
-                                              weight="bold"
                                               style={{
                                                 transform: [
                                                   {
@@ -564,7 +562,6 @@ export function ArchiveButton({
                                                           color={
                                                             themeColors.red
                                                           }
-                                                          weight="bold"
                                                         />
                                                       </TouchableOpacity>
                                                     </View>
@@ -681,7 +678,6 @@ export function ArchiveButton({
                                 <CaretRight
                                   size={16}
                                   color={themeColors.purple}
-                                  weight="bold"
                                   style={{
                                     transform: [
                                       {
@@ -782,7 +778,6 @@ export function ArchiveButton({
                                             <Trash
                                               size={18}
                                               color={themeColors.red}
-                                              weight="bold"
                                             />
                                           </TouchableOpacity>
                                         </View>

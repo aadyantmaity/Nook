@@ -340,7 +340,6 @@ export default function LiveUpdateSliders({
           <Check
             size={16}
             color={themeColors.white}
-            weight="bold"
             style={{ marginRight: 6 }}
           />
           <Text

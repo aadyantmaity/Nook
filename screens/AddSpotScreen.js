@@ -514,7 +514,7 @@ export default function AddSpotScreen({ navigation, route }) {
                   }
                   accessible={true}
                 >
-                  <MapPin size={20} color={themeColors.white} weight="bold" />
+                  <MapPin size={20} color={themeColors.white} />
                   <Text
                     style={{
                       color: themeColors.white,

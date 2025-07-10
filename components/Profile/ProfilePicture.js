@@ -57,7 +57,7 @@ export default function ProfilePicture({
           )}
           {/* Always show fallback icon until image is loaded */}
           {(!profilePic || !imageLoaded) && (
-            <User size={size * 0.8} color={themeColors.white} weight="bold" />
+            <User size={size * 0.8} color={themeColors.white} />
           )}
         </View>
       </TouchableOpacity>
@@ -94,7 +94,7 @@ export default function ProfilePicture({
         )}
         {/* Always show fallback icon until image is loaded */}
         {(!profilePic || !imageLoaded) && (
-          <User size={size * 0.8} color={themeColors.white} weight="bold" />
+          <User size={size * 0.8} color={themeColors.white} />
         )}
       </View>
     </View>
