@@ -72,17 +72,21 @@ export default function ShareNookToGroupModal({
     try {
       // --- Fetch current user's name from Firestore ---
       let senderName = "User";
-      let senderUid = auth.currentUser?.uid;
-      let senderFirstName = "";
-      let senderLastName = "";
-      if (senderUid) {
-        const userDoc = await getDoc(doc(db, "users", senderUid));
+      let uid = auth.currentUser?.uid;
+      let senderProfilePic = null;
+      if (uid) {
+        const userDoc = await getDoc(doc(db, "users", uid));
         if (userDoc.exists()) {
           const d = userDoc.data();
-          senderFirstName = d.firstName || "";
-          senderLastName = d.lastName || "";
+          const first = d.firstName || "";
+          const last = d.lastName || "";
           senderName =
-            `${senderFirstName} ${senderLastName}`.trim() || d.email || "User";
+            first && last
+              ? `${first} ${last.charAt(0)}`
+              : first
+              ? first
+              : "User";
+          senderProfilePic = d.profilePic || null;
         } else {
           senderName =
             auth.currentUser?.displayName || auth.currentUser?.email || "User";
@@ -94,10 +98,9 @@ export default function ShareNookToGroupModal({
         spotId,
         spotName: spot.buildingName || spot.name || "Nook",
         spotPhoto: spot.photoUrl || null,
-        senderUid,
+        uid,
         senderName,
-        senderFirstName, // <-- add this
-        senderLastName, // <-- add this
+        senderProfilePic,
         createdAt: serverTimestamp(),
       });
       Alert.alert("Shared!", `Nook shared to "${group.name}".`);
