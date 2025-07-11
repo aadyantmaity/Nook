@@ -23,6 +23,7 @@ export function useProfileData(targetUid = null) {
   const [isFollowing, setIsFollowing] = useState(false);
   const [workTimeSetting, setWorkTimeSetting] = useState(null); // add
   const [breakTimeSetting, setBreakTimeSetting] = useState(null); // add
+  const [recentActivity, setRecentActivity] = useState([]); // add
 
   // --- Live Firestore subscription for user data ---
   useEffect(() => {
@@ -42,6 +43,8 @@ export function useProfileData(targetUid = null) {
         setFollowing(data.following || []);
         setWorkTimeSetting(data.workTimeSetting || null);
         setBreakTimeSetting(data.breakTimeSetting || null);
+        setRecentActivity(data.recentActivity || []);
+        // --- Remove recentActivity logic ---
       }
       setIsLoading(false);
     });
@@ -140,7 +143,52 @@ export function useProfileData(targetUid = null) {
       await updateDoc(doc(db, "users", targetUid), {
         followers: arrayUnion(user.uid),
       });
-      // No need to manually update state, onSnapshot will handle it
+      // --- Add recentActivity for followed user ---
+      let meDoc;
+      try {
+        meDoc = await getDoc(doc(db, "users", user.uid));
+      } catch {}
+      const meName = meDoc?.exists()
+        ? `${meDoc.data().firstName || ""} ${
+            meDoc.data().lastName || ""
+          }`.trim()
+        : "User";
+      const meProfilePic = meDoc?.exists()
+        ? meDoc.data().profilePic || null
+        : null;
+      try {
+        await updateDoc(doc(db, "users", targetUid), {
+          recentActivity: arrayUnion({
+            type: "followed_by",
+            uid: user.uid,
+            name: meName,
+            profilePic: meProfilePic,
+            createdAt: Date.now(),
+          }),
+        });
+      } catch (error) {
+        if (
+          error.code === "not-found" ||
+          error.message.includes("No document to update")
+        ) {
+          await setDoc(
+            doc(db, "users", targetUid),
+            {
+              recentActivity: [
+                {
+                  type: "followed_by",
+                  uid: user.uid,
+                  name: meName,
+                  profilePic: meProfilePic,
+                  createdAt: Date.now(),
+                },
+              ],
+            },
+            { merge: true }
+          );
+        }
+      }
+      // ...existing code...
     } catch {}
   };
 
@@ -194,5 +242,7 @@ export function useProfileData(targetUid = null) {
     setWorkTimeSetting: setWorkTimeSettingFirestore,
     breakTimeSetting,
     setBreakTimeSetting: setBreakTimeSettingFirestore,
+    recentActivity,
+    setRecentActivity,
   };
 }

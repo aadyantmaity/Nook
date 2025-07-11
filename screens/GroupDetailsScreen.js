@@ -154,6 +154,51 @@ export default function GroupDetailsScreen({ route, navigation }) {
       await updateDoc(doc(db, "users", uid), {
         followers: arrayUnion(auth.currentUser.uid),
       });
+      // --- Add recentActivity for followed user ---
+      let meDoc;
+      try {
+        meDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+      } catch {}
+      const meName = meDoc?.exists()
+        ? `${meDoc.data().firstName || ""} ${
+            meDoc.data().lastName || ""
+          }`.trim()
+        : "User";
+      const meProfilePic = meDoc?.exists()
+        ? meDoc.data().profilePic || null
+        : null;
+      try {
+        await updateDoc(doc(db, "users", uid), {
+          recentActivity: arrayUnion({
+            type: "followed_by",
+            uid: auth.currentUser.uid,
+            name: meName,
+            profilePic: meProfilePic,
+            createdAt: Date.now(),
+          }),
+        });
+      } catch (error) {
+        if (
+          error.code === "not-found" ||
+          error.message.includes("No document to update")
+        ) {
+          await setDoc(
+            doc(db, "users", uid),
+            {
+              recentActivity: [
+                {
+                  type: "followed_by",
+                  uid: auth.currentUser.uid,
+                  name: meName,
+                  profilePic: meProfilePic,
+                  createdAt: Date.now(),
+                },
+              ],
+            },
+            { merge: true }
+          );
+        }
+      }
     } catch (e) {
       Alert.alert("Error", "Failed to follow user.");
     }
@@ -854,6 +899,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
       <FlatList
         style={{ flex: 1, backgroundColor: themeColors.white }}
         contentContainerStyle={{ paddingTop: 32 }}
+        showsVerticalScrollIndicator={false}
         data={members}
         keyExtractor={(item) => item.uid}
         ListHeaderComponent={listHeader}

@@ -51,6 +51,15 @@ export default function FeedList({
                 flexDirection: "row",
                 alignItems: "flex-start",
                 position: "relative",
+                // --- Highlight card if user is mentioned ---
+                ...(item.userMentioned
+                  ? {
+                      borderWidth: 2,
+                      borderColor: themeColors.yellow || "#FFD700",
+                      shadowOpacity: 0.25,
+                      shadowRadius: 6,
+                    }
+                  : {}),
               }}
             >
               <View style={{ flex: 1 }}>

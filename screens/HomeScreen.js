@@ -78,6 +78,7 @@ import useSearchAndFilters from "../hooks/useSearchAndFilters"; // already impor
 let imageCache = {};
 
 const HOME_VIEW_KEY = "nookHomeView"; // Add this constant
+const COMMUNITY_TAB_KEY = "nookCommunityTab"; // <-- Add this constant
 
 export default function HomeScreen({ navigation, route }) {
   // Load CarosSoft font (move this to the top, before any early returns)
@@ -100,14 +101,50 @@ export default function HomeScreen({ navigation, route }) {
   const [findPeopleModalVisible, setFindPeopleModalVisible] = useState(false); // <-- add modal state
 
   // Social tab selectedTab state
-  const [socialSelectedTab, setSocialSelectedTab] = useState("socialFeed");
+  const [socialSelectedTab, setSocialSelectedTab] = useState("studyGroups");
 
-  // Reset socialSelectedTab to "socialFeed" whenever Community tab is focused
-  useFocusEffect(
-    React.useCallback(() => {
-      setSocialSelectedTab("studyGroups");
-    }, [])
-  );
+  // --- Load last selected Community tab on mount ---
+  useEffect(() => {
+    const fetchCommunityTab = async () => {
+      try {
+        // 1. Try AsyncStorage first
+        const stored = await AsyncStorage.getItem(COMMUNITY_TAB_KEY);
+        if (stored === "socialFeed" || stored === "studyGroups") {
+          setSocialSelectedTab(stored);
+          return;
+        }
+        // 2. Fallback to Firestore
+        const user = auth.currentUser;
+        if (!user) return;
+        const userRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          const pref = userDoc.data().communityTab;
+          if (pref === "socialFeed" || pref === "studyGroups") {
+            setSocialSelectedTab(pref);
+            return;
+          }
+        }
+        // 3. Default to "studyGroups"
+        setSocialSelectedTab("studyGroups");
+      } catch {
+        setSocialSelectedTab("studyGroups");
+      }
+    };
+    fetchCommunityTab();
+  }, []);
+
+  // --- Save selected Community tab when changed ---
+  const handleSetCommunityTab = async (tab) => {
+    setSocialSelectedTab(tab);
+    try {
+      await AsyncStorage.setItem(COMMUNITY_TAB_KEY, tab);
+      const user = auth.currentUser;
+      if (!user) return;
+      const userRef = doc(db, "users", user.uid);
+      await updateDoc(userRef, { communityTab: tab });
+    } catch {}
+  };
 
   // Hooks
   const { studySpots, isLoading, fetchStudySpots } = useStudySpots();
@@ -324,7 +361,7 @@ export default function HomeScreen({ navigation, route }) {
     return (
       <FindPeopleView
         selectedTab={socialSelectedTab}
-        setSelectedTab={setSocialSelectedTab}
+        setSelectedTab={handleSetCommunityTab}
       />
     );
   }

@@ -15,6 +15,7 @@ import {
   updateDoc,
   doc,
   arrayUnion,
+  getDoc,
 } from "firebase/firestore";
 import { colors } from "../../constants/colors";
 import { ThemeContext } from "../../App";
@@ -106,6 +107,25 @@ export default function FindPeopleSection({ navigation, onNavigateToProfile }) {
         followers: arrayUnion(auth.currentUser.uid),
       });
       setFollowingIds((prev) => [...prev, targetUid]);
+      // --- Add recentActivity to target user ---
+      const userDoc = await getDoc(doc(db, "users", targetUid));
+      let arr = [];
+      if (userDoc.exists()) {
+        arr = userDoc.data().recentActivity || [];
+      }
+      arr = [
+        ...arr,
+        {
+          type: "followed_by",
+          uid: auth.currentUser.uid,
+          name:
+            auth.currentUser.displayName || auth.currentUser.email || "User",
+          profilePic: null,
+          createdAt: Date.now(),
+        },
+      ];
+      // Do not slice to 8 here, let Firestore rule accept only growing arrays
+      await updateDoc(doc(db, "users", targetUid), { recentActivity: arr });
     } catch {}
     setFollowLoading((prev) => ({ ...prev, [targetUid]: false }));
   };

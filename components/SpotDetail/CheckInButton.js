@@ -7,8 +7,9 @@ import {
   ActivityIndicator,
   Modal,
   ScrollView,
+  Image,
 } from "react-native";
-import { MapPin } from "phosphor-react-native";
+import { MapPin, Check } from "phosphor-react-native"; // <-- import Check icon
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { auth } from "../../firebaseConfig";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
@@ -61,6 +62,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
                   uDoc.data().lastName || ""
                 }`.trim() || uDoc.data().email,
               email: uDoc.data().email,
+              profilePic: uDoc.data().profilePic, // <-- Add profilePic
             });
           }
         }
@@ -605,6 +607,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
                         opacity: disableSelect ? 0.5 : 1,
                       }}
                     >
+                      {/* Check bubble */}
                       <View
                         style={{
                           width: 22,
@@ -621,14 +624,33 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
                         }}
                       >
                         {isSelected && (
-                          <Text
+                          <Check size={16} color={themeColors.white} />
+                        )}
+                      </View>
+                      {/* Profile picture next to name */}
+                      <View
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 16,
+                          marginRight: 10,
+                          backgroundColor: themeColors.purple,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {user.profilePic ? (
+                          <Image
+                            source={{ uri: user.profilePic }}
                             style={{
-                              color: themeColors.white,
-                              fontWeight: "bold",
+                              width: 32,
+                              height: 32,
+                              borderRadius: 16,
                             }}
-                          >
-                            ✓
-                          </Text>
+                          />
+                        ) : (
+                          <MapPin size={20} color={themeColors.white} />
                         )}
                       </View>
                       <View style={{ flex: 1 }}>

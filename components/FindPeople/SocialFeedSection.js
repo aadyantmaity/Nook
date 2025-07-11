@@ -12,6 +12,8 @@ import {
   limit,
   doc,
   deleteDoc,
+  updateDoc,
+  arrayUnion,
 } from "firebase/firestore";
 import { colors } from "../../constants/colors";
 import { ThemeContext } from "../../App";
@@ -21,6 +23,7 @@ import ReplyPreview from "./SocialFeedSection/ReplyPreview";
 import InputBar from "./SocialFeedSection/InputBar";
 import MentionPicker from "./SocialFeedSection/MentionPicker";
 import FeedList from "./SocialFeedSection/FeedList";
+import RecentActivityList from "./SocialFeedSection/RecentActivityList";
 
 export default function SocialFeedSection({ navigation: propNavigation }) {
   const [postText, setPostText] = React.useState("");
@@ -41,6 +44,9 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
   const [mentionUsers, setMentionUsers] = React.useState([]);
   const [mentionedUsers, setMentionedUsers] = React.useState([]);
   const [mutualFriends, setMutualFriends] = React.useState([]);
+  const [recentActivity, setRecentActivity] = React.useState([]);
+  // --- Add expansion state for recent activity ---
+  const [recentExpanded, setRecentExpanded] = React.useState(false);
 
   React.useEffect(() => {
     let unsubUser = null;
@@ -150,6 +156,12 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
             }
           }
         }
+        // --- Detect if current user is mentioned in this post ---
+        const userMentioned =
+          Array.isArray(post.mentions) &&
+          auth.currentUser &&
+          post.mentions.includes(auth.currentUser.uid);
+
         if (canSee) {
           posts.push({
             id: docSnap.id,
@@ -157,6 +169,7 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
             userName,
             taggedNames,
             isOwnPost,
+            userMentioned, // <-- Add this flag
           });
         }
       }
@@ -192,6 +205,19 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
     );
   };
 
+  // --- Fetch recentActivity for current user ---
+  React.useEffect(() => {
+    if (!user?.uid) return;
+    const unsub = onSnapshot(doc(db, "users", user.uid), (docSnap) => {
+      if (docSnap.exists()) {
+        setRecentActivity(docSnap.data().recentActivity || []);
+      } else {
+        setRecentActivity([]);
+      }
+    });
+    return () => unsub();
+  }, [user?.uid]);
+
   const handlePost = async () => {
     if (!postText.trim() || posting) return;
     setPosting(true);
@@ -214,7 +240,66 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
       setPostText("");
       setReplyToPost(null);
       setMentionedUsers([]);
-    } catch {}
+
+      // --- Update recentActivity for mentioned users ---
+      if (Array.isArray(mentionedUsers) && mentionedUsers.length > 0) {
+        // Fetch user name for the poster
+        let meDoc;
+        try {
+          const snap = await getDocs(query(collection(db, "users")));
+          meDoc = snap.docs.find((d) => d.id === user.uid);
+        } catch {}
+        const meName = meDoc
+          ? `${meDoc.data().firstName || ""} ${
+              meDoc.data().lastName || ""
+            }`.trim()
+          : "User";
+
+        // NEW CODE STARTS HERE - Replace your existing mention handling
+        for (const uid of mentionedUsers) {
+          const userDocRef = doc(db, "users", uid);
+          try {
+            await updateDoc(userDocRef, {
+              recentActivity: arrayUnion({
+                type: "mention",
+                uid: user.uid,
+                name: meName,
+                profilePic: meDoc?.data().profilePic || null,
+                createdAt: Date.now(),
+                postText: postText.trim(),
+              }),
+            });
+          } catch (error) {
+            console.error("Failed to update recentActivity:", error);
+            // If update fails because field doesn't exist, try set with merge
+            if (
+              error.code === "not-found" ||
+              error.message.includes("No document to update")
+            ) {
+              await setDoc(
+                doc(db, "users", uid),
+                {
+                  recentActivity: [
+                    {
+                      type: "mention",
+                      uid: user.uid,
+                      name: meName,
+                      profilePic: meDoc?.data().profilePic || null,
+                      createdAt: Date.now(),
+                      postText: postText.trim(),
+                    },
+                  ],
+                },
+                { merge: true }
+              );
+            }
+          }
+        }
+        // NEW CODE ENDS HERE
+      }
+    } catch (error) {
+      console.error("Error posting:", error);
+    }
     setPosting(false);
   };
 
@@ -252,9 +337,8 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
           <Text
             key={match.index}
             style={{
-              color: themeColors.purple,
+              color: themeColors.black,
               fontWeight: "bold",
-              backgroundColor: themeColors.yellow || "#FFF8DC",
               borderRadius: 4,
               paddingHorizontal: 2,
               fontFamily: "CarosSoft",
@@ -329,6 +413,14 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
         mentionQuery={mentionQuery}
         handleMentionSelect={handleMentionSelect}
         themeColors={themeColors}
+      />
+      {/* --- Recent Activity Horizontal List (UI only, no logic) --- */}
+      <RecentActivityList
+        recentActivity={recentActivity}
+        navigation={navigation}
+        themeColors={themeColors}
+        expanded={recentExpanded}
+        setExpanded={setRecentExpanded}
       />
       {/* --- Feed List --- */}
       {feedLoading ? (

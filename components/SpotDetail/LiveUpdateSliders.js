@@ -404,7 +404,7 @@ export default function LiveUpdateSliders({
         </Text>
       )}
       {/* Show message if no options selected */}
-      {noOptionsSelected && canSubmitLiveUpdate && (
+      {noOptionsSelected && canSubmitLiveUpdate && !isSubmittingLive && (
         <Text
           style={{
             color: themeColors.darkGray,
@@ -414,7 +414,7 @@ export default function LiveUpdateSliders({
             fontFamily: "CarosSoft",
           }}
         >
-          Please select all required options.
+          Please update all options.
         </Text>
       )}
     </View>
