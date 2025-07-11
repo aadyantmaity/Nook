@@ -90,7 +90,8 @@ export default function GroupList({
   }, [sortedGroups]);
 
   // --- Helper to count unread messages for a group ---
-  const getUnreadCount = (groupId) => {
+  const getUnreadCount = (groupId, isMember) => {
+    if (!isMember) return 0;
     const lastReadId = groupLastRead[groupId];
     const msgs = groupMessagesCache[groupId] || [];
     if (msgs.length === 0) return 0;
@@ -101,7 +102,8 @@ export default function GroupList({
   };
 
   // --- Helper to get unread messages for a group ---
-  const getUnreadMessages = (groupId) => {
+  const getUnreadMessages = (groupId, isMember) => {
+    if (!isMember) return [];
     const lastReadId = groupLastRead[groupId];
     const msgs = groupMessagesCache[groupId] || [];
     if (msgs.length === 0) return [];
@@ -240,16 +242,10 @@ export default function GroupList({
               navigation.navigate("GroupDetail", { groupId: item.id });
             }
           };
-          const unreadCount = getUnreadCount(item.id);
-          // --- Log unread messages for each group only if unread ---
-          if (unreadCount > 0) {
-            const unreadMsgs = getUnreadMessages(item.id);
-            unreadMsgs.forEach((msg) => {
-              console.log(
-                `Group "${item.name}" (${item.id}) unread message:`,
-                msg.text
-              );
-            });
+          const unreadCount = getUnreadCount(item.id, isMember);
+          // --- Log unread messages for each group only if unread and user is a member ---
+          if (unreadCount > 0 && isMember) {
+            const unreadMsgs = getUnreadMessages(item.id, isMember);
           }
           return (
             <TouchableOpacity
