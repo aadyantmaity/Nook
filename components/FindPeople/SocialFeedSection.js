@@ -48,6 +48,33 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
   // --- Add expansion state for recent activity ---
   const [recentExpanded, setRecentExpanded] = React.useState(false);
 
+  // --- Add ref for FeedList FlatList ---
+  const feedListRef = React.useRef(null);
+
+  // --- Add state for highlighted post ---
+  const [highlightedPostId, setHighlightedPostId] = React.useState(null);
+
+  // --- Handler to scroll to message for mentions ---
+  const handleGoToMessage = React.useCallback(
+    (activityItem) => {
+      if (!activityItem?.postText) return;
+      // Find the post in feed with matching message text and uid
+      const idx = feed.findIndex(
+        (post) =>
+          post.message === activityItem.postText &&
+          post.uid === activityItem.uid
+      );
+      if (idx !== -1 && feedListRef.current) {
+        // Scroll to the item in the FlatList
+        feedListRef.current.scrollToIndex({ index: idx, animated: true });
+        // Highlight the post for a few seconds
+        setHighlightedPostId(feed[idx].id);
+        setTimeout(() => setHighlightedPostId(null), 2500);
+      }
+    },
+    [feed]
+  );
+
   React.useEffect(() => {
     let unsubUser = null;
     if (auth.currentUser) {
@@ -422,6 +449,7 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
         themeColors={themeColors}
         expanded={recentExpanded}
         setExpanded={setRecentExpanded}
+        onGoToMessage={handleGoToMessage} // <-- pass handler
       />
       {/* --- Feed List --- */}
       {feedLoading ? (
@@ -442,6 +470,7 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
         </Text>
       ) : (
         <FeedList
+          ref={feedListRef} // <-- pass ref
           feed={feed}
           isScrolled={isScrolled}
           setIsScrolled={setIsScrolled}
@@ -452,6 +481,7 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
           confirmDeletePost={confirmDeletePost}
           mutualFriends={mutualFriends}
           renderMessageWithMentions={renderMessageWithMentions}
+          highlightedPostId={highlightedPostId} // <-- pass highlighted id
         />
       )}
     </View>

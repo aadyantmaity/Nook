@@ -82,13 +82,19 @@ export default function AddPrivateNookNoteInput({
           paddingVertical: 10,
           paddingRight: 16,
           alignItems: "center",
-          opacity: isSavingNote || !noteInput.trim() ? 0.6 : 1,
         }}
       >
         {isSavingNote ? (
           <ActivityIndicator color={themeColors.white} size="small" />
         ) : (
-          <PaperPlaneRight size={26} color={themeColors.purple} />
+          <PaperPlaneRight
+            size={26}
+            color={
+              isSavingNote || !noteInput.trim()
+                ? themeColors.darkGray
+                : themeColors.purple
+            }
+          />
         )}
       </TouchableOpacity>
     </View>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -33,6 +33,83 @@ export default function GroupList({
   themeColors,
 }) {
   const [isScrolled, setIsScrolled] = useState(false);
+
+  // --- Track user's last read per group (live) ---
+  const [groupLastRead, setGroupLastRead] = useState({});
+  useEffect(() => {
+    if (!user?.uid) return;
+    const unsub = require("firebase/firestore").onSnapshot(
+      doc(db, "users", user.uid),
+      (snap) => {
+        setGroupLastRead(snap.exists() ? snap.data().groupLastRead || {} : {});
+      }
+    );
+    return () => unsub();
+  }, [user?.uid]);
+
+  // --- Live cache all messages for each group ---
+  const [groupMessagesCache, setGroupMessagesCache] = useState({});
+  useEffect(() => {
+    if (!sortedGroups || sortedGroups.length === 0) {
+      setGroupMessagesCache({});
+      return;
+    }
+    const unsubs = [];
+    const cache = {};
+    sortedGroups.forEach((group) => {
+      const q = require("firebase/firestore").query(
+        collection(db, "studyGroups", group.id, "messages"),
+        require("firebase/firestore").orderBy("createdAt", "asc")
+      );
+      const unsub = require("firebase/firestore").onSnapshot(q, (snap) => {
+        const msgs = snap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => {
+            const aTs =
+              a.createdAt?.seconds !== undefined
+                ? a.createdAt.seconds
+                : typeof a.createdAt === "number"
+                ? a.createdAt / 1000
+                : 0;
+            const bTs =
+              b.createdAt?.seconds !== undefined
+                ? b.createdAt.seconds
+                : typeof b.createdAt === "number"
+                ? b.createdAt / 1000
+                : 0;
+            return aTs - bTs;
+          });
+        cache[group.id] = msgs;
+        setGroupMessagesCache((prev) => ({ ...prev, [group.id]: msgs }));
+      });
+      unsubs.push(unsub);
+    });
+    return () => {
+      unsubs.forEach((u) => u && u());
+    };
+  }, [sortedGroups]);
+
+  // --- Helper to count unread messages for a group ---
+  const getUnreadCount = (groupId) => {
+    const lastReadId = groupLastRead[groupId];
+    const msgs = groupMessagesCache[groupId] || [];
+    if (msgs.length === 0) return 0;
+    if (!lastReadId) return msgs.length; // all unread
+    const lastReadIdx = msgs.findIndex((m) => m.id === lastReadId);
+    if (lastReadIdx === -1) return msgs.length; // treat all as unread
+    return msgs.length - (lastReadIdx + 1);
+  };
+
+  // --- Helper to get unread messages for a group ---
+  const getUnreadMessages = (groupId) => {
+    const lastReadId = groupLastRead[groupId];
+    const msgs = groupMessagesCache[groupId] || [];
+    if (msgs.length === 0) return [];
+    if (!lastReadId) return msgs; // all unread
+    const lastReadIdx = msgs.findIndex((m) => m.id === lastReadId);
+    if (lastReadIdx === -1) return msgs; // all unread
+    return msgs.slice(lastReadIdx + 1);
+  };
 
   if (loadingGroups) {
     return (
@@ -163,6 +240,17 @@ export default function GroupList({
               navigation.navigate("GroupDetail", { groupId: item.id });
             }
           };
+          const unreadCount = getUnreadCount(item.id);
+          // --- Log unread messages for each group only if unread ---
+          if (unreadCount > 0) {
+            const unreadMsgs = getUnreadMessages(item.id);
+            unreadMsgs.forEach((msg) => {
+              console.log(
+                `Group "${item.name}" (${item.id}) unread message:`,
+                msg.text
+              );
+            });
+          }
           return (
             <TouchableOpacity
               onPress={handlePress}
@@ -263,6 +351,35 @@ export default function GroupList({
                   >
                     {item.description}
                   </Text>
+                )}
+                {/* --- Unread badge --- */}
+                {unreadCount > 0 && (
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      right: 0,
+                      backgroundColor: themeColors.purple,
+                      borderRadius: 10,
+                      paddingHorizontal: 7,
+                      paddingVertical: 2,
+                      minWidth: 24,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      zIndex: 10,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: themeColors.white,
+                        fontWeight: "bold",
+                        fontSize: 13,
+                        fontFamily: "CarosSoft",
+                      }}
+                    >
+                      {unreadCount}
+                    </Text>
+                  </View>
                 )}
               </View>
             </TouchableOpacity>

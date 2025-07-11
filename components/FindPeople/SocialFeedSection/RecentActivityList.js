@@ -8,6 +8,7 @@ export default function RecentActivityList({
   themeColors,
   expanded,
   setExpanded,
+  onGoToMessage, // <-- add this prop
 }) {
   // --- Ensure recentActivity is always an array ---
   const safeRecentActivity = Array.isArray(recentActivity)
@@ -127,6 +128,31 @@ export default function RecentActivityList({
                   ? "Mentioned You"
                   : ""}
               </Text>
+              {/* --- Add Go to Message button for mentions --- */}
+              {item.type === "mention" && item.postText && (
+                <TouchableOpacity
+                  onPress={() => onGoToMessage?.(item)}
+                  style={{
+                    marginTop: 6,
+                    backgroundColor: themeColors.purple,
+                    borderRadius: 6,
+                    paddingVertical: 4,
+                    paddingHorizontal: 10,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: themeColors.white,
+                      fontWeight: "bold",
+                      fontSize: 13,
+                      fontFamily: "CarosSoft",
+                      textAlign: "center",
+                    }}
+                  >
+                    Go to Message
+                  </Text>
+                </TouchableOpacity>
+              )}
             </TouchableOpacity>
           )}
           style={{ minHeight: 60 }}

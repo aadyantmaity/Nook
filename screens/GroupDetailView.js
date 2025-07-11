@@ -700,6 +700,17 @@ export default function GroupDetailView({ navigation, route }) {
     };
   }, []);
 
+  // --- Update user's last read message for this group ---
+  useEffect(() => {
+    if (!groupId || !auth.currentUser?.uid || messages.length === 0) return;
+    const latestMsg = messages[messages.length - 1];
+    if (!latestMsg?.id) return;
+    // Update groupLastRead field in user's doc
+    updateDoc(doc(db, "users", auth.currentUser.uid), {
+      [`groupLastRead.${groupId}`]: latestMsg.id,
+    }).catch(() => {});
+  }, [groupId, messages.length]);
+
   return (
     <>
       <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>

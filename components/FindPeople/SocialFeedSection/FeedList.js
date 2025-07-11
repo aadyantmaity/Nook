@@ -1,20 +1,38 @@
-import React from "react";
-import { View, FlatList, Text, TouchableOpacity } from "react-native";
+import React, { useRef, useEffect } from "react";
+import { View, FlatList, Text, TouchableOpacity, Animated } from "react-native";
 import { Trash, ArrowBendUpLeft } from "phosphor-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
-export default function FeedList({
-  feed,
-  isScrolled,
-  setIsScrolled,
-  navigation,
-  user,
-  themeColors,
-  setReplyToPost,
-  confirmDeletePost,
-  mutualFriends,
-  renderMessageWithMentions,
-}) {
+export default React.forwardRef(function FeedList(
+  {
+    feed,
+    isScrolled,
+    setIsScrolled,
+    navigation,
+    user,
+    themeColors,
+    setReplyToPost,
+    confirmDeletePost,
+    mutualFriends,
+    renderMessageWithMentions,
+    highlightedPostId,
+  },
+  ref
+) {
+  // --- Animated value for glisten effect ---
+  const glistenAnim = useRef(new Animated.Value(-120)).current;
+
+  useEffect(() => {
+    if (highlightedPostId) {
+      glistenAnim.setValue(-120);
+      Animated.timing(glistenAnim, {
+        toValue: 320,
+        duration: 1200,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [highlightedPostId]);
+
   return (
     <View style={{ width: "100%", flex: 1 }}>
       <View style={{ flex: 1, position: "relative" }}>
@@ -34,6 +52,7 @@ export default function FeedList({
           />
         )}
         <FlatList
+          ref={ref}
           data={feed}
           keyExtractor={(item) => item.id}
           style={{ width: "100%", flex: 1 }}
@@ -56,12 +75,61 @@ export default function FeedList({
                   ? {
                       borderWidth: 2,
                       borderColor: themeColors.yellow || "#FFD700",
-                      shadowOpacity: 0.25,
-                      shadowRadius: 6,
+                    }
+                  : {}),
+                // --- Highlight card if it's the one scrolled to ---
+                ...(highlightedPostId === item.id
+                  ? {
+                      borderWidth: 2,
+                      borderColor: themeColors.yellow || "#FFD700",
+                      overflow: "hidden",
                     }
                   : {}),
               }}
             >
+              {/* --- Glisten effect overlay --- */}
+              {highlightedPostId === item.id && (
+                <Animated.View
+                  pointerEvents="none"
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: 10,
+                    borderRadius: 10,
+                    overflow: "hidden",
+                  }}
+                >
+                  <Animated.View
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      height: "100%",
+                      width: 120,
+                      transform: [{ translateX: glistenAnim }],
+                      opacity: 0.7,
+                    }}
+                  >
+                    <LinearGradient
+                      colors={[
+                        "rgba(255,255,255,0.0)",
+                        themeColors.white,
+                        "rgba(255,255,255,0.0)",
+                      ]}
+                      start={{ x: 0, y: 0.5 }}
+                      end={{ x: 1, y: 0.5 }}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        borderRadius: 10,
+                      }}
+                    />
+                  </Animated.View>
+                </Animated.View>
+              )}
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <TouchableOpacity
@@ -209,4 +277,4 @@ export default function FeedList({
       </View>
     </View>
   );
-}
+});
