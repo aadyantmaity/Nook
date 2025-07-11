@@ -36,7 +36,18 @@ export default function GroupFiltersModal({
       next = localFilters.filter((f) => f !== key);
       if (next.length === 0) next = ["default"];
     } else {
-      next = localFilters.filter((f) => f !== "default").concat(key);
+      // Prevent public and private from being selected together
+      if (key === "public") {
+        next = localFilters
+          .filter((f) => f !== "private" && f !== "default")
+          .concat("public");
+      } else if (key === "private") {
+        next = localFilters
+          .filter((f) => f !== "public" && f !== "default")
+          .concat("private");
+      } else {
+        next = localFilters.filter((f) => f !== "default").concat(key);
+      }
     }
     setLocalFilters(next);
   };

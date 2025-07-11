@@ -58,6 +58,8 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
   const handleGoToMessage = React.useCallback(
     (activityItem) => {
       if (!activityItem?.feedMessageId) return;
+      // Find all posts with this feedMessageId (should be unique, but just in case)
+      // Feed is ordered most recent first (index 0 is newest)
       const idx = feed.findIndex(
         (post) => post.id === activityItem.feedMessageId
       );
@@ -436,7 +438,7 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
       />
       {/* --- Recent Activity Horizontal List (UI only, no logic) --- */}
       <RecentActivityList
-        recentActivity={recentActivity}
+        recentActivity={[...recentActivity].reverse()}
         navigation={navigation}
         themeColors={themeColors}
         expanded={recentExpanded}

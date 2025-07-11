@@ -309,7 +309,7 @@ export default function Filters({
             >
               <Text
                 style={{
-                  color: themeColors.red,
+                  color: themeColors.purple,
                   fontSize: 16,
                   fontWeight: "bold",
                   fontFamily: "CarosSoft",

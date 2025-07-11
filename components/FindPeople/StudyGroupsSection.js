@@ -116,10 +116,11 @@ export default function StudyGroupsSection({ navigation }) {
     { key: "public", label: "Public" },
     { key: "private", label: "Private" }, // <-- add private filter
   ];
-  const [selectedFilter, setSelectedFilter] = useState("default");
+  // --- Change selectedFilter to array for multi-select ---
+  const [selectedFilter, setSelectedFilter] = useState(["default"]);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   // Add a temp filter state for the modal
-  const [pendingFilter, setPendingFilter] = useState(selectedFilter);
+  const [pendingFilter, setPendingFilter] = useState(["default"]);
 
   // Icon selection state
   const [selectedIcon, setSelectedIcon] = useState(null); // <-- icon state
@@ -334,34 +335,78 @@ export default function StudyGroupsSection({ navigation }) {
     setUploadingPic(false);
   };
 
-  // --- Filter groups based on selected filter ---
+  // --- Filter groups based on selected filter(s) ---
   const filterGroups = (groupsArr) => {
-    switch (selectedFilter) {
-      case "my":
-        return groupsArr.filter(
-          (g) => Array.isArray(g.memberUids) && g.memberUids.includes(user.uid)
-        );
-      case "small":
-        return groupsArr.filter(
-          (g) => Array.isArray(g.memberUids) && g.memberUids.length < 10
-        );
-      case "big":
-        return groupsArr.filter(
-          (g) => Array.isArray(g.memberUids) && g.memberUids.length > 10
-        );
-      case "public":
-        return groupsArr.filter((g) => !(g.isPrivate ?? false));
-      case "private":
-        return groupsArr.filter((g) => g.isPrivate === true); // <-- filter private groups only
-      case "default":
-      default:
-        // All public groups + private groups where user is a member
-        return groupsArr.filter(
-          (g) =>
-            !(g.isPrivate ?? false) ||
-            (Array.isArray(g.memberUids) && g.memberUids.includes(user.uid))
-        );
+    // Prevent public and private from being selected together
+    let filtersToUse = selectedFilter;
+    if (filtersToUse.includes("public") && filtersToUse.includes("private")) {
+      // Only use the last selected one
+      const last = filtersToUse[filtersToUse.length - 1];
+      filtersToUse = [last];
     }
+    // If "default" or empty, show all public + private groups where user is a member
+    if (
+      !filtersToUse ||
+      filtersToUse.length === 0 ||
+      (filtersToUse.length === 1 && filtersToUse[0] === "default")
+    ) {
+      return groupsArr.filter(
+        (g) =>
+          !(g.isPrivate ?? false) ||
+          (Array.isArray(g.memberUids) && g.memberUids.includes(user.uid))
+      );
+    }
+    // Otherwise, filter by each selected filter and union results
+    let filtered = [];
+    filtersToUse.forEach((f) => {
+      switch (f) {
+        case "my":
+          filtered = [
+            ...filtered,
+            ...groupsArr.filter(
+              (g) =>
+                Array.isArray(g.memberUids) && g.memberUids.includes(user.uid)
+            ),
+          ];
+          break;
+        case "small":
+          filtered = [
+            ...filtered,
+            ...groupsArr.filter(
+              (g) => Array.isArray(g.memberUids) && g.memberUids.length < 10
+            ),
+          ];
+          break;
+        case "big":
+          filtered = [
+            ...filtered,
+            ...groupsArr.filter(
+              (g) => Array.isArray(g.memberUids) && g.memberUids.length > 10
+            ),
+          ];
+          break;
+        case "public":
+          filtered = [
+            ...filtered,
+            ...groupsArr.filter((g) => !(g.isPrivate ?? false)),
+          ];
+          break;
+        case "private":
+          filtered = [
+            ...filtered,
+            ...groupsArr.filter((g) => g.isPrivate === true),
+          ];
+          break;
+        default:
+          break;
+      }
+    });
+    // Deduplicate by id
+    const map = {};
+    filtered.forEach((g) => {
+      map[g.id] = g;
+    });
+    return Object.values(map);
   };
 
   // --- Filter groups and friends by search (fuzzy: name or description, case-insensitive) ---
