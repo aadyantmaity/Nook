@@ -218,7 +218,9 @@ export default function SuggestedPeopleAndGroups({
                         >
                           <Text
                             style={{
-                              color: themeColors.white,
+                              color: followingIds.includes(item.uid)
+                                ? themeColors.darkGray
+                                : themeColors.white,
                               fontWeight: "bold",
                               fontSize: 14,
                               fontFamily: "CarosSoft",

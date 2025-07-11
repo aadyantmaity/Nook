@@ -75,7 +75,7 @@ export default function OverallRating({
               pendingOverallRating !== 0 &&
               pendingOverallRating !== userOverallRating
                 ? themeColors.purple
-                : themeColors.darkGray, // use gray if no new rating is selected
+                : themeColors.darkGray,
             borderRadius: 16,
             padding: 4,
             alignItems: "center",
@@ -89,7 +89,13 @@ export default function OverallRating({
         >
           <Check
             size={14}
-            color={themeColors.white}
+            color={
+              isSubmittingOverall ||
+              pendingOverallRating === 0 ||
+              pendingOverallRating === userOverallRating
+                ? themeColors.darkGray
+                : themeColors.white
+            }
             weight={isSubmittingOverall ? "regular" : "bold"}
           />
         </TouchableOpacity>

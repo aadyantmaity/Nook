@@ -570,7 +570,11 @@ export const PollMessage = memo(
                     >
                       <Text
                         style={{
-                          color: voted ? themeColors.white : themeColors.purple,
+                          color: submitting
+                            ? themeColors.darkGray
+                            : voted
+                            ? themeColors.white
+                            : themeColors.purple,
                           fontWeight: "bold",
                           fontFamily: "CarosSoft",
                           fontSize: 14,
@@ -583,7 +587,11 @@ export const PollMessage = memo(
                       </Text>
                       <Text
                         style={{
-                          color: voted ? themeColors.white : themeColors.purple,
+                          color: submitting
+                            ? themeColors.darkGray
+                            : voted
+                            ? themeColors.white
+                            : themeColors.purple,
                           fontSize: 12,
                           marginLeft: 8,
                           fontFamily: "CarosSoft",

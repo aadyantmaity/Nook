@@ -724,7 +724,7 @@ export default function StudyGroupsSection({ navigation }) {
           <Plus size={24} color={themeColors.white} />
           <Text
             style={{
-              color: themeColors.white,
+              color: showCreateModal ? themeColors.darkGray : themeColors.white,
               fontWeight: "bold",
               fontSize: 14,
               marginLeft: 8,

@@ -50,9 +50,16 @@ export default function GroupTaskPinned({
         accessibilityLabel={checked ? "Uncheck task" : "Check off task"}
       >
         {checked ? (
-          <CheckCircle size={28} color={themeColors.purple} weight="fill" />
+          <CheckCircle
+            size={28}
+            color={loading ? themeColors.darkGray : themeColors.purple}
+            weight="fill"
+          />
         ) : (
-          <Circle size={28} color={themeColors.purple} />
+          <Circle
+            size={28}
+            color={loading ? themeColors.darkGray : themeColors.purple}
+          />
         )}
       </TouchableOpacity>
       <View style={{ flex: 1 }}>

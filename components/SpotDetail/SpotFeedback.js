@@ -70,7 +70,13 @@ export default function SpotFeedback({ spotId, themeColors }) {
         >
           <ThumbsUp
             size={28}
-            color={selected === "up" ? themeColors.white : themeColors.green}
+            color={
+              submitted
+                ? themeColors.darkGray
+                : selected === "up"
+                ? themeColors.white
+                : themeColors.green
+            }
             weight={selected === "up" ? "fill" : "regular"}
           />
         </TouchableOpacity>
@@ -90,7 +96,13 @@ export default function SpotFeedback({ spotId, themeColors }) {
         >
           <ThumbsDown
             size={28}
-            color={selected === "down" ? themeColors.white : themeColors.red}
+            color={
+              submitted
+                ? themeColors.darkGray
+                : selected === "down"
+                ? themeColors.white
+                : themeColors.red
+            }
             weight={selected === "down" ? "fill" : "regular"}
           />
         </TouchableOpacity>

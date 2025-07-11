@@ -282,7 +282,7 @@ export default function PrivateNookShareModal({
           >
             <Text
               style={{
-                color: themeColors.white,
+                color: updating ? themeColors.darkGray : themeColors.white,
                 fontWeight: "bold",
                 fontFamily: "CarosSoft",
               }}

@@ -208,7 +208,12 @@ export default function PollModal({ visible, onClose, onSubmit, themeColors }) {
               alignSelf: "flex-start",
             }}
           >
-            <Plus size={20} color={themeColors.purple} />
+            <Plus
+              size={20}
+              color={
+                options.length >= 6 ? themeColors.darkGray : themeColors.purple
+              }
+            />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={handleSubmit}
@@ -230,7 +235,7 @@ export default function PollModal({ visible, onClose, onSubmit, themeColors }) {
           >
             <Text
               style={{
-                color: themeColors.white,
+                color: submitting ? themeColors.darkGray : themeColors.white,
                 fontWeight: "bold",
                 fontFamily: "CarosSoft",
                 fontSize: 17,

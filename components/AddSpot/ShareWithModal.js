@@ -144,10 +144,11 @@ export default function ShareWithModal({
               paddingHorizontal: 24,
               alignItems: "center",
             }}
+            disabled={false} // If you want to add a disabled prop, update color below
           >
             <Text
               style={{
-                color: themeColors.white,
+                color: false ? themeColors.darkGray : themeColors.white,
                 fontWeight: "bold",
                 fontFamily: "CarosSoft",
               }}

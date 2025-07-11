@@ -69,7 +69,14 @@ export default function InputBar({
           }}
           accessibilityLabel="Submit"
         >
-          <PaperPlaneRight size={25} color={themeColors.purple} />
+          <PaperPlaneRight
+            size={25}
+            color={
+              posting || !postText.trim()
+                ? themeColors.darkGray
+                : themeColors.purple
+            }
+          />
         </TouchableOpacity>
       </View>
     </View>

@@ -208,7 +208,7 @@ export default function ShareNookToGroupModal({
           >
             <Text
               style={{
-                color: themeColors.white,
+                color: sending ? themeColors.darkGray : themeColors.white,
                 fontWeight: "bold",
                 fontFamily: "CarosSoft",
               }}

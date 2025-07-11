@@ -146,7 +146,7 @@ export default function PrivateNookNotesModal({
             >
               <Text
                 style={{
-                  color: themeColors.purple,
+                  color: saving ? themeColors.darkGray : themeColors.purple,
                   fontWeight: "bold",
                   fontFamily: "CarosSoft",
                 }}
@@ -168,7 +168,7 @@ export default function PrivateNookNotesModal({
             >
               <Text
                 style={{
-                  color: themeColors.white,
+                  color: saving ? themeColors.darkGray : themeColors.white,
                   fontWeight: "bold",
                   fontFamily: "CarosSoft",
                 }}

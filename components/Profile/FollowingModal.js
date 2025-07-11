@@ -119,11 +119,21 @@ export default function FollowingModal({
                         flexDirection: "row",
                       }}
                     >
-                      <UserMinus size={18} color={themeColors.white} />
+                      <UserMinus
+                        size={18}
+                        color={
+                          unfollowingUid === item.uid
+                            ? themeColors.darkGray
+                            : themeColors.white
+                        }
+                      />
                       <Text
                         style={{
                           marginLeft: 6,
-                          color: themeColors.white,
+                          color:
+                            unfollowingUid === item.uid
+                              ? themeColors.darkGray
+                              : themeColors.white,
                           fontWeight: "bold",
                           fontSize: 14,
                           fontFamily: "CarosSoft",

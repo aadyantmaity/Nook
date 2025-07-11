@@ -33,7 +33,7 @@ export default function PrimaryActionButton({
       ) : (
         <Text
           style={{
-            color: themeColors.white,
+            color: disabled ? themeColors.darkGray : themeColors.white,
             fontWeight: "bold",
             fontFamily: "CarosSoft",
             fontSize: 16,

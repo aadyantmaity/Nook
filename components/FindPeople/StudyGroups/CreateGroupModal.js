@@ -503,7 +503,7 @@ export default function CreateGroupModal({
             >
               <Text
                 style={{
-                  color: themeColors.white,
+                  color: creating ? themeColors.darkGray : themeColors.white,
                   fontWeight: "bold",
                   fontFamily: "CarosSoft",
                 }}

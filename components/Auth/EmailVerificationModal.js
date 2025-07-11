@@ -291,7 +291,9 @@ export default function EmailVerificationModal({
                           fontSize: 15,
                           fontWeight: "500",
                           marginLeft: 4,
-                          color: colors.white,
+                          color: !privacyChecked
+                            ? colors.darkGray
+                            : colors.white,
                         }}
                       >
                         I've Verified

@@ -214,7 +214,7 @@ export default function PomodoroSettingsModal({
           >
             <Text
               style={{
-                color: themeColors.white,
+                color: isDisabled ? themeColors.darkGray : themeColors.white,
                 fontWeight: "bold",
                 fontFamily: "CarosSoft",
                 fontSize: 16,

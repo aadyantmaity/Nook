@@ -208,7 +208,14 @@ export default function GroupInputBar({
           }}
           accessibilityLabel="Send"
         >
-          <PaperPlaneRight size={22} color={themeColors.purple} />
+          <PaperPlaneRight
+            size={22}
+            color={
+              sending || !input.trim() || isPollCommand || isTaskCommand
+                ? themeColors.darkGray
+                : themeColors.purple
+            }
+          />
         </TouchableOpacity>
       </View>
       {/* --- Choose Modal --- */}

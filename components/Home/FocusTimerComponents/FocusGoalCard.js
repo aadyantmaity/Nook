@@ -145,7 +145,7 @@ export function FocusGoalCard({
       {/* Custom goal description or time progress */}
       <Text
         style={{
-          color: themeColors.black,
+          color: isRunning ? themeColors.darkGray : themeColors.black,
           fontSize: 14,
           marginBottom: 8,
           marginTop: 4,

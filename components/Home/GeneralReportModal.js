@@ -141,7 +141,7 @@ export default function GeneralReportModal({
             >
               <Text
                 style={{
-                  color: themeColors.purple,
+                  color: submitting ? themeColors.darkGray : themeColors.purple,
                   fontWeight: "bold",
                   fontFamily: "CarosSoft",
                 }}

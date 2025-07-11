@@ -471,7 +471,9 @@ export function FocusStatsDropdown({
               >
                 <Text
                   style={{
-                    color: themeColors.purple,
+                    color: deletingStat
+                      ? themeColors.darkGray
+                      : themeColors.purple,
                     fontWeight: "bold",
                     fontFamily: "CarosSoft",
                   }}

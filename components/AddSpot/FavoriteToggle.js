@@ -33,7 +33,7 @@ export default function FavoriteToggle({
       >
         <Heart
           size={22}
-          color={themeColors.purple}
+          color={isFavorite ? themeColors.purple : themeColors.darkGray}
           weight={isFavorite ? "fill" : "regular"}
         />
       </TouchableOpacity>

@@ -32,7 +32,7 @@ export default function RecentActivityList({
         <Text
           style={{
             fontSize: 17,
-            color: themeColors.purple,
+            color: expanded ? themeColors.darkGray : themeColors.purple,
             fontFamily: "CarosSoft",
             marginRight: 6,
           }}

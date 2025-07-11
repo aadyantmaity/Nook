@@ -351,7 +351,10 @@ export default function SpotGallery({
           }}
           disabled={isUploading}
         >
-          <Plus size={20} color={themeColors.white} />
+          <Plus
+            size={20}
+            color={isUploading ? themeColors.darkGray : themeColors.white}
+          />
         </TouchableOpacity>
         {isUploading && (
           <ActivityIndicator

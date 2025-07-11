@@ -329,7 +329,9 @@ export default function MapLocationPicker({
             >
               <Text
                 style={{
-                  color: selectedLocation ? themeColors.white : "#888",
+                  color: !selectedLocation
+                    ? themeColors.darkGray
+                    : themeColors.white,
                   fontWeight: "bold",
                   fontFamily: "CarosSoft",
                 }}

@@ -196,7 +196,10 @@ export default function GroupTaskModal({
             >
               <Text
                 style={{
-                  color: themeColors.white,
+                  color:
+                    submitting || !taskText.trim()
+                      ? themeColors.darkGray
+                      : themeColors.white,
                   fontWeight: "bold",
                   fontFamily: "CarosSoft",
                 }}

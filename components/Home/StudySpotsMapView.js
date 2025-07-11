@@ -490,17 +490,19 @@ export default function StudySpotsMapView({
                 >
                   <Text
                     style={{
-                      color:
-                        modalRegion &&
-                        modalRegion.latitude &&
-                        modalRegion.longitude &&
-                        (Math.abs(modalRegion.latitude - UW_REGION.latitude) >=
-                          0.0001 ||
-                          Math.abs(
-                            modalRegion.longitude - UW_REGION.longitude
-                          ) >= 0.0001)
-                          ? themeColors.white
-                          : themeColors.purple,
+                      color: gettingLocation
+                        ? themeColors.darkGray
+                        : modalRegion &&
+                          modalRegion.latitude &&
+                          modalRegion.longitude &&
+                          (Math.abs(
+                            modalRegion.latitude - UW_REGION.latitude
+                          ) >= 0.0001 ||
+                            Math.abs(
+                              modalRegion.longitude - UW_REGION.longitude
+                            ) >= 0.0001)
+                        ? themeColors.white
+                        : themeColors.purple,
                       fontWeight: "bold",
                       fontFamily: "CarosSoft",
                       fontSize: 13,

@@ -19,10 +19,11 @@ export default function ImagePickerButton({
         }}
         accessibilityLabel="Pick an image for this location"
         accessible={true}
+        disabled={false} // If you want to add a disabled prop, update color below
       >
         <Text
           style={{
-            color: themeColors.white,
+            color: false ? themeColors.darkGray : themeColors.white,
             fontWeight: "bold",
             fontFamily: "CarosSoft",
           }}
