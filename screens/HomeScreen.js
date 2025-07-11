@@ -534,6 +534,23 @@ export default function HomeScreen({ navigation, route }) {
   const [verifyError, setVerifyError] = useState("");
   const [checkingVerification, setCheckingVerification] = useState(false);
 
+  // --- Handler for resending verification email ---
+  const handleResendEmail = async () => {
+    if (!user) return;
+    try {
+      await sendEmailVerification(user);
+      Alert.alert(
+        "Verification Email Sent",
+        "Please check your inbox (and spam folder) for the verification email."
+      );
+    } catch (e) {
+      Alert.alert(
+        "Error",
+        "Failed to send verification email. Please try again later."
+      );
+    }
+  };
+
   // Track requireEmailVerification flag from user doc
   const [userRequireEmailVerification, setUserRequireEmailVerification] =
     useState(undefined); // <-- undefined until loaded
@@ -656,16 +673,27 @@ export default function HomeScreen({ navigation, route }) {
           onCheckVerification={handleCheckVerification}
           errorMessage={verifyError}
           onBackToLogin={handleBackToLogin} // <-- add this prop
+          onResendEmail={handleResendEmail} // <-- add this prop
         />
       </>
     );
   }
 
   // --- Show onboarding modal if user is not onboarded ---
-  if (checkingOnboarded || (user && userOnboarded === undefined)) {
+  // Only check onboarding if user is verified
+  if (
+    user &&
+    user.emailVerified && // <-- Only check onboarding if verified
+    (checkingOnboarded || userOnboarded === undefined)
+  ) {
     return null;
   }
-  if (user && !userOnboarded && showOnboarding) {
+  if (
+    user &&
+    user.emailVerified && // <-- Only show onboarding if verified
+    !userOnboarded &&
+    showOnboarding
+  ) {
     return (
       <OnboardingModal
         visible={true}

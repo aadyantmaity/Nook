@@ -57,17 +57,12 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
   // --- Handler to scroll to message for mentions ---
   const handleGoToMessage = React.useCallback(
     (activityItem) => {
-      if (!activityItem?.postText) return;
-      // Find the post in feed with matching message text and uid
+      if (!activityItem?.feedMessageId) return;
       const idx = feed.findIndex(
-        (post) =>
-          post.message === activityItem.postText &&
-          post.uid === activityItem.uid
+        (post) => post.id === activityItem.feedMessageId
       );
       if (idx !== -1 && feedListRef.current) {
-        // Scroll to the item in the FlatList
         feedListRef.current.scrollToIndex({ index: idx, animated: true });
-        // Highlight the post for a few seconds
         setHighlightedPostId(feed[idx].id);
         setTimeout(() => setHighlightedPostId(null), 2500);
       }
@@ -251,7 +246,8 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
     try {
       const user = auth.currentUser;
       if (!user) throw new Error("Not logged in");
-      await addDoc(collection(db, "posts"), {
+      // Add post and get its id
+      const postRef = await addDoc(collection(db, "posts"), {
         uid: user.uid,
         message: postText.trim(),
         createdAt: serverTimestamp(),
@@ -264,13 +260,12 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
             }
           : null,
       });
+      const postId = postRef.id;
       setPostText("");
       setReplyToPost(null);
       setMentionedUsers([]);
-
       // --- Update recentActivity for mentioned users ---
       if (Array.isArray(mentionedUsers) && mentionedUsers.length > 0) {
-        // Fetch user name for the poster
         let meDoc;
         try {
           const snap = await getDocs(query(collection(db, "users")));
@@ -281,8 +276,6 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
               meDoc.data().lastName || ""
             }`.trim()
           : "User";
-
-        // NEW CODE STARTS HERE - Replace your existing mention handling
         for (const uid of mentionedUsers) {
           const userDocRef = doc(db, "users", uid);
           try {
@@ -294,11 +287,10 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
                 profilePic: meDoc?.data().profilePic || null,
                 createdAt: Date.now(),
                 postText: postText.trim(),
+                feedMessageId: postId, // <-- store feed message id
               }),
             });
           } catch (error) {
-            console.error("Failed to update recentActivity:", error);
-            // If update fails because field doesn't exist, try set with merge
             if (
               error.code === "not-found" ||
               error.message.includes("No document to update")
@@ -314,6 +306,7 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
                       profilePic: meDoc?.data().profilePic || null,
                       createdAt: Date.now(),
                       postText: postText.trim(),
+                      feedMessageId: postId, // <-- store feed message id
                     },
                   ],
                 },
@@ -322,7 +315,6 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
             }
           }
         }
-        // NEW CODE ENDS HERE
       }
     } catch (error) {
       console.error("Error posting:", error);

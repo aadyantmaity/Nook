@@ -8,7 +8,13 @@ import {
   Alert,
   Linking,
 } from "react-native";
-import { Check, X, Warning, Flag } from "phosphor-react-native"; // <-- import Flag icon
+import {
+  Check,
+  X,
+  Warning,
+  Flag,
+  ArrowCounterClockwise,
+} from "phosphor-react-native"; // <-- import ArrowCounterClockwise icon
 import { colors } from "../../constants/colors";
 import { db, auth } from "../../firebaseConfig";
 import { addDoc, collection, Timestamp } from "firebase/firestore";
@@ -94,25 +100,56 @@ export default function EmailVerificationModal({
               overflow: "hidden",
             }}
           >
-            {/* --- Flag icon button at top right --- */}
-            <TouchableOpacity
-              onPress={() => setShowReport(true)}
+            {/* --- Row for Resend Email and Flag --- */}
+            <View
               style={{
-                position: "absolute",
-                top: 12,
-                right: 12,
-                zIndex: 10,
-                padding: 6,
-                borderRadius: 16,
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                width: "100%",
+                paddingHorizontal: 16,
+                paddingTop: 16,
+                marginBottom: 2,
               }}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              activeOpacity={0.7}
-              accessibilityLabel="Report an Issue"
             >
-              <Flag size={22} color={colors.purple} />
-            </TouchableOpacity>
-            {/* Add extra top padding to prevent cut-off */}
-            <View style={{ height: 24, width: "100%" }} />
+              <TouchableOpacity
+                onPress={onResendEmail}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  padding: 6,
+                  borderRadius: 16,
+                }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                activeOpacity={0.7}
+                accessibilityLabel="Resend Email"
+              >
+                <ArrowCounterClockwise size={22} color={colors.purple} />
+                <Text
+                  style={{
+                    marginLeft: 4,
+                    color: colors.purple,
+                    fontFamily: "CarosSoft",
+                    fontSize: 13,
+                    fontWeight: "bold",
+                  }}
+                >
+                  Resend Email
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setShowReport(true)}
+                style={{
+                  padding: 6,
+                  borderRadius: 16,
+                }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                activeOpacity={0.7}
+                accessibilityLabel="Report an Issue"
+              >
+                <Flag size={22} color={colors.purple} />
+              </TouchableOpacity>
+            </View>
 
             <View
               style={{

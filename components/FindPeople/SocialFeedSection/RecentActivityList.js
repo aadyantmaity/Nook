@@ -53,16 +53,7 @@ export default function RecentActivityList({
           showsHorizontalScrollIndicator={false}
           keyExtractor={(item, idx) => `${item.type}_${item.uid}_${idx}`}
           renderItem={({ item }) => (
-            <TouchableOpacity
-              onPress={() => {
-                if (item.type === "follow" || item.type === "followed_by") {
-                  navigation.navigate("Profile", { uid: item.uid });
-                } else if (item.type === "mention") {
-                  navigation.navigate("Profile", { uid: item.uid });
-                } else if (item.type === "join_group" && item.groupId) {
-                  navigation.navigate("GroupDetail", { groupId: item.groupId });
-                }
-              }}
+            <View
               style={{
                 backgroundColor: themeColors.lightGray,
                 borderRadius: 10,
@@ -72,9 +63,13 @@ export default function RecentActivityList({
                 maxWidth: 160,
                 marginRight: 10,
               }}
-              activeOpacity={0.8}
             >
-              <View
+              {/* Profile picture touchable */}
+              <TouchableOpacity
+                onPress={() => {
+                  navigation.navigate("Profile", { uid: item.uid });
+                }}
+                activeOpacity={0.8}
                 style={{
                   width: 40,
                   height: 40,
@@ -99,61 +94,52 @@ export default function RecentActivityList({
                 ) : (
                   <UsersThree size={28} color={themeColors.white} />
                 )}
-              </View>
-              <Text
-                style={{
-                  color: themeColors.black,
-                  fontWeight: "bold",
-                  fontSize: 15,
-                  fontFamily: "CarosSoft",
-                  textAlign: "center",
-                  marginBottom: 2,
+              </TouchableOpacity>
+              {/* Rest of card touchable for message navigation */}
+              <TouchableOpacity
+                onPress={() => {
+                  if (item.type === "mention" && item.feedMessageId) {
+                    onGoToMessage?.(item);
+                  } else if (item.type === "join_group" && item.groupId) {
+                    navigation.navigate("GroupDetail", {
+                      groupId: item.groupId,
+                    });
+                  }
                 }}
-                numberOfLines={1}
+                activeOpacity={0.8}
+                style={{ width: "100%", alignItems: "center" }}
               >
-                {item.name || item.groupName || item.postText || ""}
-              </Text>
-              <Text
-                style={{
-                  color: themeColors.darkGray,
-                  fontSize: 13,
-                  fontFamily: "CarosSoft",
-                  textAlign: "center",
-                }}
-                numberOfLines={2}
-              >
-                {item.type === "followed_by"
-                  ? "Followed you"
-                  : item.type === "mention"
-                  ? "Mentioned You"
-                  : ""}
-              </Text>
-              {/* --- Add Go to Message button for mentions --- */}
-              {item.type === "mention" && item.postText && (
-                <TouchableOpacity
-                  onPress={() => onGoToMessage?.(item)}
+                <Text
                   style={{
-                    marginTop: 6,
-                    backgroundColor: themeColors.purple,
-                    borderRadius: 6,
-                    paddingVertical: 4,
-                    paddingHorizontal: 10,
+                    color: themeColors.black,
+                    fontWeight: "bold",
+                    fontSize: 15,
+                    fontFamily: "CarosSoft",
+                    textAlign: "center",
+                    marginBottom: 2,
                   }}
+                  numberOfLines={1}
                 >
-                  <Text
-                    style={{
-                      color: themeColors.white,
-                      fontWeight: "bold",
-                      fontSize: 13,
-                      fontFamily: "CarosSoft",
-                      textAlign: "center",
-                    }}
-                  >
-                    Go to Message
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </TouchableOpacity>
+                  {item.name || item.groupName || item.postText || ""}
+                </Text>
+                <Text
+                  style={{
+                    color: themeColors.darkGray,
+                    fontSize: 13,
+                    fontFamily: "CarosSoft",
+                    textAlign: "center",
+                  }}
+                  numberOfLines={2}
+                >
+                  {item.type === "followed_by"
+                    ? "Followed you"
+                    : item.type === "mention"
+                    ? "Mentioned You"
+                    : ""}
+                </Text>
+                {/* Removed Go to Message button */}
+              </TouchableOpacity>
+            </View>
           )}
           style={{ minHeight: 60 }}
         />
