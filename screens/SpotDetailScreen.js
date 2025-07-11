@@ -592,8 +592,18 @@ export default function SpotDetailScreen({ route, navigation }) {
                           </Text>
                         </TouchableOpacity>
                       )}
+                      {/* Divider */}
+                      {isOwner && (
+                        <View
+                          style={{
+                            height: 1,
+                            backgroundColor: themeColors.gray,
+                            marginHorizontal: 10,
+                          }}
+                        />
+                      )}
                       {/* --- Edit Nook (only for owner, not private nooks) --- */}
-                      {isOwner && !isPrivateNook && (
+                      {isOwner && (
                         <TouchableOpacity
                           onPress={() => {
                             setShowMenu(false);
@@ -1050,7 +1060,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                         </TouchableOpacity>
                       )}
                       {/* --- Edit Nook (only for owner, not private nooks) --- */}
-                      {isOwner && !isPrivateNook && (
+                      {isOwner && (
                         <TouchableOpacity
                           onPress={() => {
                             setShowMenu(false);

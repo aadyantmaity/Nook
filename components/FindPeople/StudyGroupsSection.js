@@ -513,7 +513,7 @@ export default function StudyGroupsSection({ navigation }) {
         borderRadius: 16,
         paddingBottom: 24,
         paddingTop: 16,
-        paddingHorizontal: 24,
+        paddingHorizontal: 16,
         marginHorizontal: 0,
         width: "100%",
         marginTop: -8,

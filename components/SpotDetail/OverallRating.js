@@ -75,7 +75,7 @@ export default function OverallRating({
               pendingOverallRating !== 0 &&
               pendingOverallRating !== userOverallRating
                 ? themeColors.purple
-                : themeColors.darkGray,
+                : themeColors.gray,
             borderRadius: 16,
             padding: 4,
             alignItems: "center",

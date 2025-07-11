@@ -20,13 +20,14 @@ export default function MentionPicker({
     <View
       style={{
         position: "absolute",
+        top: 70, // Adjust this value to match your input bar's bottom position
         left: 0,
         right: 0,
-        top: 80,
-        backgroundColor: themeColors.white,
         zIndex: 1000,
+        backgroundColor: themeColors.white,
         maxHeight: 220,
         borderRadius: 14,
+        marginHorizontal: 16,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.15,

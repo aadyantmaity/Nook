@@ -344,23 +344,23 @@ export default function ProfileScreen({ navigation, route }) {
         >
           <ArrowLeft size={24} color={themeColors.purple} />
         </TouchableOpacity>
-        <TouchableOpacity
-          style={{
-            padding: 8,
-            borderRadius: 16,
-          }}
-          onPress={() => setMenuVisible(true)}
-          accessibilityLabel="Profile Menu"
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Gear // <-- Replace DotsThreeVertical with Gear
-            size={26}
-            color={themeColors.purple}
-          />
-        </TouchableOpacity>
+        {/* Only show Gear/settings icon if own profile */}
+        {isOwnProfile && (
+          <TouchableOpacity
+            style={{
+              padding: 8,
+              borderRadius: 16,
+            }}
+            onPress={() => setMenuVisible(true)}
+            accessibilityLabel="Profile Menu"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Gear size={26} color={themeColors.purple} />
+          </TouchableOpacity>
+        )}
       </View>
-      {/* Profile Menu Modal */}
-      {menuVisible && (
+      {/* Only show Profile Menu Modal if own profile */}
+      {isOwnProfile && menuVisible && (
         <TouchableOpacity
           style={{
             position: "absolute",

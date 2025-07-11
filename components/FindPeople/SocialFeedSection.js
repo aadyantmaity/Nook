@@ -381,14 +381,15 @@ export default function SocialFeedSection({ navigation: propNavigation }) {
   return (
     <View
       style={{
+        flex: 1,
+        position: "relative", // <-- Add this line
         backgroundColor: themeColors.white,
         borderRadius: 16,
-        padding: 24,
+        padding: 16,
         marginHorizontal: 0,
         width: "100%",
         marginTop: -8,
         alignItems: "center",
-        flex: 1,
       }}
     >
       {/* --- Reply Preview --- */}
