@@ -13,19 +13,21 @@ import { CaretLeft } from "phosphor-react-native";
 const slides = [
   {
     title: "Welcome to Nook!",
-    description: "Browse Nooks and use filters to find your perfect spot.",
+    description:
+      "Browse Nooks with live noise and crowd levels to find your perfect spot.",
     image:
       "https://res.cloudinary.com/dxnd4aryf/image/upload/w_900,h_1200,c_fit,f_auto/v1752130307/z86g9inn5qqmo7t6io6m.png",
   },
   {
-    title: "Add a Nook",
-    description: "Add new Nooks for everyone or just for you and your friends.",
+    title: "Add Nooks",
+    description: "Add new Nooks for everyone or just you and your friends.",
     image:
       "https://res.cloudinary.com/dxnd4aryf/image/upload/w_900,h_1200,c_fit,f_auto/v1752130630/w83bmvzpfg9ubnuiqup0.jpg",
   },
   {
     title: "Spot Details",
-    description: "See live status, check in, and share your favorite Nooks.",
+    description:
+      "Click on a Nook to send live updates and check into your favorite Nooks.",
     image:
       "https://res.cloudinary.com/dxnd4aryf/image/upload/w_900,h_1200,c_fit,f_auto/v1752134055/mloewartesijk3mv7knr.png",
   },
@@ -39,7 +41,7 @@ const slides = [
   {
     title: "Community",
     description:
-      "Join study groups, chat, and see what your friends are up to.",
+      "Join study groups, make new friends, and share updates with friends.",
     image:
       "https://res.cloudinary.com/dxnd4aryf/image/upload/w_900,h_1200,c_fit,f_auto/v1752133551/ezmqmv4sf2ie5nuj968b.png",
   },

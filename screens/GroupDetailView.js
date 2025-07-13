@@ -49,13 +49,13 @@ import {
   Star,
 } from "phosphor-react-native";
 import PrivateNookShareModal from "../components/SpotDetail/PrivateNookShareModal";
-import GroupMembersModal from "../components/Groups/GroupMembersModal";
 import GroupMenuModal from "../components/Groups/GroupMenuModal";
 import GroupMessagesList from "../components/Groups/GroupMessagesList";
 import GroupInputBar from "../components/Groups/GroupInputBar";
 import useFavorites from "../hooks/useFavorites";
 import PollModal from "../components/Groups/PollModal";
 import GroupTaskModal from "../components/Groups/GroupTaskModal";
+import GroupShareModal from "../components/SpotDetail/GroupShareModal";
 
 export default function GroupDetailView({ navigation, route }) {
   const { groupId } = route.params;
@@ -93,7 +93,7 @@ export default function GroupDetailView({ navigation, route }) {
   const [showPollModal, setShowPollModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
 
-  // Fetch group info (NO system message logic here anymore)
+  // Fetch group info (remove adminUids)
   useEffect(() => {
     if (!groupId) return;
     const unsub = onSnapshot(
@@ -196,7 +196,7 @@ export default function GroupDetailView({ navigation, route }) {
               uid: d.id,
               name:
                 first && last
-                  ? `${first} ${last.charAt(0)}`
+                  ? `${first} ${last.charAt(0)}.`
                   : first
                   ? first
                   : "User",
@@ -257,7 +257,7 @@ export default function GroupDetailView({ navigation, route }) {
           const last = d.lastName || "";
           senderName =
             first && last
-              ? `${first} ${last.charAt(0)}`
+              ? `${first} ${last.charAt(0)}.`
               : first
               ? first
               : "User";
@@ -301,7 +301,7 @@ export default function GroupDetailView({ navigation, route }) {
           const last = d.lastName || "";
           senderName =
             first && last
-              ? `${first} ${last.charAt(0)}`
+              ? `${first} ${last.charAt(0)}.`
               : first
               ? first
               : "User";
@@ -336,7 +336,11 @@ export default function GroupDetailView({ navigation, route }) {
         const first = d.firstName || "";
         const last = d.lastName || "";
         const name =
-          first && last ? `${first} ${last.charAt(0)}` : first ? first : "User";
+          first && last
+            ? `${first} ${last.charAt(0)}.`
+            : first
+            ? first
+            : "User";
         const profilePic = d.profilePic || null;
         setUserCache((prev) => ({ ...prev, [uid]: name }));
         setUserPicCache((prev) => ({ ...prev, [uid]: profilePic }));
@@ -726,26 +730,22 @@ export default function GroupDetailView({ navigation, route }) {
           setShowMembersModal={setShowMembersModal}
           fetchMembersList={fetchMembersList}
           handleLeaveGroup={handleLeaveGroup}
-          handleDeleteGroup={handleDeleteGroup}
+          handleDeleteGroup={
+            group?.createdBy === auth.currentUser?.uid
+              ? handleDeleteGroup
+              : undefined
+          }
           navigation={navigation}
         />
         {/* Share Modal */}
-        <PrivateNookShareModal
+        <GroupShareModal
           visible={showShareModal}
           onClose={() => setShowShareModal(false)}
           spotId={groupId}
           themeColors={themeColors}
           ownerUid={group?.createdBy}
-          isGroup
           collectionName="studyGroups"
           fieldName="memberUids"
-        />
-        {/* Members Modal */}
-        <GroupMembersModal
-          visible={showMembersModal}
-          onClose={() => setShowMembersModal(false)}
-          membersList={membersList}
-          themeColors={themeColors}
         />
         {/* Poll Modal */}
         <PollModal

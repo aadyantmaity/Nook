@@ -13,12 +13,11 @@ import {
 } from "phosphor-react-native";
 import Filters from "./Filters";
 import HomeLoadingScreen from "./HomeLoadingScreen"; // Import the loading screen
+import useFavorites from "../../hooks/useFavorites";
 
 export default function StudySpotsList({
   filteredSpots,
   navigation,
-  favorites,
-  handleToggleFavorite,
   isDarkMode,
   themeColors,
   onRefresh,
@@ -40,6 +39,8 @@ export default function StudySpotsList({
   userLocation, // <-- add
   ...props
 }) {
+  const { favorites, toggleFavorite } = useFavorites(); // <-- get favorites array
+
   // Add helper functions:
   function getNoiseLabel(avg) {
     if (avg === "N/A" || avg === "No rating yet" || avg == null) return "N/A";
@@ -135,6 +136,9 @@ export default function StudySpotsList({
           if (dist < 1000) distanceLabel = `${Math.round(dist)} m`;
           else distanceLabel = `${(dist / 1000).toFixed(2)} km`;
         }
+
+        // Use favorites array instead of useFavoriteStatus hook
+        const isFavorite = favorites.includes(item.id);
 
         return (
           <TouchableOpacity
@@ -261,7 +265,7 @@ export default function StudySpotsList({
             </View>
             {/* Heart icon for favorite */}
             <TouchableOpacity
-              onPress={() => handleToggleFavorite(item.id)}
+              onPress={() => toggleFavorite(item.id)}
               style={{
                 position: "absolute",
                 top: 12,
@@ -278,7 +282,7 @@ export default function StudySpotsList({
               <Heart
                 size={28}
                 color={themeColors.purple}
-                weight={favorites.includes(item.id) ? "fill" : "regular"}
+                weight={isFavorite ? "fill" : "regular"}
               />
             </TouchableOpacity>
             <Text

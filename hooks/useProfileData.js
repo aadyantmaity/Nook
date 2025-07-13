@@ -188,7 +188,6 @@ export function useProfileData(targetUid = null) {
           );
         }
       }
-      // ...existing code...
     } catch {}
   };
 

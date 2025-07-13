@@ -147,10 +147,11 @@ export default function HomeScreen({ navigation, route }) {
   };
 
   // Hooks
+  const { favorites, toggleFavorite, favoriteGroups, toggleFavoriteGroup } =
+    useFavorites(); // <-- destructure favorites
   const { studySpots, isLoading, fetchStudySpots } = useStudySpots();
-  const { favorites, toggleFavorite } = useFavorites();
   const { filters, setFilters, filteredSpots, sortBy, setSortBy } =
-    useSearchAndFilters(studySpots, favorites);
+    useSearchAndFilters(studySpots, favorites); // <-- pass favorites
 
   // Add state for profile picture
   const [profilePic, setProfilePic] = useState(null);
@@ -411,8 +412,6 @@ export default function HomeScreen({ navigation, route }) {
               }
             },
           }}
-          favorites={favorites}
-          handleToggleFavorite={toggleFavorite}
           themeColors={themeColors}
           onRefresh={fetchStudySpots}
           refreshing={isLoading}
@@ -420,7 +419,7 @@ export default function HomeScreen({ navigation, route }) {
           setFilters={setFilters}
           setCurrentAlerts={setCurrentAlerts}
           setShowAlertsModal={setShowAlertsModal}
-          contentContainerStyle={{ paddingBottom: 120 }} // <-- Increased padding
+          contentContainerStyle={{ paddingBottom: 120 }}
           getLastUpdatedLabel={getLastUpdatedLabel}
           showMapView={showMapView}
           setShowMapView={handleSetShowMapView}

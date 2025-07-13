@@ -34,7 +34,7 @@ import {
   PencilSimple,
 } from "phosphor-react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import PrivateNookShareModal from "../components/SpotDetail/PrivateNookShareModal";
+import GroupShareModal from "../components/SpotDetail/GroupShareModal";
 
 export default function GroupDetailsScreen({ route, navigation }) {
   const { groupId } = route.params;
@@ -83,7 +83,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
     }
   };
 
-  // Fetch group info and members
+  // Fetch group info and members (remove adminUids)
   useEffect(() => {
     if (!groupId) return;
     setLoading(true);
@@ -107,7 +107,13 @@ export default function GroupDetailsScreen({ route, navigation }) {
           users.push({ uid, ...userDoc.data() });
         }
       }
-      setMembers(users);
+      // Move current user to end of list
+      const currentUid = auth.currentUser?.uid;
+      const sortedUsers = [
+        ...users.filter((u) => u.uid !== currentUid),
+        ...users.filter((u) => u.uid === currentUid),
+      ];
+      setMembers(sortedUsers);
       setLoading(false);
     });
     return () => unsub();
@@ -365,7 +371,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
   const listHeader = (
     <View style={{ padding: 0, marginBottom: 12 }}>
       {/* Group Name and Description */}
-      <View style={{ paddingHorizontal: 24 }}>
+      <View style={{ paddingHorizontal: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Text
             style={{
@@ -884,13 +890,12 @@ export default function GroupDetailsScreen({ route, navigation }) {
       )}
       {/* Manage Members Modal (owner only, uses PrivateNookShareModal in group mode) */}
       {group?.createdBy === auth.currentUser?.uid && (
-        <PrivateNookShareModal
+        <GroupShareModal
           visible={showMembersModal}
           onClose={() => setShowMembersModal(false)}
           spotId={groupId}
           themeColors={themeColors}
           ownerUid={group?.createdBy}
-          isGroup
           collectionName="studyGroups"
           fieldName="memberUids"
         />
@@ -913,7 +918,9 @@ export default function GroupDetailsScreen({ route, navigation }) {
               paddingHorizontal: 24,
             }}
           >
-            <View
+            {/* Make pfp clickable */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Profile", { uid: item.uid })}
               style={{
                 width: 36,
                 height: 36,
@@ -933,7 +940,8 @@ export default function GroupDetailsScreen({ route, navigation }) {
               ) : (
                 <User size={22} color={themeColors.white} />
               )}
-            </View>
+            </TouchableOpacity>
+            {/* Make name clickable */}
             <TouchableOpacity
               onPress={() => navigation.navigate("Profile", { uid: item.uid })}
               style={{ flex: 1 }}
@@ -945,7 +953,21 @@ export default function GroupDetailsScreen({ route, navigation }) {
                   fontFamily: "CarosSoft",
                 }}
               >
-                {item.firstName} {item.lastName}
+                {item.uid !== auth.currentUser?.uid && (
+                  <Text style={{ color: themeColors.purple }}>
+                    {/* Show first name and last initial */}
+                    {item.firstName}{" "}
+                    {item.lastName && item.lastName.length > 0
+                      ? item.lastName[0] + "."
+                      : ""}
+                  </Text>
+                )}
+                {item.uid === auth.currentUser?.uid && (
+                  <Text style={{ color: themeColors.purple }}>You</Text>
+                )}
+                {group?.createdBy === item.uid && (
+                  <Text style={{ color: themeColors.purple }}> (Owner)</Text>
+                )}
               </Text>
             </TouchableOpacity>
             {item.uid !== auth.currentUser?.uid &&
@@ -962,6 +984,8 @@ export default function GroupDetailsScreen({ route, navigation }) {
                     justifyContent: "center",
                     marginLeft: 8,
                     opacity: followingLoading ? 0.6 : 1,
+                    minWidth: 80, // <-- ensure same width
+                    width: 90, // <-- set fixed width for both buttons
                   }}
                 >
                   <Text
@@ -988,6 +1012,8 @@ export default function GroupDetailsScreen({ route, navigation }) {
                     justifyContent: "center",
                     marginLeft: 8,
                     opacity: followingLoading ? 0.6 : 1,
+                    minWidth: 80, // <-- ensure same width
+                    width: 90, // <-- set fixed width for both buttons
                   }}
                 >
                   <Text

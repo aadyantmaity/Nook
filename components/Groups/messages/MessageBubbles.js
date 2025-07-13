@@ -221,7 +221,16 @@ export const OtherMessageBubble = memo(
                     fontFamily: "CarosSoft",
                   }}
                 >
-                  {getUserName()}
+                  {/* Show first name and last initial */}
+                  {(() => {
+                    const name = getUserName();
+                    if (!name) return "";
+                    const parts = name.split(" ");
+                    const first = parts[0] || "";
+                    const lastInitial =
+                      parts.length > 1 && parts[1] ? parts[1][0] : "";
+                    return `${first} ${lastInitial}.`;
+                  })()}
                 </Text>
               </View>
             )}
@@ -634,7 +643,16 @@ export const PollMessage = memo(
                     fontFamily: "CarosSoft",
                   }}
                 >
-                  {getUserName()}
+                  {/* Show first name and last initial */}
+                  {(() => {
+                    const name = getUserName();
+                    if (!name) return "";
+                    const parts = name.split(" ");
+                    const first = parts[0] || "";
+                    const lastInitial =
+                      parts.length > 1 && parts[1] ? parts[1][0] + "." : "";
+                    return `${first} ${lastInitial}.`;
+                  })()}
                 </Text>
               </View>
             )}

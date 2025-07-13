@@ -175,6 +175,13 @@ const GroupMessagesList = memo(
         } else {
           name = getUserName(item.uid);
         }
+        // Format as first name + last initial
+        if (name) {
+          const parts = name.split(" ");
+          const first = parts[0] || "";
+          const lastInitial = parts.length > 1 && parts[1] ? parts[1][0] : "";
+          name = `${first} ${lastInitial}`;
+        }
         let time = "";
         let date = "";
         if (item.createdAt && item.createdAt.seconds) {

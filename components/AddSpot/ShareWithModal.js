@@ -128,7 +128,18 @@ export default function ShareWithModal({
                       fontFamily: "CarosSoft",
                     }}
                   >
-                    {user.name} ({user.email})
+                    {/* Show first name and last initial */}
+                    {user.name
+                      ? (() => {
+                          const parts = user.name.split(" ");
+                          const first = parts[0] || "";
+                          const lastInitial =
+                            parts.length > 1 && parts[1]
+                              ? parts[1][0] + "."
+                              : "";
+                          return `${first} ${lastInitial}`;
+                        })()
+                      : user.email}
                   </Text>
                 </TouchableOpacity>
               ))}
