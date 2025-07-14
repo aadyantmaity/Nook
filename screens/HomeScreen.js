@@ -69,6 +69,7 @@ import ProfilePicture from "../components/Profile/ProfilePicture";
 import FindPeopleSection from "../components/FindPeople/FindPeopleSection"; // <-- REMOVE this import
 import EmailVerificationModal from "../components/Auth/EmailVerificationModal"; // <-- Import EmailVerificationModal
 import OnboardingModal from "../components/Auth/OnboardingModal"; // <-- Add this import
+import { useHomeView } from "../components/Home/HomeViewContext"; // <-- Import HomeViewContext
 
 //hook imports
 import useStudySpots from "../hooks/useStudySpots";
@@ -96,8 +97,14 @@ export default function HomeScreen({ navigation, route }) {
   const [showGeneralReport, setShowGeneralReport] = useState(false);
   const [showAlertsModal, setShowAlertsModal] = useState(false);
   const [currentAlerts, setCurrentAlerts] = useState([]);
-  const [showMapView, setShowMapView] = useState(false);
-  const [findPeopleModalVisible, setFindPeopleModalVisible] = useState(false); // <-- add modal state
+
+  const { showMapView, setShowMapView, tabIndex, setTabIndex } = useHomeView(); // <-- Use HomeViewContext
+  // Expose a method to set map view from outside
+  useEffect(() => {
+    navigation.setParams({
+      setShowMapView: (val) => setShowMapView(val),
+    });
+  }, []);
 
   // Social tab selectedTab state
   const [socialSelectedTab, setSocialSelectedTab] = useState("socialFeed");
@@ -119,6 +126,7 @@ export default function HomeScreen({ navigation, route }) {
   const [profilePic, setProfilePic] = useState(null);
   const [isProfilePicLoading, setIsProfilePicLoading] = useState(true); // <-- add loading state
   const user = auth.currentUser;
+  const [findPeopleModalVisible, setFindPeopleModalVisible] = useState(false);
 
   // Subscribe to user's profilePic for instant updates
   useEffect(() => {
@@ -447,7 +455,6 @@ export default function HomeScreen({ navigation, route }) {
 
   // TabView
   const layout = Dimensions.get("window");
-  const [index, setIndex] = useState(1);
   const [routes] = useState([
     { key: "focus", title: "Focus" },
     { key: "home", title: "Home" },
@@ -729,9 +736,9 @@ export default function HomeScreen({ navigation, route }) {
         {/* Main Content */}
         <View style={{ flex: 1 }}>
           <TabView
-            navigationState={{ index, routes }}
+            navigationState={{ index: tabIndex, routes }}
             renderScene={renderScene}
-            onIndexChange={setIndex}
+            onIndexChange={setTabIndex}
             initialLayout={{ width: layout.width }}
             lazy
             renderLazyPlaceholder={() => (
@@ -753,13 +760,13 @@ export default function HomeScreen({ navigation, route }) {
             }}
           >
             <TabBar
-              navigationState={{ index, routes }}
+              navigationState={{ index: tabIndex, routes }}
               jumpTo={(key) => {
                 const idx = routes.findIndex((r) => r.key === key);
-                if (idx !== -1) setIndex(idx);
+                if (idx !== -1) setTabIndex(idx);
               }}
               themeColors={themeColors}
-              currentIndex={index}
+              currentIndex={tabIndex}
               labelStyle={{ fontFamily: "CarosSoft" }}
             />
           </View>

@@ -16,6 +16,7 @@ import * as Font from "expo-font";
 import AppLoading from "expo-app-loading"; // Show while fonts are loading
 import GroupDetailView from "./screens/GroupDetailView"; // <-- add this import
 import GroupDetailsScreen from "./screens/GroupDetailsScreen"; // <-- add this import
+import { HomeViewProvider } from "./components/Home/HomeViewContext";
 
 const Stack = createStackNavigator();
 
@@ -95,10 +96,12 @@ export default function App() {
   );
 
   return (
-    <ThemeContext.Provider value={{ isDarkMode, setIsDarkMode, themeColors }}>
-      <NavigationContainer linking={linking}>
-        {isAuthenticated ? <MainStack /> : <AuthStack />}
-      </NavigationContainer>
-    </ThemeContext.Provider>
+    <HomeViewProvider>
+      <ThemeContext.Provider value={{ isDarkMode, setIsDarkMode, themeColors }}>
+        <NavigationContainer linking={linking}>
+          {isAuthenticated ? <MainStack /> : <AuthStack />}
+        </NavigationContainer>
+      </ThemeContext.Provider>
+    </HomeViewProvider>
   );
 }
