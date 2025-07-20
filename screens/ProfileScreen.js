@@ -720,21 +720,6 @@ export default function ProfileScreen({ navigation, route }) {
               justifyContent: "space-between",
             }}
           >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Heart size={20} color={themeColors.purple} weight="fill" />
-              <Text
-                style={[
-                  styles.favoritesTitle,
-                  {
-                    marginLeft: 8,
-                    color: themeColors.black,
-                    fontFamily: "CarosSoft",
-                  },
-                ]}
-              >
-                Favorites
-              </Text>
-            </View>
             <TouchableOpacity
               onPress={() => setFavoritesExpanded((v) => !v)}
               style={{
@@ -749,11 +734,27 @@ export default function ProfileScreen({ navigation, route }) {
                 favoritesExpanded ? "Collapse favorites" : "Expand favorites"
               }
             >
-              {favoritesExpanded ? (
-                <CaretDown size={22} color={themeColors.purple} />
-              ) : (
-                <CaretRight size={22} color={themeColors.purple} />
-              )}
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Heart size={20} color={themeColors.purple} weight="fill" />
+                <Text
+                  style={[
+                    styles.favoritesTitle,
+                    {
+                      marginLeft: 8,
+                      marginRight: 8,
+                      color: themeColors.black,
+                      fontFamily: "CarosSoft",
+                    },
+                  ]}
+                >
+                  Favorites
+                </Text>
+                {favoritesExpanded ? (
+                  <CaretDown size={22} color={themeColors.purple} />
+                ) : (
+                  <CaretRight size={22} color={themeColors.purple} />
+                )}
+              </View>
             </TouchableOpacity>
           </View>
           {favoritesExpanded && (

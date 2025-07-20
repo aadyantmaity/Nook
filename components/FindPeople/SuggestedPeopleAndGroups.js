@@ -86,16 +86,7 @@ export default function SuggestedPeopleAndGroups({
 
   return (
     <View style={{ width: "100%", marginBottom: 8 }}>
-      <TouchableOpacity
-        onPress={async () => {
-          if (!suggestedExpanded) {
-            await fetchFollowing();
-            setSuggestedExpanded(true);
-            refreshSuggested();
-          } else {
-            setSuggestedExpanded(false);
-          }
-        }}
+      <View
         style={{
           flexDirection: "row",
           alignItems: "center",
@@ -104,28 +95,44 @@ export default function SuggestedPeopleAndGroups({
           backgroundColor: themeColors.lightGray,
           marginBottom: suggestedExpanded ? 8 : 0,
         }}
-        accessibilityLabel={
-          suggestedExpanded
-            ? "Collapse suggested users and groups"
-            : "Expand suggested users and groups"
-        }
       >
-        <Text
-          style={{
-            fontSize: 17,
-            color: themeColors.purple,
-            fontFamily: "CarosSoft",
-            marginRight: 6,
+        <TouchableOpacity
+          onPress={async () => {
+            if (!suggestedExpanded) {
+              await fetchFollowing();
+              setSuggestedExpanded(true);
+              refreshSuggested();
+            } else {
+              setSuggestedExpanded(false);
+            }
           }}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+          accessibilityLabel={
+            suggestedExpanded
+              ? "Collapse suggested users and groups"
+              : "Expand suggested users and groups"
+          }
         >
-          Suggested
-        </Text>
-        {suggestedExpanded ? (
-          <Minus size={18} color={themeColors.purple} />
-        ) : (
-          <Plus size={18} color={themeColors.purple} />
-        )}
-      </TouchableOpacity>
+          <Text
+            style={{
+              fontSize: 17,
+              color: themeColors.purple,
+              fontFamily: "CarosSoft",
+              marginRight: 6,
+            }}
+          >
+            Suggested
+          </Text>
+          {suggestedExpanded ? (
+            <Minus size={18} color={themeColors.purple} />
+          ) : (
+            <Plus size={18} color={themeColors.purple} />
+          )}
+        </TouchableOpacity>
+      </View>
       {suggestedExpanded && (
         <View style={{ marginTop: 0 }}>
           {suggestedLoading || suggestedGroupsLoading ? (

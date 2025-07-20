@@ -16,8 +16,7 @@ export default function RecentActivityList({
     : [];
   return (
     <View style={{ width: "100%", marginBottom: 8 }}>
-      <TouchableOpacity
-        onPress={() => setExpanded(!expanded)}
+      <View
         style={{
           flexDirection: "row",
           alignItems: "center",
@@ -26,26 +25,34 @@ export default function RecentActivityList({
           backgroundColor: themeColors.lightGray,
           marginBottom: expanded ? 8 : 0,
         }}
-        accessibilityLabel={
-          expanded ? "Collapse recent activity" : "Expand recent activity"
-        }
       >
-        <Text
+        <TouchableOpacity
+          onPress={() => setExpanded(!expanded)}
           style={{
-            fontSize: 17,
-            color: themeColors.purple,
-            fontFamily: "CarosSoft",
-            marginRight: 6,
+            flexDirection: "row",
+            alignItems: "center",
           }}
+          accessibilityLabel={
+            expanded ? "Collapse recent activity" : "Expand recent activity"
+          }
         >
-          Recent Activity
-        </Text>
-        {expanded ? (
-          <Minus size={18} color={themeColors.purple} />
-        ) : (
-          <Plus size={18} color={themeColors.purple} />
-        )}
-      </TouchableOpacity>
+          <Text
+            style={{
+              fontSize: 17,
+              color: themeColors.purple,
+              fontFamily: "CarosSoft",
+              marginRight: 6,
+            }}
+          >
+            Recent Activity
+          </Text>
+          {expanded ? (
+            <Minus size={18} color={themeColors.purple} />
+          ) : (
+            <Plus size={18} color={themeColors.purple} />
+          )}
+        </TouchableOpacity>
+      </View>
       {expanded && (
         <FlatList
           data={safeRecentActivity}

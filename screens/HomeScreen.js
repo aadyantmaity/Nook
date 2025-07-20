@@ -66,7 +66,6 @@ import TabBar from "../components/Home/TabBar"; // Import TabBar component
 import GeneralReportModal from "../components/Home/GeneralReportModal"; // Import GeneralReportModal component
 import HomeLoadingScreen from "../components/Home/HomeLoadingScreen"; // <-- Import the new component
 import ProfilePicture from "../components/Profile/ProfilePicture";
-import FindPeopleSection from "../components/FindPeople/FindPeopleSection"; // <-- REMOVE this import
 import EmailVerificationModal from "../components/Auth/EmailVerificationModal"; // <-- Import EmailVerificationModal
 import OnboardingModal from "../components/Auth/OnboardingModal"; // <-- Add this import
 
@@ -488,13 +487,18 @@ export default function HomeScreen({ navigation, route }) {
     { key: "focus", title: "Focus" },
     { key: "home", title: "Home" },
     { key: "social", title: "Community" },
+    { key: "socialFeed", title: "Social Feed" },
   ]);
 
   // Tab scenes
   const renderScene = SceneMap({
     focus: FocusTimerView,
     home: HomeTab,
-    social: SocialTab, // <-- Add LoadingTab
+    social: SocialTab,
+    socialFeed: () => {
+      const SocialFeedView = require("./SocialFeedView").default;
+      return <SocialFeedView />;
+    },
   });
 
   // --- Track if this is the initial mount (not after navigation) ---
@@ -841,71 +845,6 @@ export default function HomeScreen({ navigation, route }) {
           alerts={currentAlerts}
           themeColors={themeColors}
         />
-        {/* Find People Modal */}
-        <Modal
-          visible={findPeopleModalVisible}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setFindPeopleModalVisible(false)}
-        >
-          <TouchableOpacity
-            style={{
-              flex: 1,
-              backgroundColor: "rgba(0,0,0,0.3)",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-            activeOpacity={1}
-            onPressOut={() => setFindPeopleModalVisible(false)}
-          >
-            <View
-              style={{
-                backgroundColor: themeColors.white,
-                borderRadius: 16,
-                padding: 0,
-                width: "95%",
-                maxHeight: "90%",
-                alignItems: "center",
-                borderWidth: 1,
-                borderColor: themeColors.black,
-                shadowColor: themeColors.black,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-                elevation: 5,
-              }}
-              onStartShouldSetResponder={() => true}
-            >
-              <FindPeopleSection
-                navigation={navigation}
-                onNavigateToProfile={() => setFindPeopleModalVisible(false)}
-              />
-              <TouchableOpacity
-                onPress={() => setFindPeopleModalVisible(false)}
-                style={{
-                  marginTop: 8,
-                  backgroundColor: themeColors.purple,
-                  borderRadius: 8,
-                  paddingVertical: 10,
-                  alignItems: "center",
-                  width: "90%",
-                  alignSelf: "center",
-                  marginBottom: 12,
-                }}
-              >
-                <Text
-                  style={{
-                    color: themeColors.white,
-                    fontWeight: "bold",
-                    fontFamily: "CarosSoft",
-                  }}
-                >
-                  Close
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        </Modal>
       </View>
     </View>
   );

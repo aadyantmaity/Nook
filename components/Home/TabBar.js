@@ -1,17 +1,19 @@
 import React from "react";
 import { View, TouchableOpacity, Text, Dimensions } from "react-native";
-import { Timer, House, Chats } from "phosphor-react-native"; // Changed icons
+import { Timer, House, Chats, Globe } from "phosphor-react-native";
 
 const TAB_ICONS = {
   focus: Timer,
   home: House,
   social: Chats,
+  socialFeed: Globe,
 };
 
 const TAB_LABELS = {
   focus: "Focus",
   home: "Home",
-  social: "Community",
+  social: "Groups",
+  socialFeed: "Feed",
 };
 
 export default function TabBar({
@@ -56,7 +58,6 @@ export default function TabBar({
                 paddingTop: 5,
                 paddingBottom: 20,
                 alignItems: "center",
-
                 backgroundColor: themeColors.white,
               }}
               accessibilityLabel={TAB_LABELS[route.key]}

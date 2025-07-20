@@ -123,18 +123,31 @@ export default function GroupList({
     groupSearch ? groupSearchResults.length === 0 : sortedGroups.length === 0
   ) {
     return (
-      <Text
-        style={{
-          color: themeColors.darkGray,
-          fontFamily: "CarosSoft",
-          textAlign: "center",
-          marginTop: 12,
-        }}
-      >
-        {groupSearch
-          ? "No groups found matching your search."
-          : "No study groups found."}
-      </Text>
+      <View style={{ flex: 1, alignItems: "center", marginTop: 16 }}>
+        <Text
+          style={{
+            color: themeColors.purple,
+            fontWeight: "bold",
+            fontSize: 16,
+            fontFamily: "CarosSoft",
+            marginBottom: 4,
+          }}
+        >
+          Groups
+        </Text>
+        <Text
+          style={{
+            color: themeColors.darkGray,
+            fontFamily: "CarosSoft",
+            textAlign: "center",
+            marginTop: 4,
+          }}
+        >
+          {groupSearch
+            ? "No groups found matching your search."
+            : "No study groups found."}
+        </Text>
+      </View>
     );
   }
 

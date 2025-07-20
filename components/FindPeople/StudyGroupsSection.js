@@ -39,16 +39,9 @@ import ProfilePicture from "../Profile/ProfilePicture";
 import SuggestedPeopleAndGroups from "./SuggestedPeopleAndGroups";
 
 function getMutualFriends(users, currentUser) {
-  // Show all friends: users who are both in my followers and following
+  // Show all users except the current user
   if (!currentUser) return [];
-  const me = users.find((u) => u.uid === currentUser.uid);
-  if (!me) return [];
-  if (!Array.isArray(me.followers) || !Array.isArray(me.following)) return [];
-  // Friends: users who are both in followers and following
-  const friendUids = me.followers.filter((uid) => me.following.includes(uid));
-  return users.filter(
-    (u) => u.uid !== currentUser.uid && friendUids.includes(u.uid)
-  );
+  return users.filter((u) => u.uid !== currentUser.uid);
 }
 
 // List of icon names from phosphor-react-native (pick your favorites)
@@ -126,10 +119,7 @@ export default function StudyGroupsSection({ navigation }) {
   const [selectedIcon, setSelectedIcon] = useState(null); // <-- icon state
   const [showIconModal, setShowIconModal] = useState(false); // <-- icon modal state
 
-  // --- Friend search and suggested users state ---
-  const [friendSearch, setFriendSearch] = useState("");
-  const [friendResults, setFriendResults] = useState([]);
-  const [friendLoading, setFriendLoading] = useState(false);
+  // --- Suggested users and groups state ---
   const [suggested, setSuggested] = useState([]);
   const [suggestedGroups, setSuggestedGroups] = useState([]); // <-- add this
   const [suggestedLoading, setSuggestedLoading] = useState(true);
@@ -201,7 +191,7 @@ export default function StudyGroupsSection({ navigation }) {
         ...d.data(),
       }));
       setAllUsers(users);
-      setMutualFriends(getMutualFriends(users, user));
+      setMutualFriends(getMutualFriends(users, user)); // Now includes all users
     })();
   }, [user]);
 
@@ -410,15 +400,12 @@ export default function StudyGroupsSection({ navigation }) {
   };
 
   // --- Filter groups and friends by search (fuzzy: name or description, case-insensitive) ---
-  const [friendSearchResults, setFriendSearchResults] = useState([]);
   useEffect(() => {
     // Always use allGroups for filtering, since it contains all public groups
     const sourceGroups = allGroups.length > 0 ? allGroups : groups;
     let filteredGroups = filterGroups(sourceGroups);
-    let filteredFriends = [];
     if (!groupSearch.trim()) {
       setGroupSearchResults(filteredGroups);
-      setFriendSearchResults([]);
       return;
     }
     const s = groupSearch.trim().toLowerCase();
@@ -429,13 +416,6 @@ export default function StudyGroupsSection({ navigation }) {
           (g.description && g.description.toLowerCase().includes(s))
       )
     );
-    // --- Friend search: search mutual friends by name or email ---
-    filteredFriends = mutualFriends.filter(
-      (u) =>
-        (u.email && u.email.toLowerCase().includes(s)) ||
-        `${u.firstName} ${u.lastName}`.toLowerCase().includes(s)
-    );
-    setFriendSearchResults(filteredFriends);
   }, [groupSearch, groups, allGroups, selectedFilter, mutualFriends]);
 
   // --- Sort groups: favorite groups first for current user ---
@@ -573,11 +553,12 @@ export default function StudyGroupsSection({ navigation }) {
           alignItems: "center",
           width: "100%",
           marginBottom: 12,
+          marginTop: 24,
         }}
       >
         <View style={{ flex: 1 }}>
           <TextInput
-            placeholder="Search for a group or person..."
+            placeholder="Search for a study group..."
             value={groupSearch}
             onChangeText={setGroupSearch}
             style={{
@@ -646,69 +627,6 @@ export default function StudyGroupsSection({ navigation }) {
         handleCreateGroup={handleCreateGroup}
         themeColors={themeColors}
       />
-      {/* --- Friend Search Results (above group list) --- */}
-      {groupSearch.length > 0 && friendSearchResults.length > 0 && (
-        <View style={{ width: "100%", marginBottom: 8 }}>
-          <Text
-            style={{
-              color: themeColors.purple,
-              fontWeight: "bold",
-              fontSize: 16,
-              fontFamily: "CarosSoft",
-              marginBottom: 4,
-            }}
-          >
-            Friends
-          </Text>
-          <FlatList
-            data={friendSearchResults}
-            keyExtractor={(item) => item.uid}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => {
-                  navigation.navigate("Profile", { uid: item.uid });
-                }}
-                style={{
-                  backgroundColor: themeColors.white,
-                  borderRadius: 12,
-                  padding: 14,
-                  marginBottom: 10,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 3,
-                  elevation: 1,
-                  borderWidth: 0.5,
-                  borderColor: themeColors.darkGray,
-                }}
-              >
-                <Text
-                  style={{
-                    color: themeColors.black,
-                    fontSize: 17,
-                    fontWeight: "600",
-                    fontFamily: "CarosSoft",
-                  }}
-                >
-                  {item.firstName} {item.lastName}
-                </Text>
-                <Text
-                  style={{
-                    color: themeColors.darkGray,
-                    marginTop: 4,
-                    fontFamily: "CarosSoft",
-                  }}
-                >
-                  {item.email}
-                </Text>
-              </TouchableOpacity>
-            )}
-            style={{ width: "100%" }}
-            ListEmptyComponent={null}
-            scrollEnabled={false}
-          />
-        </View>
-      )}
       {/* --- Suggested Users and Groups Dropdown --- */}
       {groupSearch.length === 0 && (
         <SuggestedPeopleAndGroups

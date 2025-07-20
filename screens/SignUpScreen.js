@@ -67,6 +67,8 @@ export default function SignUpScreen({ navigation }) {
         following: [],
         requireEmailVerification: true, // Add this field
         onboarded: false, // <-- Add this field
+        workTimeSetting: 25, // Add default work time setting
+        breakTimeSetting: 5, // Add default break time setting
       });
 
       // Send email verification
