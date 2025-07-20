@@ -1,10 +1,17 @@
 import React from "react";
 import { View, TouchableOpacity, Text, Dimensions } from "react-native";
-import { Timer, House, Chats, Globe } from "phosphor-react-native";
+import {
+  Timer,
+  House,
+  MagnifyingGlass,
+  Chats,
+  Globe,
+} from "phosphor-react-native";
 
 const TAB_ICONS = {
   focus: Timer,
   home: House,
+  search: MagnifyingGlass,
   social: Chats,
   socialFeed: Globe,
 };
@@ -12,6 +19,7 @@ const TAB_ICONS = {
 const TAB_LABELS = {
   focus: "Focus",
   home: "Home",
+  search: "Search",
   social: "Groups",
   socialFeed: "Feed",
 };
@@ -64,7 +72,7 @@ export default function TabBar({
               accessible={true}
             >
               <Icon
-                size={25}
+                size={24}
                 color={
                   currentIndex === i ? themeColors.purple : themeColors.darkGray
                 }
@@ -76,7 +84,7 @@ export default function TabBar({
                     currentIndex === i
                       ? themeColors.purple
                       : themeColors.darkGray,
-                  fontSize: 12,
+                  fontSize: 11,
                   fontFamily: "CarosSoft",
                   marginTop: 2,
                   fontWeight: currentIndex === i ? "bold" : "normal",

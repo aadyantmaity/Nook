@@ -15,7 +15,7 @@ export default function InputBar({
       style={{
         width: "100%",
         marginBottom: 12,
-        marginTop: 24,
+        marginTop: 16,
       }}
     >
       <View

@@ -553,7 +553,7 @@ export default function StudyGroupsSection({ navigation }) {
           alignItems: "center",
           width: "100%",
           marginBottom: 12,
-          marginTop: 24,
+          marginTop: 16,
         }}
       >
         <View style={{ flex: 1 }}>

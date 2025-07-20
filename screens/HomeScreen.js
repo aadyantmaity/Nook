@@ -484,8 +484,9 @@ export default function HomeScreen({ navigation, route }) {
   const layout = Dimensions.get("window");
   const [index, setIndex] = useState(1);
   const [routes] = useState([
-    { key: "focus", title: "Focus" },
     { key: "home", title: "Home" },
+    { key: "search", title: "Search" },
+    { key: "focus", title: "Focus" },
     { key: "social", title: "Community" },
     { key: "socialFeed", title: "Social Feed" },
   ]);
@@ -494,6 +495,10 @@ export default function HomeScreen({ navigation, route }) {
   const renderScene = SceneMap({
     focus: FocusTimerView,
     home: HomeTab,
+    search: () => {
+      const SearchView = require("./SearchView").default;
+      return <SearchView />;
+    },
     social: SocialTab,
     socialFeed: () => {
       const SocialFeedView = require("./SocialFeedView").default;
