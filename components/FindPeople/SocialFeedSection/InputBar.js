@@ -52,8 +52,7 @@ export default function InputBar({
             editable={!posting}
             placeholderTextColor={themeColors.darkGray}
             maxLength={100}
-            returnKeyType="send"
-            onSubmitEditing={handlePost}
+            returnKeyType={"default"}
             blurOnSubmit={true}
           />
         </View>

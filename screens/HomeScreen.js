@@ -482,7 +482,7 @@ export default function HomeScreen({ navigation, route }) {
 
   // TabView
   const layout = Dimensions.get("window");
-  const [index, setIndex] = useState(1);
+  const [index, setIndex] = useState(0);
   const [routes] = useState([
     { key: "home", title: "Home" },
     { key: "search", title: "Search" },

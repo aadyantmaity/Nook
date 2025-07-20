@@ -69,6 +69,7 @@ export default function FollowingModal({
           ) : (
             <FlatList
               data={userList}
+              showsVerticalScrollIndicator={false}
               keyExtractor={(item) => item.uid}
               renderItem={({ item }) => (
                 <View

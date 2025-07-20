@@ -56,13 +56,13 @@ const BUILDINGS = [
   },
   {
     name: "Paul G. Allen Center (CSE)",
-    latitude: 47.6537,
-    longitude: -122.3051,
+    latitude: 47.6532,
+    longitude: -122.306,
   },
   {
     name: "Bill‑Melinda Gates Center (CSE)",
     latitude: 47.6532,
-    longitude: -122.3047,
+    longitude: -122.3042,
   },
   { name: "Paccar Hall", latitude: 47.6591, longitude: -122.3087 },
   { name: "Denny Hall", latitude: 47.6577, longitude: -122.3122 },

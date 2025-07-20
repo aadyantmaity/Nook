@@ -24,6 +24,8 @@ export function useProfileData(targetUid = null) {
   const [workTimeSetting, setWorkTimeSetting] = useState(null); // add
   const [breakTimeSetting, setBreakTimeSetting] = useState(null); // add
   const [recentActivity, setRecentActivity] = useState([]); // add
+  const [mapType, setMapType] = useState("hybrid");
+  const [mapRegion, setMapRegion] = useState("UW");
 
   // --- Live Firestore subscription for user data ---
   useEffect(() => {
@@ -44,6 +46,8 @@ export function useProfileData(targetUid = null) {
         setWorkTimeSetting(data.workTimeSetting || null);
         setBreakTimeSetting(data.breakTimeSetting || null);
         setRecentActivity(data.recentActivity || []);
+        setMapType(data.mapType || "hybrid");
+        setMapRegion(data.mapRegion || "UW");
         // --- Remove recentActivity logic ---
       }
       setIsLoading(false);
@@ -219,6 +223,20 @@ export function useProfileData(targetUid = null) {
     }
   };
 
+  // --- Add setters for map settings (only for current user) ---
+  const setMapTypeFirestore = async (val) => {
+    const user = auth.currentUser;
+    if (user && (!targetUid || targetUid === user.uid)) {
+      await updateDoc(doc(db, "users", user.uid), { mapType: val });
+    }
+  };
+  const setMapRegionFirestore = async (val) => {
+    const user = auth.currentUser;
+    if (user && (!targetUid || targetUid === user.uid)) {
+      await updateDoc(doc(db, "users", user.uid), { mapRegion: val });
+    }
+  };
+
   return {
     firstName,
     lastName,
@@ -243,5 +261,9 @@ export function useProfileData(targetUid = null) {
     setBreakTimeSetting: setBreakTimeSettingFirestore,
     recentActivity,
     setRecentActivity,
+    mapType,
+    setMapType: setMapTypeFirestore,
+    mapRegion,
+    setMapRegion: setMapRegionFirestore,
   };
 }

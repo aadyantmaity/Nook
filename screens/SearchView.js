@@ -69,7 +69,7 @@ export default function SearchView() {
     fetchData();
   }, []);
 
-  // Generate suggested people - randomized list of 8 people
+  // Generate suggested people - randomized list of 6 people
   const generateSuggestedPeople = (users, userFollowing) => {
     const currentUserId = auth.currentUser?.uid;
     if (!currentUserId) return [];
@@ -79,9 +79,9 @@ export default function SearchView() {
       (user) => !userFollowing.includes(user.uid)
     );
 
-    // Shuffle the array and take first 8
+    // Shuffle the array and take first 6
     const shuffled = [...availableUsers].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 10);
+    return shuffled.slice(0, 6);
   };
 
   // Search functionality
@@ -105,7 +105,7 @@ export default function SearchView() {
       );
     });
 
-    setSearchResults(results);
+    setSearchResults(results.slice(0, 5)); // Limit to 5 results
     setLoading(false);
   }, [searchQuery, allUsers]);
 
@@ -206,50 +206,67 @@ export default function SearchView() {
   };
 
   // Render user item
-  const renderUserItem = ({ item, showMutualCount = false }) => (
+  const renderUserItem = ({
+    item,
+    showMutualCount = false,
+    isGrid = false,
+  }) => (
     <TouchableOpacity
       style={{
-        flexDirection: "row",
+        flexDirection: isGrid ? "column" : "row",
         alignItems: "center",
         paddingVertical: 12,
-        paddingHorizontal: 16,
+        paddingHorizontal: isGrid ? 8 : 16,
         backgroundColor: themeColors.white,
+        flex: isGrid ? 1 : undefined,
+        margin: isGrid ? 4 : 0,
+        borderRadius: isGrid ? 8 : 0,
+        borderWidth: isGrid ? 1 : 0,
+        borderColor: isGrid ? themeColors.darkGray + "70" : "transparent",
       }}
       onPress={() => navigation.navigate("Profile", { uid: item.uid })}
     >
       {/* Profile Picture */}
       <View
         style={{
-          width: 30,
-          height: 30,
-          borderRadius: 15,
+          width: isGrid ? 40 : 30,
+          height: isGrid ? 40 : 30,
+          borderRadius: isGrid ? 20 : 15,
           backgroundColor: themeColors.purple,
           alignItems: "center",
           justifyContent: "center",
-          marginRight: 12,
+          marginRight: isGrid ? 0 : 12,
+          marginBottom: isGrid ? 8 : 0,
           overflow: "hidden",
         }}
       >
         {item.profilePic ? (
           <Image
             source={{ uri: item.profilePic }}
-            style={{ width: 30, height: 30, borderRadius: 15 }}
+            style={{
+              width: isGrid ? 40 : 30,
+              height: isGrid ? 40 : 30,
+              borderRadius: isGrid ? 20 : 15,
+            }}
             resizeMode="cover"
           />
         ) : (
-          <User size={24} color={themeColors.white} />
+          <User size={isGrid ? 28 : 24} color={themeColors.white} />
         )}
       </View>
 
       {/* User Info */}
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, alignItems: isGrid ? "center" : "flex-start" }}>
         <Text
           style={{
             color: themeColors.black,
-            fontSize: 16,
+            fontSize: isGrid ? 14 : 16,
             fontWeight: "bold",
             fontFamily: "CarosSoft",
+            textAlign: isGrid ? "center" : "left",
+            marginBottom: isGrid ? 8 : 0,
           }}
+          numberOfLines={isGrid ? 2 : 1}
         >
           {item.firstName} {item.lastName}
         </Text>
@@ -262,10 +279,10 @@ export default function SearchView() {
             ? themeColors.red
             : themeColors.purple,
           borderRadius: 6,
-          paddingVertical: 8,
-          paddingHorizontal: 16,
+          paddingVertical: isGrid ? 6 : 8,
+          paddingHorizontal: isGrid ? 12 : 16,
           alignItems: "center",
-          width: 100,
+          width: isGrid ? "100%" : 100,
         }}
         onPress={() =>
           following.includes(item.uid)
@@ -277,7 +294,7 @@ export default function SearchView() {
           style={{
             color: themeColors.white,
             fontWeight: "bold",
-            fontSize: 14,
+            fontSize: isGrid ? 12 : 14,
             fontFamily: "CarosSoft",
           }}
         >
@@ -294,22 +311,29 @@ export default function SearchView() {
         style={{
           flexDirection: "row",
           alignItems: "center",
-          backgroundColor: themeColors.lightGray,
+          backgroundColor: themeColors.white,
           borderRadius: 10,
           margin: 16,
           marginTop: 24,
           paddingHorizontal: 12,
           borderWidth: 1,
           borderColor: themeColors.darkGray,
+          height: 44,
         }}
       >
+        <MagnifyingGlass
+          size={20}
+          color={themeColors.darkGray}
+          style={{ marginRight: 8 }}
+        />
         <TextInput
           style={{
+            flex: 1,
             fontSize: 16,
             color: themeColors.black,
             height: 44,
             fontFamily: "CarosSoft",
-            backgroundColor: themeColors.white,
+            paddingVertical: 0,
           }}
           placeholder="Search people..."
           placeholderTextColor={themeColors.darkGray}
@@ -335,13 +359,16 @@ export default function SearchView() {
             Suggested for you
           </Text>
           <FlatList
+            key="suggested-grid-2-cols"
             data={suggestedPeople}
             keyExtractor={(item) => item.uid}
             renderItem={({ item }) =>
-              renderUserItem({ item, showMutualCount: true })
+              renderUserItem({ item, showMutualCount: true, isGrid: true })
             }
+            numColumns={2}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 90 }}
+            contentContainerStyle={{ paddingBottom: 90, paddingHorizontal: 12 }}
+            columnWrapperStyle={{ justifyContent: "space-between" }}
           />
         </View>
       ) : (
@@ -353,24 +380,12 @@ export default function SearchView() {
             </View>
           ) : (
             <>
-              <Text
-                style={{
-                  fontSize: 16,
-                  color: themeColors.darkGray,
-                  marginHorizontal: 16,
-                  marginBottom: 12,
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                {searchResults.length} result
-                {searchResults.length !== 1 ? "s" : ""}
-              </Text>
               <FlatList
+                key="search-list"
                 data={searchResults}
                 keyExtractor={(item) => item.uid}
-                renderItem={renderUserItem}
+                renderItem={({ item }) => renderUserItem({ item })}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 120 }}
               />
             </>
           )}

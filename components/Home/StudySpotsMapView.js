@@ -66,12 +66,14 @@ export default function StudySpotsMapView({
   const [regionPickerVisible, setRegionPickerVisible] = useState(false);
   const [userHasPickedRegion, setUserHasPickedRegion] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
-  const [mapType, setMapType] = useState("satellite");
+  const [mapType, setMapType] = useState("hybrid");
   const [mapTypeLoading, setMapTypeLoading] = useState(false);
+  const [mapRegion, setMapRegion] = useState("UW");
 
   // --- NEW: Temporary state for modal edits ---
   const [modalRegion, setModalRegion] = useState(null);
   const [modalMapType, setModalMapType] = useState(mapType);
+  const [modalMapRegion, setModalMapRegion] = useState("UW");
 
   // Add this state for the selected spot/building
   const [selectedPin, setSelectedPin] = useState(null);
@@ -96,11 +98,25 @@ export default function StudySpotsMapView({
       if (!auth.currentUser) return;
       try {
         const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
-        const mapRegion = userDoc.exists() && userDoc.data().mapRegion;
+        const savedMapRegion = userDoc.exists() && userDoc.data().mapRegion;
+        const savedRegion = userDoc.exists() && userDoc.data().mapRegion;
         const userMapType = userDoc.exists() && userDoc.data().mapType;
-        if (mapRegion && !unsub) {
-          setRegion(mapRegion);
+
+        if (savedMapRegion && !unsub) {
+          setMapRegion(savedMapRegion);
         }
+
+        // Set actual coordinates based on mapRegion
+        if (savedMapRegion === "UW" && !unsub) {
+          setRegion(UW_REGION);
+        } else if (
+          userDoc.exists() &&
+          userDoc.data().customMapRegion &&
+          !unsub
+        ) {
+          setRegion(userDoc.data().customMapRegion);
+        }
+
         if (userMapType && !unsub) {
           setMapType(userMapType);
         }
@@ -117,9 +133,10 @@ export default function StudySpotsMapView({
     if (regionPickerVisible) {
       setModalRegion(region || UW_REGION);
       setModalMapType(mapType);
+      setModalMapRegion(mapRegion);
     }
     // eslint-disable-next-line
-  }, [regionPickerVisible]);
+  }, [regionPickerVisible, region, mapType, mapRegion]);
 
   // --- Persist region and mapType to Firestore whenever they change ---
   useEffect(() => {
@@ -127,7 +144,22 @@ export default function StudySpotsMapView({
     const saveRegion = async () => {
       try {
         const userRef = doc(db, "users", auth.currentUser.uid);
-        await setDoc(userRef, { mapRegion: region, mapType }, { merge: true });
+        const updateData = { mapType };
+
+        // Determine if this is UW region or custom
+        const isUWRegion =
+          Math.abs(region.latitude - UW_REGION.latitude) < 0.001 &&
+          Math.abs(region.longitude - UW_REGION.longitude) < 0.001;
+
+        if (isUWRegion) {
+          updateData.mapRegion = "UW";
+        } else {
+          updateData.mapRegion = "Custom";
+          updateData.customMapRegion = region;
+        }
+
+        setMapRegion(updateData.mapRegion);
+        await setDoc(userRef, updateData, { merge: true });
       } catch {}
     };
     saveRegion();
@@ -238,6 +270,7 @@ export default function StudySpotsMapView({
         longitudeDelta: 0.01,
       };
       setModalRegion(userRegion);
+      setModalMapRegion("Custom");
       setUserHasPickedRegion(true);
       // Don't animate map here, only after submit
       setRegionPickerVisible(true); // keep modal open
@@ -432,17 +465,14 @@ export default function StudySpotsMapView({
                 <TouchableOpacity
                   onPress={() => {
                     setModalRegion(UW_REGION);
+                    setModalMapRegion("UW");
                     setUserHasPickedRegion(true);
                   }}
                   style={{
                     alignItems: "center",
                     paddingVertical: 10,
                     backgroundColor:
-                      modalRegion &&
-                      Math.abs(modalRegion.latitude - UW_REGION.latitude) <
-                        0.0001 &&
-                      Math.abs(modalRegion.longitude - UW_REGION.longitude) <
-                        0.0001
+                      modalMapRegion === "UW"
                         ? themeColors.purple
                         : themeColors.white,
                     borderRadius: 6,
@@ -451,11 +481,7 @@ export default function StudySpotsMapView({
                   <Text
                     style={{
                       color:
-                        modalRegion &&
-                        Math.abs(modalRegion.latitude - UW_REGION.latitude) <
-                          0.0001 &&
-                        Math.abs(modalRegion.longitude - UW_REGION.longitude) <
-                          0.0001
+                        modalMapRegion === "UW"
                           ? themeColors.white
                           : themeColors.purple,
                       fontWeight: "bold",
@@ -475,13 +501,7 @@ export default function StudySpotsMapView({
                     alignItems: "center",
                     paddingVertical: 10,
                     backgroundColor:
-                      modalRegion &&
-                      modalRegion.latitude &&
-                      modalRegion.longitude &&
-                      (Math.abs(modalRegion.latitude - UW_REGION.latitude) >=
-                        0.0001 ||
-                        Math.abs(modalRegion.longitude - UW_REGION.longitude) >=
-                          0.0001)
+                      modalMapRegion === "Custom"
                         ? themeColors.purple
                         : themeColors.white,
                     borderRadius: 6,
@@ -492,15 +512,7 @@ export default function StudySpotsMapView({
                     style={{
                       color: gettingLocation
                         ? themeColors.darkGray
-                        : modalRegion &&
-                          modalRegion.latitude &&
-                          modalRegion.longitude &&
-                          (Math.abs(
-                            modalRegion.latitude - UW_REGION.latitude
-                          ) >= 0.0001 ||
-                            Math.abs(
-                              modalRegion.longitude - UW_REGION.longitude
-                            ) >= 0.0001)
+                        : modalMapRegion === "Custom"
                         ? themeColors.white
                         : themeColors.purple,
                       fontWeight: "bold",

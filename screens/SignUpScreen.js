@@ -69,6 +69,8 @@ export default function SignUpScreen({ navigation }) {
         onboarded: false, // <-- Add this field
         workTimeSetting: 25, // Add default work time setting
         breakTimeSetting: 5, // Add default break time setting
+        mapType: "hybrid", // Add default map type
+        mapRegion: "UW", // Add default map region
       });
 
       // Send email verification

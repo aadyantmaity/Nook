@@ -69,6 +69,7 @@ export default function FollowersModal({
             <FlatList
               data={userList}
               keyExtractor={(item) => item.uid}
+              showsVerticalScrollIndicator={false}
               renderItem={({ item }) => (
                 <View
                   style={{
