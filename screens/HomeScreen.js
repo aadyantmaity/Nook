@@ -80,6 +80,8 @@ const HOME_VIEW_KEY = "nookHomeView"; // Add this constant
 const COMMUNITY_TAB_KEY = "nookCommunityTab"; // <-- Add this constant
 
 export default function HomeScreen({ navigation, route }) {
+  const { view } = route.params || {}; // <-- Destructure view from route.params
+
   // Load CarosSoft font (move this to the top, before any early returns)
   const [fontsLoaded] = useFonts({
     CarosSoft: require("../assets/fonts/CarosSoftBold.otf"),
@@ -482,27 +484,23 @@ export default function HomeScreen({ navigation, route }) {
 
   // TabView
   const layout = Dimensions.get("window");
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(1);
   const [routes] = useState([
-    { key: "home", title: "Home" },
-    { key: "search", title: "Search" },
     { key: "focus", title: "Focus" },
+    { key: "home", title: "Home" },
     { key: "social", title: "Community" },
-    { key: "socialFeed", title: "Social Feed" },
+    { key: "search", title: "Search" }, // <-- Add search route
   ]);
 
   // Tab scene
   const renderScene = SceneMap({
     focus: FocusTimerView,
     home: HomeTab,
+    social: SocialTab,
     search: () => {
+      // <-- Add search scene
       const SearchView = require("./SearchView").default;
       return <SearchView />;
-    },
-    social: SocialTab,
-    socialFeed: () => {
-      const SocialFeedView = require("./SocialFeedView").default;
-      return <SocialFeedView />;
     },
   });
 
@@ -795,6 +793,18 @@ export default function HomeScreen({ navigation, route }) {
                 isTouchable={false}
                 isLoading={isProfilePicLoading}
               />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setIndex(3)} // <-- Change this to switch to search tab (assuming search is at index 3)
+              style={{
+                alignItems: "center",
+                marginLeft: 4,
+                justifyContent: "center",
+                backgroundColor: themeColors.white,
+              }}
+              accessibilityLabel="Search"
+            >
+              <MagnifyingGlass size={24} color={themeColors.purple} />
             </TouchableOpacity>
           </View>
         </View>

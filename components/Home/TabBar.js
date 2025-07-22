@@ -6,12 +6,12 @@ import {
   MagnifyingGlass,
   Chats,
   Globe,
+  Rows,
 } from "phosphor-react-native";
 
 const TAB_ICONS = {
   focus: Timer,
   home: House,
-  search: MagnifyingGlass,
   social: Chats,
   socialFeed: Globe,
 };
@@ -19,7 +19,6 @@ const TAB_ICONS = {
 const TAB_LABELS = {
   focus: "Focus",
   home: "Home",
-  search: "Search",
   social: "Groups",
   socialFeed: "Feed",
 };
@@ -55,46 +54,55 @@ export default function TabBar({
           maxWidth: 420,
         }}
       >
-        {navigationState.routes.map((route, i) => {
-          const Icon = TAB_ICONS[route.key] || Rows;
-          return (
-            <TouchableOpacity
-              key={route.key}
-              onPress={() => jumpTo(route.key)}
-              style={{
-                flex: 1,
-                paddingTop: 5,
-                paddingBottom: 20,
-                alignItems: "center",
-                backgroundColor: themeColors.white,
-              }}
-              accessibilityLabel={TAB_LABELS[route.key]}
-              accessible={true}
-            >
-              <Icon
-                size={24}
-                color={
-                  currentIndex === i ? themeColors.purple : themeColors.darkGray
-                }
-                weight={currentIndex === i ? "fill" : "regular"}
-              />
-              <Text
+        {navigationState.routes
+          .filter((route) => route.key !== "search") // Hide search tab
+          .map((route, i) => {
+            // Get the original index for proper currentIndex comparison
+            const originalIndex = navigationState.routes.findIndex(
+              (r) => r.key === route.key
+            );
+            const Icon = TAB_ICONS[route.key] || Rows;
+            return (
+              <TouchableOpacity
+                key={route.key}
+                onPress={() => jumpTo(route.key)}
                 style={{
-                  color:
-                    currentIndex === i
-                      ? themeColors.purple
-                      : themeColors.darkGray,
-                  fontSize: 11,
-                  fontFamily: "CarosSoft",
-                  marginTop: 2,
-                  fontWeight: currentIndex === i ? "bold" : "normal",
+                  flex: 1,
+                  paddingTop: 5,
+                  paddingBottom: 20,
+                  alignItems: "center",
+                  backgroundColor: themeColors.white,
                 }}
+                accessibilityLabel={TAB_LABELS[route.key]}
+                accessible={true}
               >
-                {TAB_LABELS[route.key]}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+                <Icon
+                  size={24}
+                  color={
+                    currentIndex === originalIndex
+                      ? themeColors.purple
+                      : themeColors.darkGray
+                  }
+                  weight={currentIndex === originalIndex ? "fill" : "regular"}
+                />
+                <Text
+                  style={{
+                    color:
+                      currentIndex === originalIndex
+                        ? themeColors.purple
+                        : themeColors.darkGray,
+                    fontSize: 11,
+                    fontFamily: "CarosSoft",
+                    marginTop: 2,
+                    fontWeight:
+                      currentIndex === originalIndex ? "bold" : "normal",
+                  }}
+                >
+                  {TAB_LABELS[route.key]}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
       </View>
     </View>
   );

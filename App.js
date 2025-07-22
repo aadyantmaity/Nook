@@ -8,6 +8,7 @@ import LoginScreen from "./screens/LoginScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import EditSpotScreen from "./screens/EditSpotScreen";
+import SearchScreen from "./screens/SearchScreen"; // <-- Add this import
 import { auth } from "./firebaseConfig";
 import { Appearance } from "react-native";
 import { colors, getThemeColors } from "./constants/colors";
@@ -91,6 +92,7 @@ export default function App() {
       <Stack.Screen name="EditSpot" component={EditSpotScreen} />
       <Stack.Screen name="GroupDetail" component={GroupDetailView} />
       <Stack.Screen name="GroupDetails" component={GroupDetailsScreen} />
+      <Stack.Screen name="Search" component={SearchScreen} />
     </Stack.Navigator>
   );
 
