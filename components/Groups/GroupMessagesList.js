@@ -339,7 +339,7 @@ const GroupMessagesList = memo(
           let pollShowProfilePic, pollShowSenderInfo;
           if (isMe) {
             pollShowProfilePic = showMyProfilePic;
-            pollShowSenderInfo = showMySenderInfo;
+            pollShowSenderInfo = false; // Don't show sender info for own poll messages
           } else {
             pollShowProfilePic = showProfilePic;
             pollShowSenderInfo = showSenderInfo;

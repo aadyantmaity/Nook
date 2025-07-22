@@ -298,6 +298,7 @@ export const NookShareMessage = memo(
     showSenderInfo,
     getUserName,
     addGap = 0,
+    onProfilePicPress, // <-- Add this missing prop
   }) => {
     // Alignment and margin logic (same as MyMessageBubble for isMe)
     const containerStyle = isMe
@@ -626,7 +627,7 @@ export const PollMessage = memo(
                 </Text>
               )}
             </View>
-            {showSenderInfo && (
+            {!isMe && showSenderInfo && (
               <View
                 style={{
                   flexDirection: "row",
@@ -650,8 +651,8 @@ export const PollMessage = memo(
                     const parts = name.split(" ");
                     const first = parts[0] || "";
                     const lastInitial =
-                      parts.length > 1 && parts[1] ? parts[1][0] + "." : "";
-                    return `${first} ${lastInitial}.`;
+                      parts.length > 1 && parts[1] ? parts[1][0] : "";
+                    return lastInitial ? `${first} ${lastInitial}.` : first;
                   })()}
                 </Text>
               </View>

@@ -491,7 +491,7 @@ export default function HomeScreen({ navigation, route }) {
     { key: "socialFeed", title: "Social Feed" },
   ]);
 
-  // Tab scenes
+  // Tab scene
   const renderScene = SceneMap({
     focus: FocusTimerView,
     home: HomeTab,

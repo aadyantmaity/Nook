@@ -609,13 +609,20 @@ export default function GroupDetailsScreen({ route, navigation }) {
           style={{
             color: themeColors.darkGray,
             fontFamily: "CarosSoft",
-            marginBottom: 12,
+            marginBottom: 90,
           }}
         >
           No starred nooks yet.
         </Text>
       ) : (
-        <View style={{ width: "100%", position: "relative", minHeight: 80 }}>
+        <View
+          style={{
+            width: "100%",
+            position: "relative",
+            minHeight: 80,
+            marginBottom: 90,
+          }}
+        >
           {showLeftGradient && (
             <LinearGradient
               colors={[themeColors.white, themeColors.white + "00"]}
