@@ -23,7 +23,7 @@ import {
   arrayRemove,
   setDoc,
 } from "firebase/firestore";
-import { MagnifyingGlass, User } from "phosphor-react-native";
+import { MagnifyingGlass, User, ArrowLeft } from "phosphor-react-native";
 
 export default function SearchView() {
   const navigation = useNavigation();
@@ -81,7 +81,7 @@ export default function SearchView() {
 
     // Shuffle the array and take first 6
     const shuffled = [...availableUsers].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 6);
+    return shuffled.slice(0, 8);
   };
 
   // Search functionality
@@ -305,7 +305,38 @@ export default function SearchView() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: themeColors.white }}>
+    <View
+      style={{ flex: 1, backgroundColor: themeColors.white, paddingTop: 48 }}
+    >
+      {/* Header */}
+      <View
+        style={{
+          width: "100%",
+          flexDirection: "row",
+          alignItems: "center",
+          paddingHorizontal: 16,
+          marginBottom: 24,
+          marginTop: 16,
+          position: "relative",
+        }}
+      >
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={{
+            position: "absolute",
+            left: 4,
+            zIndex: 1,
+            padding: 10,
+            shadowColor: themeColors.black,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.2,
+            shadowRadius: 4,
+          }}
+        >
+          <ArrowLeft size={24} color={themeColors.purple} />
+        </TouchableOpacity>
+      </View>
+
       {/* Search Bar */}
       <View
         style={{
@@ -314,7 +345,7 @@ export default function SearchView() {
           backgroundColor: themeColors.white,
           borderRadius: 10,
           margin: 16,
-          marginTop: 24,
+          marginTop: 8,
           paddingHorizontal: 12,
           borderWidth: 1,
           borderColor: themeColors.darkGray,

@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, ScrollView, Modal } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { CaretRight, Trash } from "phosphor-react-native";
 
 export function FocusStatsDropdown({
@@ -11,8 +11,6 @@ export function FocusStatsDropdown({
   themeColors,
   selectedStatSpot,
   setSelectedStatSpot,
-  showStatModal,
-  setShowStatModal,
   deletingStat,
 }) {
   // Only consider non-break sessions for stats
@@ -165,20 +163,8 @@ export function FocusStatsDropdown({
                           {nonBreakSessions
                             .sort((a, b) => b.start - a.start)
                             .map((s, idx) => (
-                              <TouchableOpacity
+                              <View
                                 key={s.sessionId || idx}
-                                onPress={() => {
-                                  setSelectedStatSpot({
-                                    spotId,
-                                    spot,
-                                    ms,
-                                    hours,
-                                    minutes,
-                                    seconds,
-                                    sessions: nonBreakSessions,
-                                  });
-                                  setShowStatModal(true);
-                                }}
                                 style={{
                                   marginLeft: 8,
                                   marginBottom: 4,
@@ -237,7 +223,7 @@ export function FocusStatsDropdown({
                                         fontFamily: "CarosSoft",
                                       }}
                                     >
-                                      “{s.note}”
+                                      "{s.note}"
                                     </Text>
                                   ) : null}
                                 </View>
@@ -254,7 +240,7 @@ export function FocusStatsDropdown({
                                 >
                                   <Trash size={18} color={themeColors.red} />
                                 </TouchableOpacity>
-                              </TouchableOpacity>
+                              </View>
                             ))}
                         </ScrollView>
                       ) : (
@@ -288,204 +274,6 @@ export function FocusStatsDropdown({
           )}
         </View>
       </View>
-      {/* --- Stat Card Modal with session list and notes --- */}
-      <Modal
-        visible={!!showStatModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowStatModal(false)}
-      >
-        <TouchableOpacity
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.3)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-          activeOpacity={1}
-          onPressOut={() => setShowStatModal(false)}
-        >
-          <View
-            style={{
-              backgroundColor: themeColors.white,
-              borderRadius: 12,
-              padding: 20,
-              width: "85%",
-              alignItems: "center",
-              maxHeight: "85%",
-            }}
-            onStartShouldSetResponder={() => true}
-          >
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "bold",
-                color: themeColors.black,
-                marginBottom: 8,
-                fontFamily: "CarosSoft",
-              }}
-            >
-              {selectedStatSpot?.spot
-                ? `${selectedStatSpot.spot.buildingName}${
-                    selectedStatSpot.spot.roomNumber
-                      ? ` - Floor ${selectedStatSpot.spot.roomNumber}`
-                      : ""
-                  }`
-                : "Spot Deleted"}
-            </Text>
-            <Text
-              style={{
-                fontSize: 16,
-                color: themeColors.purple,
-                marginBottom: 8,
-                fontFamily: "CarosSoft",
-              }}
-            >
-              Focused for:{" "}
-              {selectedStatSpot
-                ? `${selectedStatSpot.hours}h ${selectedStatSpot.minutes}m ${selectedStatSpot.seconds}s`
-                : ""}
-            </Text>
-            {/* Session List with Notes (delete button removed) */}
-            <ScrollView
-              style={{ width: "100%", maxHeight: 220, marginBottom: 12 }}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 40 }}
-            >
-              {selectedStatSpot?.sessions?.length > 0 ? (
-                selectedStatSpot.sessions
-                  .filter((session) => !session.isBreak)
-                  .sort((a, b) => b.start - a.start)
-                  .map((session, idx, arr) => {
-                    const date = new Date(session.start);
-                    const durationSec = Math.floor(
-                      (session.duration || 0) / 1000
-                    );
-                    const hours = Math.floor(durationSec / 3600);
-                    const minutes = Math.floor((durationSec % 3600) / 60);
-                    const seconds = durationSec % 60;
-                    return (
-                      <View
-                        key={session.sessionId}
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "flex-start",
-                          borderBottomWidth: idx === arr.length - 1 ? 0 : 1,
-                          borderBottomColor: themeColors.gray,
-                          paddingVertical: 10,
-                          backgroundColor: "#fff",
-                          minHeight: 48,
-                        }}
-                      >
-                        <View style={{ flex: 1 }}>
-                          <Text
-                            style={{
-                              color: themeColors.black,
-                              fontWeight: "bold",
-                              fontSize: 15,
-                              fontFamily: "CarosSoft",
-                            }}
-                          >
-                            {date.toLocaleDateString()}{" "}
-                            {date.toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </Text>
-                          <Text
-                            style={{
-                              color: themeColors.darkGray,
-                              fontSize: 13,
-                              fontFamily: "CarosSoft",
-                            }}
-                          >
-                            Duration: {hours}h {minutes}m {seconds}s
-                          </Text>
-                          {session.note ? (
-                            <Text
-                              style={{
-                                color: themeColors.purple,
-                                fontSize: 14,
-                                marginTop: 2,
-                                fontStyle: "italic",
-                                fontFamily: "CarosSoft",
-                              }}
-                            >
-                              “{session.note}”
-                            </Text>
-                          ) : (
-                            <Text
-                              style={{
-                                color: themeColors.gray,
-                                fontSize: 13,
-                                marginTop: 2,
-                                fontStyle: "italic",
-                              }}
-                            >
-                              No reflection
-                            </Text>
-                          )}
-                        </View>
-                        {/* Delete button removed */}
-                      </View>
-                    );
-                  })
-              ) : (
-                <Text
-                  style={{
-                    color: themeColors.darkGray,
-                    fontSize: 14,
-                    fontFamily: "CarosSoft",
-                  }}
-                >
-                  No sessions for this spot this week.
-                </Text>
-              )}
-            </ScrollView>
-            <Text
-              style={{
-                fontSize: 14,
-                color: themeColors.darkGray,
-                marginBottom: 18,
-                textAlign: "center",
-                fontFamily: "CarosSoft",
-              }}
-            >
-              You can view your sessions for this spot.
-            </Text>
-            <View style={{ flexDirection: "row", width: "100%" }}>
-              <TouchableOpacity
-                onPress={() => setShowStatModal(false)}
-                disabled={deletingStat}
-                style={{
-                  flex: 1,
-                  backgroundColor: themeColors.white,
-                  borderRadius: 8,
-                  padding: 12,
-                  alignItems: "center",
-                  borderColor: themeColors.black,
-                  borderWidth: 0.5,
-                  marginRight: 8,
-                }}
-              >
-                <Text
-                  style={{
-                    color: deletingStat
-                      ? themeColors.darkGray
-                      : themeColors.purple,
-                    fontWeight: "bold",
-                    fontFamily: "CarosSoft",
-                  }}
-                >
-                  Close
-                </Text>
-              </TouchableOpacity>
-              {/* Delete All button removed */}
-            </View>
-          </View>
-        </TouchableOpacity>
-      </Modal>
     </>
   );
 }

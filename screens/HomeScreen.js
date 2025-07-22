@@ -489,7 +489,6 @@ export default function HomeScreen({ navigation, route }) {
     { key: "focus", title: "Focus" },
     { key: "home", title: "Home" },
     { key: "social", title: "Community" },
-    { key: "search", title: "Search" }, // <-- Add search route
   ]);
 
   // Tab scene
@@ -497,11 +496,6 @@ export default function HomeScreen({ navigation, route }) {
     focus: FocusTimerView,
     home: HomeTab,
     social: SocialTab,
-    search: () => {
-      // <-- Add search scene
-      const SearchView = require("./SearchView").default;
-      return <SearchView />;
-    },
   });
 
   // --- Track if this is the initial mount (not after navigation) ---
@@ -768,6 +762,17 @@ export default function HomeScreen({ navigation, route }) {
             Nook
           </Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Search")} // <-- Change this to navigate to SearchScreen
+              style={{
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: themeColors.white,
+              }}
+              accessibilityLabel="Search"
+            >
+              <MagnifyingGlass size={24} color={themeColors.purple} />
+            </TouchableOpacity>
             {/* Profile picture button to open hamburger menu */}
             <TouchableOpacity
               onPress={() => navigation.navigate("Profile")}
@@ -777,7 +782,7 @@ export default function HomeScreen({ navigation, route }) {
                 alignItems: "center",
                 justifyContent: "center",
                 elevation: 2,
-                marginLeft: 8,
+                marginLeft: 4,
                 width: 34,
                 height: 34,
                 overflow: "hidden",
@@ -793,18 +798,6 @@ export default function HomeScreen({ navigation, route }) {
                 isTouchable={false}
                 isLoading={isProfilePicLoading}
               />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setIndex(3)} // <-- Change this to switch to search tab (assuming search is at index 3)
-              style={{
-                alignItems: "center",
-                marginLeft: 4,
-                justifyContent: "center",
-                backgroundColor: themeColors.white,
-              }}
-              accessibilityLabel="Search"
-            >
-              <MagnifyingGlass size={24} color={themeColors.purple} />
             </TouchableOpacity>
           </View>
         </View>

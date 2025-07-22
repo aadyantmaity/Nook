@@ -54,55 +54,46 @@ export default function TabBar({
           maxWidth: 420,
         }}
       >
-        {navigationState.routes
-          .filter((route) => route.key !== "search") // Hide search tab
-          .map((route, i) => {
-            // Get the original index for proper currentIndex comparison
-            const originalIndex = navigationState.routes.findIndex(
-              (r) => r.key === route.key
-            );
-            const Icon = TAB_ICONS[route.key] || Rows;
-            return (
-              <TouchableOpacity
-                key={route.key}
-                onPress={() => jumpTo(route.key)}
+        {navigationState.routes.map((route, i) => {
+          const Icon = TAB_ICONS[route.key] || Rows;
+          return (
+            <TouchableOpacity
+              key={route.key}
+              onPress={() => jumpTo(route.key)}
+              style={{
+                flex: 1,
+                paddingTop: 5,
+                paddingBottom: 18,
+                alignItems: "center",
+                backgroundColor: themeColors.white,
+              }}
+              accessibilityLabel={TAB_LABELS[route.key]}
+              accessible={true}
+            >
+              <Icon
+                size={24}
+                color={
+                  currentIndex === i ? themeColors.purple : themeColors.darkGray
+                }
+                weight={currentIndex === i ? "fill" : "regular"}
+              />
+              <Text
                 style={{
-                  flex: 1,
-                  paddingTop: 5,
-                  paddingBottom: 20,
-                  alignItems: "center",
-                  backgroundColor: themeColors.white,
-                }}
-                accessibilityLabel={TAB_LABELS[route.key]}
-                accessible={true}
-              >
-                <Icon
-                  size={24}
-                  color={
-                    currentIndex === originalIndex
+                  color:
+                    currentIndex === i
                       ? themeColors.purple
-                      : themeColors.darkGray
-                  }
-                  weight={currentIndex === originalIndex ? "fill" : "regular"}
-                />
-                <Text
-                  style={{
-                    color:
-                      currentIndex === originalIndex
-                        ? themeColors.purple
-                        : themeColors.darkGray,
-                    fontSize: 11,
-                    fontFamily: "CarosSoft",
-                    marginTop: 2,
-                    fontWeight:
-                      currentIndex === originalIndex ? "bold" : "normal",
-                  }}
-                >
-                  {TAB_LABELS[route.key]}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+                      : themeColors.darkGray,
+                  fontSize: 11,
+                  fontFamily: "CarosSoft",
+                  marginTop: 2,
+                  fontWeight: currentIndex === i ? "bold" : "normal",
+                }}
+              >
+                {TAB_LABELS[route.key]}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </View>
   );
