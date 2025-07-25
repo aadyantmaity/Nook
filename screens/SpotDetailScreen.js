@@ -63,6 +63,7 @@ import PrivateNookShareModal from "../components/SpotDetail/PrivateNookShareModa
 import UserFocusStatsDropdown from "../components/SpotDetail/UserFocusStatsDropdown";
 import AddPrivateNookNoteInput from "../components/SpotDetail/AddPrivateNookNoteInput";
 import ShareNookToGroupModal from "../components/SpotDetail/ShareNookToGroupModal"; // <-- ADD THIS IMPORT
+import { useHomeView } from "../components/Home/HomeViewContext"; // <-- ADD THIS IMPORT
 
 // Hooks
 import useSpotDetails from "../hooks/useSpotDetails";
@@ -86,6 +87,9 @@ export default function SpotDetailScreen({ route, navigation }) {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showShareNookToGroupModal, setShowShareNookToGroupModal] =
     useState(false); // <-- ADD STATE
+
+  // for map view
+  const { setShowMapView, setTabIndex } = useHomeView();
 
   // Add this missing state:
   const [lastCheckIn, setLastCheckIn] = useState(null);
@@ -731,6 +735,28 @@ export default function SpotDetailScreen({ route, navigation }) {
                   {spot.roomNumber}
                 </Text>
               )}
+              {/* Location Pin Icon */}
+              {spot.coordinates && (
+                <TouchableOpacity
+                  onPress={() => {
+                    setTabIndex(1);
+                    navigation.navigate("Home", {
+                    view: "map",
+                    focusSpotId: spotId,
+                    mapRegion: {
+                      latitude: spot.coordinates.latitude,
+                      longitude: spot.coordinates.longitude,
+                      latitudeDelta: 0.003,
+                      longitudeDelta: 0.003,
+                      },
+                    });
+                  }}
+                  style={{ marginLeft: 8, alignItems: "center", justifyContent: "center" }}
+                  accessibilityLabel="View on Map"
+                >
+                  <MapPin size={22} color={themeColors.purple} weight="bold" />
+                </TouchableOpacity>
+              )}
             </Text>
             {/* Husky Card/Department info */}
             {!isPrivateNook && (spot.huskyCardNeeded || spot.department) && (
@@ -1197,6 +1223,27 @@ export default function SpotDetailScreen({ route, navigation }) {
                   {" - Floor "}
                   {spot.roomNumber}
                 </Text>
+              )}
+              {/* Location Pin Icon */}
+              {spot.coordinates && (
+                <TouchableOpacity
+                  onPress={() => {
+                    navigation.navigate("Home", {
+                      showMapView: true,
+                      focusSpotId: spotId,
+                      mapRegion: {
+                        latitude: spot.coordinates.latitude,
+                        longitude: spot.coordinates.longitude,
+                        latitudeDelta: 0.003,
+                        longitudeDelta: 0.003,
+                      },
+                    });
+                  }}
+                  style={{ marginLeft: 8, alignItems: "center", justifyContent: "center" }}
+                  accessibilityLabel="View on Map"
+                >
+                  <MapPin size={22} color={themeColors.purple} weight="bold" />
+                </TouchableOpacity>
               )}
             </Text>
             {/* Husky Card/Department info */}
