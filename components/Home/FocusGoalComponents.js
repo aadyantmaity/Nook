@@ -14,7 +14,7 @@ import { Trophy, PencilSimple, Trash } from "phosphor-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import PrimaryActionButton from "../PrimaryActionButton";
 
-// Goal constants
+// Goal constants - make user-specific
 export const GOAL_STATE_KEY = "focusGoalState";
 
 // Custom hook for goal state management
@@ -30,11 +30,17 @@ export const useGoal = () => {
   const [goalLoaded, setGoalLoaded] = useState(false);
   const [goalCongratsShown, setGoalCongratsShown] = useState(false);
 
+  // Get current user for user-specific storage
+  const user = require("../../firebaseConfig").auth.currentUser;
+  const userSpecificGoalKey = user
+    ? `${GOAL_STATE_KEY}_${user.uid}`
+    : GOAL_STATE_KEY;
+
   // Load goal from storage on mount
   useEffect(() => {
     const restoreGoal = async () => {
       try {
-        const raw = await AsyncStorage.getItem(GOAL_STATE_KEY);
+        const raw = await AsyncStorage.getItem(userSpecificGoalKey);
         if (raw) {
           const parsed = JSON.parse(raw);
           if (parsed && typeof parsed === "object") {
@@ -45,16 +51,16 @@ export const useGoal = () => {
       setGoalLoaded(true);
     };
     restoreGoal();
-  }, []);
+  }, [userSpecificGoalKey]);
 
   // Persist goal to storage when it changes
   useEffect(() => {
     if (goalLoaded && goal && typeof goal === "object") {
-      AsyncStorage.setItem(GOAL_STATE_KEY, JSON.stringify(goal)).catch(
+      AsyncStorage.setItem(userSpecificGoalKey, JSON.stringify(goal)).catch(
         () => {}
       );
     }
-  }, [goal, goalLoaded]);
+  }, [goal, goalLoaded, userSpecificGoalKey]);
 
   // Show congrats when goal is achieved
   useEffect(() => {
@@ -163,7 +169,7 @@ export const useGoal = () => {
 
     try {
       await AsyncStorage.setItem(
-        GOAL_STATE_KEY,
+        userSpecificGoalKey,
         JSON.stringify({
           title: "",
           target: 0,

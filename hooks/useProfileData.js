@@ -26,6 +26,7 @@ export function useProfileData(targetUid = null) {
   const [recentActivity, setRecentActivity] = useState([]); // add
   const [mapType, setMapType] = useState("hybrid");
   const [mapRegion, setMapRegion] = useState("UW");
+  const [reflectionsEnabled, setReflectionsEnabled] = useState(true); // add
 
   // --- Live Firestore subscription for user data ---
   useEffect(() => {
@@ -48,6 +49,7 @@ export function useProfileData(targetUid = null) {
         setRecentActivity(data.recentActivity || []);
         setMapType(data.mapType || "hybrid");
         setMapRegion(data.mapRegion || "UW");
+        setReflectionsEnabled(data.reflectionsEnabled !== false);
         // --- Remove recentActivity logic ---
       }
       setIsLoading(false);
@@ -237,6 +239,14 @@ export function useProfileData(targetUid = null) {
     }
   };
 
+  // --- Add setter for reflections setting (only for current user) ---
+  const setReflectionsEnabledFirestore = async (val) => {
+    const user = auth.currentUser;
+    if (user && (!targetUid || targetUid === user.uid)) {
+      await updateDoc(doc(db, "users", user.uid), { reflectionsEnabled: val });
+    }
+  };
+
   return {
     firstName,
     lastName,
@@ -265,5 +275,7 @@ export function useProfileData(targetUid = null) {
     setMapType: setMapTypeFirestore,
     mapRegion,
     setMapRegion: setMapRegionFirestore,
+    reflectionsEnabled,
+    setReflectionsEnabled: setReflectionsEnabledFirestore,
   };
 }

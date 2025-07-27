@@ -38,8 +38,8 @@ export default function PomodoroSettingsModal({
     if (!brk || brk < 1 || brk > 60) return;
     setWorkTimeSetting(work); // parent will update Firestore
     setBreakTimeSetting(brk); // parent will update Firestore
-    if (!isRunning && !isBreak) setTimer(work * 60);
-    if (!isRunning && isBreak) setTimer(brk * 60);
+    if (!isRunning && !isBreak && setTimer) setTimer(work * 60);
+    if (!isRunning && isBreak && setTimer) setTimer(brk * 60);
     onClose();
   };
 

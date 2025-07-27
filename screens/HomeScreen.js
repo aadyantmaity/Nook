@@ -68,6 +68,7 @@ import HomeLoadingScreen from "../components/Home/HomeLoadingScreen"; // <-- Imp
 import ProfilePicture from "../components/Profile/ProfilePicture";
 import EmailVerificationModal from "../components/Auth/EmailVerificationModal"; // <-- Import EmailVerificationModal
 import OnboardingModal from "../components/Auth/OnboardingModal"; // <-- Add this import
+import { useProfileData } from "../hooks/useProfileData"; // add
 
 //hook imports
 import useStudySpots from "../hooks/useStudySpots";
@@ -76,8 +77,8 @@ import useSearchAndFilters from "../hooks/useSearchAndFilters"; // already impor
 
 let imageCache = {};
 
-const HOME_VIEW_KEY = "nookHomeView"; // Add this constant
-const COMMUNITY_TAB_KEY = "nookCommunityTab"; // <-- Add this constant
+const HOME_VIEW_KEY = "nookHomeView";
+const COMMUNITY_TAB_KEY = "nookCommunityTab";
 
 export default function HomeScreen({ navigation, route }) {
   const { view } = route.params || {}; // <-- Destructure view from route.params
@@ -104,18 +105,26 @@ export default function HomeScreen({ navigation, route }) {
   // Social tab selectedTab state
   const [socialSelectedTab, setSocialSelectedTab] = useState("studyGroups");
 
+  // Make storage keys user-specific
+  const user = auth.currentUser;
+  const userSpecificHomeViewKey = user
+    ? `${HOME_VIEW_KEY}_${user.uid}`
+    : HOME_VIEW_KEY;
+  const userSpecificCommunityTabKey = user
+    ? `${COMMUNITY_TAB_KEY}_${user.uid}`
+    : COMMUNITY_TAB_KEY;
+
   // --- Load last selected Community tab on mount ---
   useEffect(() => {
     const fetchCommunityTab = async () => {
       try {
         // 1. Try AsyncStorage first
-        const stored = await AsyncStorage.getItem(COMMUNITY_TAB_KEY);
+        const stored = await AsyncStorage.getItem(userSpecificCommunityTabKey);
         if (stored === "socialFeed" || stored === "studyGroups") {
           setSocialSelectedTab(stored);
           return;
         }
         // 2. Fallback to Firestore
-        const user = auth.currentUser;
         if (!user) return;
         const userRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userRef);
@@ -133,14 +142,13 @@ export default function HomeScreen({ navigation, route }) {
       }
     };
     fetchCommunityTab();
-  }, []);
+  }, [userSpecificCommunityTabKey, user]);
 
   // --- Save selected Community tab when changed ---
   const handleSetCommunityTab = async (tab) => {
     setSocialSelectedTab(tab);
     try {
-      await AsyncStorage.setItem(COMMUNITY_TAB_KEY, tab);
-      const user = auth.currentUser;
+      await AsyncStorage.setItem(userSpecificCommunityTabKey, tab);
       if (!user) return;
       const userRef = doc(db, "users", user.uid);
       await updateDoc(userRef, { communityTab: tab });
@@ -153,11 +161,18 @@ export default function HomeScreen({ navigation, route }) {
   const { studySpots, isLoading, fetchStudySpots } = useStudySpots();
   const { filters, setFilters, filteredSpots, sortBy, setSortBy } =
     useSearchAndFilters(studySpots, favorites); // <-- pass favorites
+  const {
+    workTimeSetting,
+    setWorkTimeSetting,
+    breakTimeSetting,
+    setBreakTimeSetting,
+    reflectionsEnabled,
+    setReflectionsEnabled,
+  } = useProfileData(); // add
 
   // Add state for profile picture
   const [profilePic, setProfilePic] = useState(null);
   const [isProfilePicLoading, setIsProfilePicLoading] = useState(true); // <-- add loading state
-  const user = auth.currentUser;
 
   // Subscribe to user's profilePic for instant updates
   useEffect(() => {
@@ -177,7 +192,7 @@ export default function HomeScreen({ navigation, route }) {
     const fetchUserView = async () => {
       try {
         // 1. Try AsyncStorage first
-        const stored = await AsyncStorage.getItem(HOME_VIEW_KEY);
+        const stored = await AsyncStorage.getItem(userSpecificHomeViewKey);
         if (stored === "map") {
           setShowMapView(true);
           return;
@@ -187,7 +202,6 @@ export default function HomeScreen({ navigation, route }) {
           return;
         }
         // 2. Fallback to Firestore
-        const user = auth.currentUser;
         if (!user) return;
         const userRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userRef);
@@ -202,13 +216,12 @@ export default function HomeScreen({ navigation, route }) {
     if (route?.params?.view) {
       setShowMapView(route.params.view === "map");
       AsyncStorage.setItem(
-        HOME_VIEW_KEY,
+        userSpecificHomeViewKey,
         route.params.view === "map" ? "map" : "list"
       );
       // Also update Firestore
       (async () => {
         try {
-          const user = auth.currentUser;
           if (!user) return;
           const userRef = doc(db, "users", user.uid);
           await updateDoc(userRef, {
@@ -219,14 +232,13 @@ export default function HomeScreen({ navigation, route }) {
     } else {
       fetchUserView();
     }
-  }, [route?.params?.view]);
+  }, [route?.params?.view, userSpecificHomeViewKey, user]);
 
   // --- Save user's preferred view when toggled ---
   const handleSetShowMapView = async (val) => {
     setShowMapView(val);
     try {
-      await AsyncStorage.setItem(HOME_VIEW_KEY, val ? "map" : "list");
-      const user = auth.currentUser;
+      await AsyncStorage.setItem(userSpecificHomeViewKey, val ? "map" : "list");
       if (!user) return;
       const userRef = doc(db, "users", user.uid);
       await updateDoc(userRef, { homeView: val ? "map" : "list" });

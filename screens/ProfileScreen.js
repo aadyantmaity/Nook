@@ -32,6 +32,7 @@ import { ThemeContext } from "../App";
 import * as ImagePicker from "expo-image-picker";
 import { getLastUpdatedLabel } from "../utils/lastUpdatedLabel";
 import { onSnapshot, doc } from "firebase/firestore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Hooks and components
 import { useProfileData } from "../hooks/useProfileData";
@@ -126,7 +127,37 @@ export default function ProfileScreen({ navigation, route }) {
   const handleLogout = () => setLogoutModalVisible(true);
   const confirmLogout = () => {
     setLogoutModalVisible(false);
-    signOut(auth).catch((error) => {});
+    // Clear all user-specific AsyncStorage data
+    clearUserData();
+    auth.signOut();
+  };
+
+  // Clear user-specific data on logout
+  const clearUserData = async () => {
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        const keysToRemove = [
+          `focusTimerState_${user.uid}`,
+          `focusTimerRunningState_${user.uid}`,
+          `focusReflectionsEnabled_${user.uid}`,
+          `focusGoalState_${user.uid}`,
+          `nookHomeView`,
+          `nookCommunityTab`,
+        ];
+
+        // Also remove any check-in cooldowns for this user
+        const allKeys = await AsyncStorage.getAllKeys();
+        const userCheckinKeys = allKeys.filter(
+          (key) =>
+            key.startsWith(`nook_checkin_`) && key.endsWith(`_${user.uid}`)
+        );
+
+        await AsyncStorage.multiRemove([...keysToRemove, ...userCheckinKeys]);
+      }
+    } catch (error) {
+      console.log("Error clearing user data:", error);
+    }
   };
 
   // Save profile

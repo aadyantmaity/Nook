@@ -85,9 +85,6 @@ export function FocusTimerView({ navigation }) {
   const timerStartRef = useRef(null); // {start: Date, duration: seconds}
   const appState = useRef(AppState.currentState);
 
-  // Add a unique key for saving timer state
-  const TIMER_STATE_KEY = "focusTimerState";
-
   // Auto-start next session state
   const [autoStartNext, setAutoStartNext] = useState(false);
 
@@ -835,9 +832,6 @@ export function FocusTimerView({ navigation }) {
   // Add a ref to track if timer was running before leaving screen
   const wasRunningRef = useRef(false);
 
-  // Add a unique key for saving timer running state and start info
-  const TIMER_RUNNING_KEY = "focusTimerRunningState";
-
   // Track when timer was last backgrounded for progress bar calculation
   const lastBackgroundTimeRef = useRef(null);
 
@@ -1092,8 +1086,6 @@ export function FocusTimerView({ navigation }) {
     }
   }, [sessionStart]);
 
-  // --- Reflections Feature State ---
-  const REFLECTIONS_ENABLED_KEY = "focusReflectionsEnabled";
   const [reflectionsEnabled, setReflectionsEnabled] = useState(true);
 
   // Load reflectionsEnabled from AsyncStorage on mount
@@ -1117,9 +1109,49 @@ export function FocusTimerView({ navigation }) {
     } catch {}
   };
 
-  // Only render UI after goalLoaded is true
-  if (!goalLoaded) {
-    return null;
+  // Make storage keys user-specific
+  const user = auth.currentUser;
+  const TIMER_STATE_KEY = user
+    ? `focusTimerState_${user.uid}`
+    : "focusTimerState";
+  const TIMER_RUNNING_KEY = user
+    ? `focusTimerRunningState_${user.uid}`
+    : "focusTimerRunningState";
+  const REFLECTIONS_ENABLED_KEY = user
+    ? `focusReflectionsEnabled_${user.uid}`
+    : "focusReflectionsEnabled";
+
+  // Clear user-specific data when user changes or logs out
+  useEffect(() => {
+    if (!user) {
+      // Clear all timer-related data when user logs out
+      setSelectedSpot(null);
+      setTimer(workTimeSetting * 60);
+      setIsRunning(false);
+      setIsBreak(false);
+      setSessionStart(null);
+      setFocusStats({});
+      timerStartRef.current = null;
+      pausedTimeRef.current = null;
+    }
+  }, [user, workTimeSetting]);
+
+  // Initialize timer only after profile data is loaded
+  useEffect(() => {
+    if (!profileLoading && workTimeSetting && timer === null) {
+      setTimer(workTimeSetting * 60);
+    }
+  }, [profileLoading, workTimeSetting, timer]);
+
+  // Only render UI after profile data and timer are loaded
+  if (profileLoading || timer === null) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text style={{ color: themeColors.purple, fontFamily: "CarosSoft" }}>
+          Loading...
+        </Text>
+      </View>
+    );
   }
 
   return (

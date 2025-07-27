@@ -40,7 +40,7 @@ export function TimerControls({
             fontFamily: "CarosSoft",
           }}
         >
-          {formatTime(timer)}
+          {timer !== null ? formatTime(timer) : "00:00"}
         </Text>
         <TouchableOpacity
           onPress={onSettings}
