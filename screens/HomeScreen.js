@@ -128,7 +128,7 @@ export default function HomeScreen({ navigation, route }) {
       try {
         // 1. Try AsyncStorage first
         const stored = await AsyncStorage.getItem(userSpecificCommunityTabKey);
-        if (stored === "socialFeed" || stored === "studyGroups") {
+        if (stored === "studyGroups") {
           setSocialSelectedTab(stored);
           return;
         }
@@ -138,7 +138,7 @@ export default function HomeScreen({ navigation, route }) {
         const userDoc = await getDoc(userRef);
         if (userDoc.exists()) {
           const pref = userDoc.data().communityTab;
-          if (pref === "socialFeed" || pref === "studyGroups") {
+          if (pref === "studyGroups") {
             setSocialSelectedTab(pref);
             return;
           }

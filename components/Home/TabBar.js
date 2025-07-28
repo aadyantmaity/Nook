@@ -13,14 +13,12 @@ const TAB_ICONS = {
   focus: Timer,
   home: House,
   social: Chats,
-  socialFeed: Globe,
 };
 
 const TAB_LABELS = {
   focus: "Focus",
   home: "Home",
   social: "Groups",
-  socialFeed: "Feed",
 };
 
 export default function TabBar({
