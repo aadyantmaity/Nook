@@ -146,7 +146,7 @@ export default function ProfileScreen({ navigation, route }) {
           `nookCommunityTab`,
         ];
 
-        // Also remove any check-in cooldowns for this user
+        // Also remove any check in cooldowns for this user
         const allKeys = await AsyncStorage.getAllKeys();
         const userCheckinKeys = allKeys.filter(
           (key) =>

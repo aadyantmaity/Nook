@@ -18,6 +18,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkedIn, setCheckedIn] = useState(null); // { spotId, checkedInAt }
   const [loadingCheckedIn, setLoadingCheckedIn] = useState(true);
+  const [timeRemaining, setTimeRemaining] = useState(null); // Add countdown state
 
   // --- Determine if check-in is allowed ---
   let canCheckIn = false;
@@ -204,42 +205,100 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
     }
   }, [checkedIn]);
 
+  // --- Countdown timer effect ---
+  useEffect(() => {
+    if (!checkedIn || !checkedIn.checkedInAt) {
+      setTimeRemaining(null);
+      return;
+    }
+
+    const updateCountdown = () => {
+      const now = Date.now();
+      const elapsed = now - checkedIn.checkedInAt;
+      const remaining = 60 * 60 * 1000 - elapsed; // 60 minutes in milliseconds
+
+      if (remaining <= 0) {
+        setTimeRemaining(null);
+        return;
+      }
+
+      const minutes = Math.floor(remaining / (1000 * 60));
+      const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+      setTimeRemaining({ minutes, seconds });
+    };
+
+    // Update immediately
+    updateCountdown();
+
+    // Update every second
+    const interval = setInterval(updateCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, [checkedIn]);
+
+  // Helper function to format countdown text
+  const getCountdownText = () => {
+    if (!timeRemaining) return "";
+
+    if (timeRemaining.minutes > 0) {
+      return `Your check-in status will be reset in ${timeRemaining.minutes}m`;
+    } else {
+      return `Your check-in status will be reset in less than 1m`;
+    }
+  };
+
   return (
     <View style={{ marginTop: 16, marginBottom: 8, alignItems: "center" }}>
       {canCheckOut ? (
-        <TouchableOpacity
-          onPress={handleCheckOut}
-          disabled={isCheckingOut}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            backgroundColor: themeColors.red,
-            borderRadius: 24,
-            paddingVertical: 10,
-            paddingHorizontal: 24,
-            opacity: isCheckingOut ? 0.7 : 1,
-          }}
-          accessibilityLabel="Check Out"
-        >
-          {isCheckingOut ? (
-            <ActivityIndicator color={themeColors.white} />
-          ) : (
-            <>
-              <MapPin size={20} color={themeColors.white} />
-              <Text
-                style={{
-                  color: themeColors.white,
-                  fontWeight: "bold",
-                  fontSize: 15,
-                  marginLeft: 8,
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                Check Out
-              </Text>
-            </>
+        <>
+          <TouchableOpacity
+            onPress={handleCheckOut}
+            disabled={isCheckingOut}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: themeColors.red,
+              borderRadius: 24,
+              paddingVertical: 10,
+              paddingHorizontal: 24,
+              opacity: isCheckingOut ? 0.7 : 1,
+            }}
+            accessibilityLabel="Check Out"
+          >
+            {isCheckingOut ? (
+              <ActivityIndicator color={themeColors.white} />
+            ) : (
+              <>
+                <MapPin size={20} color={themeColors.white} />
+                <Text
+                  style={{
+                    color: themeColors.white,
+                    fontWeight: "bold",
+                    fontSize: 15,
+                    marginLeft: 8,
+                    fontFamily: "CarosSoft",
+                  }}
+                >
+                  Check Out
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+          {/* Countdown timer below check out button */}
+          {timeRemaining && (
+            <Text
+              style={{
+                color: themeColors.darkGray,
+                fontSize: 12,
+                marginTop: 8,
+                fontFamily: "CarosSoft",
+                textAlign: "center",
+              }}
+            >
+              {getCountdownText()}
+            </Text>
           )}
-        </TouchableOpacity>
+        </>
       ) : (
         <TouchableOpacity
           onPress={handleCheckIn}
@@ -253,7 +312,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
             paddingHorizontal: 24,
             opacity: isCheckingIn || !canCheckIn ? 0.7 : 1,
           }}
-          accessibilityLabel="Check In"
+          accessibilityLabel="Check-in"
         >
           {isCheckingIn ? (
             <ActivityIndicator color={themeColors.white} />
@@ -272,8 +331,8 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
                 {isCheckingIn
                   ? "Checking In..."
                   : canCheckIn
-                  ? "Check In"
-                  : "Check In"}
+                  ? "Check-in"
+                  : "Check-in"}
               </Text>
             </>
           )}

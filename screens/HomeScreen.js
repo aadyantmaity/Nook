@@ -44,6 +44,7 @@ import {
   List,
   MapTrifold,
   MapPin,
+  UsersThree,
 } from "phosphor-react-native"; // Add Heart icon
 import { colors } from "../constants/colors"; // Import colors
 import { auth, db } from "../firebaseConfig"; // Import Firebase
@@ -62,7 +63,10 @@ import StudySpotsList from "../components/Home/StudySpotsList";
 import StudySpotsMapView from "../components/Home/StudySpotsMapView"; // <-- new component
 import { FocusTimerView } from "../components/Home/FocusTimer"; // <-- Use correct import
 import AlertsModal from "../components/Home/AlertsModal"; // Import AlertsModal component
-import TabBar from "../components/Home/TabBar"; // Import TabBar component
+import TabBar from "../components/Home/TabBar";
+
+// hooks imports
+import useFriendsCheckIns from "../hooks/useFriendsCheckIns"; // Import TabBar component
 import GeneralReportModal from "../components/Home/GeneralReportModal"; // Import GeneralReportModal component
 import HomeLoadingScreen from "../components/Home/HomeLoadingScreen"; // <-- Import the new component
 import ProfilePicture from "../components/Profile/ProfilePicture";
@@ -102,13 +106,32 @@ export default function HomeScreen({ navigation, route }) {
   const [showAlertsModal, setShowAlertsModal] = useState(false);
   const [currentAlerts, setCurrentAlerts] = useState([]);
 
-  const { showMapView, setShowMapView, tabIndex, setTabIndex } = useHomeView(); // <-- Use HomeViewContext
+  // Animation for sliding toggle
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
+  const {
+    showMapView,
+    setShowMapView,
+    showFriendsView,
+    setShowFriendsView,
+    tabIndex,
+    setTabIndex,
+  } = useHomeView(); // <-- Use HomeViewContext
   // Expose a method to set map view from outside
   useEffect(() => {
     navigation.setParams({
       setShowMapView: (val) => setShowMapView(val),
     });
   }, []);
+
+  // Animate toggle when showFriendsView changes
+  useEffect(() => {
+    Animated.timing(slideAnim, {
+      toValue: showFriendsView ? 1 : 0,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  }, [showFriendsView]);
 
   // Social tab selectedTab state
   const [socialSelectedTab, setSocialSelectedTab] = useState("studyGroups");
@@ -169,6 +192,7 @@ export default function HomeScreen({ navigation, route }) {
   const { studySpots, isLoading, fetchStudySpots } = useStudySpots();
   const { filters, setFilters, filteredSpots, sortBy, setSortBy } =
     useSearchAndFilters(studySpots, favorites); // <-- pass favorites
+  const { friendsCheckIns, isLoading: friendsLoading } = useFriendsCheckIns(); // Add friends check ins hook
   const {
     workTimeSetting,
     setWorkTimeSetting,
@@ -259,6 +283,8 @@ export default function HomeScreen({ navigation, route }) {
   function StudySpotsHeader({
     showMapView,
     setShowMapView,
+    showFriendsView,
+    setShowFriendsView,
     themeColors,
     filters,
     setFilters,
@@ -277,8 +303,8 @@ export default function HomeScreen({ navigation, route }) {
             justifyContent: "space-between",
           }}
         >
-          {/* Left: List/Map View Toggle */}
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {/* Left: View Toggles */}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <TouchableOpacity
               onPress={() => handleSetShowMapView(false)}
               style={{
@@ -310,7 +336,7 @@ export default function HomeScreen({ navigation, route }) {
                 minWidth: 48,
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: 0,
+                marginRight: 8,
                 height: 42,
               }}
             >
@@ -405,6 +431,8 @@ export default function HomeScreen({ navigation, route }) {
             <StudySpotsHeader
               showMapView={showMapView}
               setShowMapView={handleSetShowMapView}
+              showFriendsView={showFriendsView}
+              setShowFriendsView={setShowFriendsView}
               themeColors={themeColors}
               filters={filters}
               setFilters={setFilters}
@@ -412,8 +440,129 @@ export default function HomeScreen({ navigation, route }) {
               setSortBy={setSortBy}
             />
           </View>
+
+          {/* Sliding Toggle - only show when in map view */}
+          {showMapView && (
+            <View
+              style={{
+                alignItems: "center",
+                marginBottom: 16,
+                paddingHorizontal: 16,
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: themeColors.lightGray,
+                  borderRadius: 25,
+                  padding: 4,
+                  flexDirection: "row",
+                  width: 200,
+                  height: 44,
+                  position: "relative",
+                }}
+              >
+                {/* Sliding Background */}
+                <Animated.View
+                  style={{
+                    position: "absolute",
+                    top: 4,
+                    left: 4,
+                    right: 4,
+                    bottom: 4,
+                    backgroundColor: themeColors.white,
+                    borderRadius: 21,
+                    width: 96,
+                    transform: [
+                      {
+                        translateX: slideAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, 96],
+                        }),
+                      },
+                    ],
+                    shadowColor: themeColors.black,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                    elevation: 3,
+                  }}
+                />
+
+                {/* Nooks Button */}
+                <TouchableOpacity
+                  onPress={() => setShowFriendsView(false)}
+                  style={{
+                    flex: 1,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexDirection: "row",
+                    gap: 6,
+                    zIndex: 2,
+                  }}
+                >
+                  <MapPin
+                    size={18}
+                    color={
+                      !showFriendsView
+                        ? themeColors.purple
+                        : themeColors.darkGray
+                    }
+                  />
+                  <Text
+                    style={{
+                      color: !showFriendsView
+                        ? themeColors.purple
+                        : themeColors.darkGray,
+                      fontSize: 14,
+                      fontWeight: "bold",
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    Nooks
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Friends Button */}
+                <TouchableOpacity
+                  onPress={() => setShowFriendsView(true)}
+                  style={{
+                    flex: 1,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexDirection: "row",
+                    gap: 6,
+                    zIndex: 2,
+                  }}
+                >
+                  <UsersThree
+                    size={18}
+                    color={
+                      showFriendsView
+                        ? themeColors.orange
+                        : themeColors.darkGray
+                    }
+                  />
+                  <Text
+                    style={{
+                      color: showFriendsView
+                        ? themeColors.orange
+                        : themeColors.darkGray,
+                      fontSize: 14,
+                      fontWeight: "bold",
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    Friends
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
           <StudySpotsMapView
             spots={filteredSpots}
+            friendsCheckIns={friendsCheckIns}
+            showFriendsView={showFriendsView}
             navigation={navigation} // <-- pass navigation object, not a function
             themeColors={themeColors}
             containerStyle={{ marginTop: 0 }}
@@ -452,6 +601,8 @@ export default function HomeScreen({ navigation, route }) {
             <StudySpotsHeader
               showMapView={showMapView}
               setShowMapView={handleSetShowMapView}
+              showFriendsView={showFriendsView}
+              setShowFriendsView={setShowFriendsView}
               themeColors={themeColors}
               filters={filters}
               setFilters={setFilters}

@@ -9,13 +9,14 @@ import {
   Pressable,
   ScrollView,
   Linking,
+  Image,
 } from "react-native";
 import MapView, { Marker, Callout, PROVIDER_GOOGLE } from "react-native-maps";
 import { auth, db } from "../../firebaseConfig";
 import * as Location from "expo-location";
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 // Remove MaterialCommunityIcons import and use Phosphor instead:
-import { PencilSimple, Info, MapPinLine } from "phosphor-react-native";
+import { PencilSimple, Info, MapPinLine, User } from "phosphor-react-native";
 
 // Helper: Haversine distance in meters
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -57,6 +58,8 @@ function clusterSpots(spots, threshold = 30) {
 
 export default function StudySpotsMapView({
   spots,
+  friendsCheckIns = [],
+  showFriendsView = false,
   navigation,
   themeColors,
   containerStyle,
@@ -77,6 +80,7 @@ export default function StudySpotsMapView({
 
   // Add this state for the selected spot/building
   const [selectedPin, setSelectedPin] = useState(null);
+  const [selectedFriend, setSelectedFriend] = useState(null); // Add state for selected friend
   const [mapRefreshKey, setMapRefreshKey] = useState(0);
 
   // Calculate square size (full width minus 32px)
@@ -138,32 +142,41 @@ export default function StudySpotsMapView({
     // eslint-disable-next-line
   }, [regionPickerVisible, region, mapType, mapRegion]);
 
-  // --- Persist region and mapType to Firestore whenever they change ---
+  // --- Persist mapType to Firestore whenever it changes ---
   useEffect(() => {
-    if (!auth.currentUser || !region) return;
-    const saveRegion = async () => {
+    if (!auth.currentUser) return;
+    const saveMapType = async () => {
       try {
         const userRef = doc(db, "users", auth.currentUser.uid);
-        const updateData = { mapType };
-
-        // Determine if this is UW region or custom
-        const isUWRegion =
-          Math.abs(region.latitude - UW_REGION.latitude) < 0.001 &&
-          Math.abs(region.longitude - UW_REGION.longitude) < 0.001;
-
-        if (isUWRegion) {
-          updateData.mapRegion = "UW";
-        } else {
-          updateData.mapRegion = "Custom";
-          updateData.customMapRegion = region;
-        }
-
-        setMapRegion(updateData.mapRegion);
-        await setDoc(userRef, updateData, { merge: true });
+        await setDoc(userRef, { mapType }, { merge: true });
       } catch {}
     };
-    saveRegion();
-  }, [region, mapType]);
+    saveMapType();
+  }, [mapType]);
+
+  // --- Save region only when explicitly set through modal ---
+  const saveRegionToFirestore = async (newRegion) => {
+    if (!auth.currentUser || !newRegion) return;
+    try {
+      const userRef = doc(db, "users", auth.currentUser.uid);
+      const updateData = { mapType };
+
+      // Determine if this is UW region or custom
+      const isUWRegion =
+        Math.abs(newRegion.latitude - UW_REGION.latitude) < 0.001 &&
+        Math.abs(newRegion.longitude - UW_REGION.longitude) < 0.001;
+
+      if (isUWRegion) {
+        updateData.mapRegion = "UW";
+      } else {
+        updateData.mapRegion = "Custom";
+        updateData.customMapRegion = newRegion;
+      }
+
+      setMapRegion(updateData.mapRegion);
+      await setDoc(userRef, updateData, { merge: true });
+    } catch {}
+  };
 
   // --- Map type options and preview images ---
   const MAP_TYPE_OPTIONS = [
@@ -326,6 +339,15 @@ export default function StudySpotsMapView({
       });
     }
   };
+
+  // Helper to get all friends at a given spot
+  function getFriendsAtSpot(spotId) {
+    return friendsCheckIns.filter((f) => f.spotId === spotId);
+  }
+
+  const friendsAtSpot = selectedFriend
+    ? friendsCheckIns.filter((f) => f.spotId === selectedFriend.spotId)
+    : [];
 
   return (
     <>
@@ -545,6 +567,8 @@ export default function StudySpotsMapView({
                 if (mapRef.current && modalRegion) {
                   mapRef.current.animateToRegion(modalRegion);
                 }
+                // Save region to Firestore only when explicitly set through modal
+                saveRegionToFirestore(modalRegion);
               }}
             >
               <Text
@@ -567,7 +591,7 @@ export default function StudySpotsMapView({
           {
             alignSelf: "center",
             width: mapSize,
-            height: mapSize + 90,
+            height: mapSize + 50,
             borderRadius: 16,
             overflow: "hidden",
             backgroundColor: themeColors.gray,
@@ -614,37 +638,70 @@ export default function StudySpotsMapView({
           showsCompass={true}
           rotateEnabled={true}
         >
-          {/* --- Render one marker per building --- */}
-          {buildingPins.map((pin) => (
-            <Marker
-              key={pin.buildingName}
-              coordinate={{
-                latitude: pin.latitude,
-                longitude: pin.longitude,
-              }}
-              pinColor={themeColors.orange}
-              onPress={() => handlePinPress(pin)}
-            />
-          ))}
+          {/* --- Render markers based on view mode --- */}
+          {showFriendsView
+            ? // Friends view - show friend check ins
+              friendsCheckIns
+                .filter(
+                  (friend) =>
+                    friend.coordinates &&
+                    typeof friend.coordinates.latitude === "number" &&
+                    typeof friend.coordinates.longitude === "number"
+                )
+                .map((friend) => (
+                  <Marker
+                    key={`friend-${friend.friendId}`}
+                    coordinate={{
+                      latitude: friend.coordinates.latitude,
+                      longitude: friend.coordinates.longitude,
+                    }}
+                    pinColor={themeColors.green}
+                    onPress={() => setSelectedFriend({ spotId: friend.spotId })}
+                  ></Marker>
+                ))
+            : // Nooks view - show study spots
+              buildingPins.map((pin) => (
+                <Marker
+                  key={pin.buildingName}
+                  coordinate={{
+                    latitude: pin.latitude,
+                    longitude: pin.longitude,
+                  }}
+                  pinColor={themeColors.orange}
+                  onPress={() => handlePinPress(pin)}
+                />
+              ))}
         </MapView>
-        {spotsWithCoords.length === 0 && (
-          <View
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: 0,
-              right: 0,
-              alignItems: "center",
-            }}
-          >
-            <Text style={{ color: themeColors.darkGray }}>
-              No Nooks with map locations yet.
-            </Text>
-          </View>
-        )}
+        {showFriendsView
+          ? friendsCheckIns.length === 0 && (
+              <View
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: 0,
+                  right: 0,
+                  alignItems: "center",
+                }}
+              ></View>
+            )
+          : spotsWithCoords.length === 0 && (
+              <View
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: 0,
+                  right: 0,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ color: themeColors.darkGray }}>
+                  No Nooks with map locations yet.
+                </Text>
+              </View>
+            )}
         {/* Legend removed */}
       </View>
-      {/* --- Nook summary panel below the map --- */}
+      {/* --- Summary panel below the map --- */}
       <View
         style={{
           marginBottom: 8,
@@ -663,69 +720,120 @@ export default function StudySpotsMapView({
           justifyContent: "space-between",
         }}
       >
-        <View style={{ alignItems: "center", flex: 1 }}>
-          <Text
-            style={{
-              color: themeColors.purple,
-              fontWeight: "bold",
-              fontSize: 16,
-              fontFamily: "CarosSoft",
-            }}
-          >
-            {totalNooks}
-          </Text>
-          <Text
-            style={{
-              color: themeColors.darkGray,
-              fontSize: 13,
-              fontFamily: "CarosSoft",
-            }}
-          >
-            Nooks
-          </Text>
-        </View>
-        <View style={{ alignItems: "center", flex: 1 }}>
-          <Text
-            style={{
-              color: themeColors.purple,
-              fontWeight: "bold",
-              fontSize: 16,
-              fontFamily: "CarosSoft",
-            }}
-          >
-            {privateNooks}
-          </Text>
-          <Text
-            style={{
-              color: themeColors.darkGray,
-              fontSize: 13,
-              fontFamily: "CarosSoft",
-            }}
-          >
-            Private
-          </Text>
-        </View>
-        <View style={{ alignItems: "center", flex: 1 }}>
-          <Text
-            style={{
-              color: themeColors.purple,
-              fontWeight: "bold",
-              fontSize: 16,
-              fontFamily: "CarosSoft",
-            }}
-          >
-            {nooksWithAlertsToday}
-          </Text>
-          <Text
-            style={{
-              color: themeColors.darkGray,
-              fontSize: 13,
-              fontFamily: "CarosSoft",
-            }}
-          >
-            Alerts Today
-          </Text>
-        </View>
+        {showFriendsView ? (
+          // Friends view summary
+          <>
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <Text
+                style={{
+                  color: themeColors.green,
+                  fontWeight: "bold",
+                  fontSize: 16,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                {friendsCheckIns.length}
+              </Text>
+              <Text
+                style={{
+                  color: themeColors.darkGray,
+                  fontSize: 13,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                Active Friends
+              </Text>
+            </View>
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <Text
+                style={{
+                  color: themeColors.green,
+                  fontWeight: "bold",
+                  fontSize: 16,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                {new Set(friendsCheckIns.map((f) => f.spotId)).size}
+              </Text>
+              <Text
+                style={{
+                  color: themeColors.darkGray,
+                  fontSize: 13,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                Nooks
+              </Text>
+            </View>
+          </>
+        ) : (
+          // Nooks view summary
+          <>
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontWeight: "bold",
+                  fontSize: 16,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                {totalNooks}
+              </Text>
+              <Text
+                style={{
+                  color: themeColors.darkGray,
+                  fontSize: 13,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                Nooks
+              </Text>
+            </View>
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontWeight: "bold",
+                  fontSize: 16,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                {privateNooks}
+              </Text>
+              <Text
+                style={{
+                  color: themeColors.darkGray,
+                  fontSize: 13,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                Private
+              </Text>
+            </View>
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontWeight: "bold",
+                  fontSize: 16,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                {nooksWithAlertsToday}
+              </Text>
+              <Text
+                style={{
+                  color: themeColors.darkGray,
+                  fontSize: 13,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                Alerts Today
+              </Text>
+            </View>
+          </>
+        )}
       </View>
       {/* --- Building Modal: List all floors/spots for selected building --- */}
       <Modal
@@ -1054,6 +1162,286 @@ export default function StudySpotsMapView({
               }}
               style={{
                 marginTop: 14,
+                backgroundColor: themeColors.darkGray,
+                borderRadius: 8,
+                paddingVertical: 10,
+                paddingHorizontal: 24,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontSize: 16,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                Close
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* --- Friend Modal: Show friend info and options --- */}
+      <Modal
+        visible={!!selectedFriend}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSelectedFriend(null)}
+      >
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.3)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          activeOpacity={1}
+          onPressOut={() => setSelectedFriend(null)}
+        >
+          <View
+            style={{
+              backgroundColor: themeColors.white,
+              borderRadius: 16,
+              padding: 24,
+              width: "90%",
+              alignItems: "center",
+              borderWidth: 1,
+              borderColor: themeColors.black,
+              shadowColor: themeColors.black,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+              elevation: 5,
+              maxHeight: 420,
+            }}
+            onStartShouldSetResponder={() => true}
+          >
+            {/* Top row: spot name (left), details button (right) */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                width: "100%",
+                marginBottom: 12,
+                // Remove justifyContent: "space-between"
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "bold",
+                  color: themeColors.purple,
+                  textAlign: "left",
+                  fontFamily: "CarosSoft",
+                  // Remove flex: 1 to allow button to be right next to name
+                }}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {friendsAtSpot[0]?.spotName || "Location"}
+              </Text>
+              <View style={{ alignItems: "center", marginLeft: 4 }}>
+                <TouchableOpacity
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 18,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  onPress={() => {
+                    setSelectedFriend(null);
+                    setMapRefreshKey((k) => k + 1);
+                    setTimeout(() => {
+                      navigation.navigate("SpotDetail", {
+                        spotId: selectedFriend?.spotId,
+                        view: "map",
+                      });
+                    }, 250);
+                  }}
+                  accessibilityLabel="View Spot Details"
+                >
+                  <Info size={22} color={themeColors.purple} />
+                </TouchableOpacity>
+              </View>
+            </View>
+            {friendsAtSpot.length > 3 ? (
+              <ScrollView
+                style={{ width: "100%", maxHeight: 260 }}
+                showsVerticalScrollIndicator={false}
+              >
+                {friendsAtSpot.map((friend) => (
+                  <TouchableOpacity
+                    key={friend.friendId}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginBottom: 0,
+                      backgroundColor: themeColors.lightGray,
+                      borderRadius: 12,
+                      padding: 10,
+                    }}
+                    onPress={() => {
+                      setSelectedFriend(null);
+                      setMapRefreshKey((k) => k + 1);
+                      setTimeout(() => {
+                        navigation.navigate("Profile", {
+                          uid: friend.friendId,
+                          view: "map",
+                        });
+                      }, 250);
+                    }}
+                    accessibilityLabel={`View ${friend.friendName}'s Profile`}
+                  >
+                    {friend.profilePic ? (
+                      <Image
+                        source={{ uri: friend.profilePic }}
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 24,
+                          marginRight: 20,
+                          borderWidth: 1,
+                          borderColor: themeColors.purple,
+                        }}
+                      />
+                    ) : (
+                      <View
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 24,
+                          backgroundColor: themeColors.green,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          marginRight: 20,
+                          borderWidth: 1,
+                          borderColor: themeColors.purple,
+                        }}
+                      >
+                        <User size={28} color={themeColors.white} />
+                      </View>
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: "bold",
+                          color: themeColors.black,
+                          fontFamily: "CarosSoft",
+                        }}
+                      >
+                        {friend.friendName}
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 13,
+                          color: themeColors.darkGray,
+                          fontFamily: "CarosSoft",
+                          marginTop: 2,
+                        }}
+                      >
+                        Checked in{" "}
+                        {Math.floor(
+                          (Date.now() - (friend.checkedInAt || 0)) / 60000
+                        )}
+                        m ago
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            ) : (
+              <View style={{ width: "100%" }}>
+                {friendsAtSpot.map((friend) => (
+                  <TouchableOpacity
+                    key={friend.friendId}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginBottom: 0,
+                      backgroundColor: themeColors.lightGray,
+                      borderRadius: 12,
+                      padding: 10,
+                    }}
+                    onPress={() => {
+                      setSelectedFriend(null);
+                      setMapRefreshKey((k) => k + 1);
+                      setTimeout(() => {
+                        navigation.navigate("Profile", {
+                          uid: friend.friendId,
+                          view: "map",
+                        });
+                      }, 250);
+                    }}
+                    accessibilityLabel={`View ${friend.friendName}'s Profile`}
+                  >
+                    {friend.profilePic ? (
+                      <Image
+                        source={{ uri: friend.profilePic }}
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 24,
+                          marginRight: 20,
+                        }}
+                      />
+                    ) : (
+                      <View
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 24,
+                          backgroundColor: themeColors.green,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          marginRight: 20,
+                        }}
+                      >
+                        <User size={28} color={themeColors.white} />
+                      </View>
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: "bold",
+                          color: themeColors.black,
+                          fontFamily: "CarosSoft",
+                        }}
+                      >
+                        {friend.friendName}
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 13,
+                          color: themeColors.darkGray,
+                          fontFamily: "CarosSoft",
+                          marginTop: 2,
+                        }}
+                      >
+                        Checked in{" "}
+                        {Math.floor(
+                          (Date.now() - (friend.checkedInAt || 0)) / 60000
+                        )}
+                        m ago
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            <TouchableOpacity
+              onPress={() => {
+                setSelectedFriend(null);
+                setMapRefreshKey((k) => k + 1);
+              }}
+              style={{
+                marginTop: 10,
                 backgroundColor: themeColors.darkGray,
                 borderRadius: 8,
                 paddingVertical: 10,

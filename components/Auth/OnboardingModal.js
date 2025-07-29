@@ -27,7 +27,7 @@ const slides = [
   {
     title: "Spot Details",
     description:
-      "Click on a Nook to send live updates and check into your favorite Nooks.",
+      "Click on a Nook to send live updates and check in to your favorite Nooks.",
     image:
       "https://res.cloudinary.com/dxnd4aryf/image/upload/w_900,h_1200,c_fit,f_auto/v1752134055/mloewartesijk3mv7knr.png",
   },
