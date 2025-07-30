@@ -1,18 +1,11 @@
-import { useState, useEffect, useRef } from "react";
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  doc,
-  getDoc,
-} from "firebase/firestore";
+import { useState, useRef } from "react";
+import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 
 export default function useFriendsCheckIns() {
   const [friendsCheckIns, setFriendsCheckIns] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const unsubRefs = useRef([]);
+  const [isLoading, setIsLoading] = useState(false); // Start as not loading since we don't auto-fetch
+  const friendsDataRef = useRef({}); // Store friends data as object keyed by friendId
 
   const fetchFriendsCheckIns = async () => {
     setIsLoading(true);
@@ -41,112 +34,95 @@ export default function useFriendsCheckIns() {
         return;
       }
 
-      // Clear previous listeners
-      unsubRefs.current.forEach((unsub) => {
+      // Reset friends data
+      friendsDataRef.current = {};
+
+      // Fetch each friend's check in status manually
+      const fetchPromises = allFriends.map(async (friendId) => {
         try {
-          unsub();
-        } catch {}
-      });
-      unsubRefs.current = [];
+          const friendDoc = await getDoc(doc(db, "users", friendId));
+          if (!friendDoc.exists()) {
+            return null;
+          }
 
-      // Set up listeners for each friend's check in status
-      const checkInPromises = allFriends.map(async (friendId) => {
-        return new Promise((resolve) => {
-          const unsub = onSnapshot(
-            doc(db, "users", friendId),
-            async (friendDoc) => {
-              if (!friendDoc.exists()) {
-                resolve(null);
-                return;
-              }
+          const friendData = friendDoc.data();
+          const checkedIn = friendData.checkedIn;
 
-              const friendData = friendDoc.data();
-              const checkedIn = friendData.checkedIn;
+          // If friend is not checked in anywhere, skip
+          if (!checkedIn || !checkedIn.spotId || !checkedIn.checkedInAt) {
+            return null;
+          }
 
-              // If friend is not checked in anywhere, return null
-              if (!checkedIn || !checkedIn.spotId || !checkedIn.checkedInAt) {
-                resolve(null);
-                return;
-              }
+          // Check if check in has expired (60 minutes)
+          const now = Date.now();
+          const elapsed = now - checkedIn.checkedInAt;
+          if (elapsed >= 60 * 60 * 1000) {
+            return null;
+          }
 
-              // Check if check in has expired (60 minutes)
-              const now = Date.now();
-              const elapsed = now - checkedIn.checkedInAt;
-              if (elapsed >= 60 * 60 * 1000) {
-                resolve(null);
-                return;
-              }
+          // Get the spot details
+          const spotDoc = await getDoc(doc(db, "studySpots", checkedIn.spotId));
+          if (!spotDoc.exists()) {
+            return null;
+          }
 
-              // Get the spot details
-              try {
-                const spotDoc = await getDoc(
-                  doc(db, "studySpots", checkedIn.spotId)
-                );
-                if (!spotDoc.exists()) {
-                  resolve(null);
-                  return;
-                }
+          const spotData = spotDoc.data();
 
-                const spotData = spotDoc.data();
+          // Only show public spots or private spots shared with the current user
+          if (
+            spotData.privateNook &&
+            spotData.addedBy !== user.uid &&
+            (!Array.isArray(spotData.sharedWith) ||
+              !spotData.sharedWith.includes(user.uid))
+          ) {
+            return null;
+          }
 
-                // Only show public spots or private spots shared with the current user
-                if (
-                  spotData.privateNook &&
-                  spotData.addedBy !== user.uid &&
-                  (!Array.isArray(spotData.sharedWith) ||
-                    !spotData.sharedWith.includes(user.uid))
-                ) {
-                  resolve(null);
-                  return;
-                }
-
-                resolve({
-                  friendId,
-                  friendName:
-                    `${friendData.firstName || ""} ${
-                      friendData.lastName || ""
-                    }`.trim() || "Anonymous",
-                  profilePic: friendData.profilePic || null,
-                  spotId: checkedIn.spotId,
-                  spotName:
-                    spotData.buildingName ||
-                    spotData.name ||
-                    "Unknown Location",
-                  coordinates: spotData.coordinates,
-                  checkedInAt: checkedIn.checkedInAt,
-                  timeRemaining: Math.max(0, 60 * 60 * 1000 - elapsed), // Time remaining in milliseconds
-                });
-              } catch (error) {
-                console.error("Error fetching spot data:", error);
-                resolve(null);
-              }
-            }
-          );
-          unsubRefs.current.push(unsub);
-        });
+          // Return friend data
+          return {
+            friendId,
+            friendName:
+              `${friendData.firstName || ""} ${
+                friendData.lastName || ""
+              }`.trim() || "Anonymous",
+            profilePic: friendData.profilePic || null,
+            spotId: checkedIn.spotId,
+            spotName:
+              spotData.buildingName || spotData.name || "Unknown Location",
+            coordinates: spotData.coordinates,
+            checkedInAt: checkedIn.checkedInAt,
+            timeRemaining: Math.max(0, 60 * 60 * 1000 - elapsed), // Time remaining in milliseconds
+          };
+        } catch (error) {
+          console.error("Error fetching friend data:", error);
+          return null;
+        }
       });
 
-      // Wait for all friend check ins to resolve
-      const checkIns = (await Promise.all(checkInPromises)).filter(Boolean);
-      setFriendsCheckIns(checkIns);
+      // Wait for all promises and filter out null results
+      const results = await Promise.all(fetchPromises);
+      const validFriends = results.filter(Boolean);
+
+      // Update friends data
+      validFriends.forEach((friendData) => {
+        friendsDataRef.current[friendData.friendId] = friendData;
+      });
+
+      updateFriendsState();
+
       setIsLoading(false);
     } catch (error) {
-      console.error("Error fetching friends check ins:", error);
+      console.error("Error setting up friends check-ins listeners:", error);
       setFriendsCheckIns([]);
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchFriendsCheckIns();
-    return () => {
-      unsubRefs.current.forEach((unsub) => {
-        try {
-          unsub();
-        } catch {}
-      });
-    };
-  }, []);
+  // Helper function to update state from friends data object
+  const updateFriendsState = () => {
+    const checkIns = Object.values(friendsDataRef.current).filter(Boolean);
+    setFriendsCheckIns(checkIns);
+  };
 
   return {
     friendsCheckIns,

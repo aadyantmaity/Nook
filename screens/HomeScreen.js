@@ -192,7 +192,11 @@ export default function HomeScreen({ navigation, route }) {
   const { studySpots, isLoading, fetchStudySpots } = useStudySpots();
   const { filters, setFilters, filteredSpots, sortBy, setSortBy } =
     useSearchAndFilters(studySpots, favorites); // <-- pass favorites
-  const { friendsCheckIns, isLoading: friendsLoading } = useFriendsCheckIns(); // Add friends check ins hook
+  const {
+    friendsCheckIns,
+    isLoading: friendsLoading,
+    refetch: refetchFriendsCheckIns,
+  } = useFriendsCheckIns(); // Add friends check ins hook
   const {
     workTimeSetting,
     setWorkTimeSetting,
@@ -268,15 +272,46 @@ export default function HomeScreen({ navigation, route }) {
     }
   }, [route?.params?.view, userSpecificHomeViewKey, user]);
 
+  // --- Refresh data when initially loading map view ---
+  useEffect(() => {
+    if (showMapView) {
+      fetchStudySpots();
+      refetchFriendsCheckIns();
+    }
+  }, [showMapView]); // Only run when showMapView becomes true
+
   // --- Save user's preferred view when toggled ---
   const handleSetShowMapView = async (val) => {
     setShowMapView(val);
+
+    // Refresh data when switching to map view
+    if (val) {
+      fetchStudySpots(); // Refresh study spots
+      refetchFriendsCheckIns(); // Refresh friends check-ins
+    }
+
     try {
       await AsyncStorage.setItem(userSpecificHomeViewKey, val ? "map" : "list");
       if (!user) return;
       const userRef = doc(db, "users", user.uid);
       await updateDoc(userRef, { homeView: val ? "map" : "list" });
     } catch {}
+  };
+
+  // --- Handle friends/nooks mode toggle with data refresh ---
+  const handleSetShowFriendsView = (val) => {
+    setShowFriendsView(val);
+
+    // Refresh data when switching modes if on map view
+    if (showMapView) {
+      if (val) {
+        // Switching to friends view - refresh friends data
+        refetchFriendsCheckIns();
+      } else {
+        // Switching to nooks view - refresh study spots
+        fetchStudySpots();
+      }
+    }
   };
 
   // --- Reusable Header (toggle only, no filters) ---
@@ -490,7 +525,7 @@ export default function HomeScreen({ navigation, route }) {
 
                 {/* Nooks Button */}
                 <TouchableOpacity
-                  onPress={() => setShowFriendsView(false)}
+                  onPress={() => handleSetShowFriendsView(false)}
                   style={{
                     flex: 1,
                     alignItems: "center",
@@ -524,7 +559,7 @@ export default function HomeScreen({ navigation, route }) {
 
                 {/* Friends Button */}
                 <TouchableOpacity
-                  onPress={() => setShowFriendsView(true)}
+                  onPress={() => handleSetShowFriendsView(true)}
                   style={{
                     flex: 1,
                     alignItems: "center",
@@ -566,6 +601,8 @@ export default function HomeScreen({ navigation, route }) {
             navigation={navigation} // <-- pass navigation object, not a function
             themeColors={themeColors}
             containerStyle={{ marginTop: 0 }}
+            isLoadingSpots={isLoading}
+            isLoadingFriends={friendsLoading}
           />
         </ScrollView>
       ) : (
@@ -894,6 +931,8 @@ export default function HomeScreen({ navigation, route }) {
 
   // Helper to determine if loading screen should show
   const shouldShowLoadingScreen = () => {
+    // Don't show loading screen when in map view - let the map handle its own loading
+    if (showMapView) return false;
     return initialMount.current || isLoading || !minLoadingElapsed;
   };
 

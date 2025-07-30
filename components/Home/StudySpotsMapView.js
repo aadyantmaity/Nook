@@ -10,13 +10,20 @@ import {
   ScrollView,
   Linking,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import MapView, { Marker, Callout, PROVIDER_GOOGLE } from "react-native-maps";
 import { auth, db } from "../../firebaseConfig";
 import * as Location from "expo-location";
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 // Remove MaterialCommunityIcons import and use Phosphor instead:
-import { PencilSimple, Info, MapPinLine, User } from "phosphor-react-native";
+import {
+  PencilSimple,
+  Info,
+  MapPinLine,
+  User,
+  LockKey,
+} from "phosphor-react-native";
 
 // Helper: Haversine distance in meters
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -63,6 +70,8 @@ export default function StudySpotsMapView({
   navigation,
   themeColors,
   containerStyle,
+  isLoadingSpots = false,
+  isLoadingFriends = false,
 }) {
   const mapRef = useRef();
   const [region, setRegion] = useState(null);
@@ -73,6 +82,16 @@ export default function StudySpotsMapView({
   const [mapTypeLoading, setMapTypeLoading] = useState(false);
   const [mapRegion, setMapRegion] = useState("UW");
 
+  // --- NEW: Track if user has interacted with the map to prevent automatic resets ---
+  const userHasMovedMap = useRef(false);
+  const isInitialLoad = useRef(true);
+  const isProgrammaticChange = useRef(false);
+
+  // --- NEW: Store user's current region in ref to prevent resets ---
+  const currentUserRegion = useRef(null);
+  const hasSetInitialRegion = useRef(false);
+  const staticInitialRegion = useRef(null);
+
   // --- NEW: Temporary state for modal edits ---
   const [modalRegion, setModalRegion] = useState(null);
   const [modalMapType, setModalMapType] = useState(mapType);
@@ -81,7 +100,6 @@ export default function StudySpotsMapView({
   // Add this state for the selected spot/building
   const [selectedPin, setSelectedPin] = useState(null);
   const [selectedFriend, setSelectedFriend] = useState(null); // Add state for selected friend
-  const [mapRefreshKey, setMapRefreshKey] = useState(0);
 
   // Calculate square size (full width minus 32px)
   const screenWidth = Dimensions.get("window").width;
@@ -110,20 +128,42 @@ export default function StudySpotsMapView({
           setMapRegion(savedMapRegion);
         }
 
-        // Set actual coordinates based on mapRegion
-        if (savedMapRegion === "UW" && !unsub) {
-          setRegion(UW_REGION);
+        // Set actual coordinates based on mapRegion - only if user hasn't moved the map
+        let targetRegion = null;
+        if (savedMapRegion === "UW" && !unsub && !userHasMovedMap.current) {
+          targetRegion = UW_REGION;
         } else if (
           userDoc.exists() &&
           userDoc.data().customMapRegion &&
-          !unsub
+          !unsub &&
+          !userHasMovedMap.current
         ) {
-          setRegion(userDoc.data().customMapRegion);
+          targetRegion = userDoc.data().customMapRegion;
+        }
+
+        if (targetRegion && !hasSetInitialRegion.current) {
+          currentUserRegion.current = targetRegion;
+          staticInitialRegion.current = targetRegion;
+          // Only update region state on initial load, not after user has moved map
+          if (!userHasMovedMap.current) {
+            setRegion(targetRegion);
+          }
+          hasSetInitialRegion.current = true;
+
+          // Use map ref to set region instead of relying on state
+          setTimeout(() => {
+            if (mapRef.current && !userHasMovedMap.current) {
+              isProgrammaticChange.current = true;
+              mapRef.current.animateToRegion(targetRegion, 100);
+            }
+          }, 100);
         }
 
         if (userMapType && !unsub) {
           setMapType(userMapType);
         }
+
+        isInitialLoad.current = false;
       } catch {}
     }
     loadRegion();
@@ -135,7 +175,7 @@ export default function StudySpotsMapView({
   // --- Sync modal state with main state when modal opens ---
   useEffect(() => {
     if (regionPickerVisible) {
-      setModalRegion(region || UW_REGION);
+      setModalRegion(currentUserRegion.current || region || UW_REGION);
       setModalMapType(mapType);
       setModalMapRegion(mapRegion);
     }
@@ -173,6 +213,8 @@ export default function StudySpotsMapView({
         updateData.customMapRegion = newRegion;
       }
 
+      // Update both state and ref
+      currentUserRegion.current = newRegion;
       setMapRegion(updateData.mapRegion);
       await setDoc(userRef, updateData, { merge: true });
     } catch {}
@@ -202,11 +244,67 @@ export default function StudySpotsMapView({
 
   // --- Default region logic: only set to UW if not set and not picked ---
   useEffect(() => {
-    if (!region && !userHasPickedRegion) {
-      setRegion(UW_REGION);
+    if (
+      !region &&
+      !userHasPickedRegion &&
+      isInitialLoad.current &&
+      !hasSetInitialRegion.current
+    ) {
+      currentUserRegion.current = UW_REGION;
+      staticInitialRegion.current = UW_REGION;
+      // Only update region state on initial load
+      if (!userHasMovedMap.current) {
+        setRegion(UW_REGION);
+      }
+      hasSetInitialRegion.current = true;
+      isInitialLoad.current = false;
     }
     // eslint-disable-next-line
   }, []);
+
+  // --- Preserve user's map position when friendsCheckIns or view mode changes ---
+  useEffect(() => {
+    // Immediately capture current region before any potential map updates
+    if (userHasMovedMap.current && mapRef.current) {
+      mapRef.current
+        .getCamera()
+        .then((camera) => {
+          if (camera && userHasMovedMap.current) {
+            const preservedRegion = {
+              latitude: camera.center.latitude,
+              longitude: camera.center.longitude,
+              latitudeDelta: camera.altitude ? camera.altitude / 111320 : 0.01,
+              longitudeDelta: camera.altitude ? camera.altitude / 111320 : 0.01,
+            };
+            currentUserRegion.current = preservedRegion;
+          }
+        })
+        .catch(() => {
+          // Fallback: if getCamera fails, just use the existing preserved region
+        });
+    }
+
+    // Only preserve position if user has moved the map manually
+    if (
+      userHasMovedMap.current &&
+      currentUserRegion.current &&
+      mapRef.current
+    ) {
+      // Use a longer timeout to ensure the map has finished any automatic updates
+      const timeoutId = setTimeout(() => {
+        if (
+          mapRef.current &&
+          currentUserRegion.current &&
+          userHasMovedMap.current
+        ) {
+          isProgrammaticChange.current = true;
+          mapRef.current.animateToRegion(currentUserRegion.current, 200);
+        }
+      }, 150);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [friendsCheckIns, showFriendsView]);
 
   // --- Favorite spot IDs ---
   const favoriteIds = Array.isArray(spots)
@@ -214,15 +312,17 @@ export default function StudySpotsMapView({
     : [];
 
   // --- Nook summary stats ---
-  const totalNooks = spotsWithCoords.length;
-  // Only count private nooks owned by the current user or shared with them
-  const privateNooks = spotsWithCoords.filter(
-    (s) =>
-      s.privateNook &&
-      (s.addedBy === auth.currentUser?.uid ||
-        (Array.isArray(s.sharedWith) &&
-          s.sharedWith.includes(auth.currentUser?.uid)))
-  ).length;
+  // Exclude private nooks from total count unless accessible to current user
+  const totalNooks = spotsWithCoords.filter((spot) => {
+    // Include public nooks
+    if (!spot.privateNook) return true;
+    // Include private nooks only if user has access
+    return (
+      spot.addedBy === auth.currentUser?.uid ||
+      (Array.isArray(spot.sharedWith) &&
+        spot.sharedWith.includes(auth.currentUser?.uid))
+    );
+  }).length;
   // Count nooks with alerts today
   const today = new Date();
   function isSameDay(dateObj) {
@@ -311,11 +411,22 @@ export default function StudySpotsMapView({
       const lon =
         spots.reduce((sum, s) => sum + s.coordinates.longitude, 0) /
         spots.length;
+
+      // Check if any spots in this building are private nooks accessible to current user
+      const hasPrivateNook = spots.some(
+        (s) =>
+          s.privateNook &&
+          (s.addedBy === auth.currentUser?.uid ||
+            (Array.isArray(s.sharedWith) &&
+              s.sharedWith.includes(auth.currentUser?.uid)))
+      );
+
       return {
         buildingName,
         spots,
         latitude: lat,
         longitude: lon,
+        hasPrivateNook,
       };
     }
   );
@@ -561,10 +672,10 @@ export default function StudySpotsMapView({
               activeOpacity={0.8}
               onPress={() => {
                 // Only commit changes on submit
-                setRegion(modalRegion);
                 setMapType(modalMapType);
                 setRegionPickerVisible(false);
                 if (mapRef.current && modalRegion) {
+                  isProgrammaticChange.current = true;
                   mapRef.current.animateToRegion(modalRegion);
                 }
                 // Save region to Firestore only when explicitly set through modal
@@ -627,11 +738,19 @@ export default function StudySpotsMapView({
           </TouchableOpacity>
         </View>
         <MapView
-          key={mapRefreshKey}
           ref={mapRef}
           style={{ flex: 1 }}
-          region={region}
-          onRegionChangeComplete={setRegion}
+          initialRegion={staticInitialRegion.current || UW_REGION}
+          onRegionChangeComplete={(newRegion) => {
+            // Only update if this is a user-initiated change, not a programmatic one
+            if (!isInitialLoad.current && !isProgrammaticChange.current) {
+              userHasMovedMap.current = true;
+              currentUserRegion.current = newRegion;
+              // Don't update region state once user has moved map to prevent resets
+            }
+            // Reset the flag after handling the change
+            isProgrammaticChange.current = false;
+          }}
           showsUserLocation={true}
           {...(Platform.OS === "android" ? { provider: PROVIDER_GOOGLE } : {})}
           mapType={mapType}
@@ -667,13 +786,16 @@ export default function StudySpotsMapView({
                     latitude: pin.latitude,
                     longitude: pin.longitude,
                   }}
-                  pinColor={themeColors.orange}
+                  pinColor={
+                    pin.hasPrivateNook ? themeColors.purple : themeColors.orange
+                  }
                   onPress={() => handlePinPress(pin)}
                 />
               ))}
         </MapView>
         {showFriendsView
-          ? friendsCheckIns.length === 0 && (
+          ? friendsCheckIns.length === 0 &&
+            !isLoadingFriends && (
               <View
                 style={{
                   position: "absolute",
@@ -684,7 +806,8 @@ export default function StudySpotsMapView({
                 }}
               ></View>
             )
-          : spotsWithCoords.length === 0 && (
+          : spotsWithCoords.length === 0 &&
+            !isLoadingSpots && (
               <View
                 style={{
                   position: "absolute",
@@ -699,6 +822,24 @@ export default function StudySpotsMapView({
                 </Text>
               </View>
             )}
+
+        {/* Loading overlay */}
+        {(showFriendsView ? isLoadingFriends : isLoadingSpots) && (
+          <View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(255, 255, 255, 1)",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <ActivityIndicator size="large" color={themeColors.purple} />
+          </View>
+        )}
         {/* Legend removed */}
       </View>
       {/* --- Summary panel below the map --- */}
@@ -726,7 +867,7 @@ export default function StudySpotsMapView({
             <View style={{ alignItems: "center", flex: 1 }}>
               <Text
                 style={{
-                  color: themeColors.green,
+                  color: themeColors.purple,
                   fontWeight: "bold",
                   fontSize: 16,
                   fontFamily: "CarosSoft",
@@ -747,7 +888,7 @@ export default function StudySpotsMapView({
             <View style={{ alignItems: "center", flex: 1 }}>
               <Text
                 style={{
-                  color: themeColors.green,
+                  color: themeColors.purple,
                   fontWeight: "bold",
                   fontSize: 16,
                   fontFamily: "CarosSoft",
@@ -788,27 +929,6 @@ export default function StudySpotsMapView({
                 }}
               >
                 Nooks
-              </Text>
-            </View>
-            <View style={{ alignItems: "center", flex: 1 }}>
-              <Text
-                style={{
-                  color: themeColors.purple,
-                  fontWeight: "bold",
-                  fontSize: 16,
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                {privateNooks}
-              </Text>
-              <Text
-                style={{
-                  color: themeColors.darkGray,
-                  fontSize: 13,
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                Private
               </Text>
             </View>
             <View style={{ alignItems: "center", flex: 1 }}>
@@ -904,8 +1024,14 @@ export default function StudySpotsMapView({
                       alignItems: "center",
                     }}
                   >
-                    {/* Floor/name text and private label */}
-                    <View style={{ flex: 1, flexDirection: "column" }}>
+                    {/* Floor/name text with key icon for private nooks */}
+                    <View
+                      style={{
+                        flex: 1,
+                        flexDirection: "row",
+                        alignItems: "center",
+                      }}
+                    >
                       <Text
                         style={{
                           color: themeColors.purple,
@@ -918,15 +1044,13 @@ export default function StudySpotsMapView({
                           ? `Floor ${spot.roomNumber}`
                           : spot.name || "Nook"}
                       </Text>
-                      <Text
-                        style={{
-                          color: themeColors.darkGray,
-                          fontSize: 13,
-                          fontFamily: "CarosSoft",
-                        }}
-                      >
-                        {spot.privateNook ? "Private" : ""}
-                      </Text>
+                      {spot.privateNook && (
+                        <LockKey
+                          size={16}
+                          color={themeColors.purple}
+                          style={{ marginLeft: 8 }}
+                        />
+                      )}
                     </View>
                     {/* Button group to the right, horizontally aligned with labels below icons */}
                     <View
@@ -1072,18 +1196,33 @@ export default function StudySpotsMapView({
             }}
             onStartShouldSetResponder={() => true}
           >
-            <Text
+            <View
               style={{
-                fontSize: 18,
-                fontWeight: "bold",
-                color: themeColors.purple,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
                 marginBottom: 10,
-                textAlign: "center",
-                fontFamily: "CarosSoft",
               }}
             >
-              {selectedPin?.buildingName}
-            </Text>
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "bold",
+                  color: themeColors.purple,
+                  textAlign: "center",
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                {selectedPin?.buildingName}
+              </Text>
+              {selectedPin?.spots[0]?.privateNook && (
+                <LockKey
+                  size={18}
+                  color={themeColors.purple}
+                  style={{ marginLeft: 8 }}
+                />
+              )}
+            </View>
             <View style={{ flexDirection: "row", gap: 70, marginVertical: 10 }}>
               <View style={{ alignItems: "center" }}>
                 <TouchableOpacity
@@ -1097,7 +1236,6 @@ export default function StudySpotsMapView({
                   onPress={() => {
                     setSelectedPin(null);
                     setBuildingModal((prev) => ({ ...prev, visible: false }));
-                    setMapRefreshKey((k) => k + 1);
                     setTimeout(() => {
                       navigation.navigate("SpotDetail", {
                         spotId: selectedPin.spots[0].id,
@@ -1158,7 +1296,6 @@ export default function StudySpotsMapView({
             <TouchableOpacity
               onPress={() => {
                 setSelectedPin(null);
-                setMapRefreshKey((k) => k + 1);
               }}
               style={{
                 marginTop: 14,
@@ -1254,7 +1391,6 @@ export default function StudySpotsMapView({
                   }}
                   onPress={() => {
                     setSelectedFriend(null);
-                    setMapRefreshKey((k) => k + 1);
                     setTimeout(() => {
                       navigation.navigate("SpotDetail", {
                         spotId: selectedFriend?.spotId,
@@ -1286,7 +1422,6 @@ export default function StudySpotsMapView({
                     }}
                     onPress={() => {
                       setSelectedFriend(null);
-                      setMapRefreshKey((k) => k + 1);
                       setTimeout(() => {
                         navigation.navigate("Profile", {
                           uid: friend.friendId,
@@ -1369,7 +1504,6 @@ export default function StudySpotsMapView({
                     }}
                     onPress={() => {
                       setSelectedFriend(null);
-                      setMapRefreshKey((k) => k + 1);
                       setTimeout(() => {
                         navigation.navigate("Profile", {
                           uid: friend.friendId,
@@ -1438,7 +1572,6 @@ export default function StudySpotsMapView({
             <TouchableOpacity
               onPress={() => {
                 setSelectedFriend(null);
-                setMapRefreshKey((k) => k + 1);
               }}
               style={{
                 marginTop: 10,

@@ -204,43 +204,6 @@ export default function useFavoriteSpots(targetUid = null) {
                 }
               }
 
-              // --- Fetch overall ratings for this spot (live) ---
-              let averageOverallRating = 0;
-              let overallRatingsCount = 0;
-              try {
-                const overallRatingsQuery = query(
-                  collection(db, "overallRatings"),
-                  where("spotId", "==", docSnap.id)
-                );
-                // Add live snapshot for overall ratings
-                onSnapshot(overallRatingsQuery, (overallRatingsSnapshot) => {
-                  let sum = 0,
-                    count = 0;
-                  overallRatingsSnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    sum += data.rating || 0;
-                    count++;
-                  });
-                  averageOverallRating = count > 0 ? sum / count : 0;
-                  overallRatingsCount = count;
-                  // Update the spot in setFavoriteSpots
-                  setFavoriteSpots((prevSpots) =>
-                    prevSpots.map((s) =>
-                      s.id === docSnap.id
-                        ? {
-                            ...s,
-                            averageOverallRating,
-                            overallRatingsCount,
-                          }
-                        : s
-                    )
-                  );
-                });
-              } catch (e) {
-                averageOverallRating = 0;
-                overallRatingsCount = 0;
-              }
-
               // --- Table availability for Odegaard ---
               let tableAvailability = undefined;
               if (
@@ -287,9 +250,6 @@ export default function useFavoriteSpots(targetUid = null) {
                   ? { tableAvailability }
                   : {}),
               };
-              // Attach overall rating fields to spotData below
-              spotData.averageOverallRating = averageOverallRating;
-              spotData.overallRatingsCount = overallRatingsCount;
             } catch (e) {
               // fallback to N/A
             }
@@ -300,8 +260,6 @@ export default function useFavoriteSpots(targetUid = null) {
             ...spotData,
             ratings,
             cachedPhotoUri: spotData.photoUrl || "",
-            averageOverallRating: spotData.averageOverallRating || 0,
-            overallRatingsCount: spotData.overallRatingsCount || 0,
           });
         }
       }

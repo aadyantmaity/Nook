@@ -49,7 +49,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import TagList from "../components/SpotDetail/TagList";
 import SpotImage from "../components/SpotDetail/SpotImage";
 import RatingsDisplay from "../components/SpotDetail/RatingsDisplay";
-import OverallRating from "../components/SpotDetail/OverallRating";
+
 import ActionButtons from "../components/SpotDetail/ActionButtons";
 import AddAlertModal from "../components/SpotDetail/AddAlertModal";
 import ReportModal from "../components/SpotDetail/ReportModal";
@@ -65,7 +65,7 @@ import ShareNookToGroupModal from "../components/SpotDetail/ShareNookToGroupModa
 
 // Hooks
 import useSpotDetails from "../hooks/useSpotDetails";
-import useOverallRatings from "../hooks/useOverallRatings";
+
 import QRCode from "react-native-qrcode-svg";
 
 export default function SpotDetailScreen({ route, navigation }) {
@@ -96,15 +96,6 @@ export default function SpotDetailScreen({ route, navigation }) {
   // Hooks
   const { spot, addedByName, isLoading, setSpot } = useSpotDetails(spotId);
   const isOwner = !!user && !!spot && spot.addedBy === user.uid;
-  const {
-    userOverallRating,
-    averageOverallRating,
-    overallRatingsCount,
-    pendingOverallRating,
-    setPendingOverallRating,
-    isSubmittingOverall,
-    submitOverallRating,
-  } = useOverallRatings(spotId);
 
   // Add state for live update sliders
   const [liveNoise, setLiveNoise] = useState(
@@ -772,22 +763,6 @@ export default function SpotDetailScreen({ route, navigation }) {
               </Text>
             )}
 
-            {/* Hide ratings/alerts UI for private nooks */}
-            {!isPrivateNook && (
-              <>
-                <OverallRating
-                  userOverallRating={userOverallRating}
-                  averageOverallRating={averageOverallRating}
-                  overallRatingsCount={overallRatingsCount}
-                  pendingOverallRating={pendingOverallRating}
-                  setPendingOverallRating={setPendingOverallRating}
-                  isSubmittingOverall={isSubmittingOverall}
-                  onSubmit={submitOverallRating}
-                  themeColors={themeColors}
-                />
-              </>
-            )}
-
             {/* Tags */}
             <TagList tags={tags} themeColors={themeColors} />
 
@@ -1237,22 +1212,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                   </Text>
                 )}
               </Text>
-            )}
-
-            {/* Hide ratings/alerts UI for private nooks */}
-            {!isPrivateNook && (
-              <>
-                <OverallRating
-                  userOverallRating={userOverallRating}
-                  averageOverallRating={averageOverallRating}
-                  overallRatingsCount={overallRatingsCount}
-                  pendingOverallRating={pendingOverallRating}
-                  setPendingOverallRating={setPendingOverallRating}
-                  isSubmittingOverall={isSubmittingOverall}
-                  onSubmit={submitOverallRating}
-                  themeColors={themeColors}
-                />
-              </>
             )}
 
             {/* Tags */}
