@@ -229,39 +229,44 @@ export default function StudySpotsList({
               )
             )}
             {/* Image */}
-            <View
-              style={{
-                width: "100%",
-                height: 140,
-                backgroundColor: themeColors.darkGray || "#EEE",
-                borderRadius: 8,
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                marginBottom: 12,
-              }}
-            >
-              {item.cachedPhotoUri || item.photoUrl ? (
-                <Image
-                  source={{
-                    uri: item.cachedPhotoUri
-                      ? item.cachedPhotoUri
-                      : item.photoUrl,
-                  }}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    borderRadius: 8,
-                  }}
-                  resizeMode="cover"
-                />
-              ) : (
-                <Text
-                  style={{ color: themeColors.black, fontFamily: "CarosSoft" }}
-                >
-                  No Image
-                </Text>
-              )}
+            <View style={{ alignItems: "center", width: "100%" }}>
+              <View
+                style={{
+                  width: 330,
+                  height: 140,
+                  backgroundColor: themeColors.darkGray || "#EEE",
+                  borderRadius: 8,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                  marginBottom: 12,
+                }}
+              >
+                {item.cachedPhotoUri || item.photoUrl ? (
+                  <Image
+                    source={{
+                      uri: item.cachedPhotoUri
+                        ? item.cachedPhotoUri
+                        : item.photoUrl,
+                    }}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      borderRadius: 8,
+                    }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Text
+                    style={{
+                      color: themeColors.black,
+                      fontFamily: "CarosSoft",
+                    }}
+                  >
+                    No Image
+                  </Text>
+                )}
+              </View>
             </View>
             {/* Heart icon for favorite */}
             <TouchableOpacity

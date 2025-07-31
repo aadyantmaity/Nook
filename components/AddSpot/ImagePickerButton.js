@@ -28,13 +28,13 @@ export default function ImagePickerButton({
             fontFamily: "CarosSoft",
           }}
         >
-          {customImage ? "Change Image" : "Upload Image"}
+          {customImage && customImage.uri ? "Change Image" : "Upload Image"}
         </Text>
       </TouchableOpacity>
-      {customImage && (
+      {customImage && customImage.uri && (
         <View
           style={{
-            width: 350,
+            width: 330,
             height: 140,
             borderRadius: 8,
             overflow: "hidden",
