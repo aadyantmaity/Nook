@@ -13,6 +13,7 @@ import {
   Plus,
   ListChecks,
   ChartBar,
+  MapPin,
 } from "phosphor-react-native";
 
 export default function GroupInputBar({
@@ -26,6 +27,7 @@ export default function GroupInputBar({
   themeColors,
   onShowPollModal, // <-- add
   onShowTaskModal, // <-- add
+  onShowShareNookModal, // <-- add
 }) {
   const [showChooseModal, setShowChooseModal] = useState(false);
 
@@ -325,6 +327,7 @@ export default function GroupInputBar({
                 paddingHorizontal: 24,
                 width: "100%",
                 justifyContent: "center",
+                marginBottom: 12,
               }}
             >
               <ListChecks
@@ -341,6 +344,38 @@ export default function GroupInputBar({
                 }}
               >
                 Task
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                setShowChooseModal(false);
+                setTimeout(() => onShowShareNookModal?.(), 100);
+              }}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: themeColors.purple,
+                borderRadius: 8,
+                paddingVertical: 12,
+                paddingHorizontal: 24,
+                width: "100%",
+                justifyContent: "center",
+              }}
+            >
+              <MapPin
+                size={22}
+                color={themeColors.white}
+                style={{ marginRight: 10 }}
+              />
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                  fontSize: 16,
+                }}
+              >
+                Share Nook
               </Text>
             </TouchableOpacity>
           </View>

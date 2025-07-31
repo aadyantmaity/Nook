@@ -679,7 +679,7 @@ export default function AddSpotScreen({ navigation, route }) {
           {/* Tags */}
           <Text
             style={{
-              fontSize: 19,
+              fontSize: 20,
               marginBottom: 8,
               color: themeColors.black,
               fontFamily: "CarosSoft",
@@ -694,20 +694,14 @@ export default function AddSpotScreen({ navigation, route }) {
             themeColors={themeColors}
           />
 
-          {/* Favorite Toggle */}
-          <FavoriteToggle
-            isFavorite={isFavorite}
-            setIsFavorite={setIsFavorite}
-            themeColors={themeColors}
-          />
-
           {/* Only show private toggle for custom locations */}
           {!isUWBuilding && (
             <View
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                marginBottom: 12,
+                marginBottom: 36,
+                marginTop: 20,
               }}
             >
               <TouchableOpacity

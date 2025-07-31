@@ -56,6 +56,7 @@ import useFavorites from "../hooks/useFavorites";
 import PollModal from "../components/Groups/PollModal";
 import GroupTaskModal from "../components/Groups/GroupTaskModal";
 import GroupShareModal from "../components/SpotDetail/GroupShareModal";
+import ShareNookModal from "../components/Groups/ShareNookModal";
 
 export default function GroupDetailView({ navigation, route }) {
   const { groupId } = route.params;
@@ -92,6 +93,7 @@ export default function GroupDetailView({ navigation, route }) {
   // --- Modal state for Poll and Task ---
   const [showPollModal, setShowPollModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [showShareNookModal, setShowShareNookModal] = useState(false);
 
   // Fetch group info (remove adminUids)
   useEffect(() => {
@@ -761,10 +763,18 @@ export default function GroupDetailView({ navigation, route }) {
           groupId={groupId}
           themeColors={themeColors}
         />
+        {/* Share Nook Modal */}
+        <ShareNookModal
+          visible={showShareNookModal}
+          onClose={() => setShowShareNookModal(false)}
+          themeColors={themeColors}
+          groupId={groupId}
+          groupName={group?.name}
+        />
         {/* Messages and Input */}
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
           {/* Only use KeyboardAvoidingView if no modal is open */}
-          {!(showPollModal || showTaskModal) ? (
+          {!(showPollModal || showTaskModal || showShareNookModal) ? (
             <KeyboardAvoidingView
               style={{ flex: 1 }}
               behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -812,6 +822,7 @@ export default function GroupDetailView({ navigation, route }) {
                     themeColors={themeColors}
                     onShowPollModal={() => setShowPollModal(true)}
                     onShowTaskModal={() => setShowTaskModal(true)}
+                    onShowShareNookModal={() => setShowShareNookModal(true)}
                     groupId={group?.id}
                   />
                 </>
@@ -979,6 +990,7 @@ export default function GroupDetailView({ navigation, route }) {
                     themeColors={themeColors}
                     onShowPollModal={() => setShowPollModal(true)}
                     onShowTaskModal={() => setShowTaskModal(true)}
+                    onShowShareNookModal={() => setShowShareNookModal(true)}
                     groupId={group?.id}
                   />
                 </>
