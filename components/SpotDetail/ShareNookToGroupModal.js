@@ -98,6 +98,8 @@ export default function ShareNookToGroupModal({
         spotId,
         spotName: spot.buildingName || spot.name || "Nook",
         spotPhoto: spot.photoUrl || null,
+        appLink: `nook://spot/${spotId}`,
+        webLink: `https://nook-web.netlify.app/spot/${spotId}`,
         uid,
         senderName,
         senderProfilePic,

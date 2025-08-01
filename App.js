@@ -28,18 +28,18 @@ export const ThemeContext = React.createContext({
 });
 
 const linking = {
-  prefixes: [
-    "nook://",
-    "https://yourapp.page.link",
-    "exp://",
-    "exp://192.168.1.151:8081",
-  ],
+  prefixes: ["nook://", "https://nook-web.netlify.app"],
   config: {
     screens: {
       SpotDetail: {
-        path: "spot/:spotId",
+        path: "/spot/:spotId",
         parse: { spotId: (id) => id },
       },
+      GroupDetail: {
+        path: "/group/:groupId",
+        parse: { groupId: (id) => id },
+      },
+      Home: "/",
     },
   },
 };

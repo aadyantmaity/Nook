@@ -20,6 +20,7 @@
     "axios": "^1.10.0",
     "expo": "~53.0.9",
     "expo-app-loading": "^2.1.1",
+    "expo-clipboard": "^7.1.5",
     "expo-file-system": "~18.1.10",
     "expo-font": "~13.3.1",
     "expo-image-cropper": "^1.0.9",
