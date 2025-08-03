@@ -21,6 +21,8 @@ export default function useFavoriteSpots(targetUid = null) {
     try {
       const user = auth.currentUser;
       const uid = targetUid || user?.uid;
+      const isOwnProfile = !targetUid || targetUid === user?.uid;
+
       if (!uid) {
         setFavoriteSpots([]);
         setFavoriteSpotsLoading(false);
@@ -46,16 +48,18 @@ export default function useFavoriteSpots(targetUid = null) {
         const docSnap = spotDocs[i];
         if (docSnap.exists()) {
           const spotData = docSnap.data();
-          // --- Filter out private nooks not owned by user or not shared ---
+          // --- Filter out private nooks when viewing other users' profiles ---
           if (
             spotData.privateNook &&
-            spotData.addedBy !== uid &&
+            !isOwnProfile &&
+            spotData.addedBy !== user?.uid &&
             !(
               Array.isArray(spotData.sharedWith) &&
-              spotData.sharedWith.includes(uid)
+              spotData.sharedWith.includes(user?.uid)
             )
-          )
+          ) {
             continue;
+          }
           // Hide ratings for private nooks
           let ratings = spotData.privateNook
             ? {

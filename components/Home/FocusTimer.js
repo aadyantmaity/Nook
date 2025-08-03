@@ -65,6 +65,8 @@ export function FocusTimerView({ navigation }) {
     setWorkTimeSetting,
     breakTimeSetting,
     setBreakTimeSetting,
+    reflectionsEnabled,
+    setReflectionsEnabled,
     isLoading: profileLoading,
   } = useProfileData();
 
@@ -1086,29 +1088,6 @@ export function FocusTimerView({ navigation }) {
     }
   }, [sessionStart]);
 
-  const [reflectionsEnabled, setReflectionsEnabled] = useState(true);
-
-  // Load reflectionsEnabled from AsyncStorage on mount
-  useEffect(() => {
-    (async () => {
-      try {
-        const stored = await AsyncStorage.getItem(REFLECTIONS_ENABLED_KEY);
-        if (stored !== null) setReflectionsEnabled(stored === "true");
-      } catch {}
-    })();
-  }, []);
-
-  // Persist reflectionsEnabled to AsyncStorage
-  const persistReflectionsEnabled = async (val) => {
-    setReflectionsEnabled(val);
-    try {
-      await AsyncStorage.setItem(
-        REFLECTIONS_ENABLED_KEY,
-        val ? "true" : "false"
-      );
-    } catch {}
-  };
-
   // Make storage keys user-specific
   const user = auth.currentUser;
   const TIMER_STATE_KEY = user
@@ -1117,9 +1096,6 @@ export function FocusTimerView({ navigation }) {
   const TIMER_RUNNING_KEY = user
     ? `focusTimerRunningState_${user.uid}`
     : "focusTimerRunningState";
-  const REFLECTIONS_ENABLED_KEY = user
-    ? `focusReflectionsEnabled_${user.uid}`
-    : "focusReflectionsEnabled";
 
   // Clear user-specific data when user changes or logs out
   useEffect(() => {
@@ -1414,7 +1390,7 @@ export function FocusTimerView({ navigation }) {
               setTimer={setTimer}
               themeColors={themeColors}
               reflectionsEnabled={reflectionsEnabled}
-              setReflectionsEnabled={persistReflectionsEnabled}
+              setReflectionsEnabled={setReflectionsEnabled}
             />
             <GoalModal
               visible={showGoalModal}

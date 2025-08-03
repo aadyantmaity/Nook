@@ -71,6 +71,7 @@ export default function SignUpScreen({ navigation }) {
         breakTimeSetting: 5, // Add default break time setting
         mapType: "hybrid", // Add default map type
         mapRegion: "UW", // Add default map region
+        reflectionsEnabled: true, // Add default reflections setting
       });
 
       // Send email verification

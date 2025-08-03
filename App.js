@@ -8,16 +8,27 @@ import LoginScreen from "./screens/LoginScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import EditSpotScreen from "./screens/EditSpotScreen";
-import SearchScreen from "./screens/SearchScreen"; // <-- Add this import
+import SearchScreen from "./screens/SearchScreen";
 import { auth } from "./firebaseConfig";
-import { Appearance } from "react-native";
+import { Appearance, Platform } from "react-native";
 import { colors, getThemeColors } from "./constants/colors";
 import * as Linking from "expo-linking";
 import * as Font from "expo-font";
-import AppLoading from "expo-app-loading"; // Show while fonts are loading
-import GroupDetailView from "./screens/GroupDetailView"; // <-- add this import
-import GroupDetailsScreen from "./screens/GroupDetailsScreen"; // <-- add this import
+import AppLoading from "expo-app-loading";
+import GroupDetailView from "./screens/GroupDetailView";
+import GroupDetailsScreen from "./screens/GroupDetailsScreen";
 import { HomeViewProvider } from "./components/Home/HomeViewContext";
+import * as Notifications from "expo-notifications";
+
+// Configure notifications
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 const Stack = createStackNavigator();
 
@@ -35,9 +46,9 @@ const linking = {
         path: "/spot/:spotId",
         parse: { spotId: (id) => id },
       },
-      GroupDetail: {
-        path: "/group/:groupId",
-        parse: { groupId: (id) => id },
+      Profile: {
+        path: "/profile/:uid",
+        parse: { uid: (id) => id },
       },
       Home: "/",
     },
@@ -68,6 +79,19 @@ export default function App() {
       setIsAuthenticated(!!user);
     });
     return unsubscribe;
+  }, []);
+
+  // Configure notifications on app start
+  useEffect(() => {
+    const configureNotifications = async () => {
+      if (Platform.OS === "ios") {
+        // Request permissions for iOS
+        const { status } = await Notifications.requestPermissionsAsync();
+        console.log("Notification permission status:", status);
+      }
+    };
+
+    configureNotifications();
   }, []);
 
   if (!fontsLoaded || isAuthenticated === null) {

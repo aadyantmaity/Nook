@@ -26,13 +26,14 @@ import {
   DotsThreeVertical,
   Moon,
   Sun,
-  Gear, // <-- Add this import
+  ShareNetwork,
 } from "phosphor-react-native";
 import { ThemeContext } from "../App";
 import * as ImagePicker from "expo-image-picker";
 import { getLastUpdatedLabel } from "../utils/lastUpdatedLabel";
 import { onSnapshot, doc } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { auth } from "../firebaseConfig"; // <-- Add this import
 
 // Hooks and components
 import { useProfileData } from "../hooks/useProfileData";
@@ -45,9 +46,9 @@ import EditProfileModal from "../components/Profile/EditProfileModal";
 import FollowersModal from "../components/Profile/FollowersModal";
 import FollowingModal from "../components/Profile/FollowingModal";
 import UnfollowConfirmModal from "../components/Profile/UnfollowConfirmModal";
-import { auth } from "../firebaseConfig";
 import { FlatList } from "react-native-gesture-handler";
 import GeneralReportModal from "../components/Home/GeneralReportModal";
+import ProfileShareModal from "../components/Profile/ProfileShareModal"; // <-- Add this import
 
 export default function ProfileScreen({ navigation, route }) {
   const themeCtx = useContext(ThemeContext);
@@ -55,7 +56,7 @@ export default function ProfileScreen({ navigation, route }) {
   const isDarkMode = themeCtx?.isDarkMode ?? false;
   const setIsDarkMode = themeCtx?.setIsDarkMode;
 
-  // --- Use uid from route.params if present ---
+  // --- Use uid from route.params if present (including from deep linking) ---
   const targetUid = route?.params?.uid || null;
   const currentUserUid = auth.currentUser?.uid;
 
@@ -113,6 +114,7 @@ export default function ProfileScreen({ navigation, route }) {
   const [menuVisible, setMenuVisible] = useState(false);
   const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
   const [resetPasswordInfo, setResetPasswordInfo] = useState(""); // Info message
+  const [showProfileShare, setShowProfileShare] = useState(false); // <-- Add this state
 
   // Refresh handler
   const onRefresh = async () => {
@@ -140,8 +142,6 @@ export default function ProfileScreen({ navigation, route }) {
         const keysToRemove = [
           `focusTimerState_${user.uid}`,
           `focusTimerRunningState_${user.uid}`,
-          `focusReflectionsEnabled_${user.uid}`,
-          `focusGoalState_${user.uid}`,
           `nookHomeView`,
           `nookCommunityTab`,
         ];
@@ -375,7 +375,7 @@ export default function ProfileScreen({ navigation, route }) {
         >
           <ArrowLeft size={24} color={themeColors.purple} />
         </TouchableOpacity>
-        {/* Only show Gear/settings icon if own profile */}
+        {/* Only show DotsThreeVertical/settings icon if own profile */}
         {isOwnProfile && (
           <TouchableOpacity
             style={{
@@ -386,7 +386,7 @@ export default function ProfileScreen({ navigation, route }) {
             accessibilityLabel="Profile Menu"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Gear size={26} color={themeColors.purple} />
+            <DotsThreeVertical size={26} color={themeColors.purple} />
           </TouchableOpacity>
         )}
       </View>
@@ -425,6 +425,34 @@ export default function ProfileScreen({ navigation, route }) {
             }}
             onStartShouldSetResponder={() => true}
           >
+            {/* Share Profile Option */}
+            <TouchableOpacity
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingVertical: 12,
+                paddingHorizontal: 18,
+              }}
+              onPress={() => {
+                setMenuVisible(false);
+                setShowProfileShare(true);
+              }}
+            >
+              <ShareNetwork
+                size={20}
+                color={themeColors.purple}
+                style={{ marginRight: 10 }}
+              />
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontFamily: "CarosSoft",
+                  fontSize: 16,
+                }}
+              >
+                Share Profile
+              </Text>
+            </TouchableOpacity>
             {/* Report Option */}
             <TouchableOpacity
               style={{
@@ -667,78 +695,80 @@ export default function ProfileScreen({ navigation, route }) {
               </Text>
             </TouchableOpacity>
           </View>
-          {/* Study Stats */}
-          <View
-            style={{
-              width: "100%",
-              borderRadius: 12,
-              padding: 14,
-              marginTop: 18,
-              marginBottom: 8,
-              alignItems: "center",
-            }}
-          >
-            <Text
+          {/* Study Stats - Only show for own profile */}
+          {isOwnProfile && (
+            <View
               style={{
-                fontWeight: "bold",
-                fontSize: 16,
-                color: themeColors.purple,
-                marginBottom: 6,
-                fontFamily: "CarosSoft",
+                width: "100%",
+                borderRadius: 12,
+                padding: 14,
+                marginTop: 18,
+                marginBottom: 8,
+                alignItems: "center",
               }}
             >
-              Lifetime Focus Mode Summary
-            </Text>
-            <Text
-              style={{
-                color: themeColors.black,
-                fontSize: 15,
-                marginBottom: 2,
-                fontFamily: "CarosSoft",
-              }}
-            >
-              Sessions logged:{" "}
               <Text
                 style={{
                   fontWeight: "bold",
+                  fontSize: 16,
                   color: themeColors.purple,
+                  marginBottom: 6,
                   fontFamily: "CarosSoft",
                 }}
               >
-                {studyStats.totalSessions}
+                Lifetime Focus Mode Summary
               </Text>
-            </Text>
-            <Text
-              style={{
-                color: themeColors.black,
-                fontSize: 15,
-                marginBottom: 2,
-                fontFamily: "CarosSoft",
-              }}
-            >
-              Time focused:{" "}
               <Text
                 style={{
-                  fontWeight: "bold",
-                  color: themeColors.purple,
+                  color: themeColors.black,
+                  fontSize: 15,
+                  marginBottom: 2,
                   fontFamily: "CarosSoft",
                 }}
               >
-                {(() => {
-                  const ms = studyStats.totalTimeStudied || 0;
-                  const totalSeconds = Math.floor(ms / 1000);
-                  const hours = Math.floor(totalSeconds / 3600);
-                  const minutes = Math.floor((totalSeconds % 3600) / 60);
-                  const seconds = totalSeconds % 60;
-                  let out = [];
-                  if (hours > 0) out.push(`${hours}h`);
-                  if (minutes > 0 || hours > 0) out.push(`${minutes}m`);
-                  out.push(`${seconds}s`);
-                  return out.join(" ");
-                })()}
+                Sessions logged:{" "}
+                <Text
+                  style={{
+                    fontWeight: "bold",
+                    color: themeColors.purple,
+                    fontFamily: "CarosSoft",
+                  }}
+                >
+                  {studyStats.totalSessions}
+                </Text>
               </Text>
-            </Text>
-          </View>
+              <Text
+                style={{
+                  color: themeColors.black,
+                  fontSize: 15,
+                  marginBottom: 2,
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                Time focused:{" "}
+                <Text
+                  style={{
+                    fontWeight: "bold",
+                    color: themeColors.purple,
+                    fontFamily: "CarosSoft",
+                  }}
+                >
+                  {(() => {
+                    const ms = studyStats.totalTimeStudied || 0;
+                    const totalSeconds = Math.floor(ms / 1000);
+                    const hours = Math.floor(totalSeconds / 3600);
+                    const minutes = Math.floor((totalSeconds % 3600) / 60);
+                    const seconds = totalSeconds % 60;
+                    let out = [];
+                    if (hours > 0) out.push(`${hours}h`);
+                    if (minutes > 0 || hours > 0) out.push(`${minutes}m`);
+                    out.push(`${seconds}s`);
+                    return out.join(" ");
+                  })()}
+                </Text>
+              </Text>
+            </View>
+          )}
           <View
             style={[styles.divider, { backgroundColor: themeColors.gray }]}
           />
@@ -868,6 +898,21 @@ export default function ProfileScreen({ navigation, route }) {
                 >
                   No favorites yet.
                 </Text>
+              ) : favoriteSpots.length === 1 ? (
+                <View style={{ alignItems: "center", paddingHorizontal: 16 }}>
+                  <FavoriteSpotCard
+                    spot={favoriteSpots[0]}
+                    cachedImage={cachedFavoriteSpotImages[favoriteSpots[0].id]}
+                    themeColors={themeColors}
+                    getLastUpdatedLabel={getLastUpdatedLabel}
+                    onPress={() =>
+                      navigation.navigate("SpotDetail", {
+                        spotId: favoriteSpots[0].id,
+                      })
+                    }
+                    style={{ width: "100%" }}
+                  />
+                </View>
               ) : (
                 <FlatList
                   data={favoriteSpots}
@@ -893,42 +938,6 @@ export default function ProfileScreen({ navigation, route }) {
           )}
         </View>
         {/* Buttons */}
-        {/* {isOwnProfile && !isLoading && (
-          <View style={styles.optionsContainer}>
-            <View style={styles.buttonRow}>
-              <TouchableOpacity
-                style={[
-                  styles.logoutButton,
-                  { backgroundColor: themeColors.red },
-                ]}
-                onPress={handleLogout}
-              >
-                <SignOut size={20} color={themeColors.white} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.editButton,
-                  { backgroundColor: themeColors.purple },
-                ]}
-                onPress={() => {
-                  setEditedFirstName(
-                    firstName !== "No First Name" ? firstName : ""
-                  );
-                  setEditedLastName(
-                    lastName !== "No Last Name" ? lastName : ""
-                  );
-                  setEditedGradYear(
-                    userGradYear !== "No Grad Year" ? userGradYear : ""
-                  );
-                  setIsModalVisible(true);
-                  setTimeout(() => setEditedProfilePic(null), 0);
-                }}
-              >
-                <PencilSimple size={20} color={themeColors.white} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        )} */}
         {/* Only show edit button */}
         {isOwnProfile && !isLoading && (
           <View style={styles.optionsContainer}>
@@ -1051,7 +1060,18 @@ export default function ProfileScreen({ navigation, route }) {
         onConfirm={confirmUnfollow}
         themeColors={themeColors}
       />
-      {/* --- Add GeneralReportModal at the end --- */}
+      {/* --- Add ProfileShareModal at the end --- */}
+      <ProfileShareModal
+        visible={showProfileShare}
+        onClose={() => setShowProfileShare(false)}
+        user={{
+          uid: currentUserUid,
+          firstName,
+          lastName,
+          profilePic,
+        }}
+        themeColors={themeColors}
+      />
       <GeneralReportModal
         visible={showGeneralReport}
         onClose={() => setShowGeneralReport(false)}
@@ -1267,3 +1287,5 @@ const styles = StyleSheet.create({
     fontFamily: "CarosSoft",
   },
 });
+// backgroundColor: colors.white, // Remove, handled inline
+// backgroundColor: colors.white, // Remove, handled inline

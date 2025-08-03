@@ -20,7 +20,7 @@ export default function PomodoroSettingsModal({
   isBreak,
   setTimer,
   themeColors,
-  reflectionsEnabled = true,
+  reflectionsEnabled,
   setReflectionsEnabled,
 }) {
   const [workInput, setWorkInput] = useState(String(workTimeSetting));

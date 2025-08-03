@@ -1,6 +1,6 @@
 import React from "react";
 import { TouchableOpacity, View, Text, Image } from "react-native";
-import { MapPin, Star } from "phosphor-react-native";
+import { MapPin, Star, LockKey } from "phosphor-react-native";
 
 export default function FavoriteSpotCard({
   spot,
@@ -8,6 +8,7 @@ export default function FavoriteSpotCard({
   themeColors,
   onPress,
   getLastUpdatedLabel,
+  style,
 }) {
   // Use the same label logic as RatingsDisplay
   function getNoiseLabel(avg) {
@@ -41,23 +42,26 @@ export default function FavoriteSpotCard({
 
   return (
     <TouchableOpacity
-      style={{
-        backgroundColor: themeColors.white,
-        borderRadius: 12,
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        flexDirection: "row",
-        alignItems: "center",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 3,
-        elevation: 2,
-        borderColor: themeColors.black,
-        borderWidth: 0.5,
-        position: "relative",
-        marginRight: 16,
-      }}
+      style={[
+        {
+          backgroundColor: themeColors.white,
+          borderRadius: 12,
+          paddingHorizontal: 14,
+          paddingVertical: 8,
+          flexDirection: "row",
+          alignItems: "center",
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 3,
+          elevation: 2,
+          borderColor: themeColors.black,
+          borderWidth: 0.5,
+          position: "relative",
+          marginRight: 16,
+        },
+        style,
+      ]}
       onPress={onPress}
       activeOpacity={0.85}
     >
@@ -98,43 +102,48 @@ export default function FavoriteSpotCard({
         </View>
       )}
       <View style={{ flex: 1 }}>
-        <Text
+        <View
           style={{
-            fontSize: 18,
-            fontWeight: "bold",
-            color: themeColors.black,
+            flexDirection: "row",
+            alignItems: "center",
             marginBottom: 6,
-            fontFamily: "CarosSoft",
           }}
         >
-          {spot.buildingName}
-          {spot.roomNumber && (
-            <Text
-              style={{
-                fontSize: 18,
-                color: themeColors.black,
-                fontWeight: "bold",
-                fontFamily: "CarosSoft",
-              }}
-            >
-              {" - Floor "}
-              {spot.roomNumber}
-            </Text>
-          )}
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: "bold",
+              color: themeColors.black,
+              fontFamily: "CarosSoft",
+            }}
+          >
+            {spot.buildingName}
+            {spot.roomNumber && (
+              <Text
+                style={{
+                  fontSize: 18,
+                  color: themeColors.black,
+                  fontWeight: "bold",
+                  fontFamily: "CarosSoft",
+                }}
+              >
+                {" - Floor "}
+                {spot.roomNumber}
+              </Text>
+            )}
+          </Text>
           {spot.privateNook && (
-            <Text
+            <LockKey
+              size={18}
+              color={themeColors.purple}
+              weight="fill"
               style={{
-                fontSize: 18,
-                color: themeColors.black,
-                fontWeight: "bold",
                 marginLeft: 8,
-                fontFamily: "CarosSoft",
+                alignSelf: "center",
               }}
-            >
-              {" \u2022 Private"}
-            </Text>
+            />
           )}
-        </Text>
+        </View>
         <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
           {spot.tags && spot.tags.length > 0
             ? [...spot.tags]
