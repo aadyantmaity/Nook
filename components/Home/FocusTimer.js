@@ -50,6 +50,7 @@ import { TimerControls } from "./FocusTimerComponents/TimerControls";
 import { FocusGoalCard } from "./FocusTimerComponents/FocusGoalCard";
 import { useGoal, GoalModal, GOAL_STATE_KEY } from "./FocusGoalComponents";
 import { useProfileData } from "../../hooks/useProfileData"; // <-- add this import
+import * as Notifications from "expo-notifications";
 
 // Add these constants at the top (after imports)
 const POMODORO_SETTINGS_KEY = "focusPomodoroSettings";
@@ -89,6 +90,9 @@ export function FocusTimerView({ navigation }) {
 
   // Auto-start next session state
   const [autoStartNext, setAutoStartNext] = useState(false);
+
+  // Notification state
+  const [currentNotificationId, setCurrentNotificationId] = useState(null);
 
   // --- Goal Feature State ---
   const {
@@ -473,6 +477,13 @@ export function FocusTimerView({ navigation }) {
     // eslint-disable-next-line
   }, [isRunning]);
 
+  // Cleanup notifications when component unmounts
+  useEffect(() => {
+    return () => {
+      cancelTimerNotification();
+    };
+  }, []);
+
   // Save timer state when paused or before leaving the screen
   useEffect(() => {
     const saveTimerState = async () => {
@@ -499,6 +510,67 @@ export function FocusTimerView({ navigation }) {
     try {
       await AsyncStorage.removeItem(TIMER_STATE_KEY);
     } catch {}
+  };
+
+  // --- Notification Helper Functions ---
+
+  // Cancel any existing timer notification
+  const cancelTimerNotification = async () => {
+    if (currentNotificationId) {
+      try {
+        // Clear the timeout if it's a timeout ID
+        clearTimeout(currentNotificationId);
+        setCurrentNotificationId(null);
+      } catch (error) {
+        console.log("Error canceling notification:", error);
+      }
+    }
+  };
+
+  // Schedule notification for timer completion
+  const scheduleTimerNotification = async (
+    remainingSeconds,
+    isBreakSession
+  ) => {
+    try {
+      // Cancel any existing notification first
+      await cancelTimerNotification();
+
+      if (remainingSeconds <= 0) return;
+
+      const notificationTitle = isBreakSession
+        ? "Break Complete! 🎉"
+        : "Work Session Complete! 🎉";
+      const notificationBody = isBreakSession
+        ? "Your break is finished. Time to get back to work!"
+        : "Great job! Your work session is complete. Take a break!";
+
+      // Use setTimeout to ensure the notification is sent at the exact time
+      const timeoutId = setTimeout(async () => {
+        try {
+          const notificationId = await Notifications.scheduleNotificationAsync({
+            content: {
+              title: notificationTitle,
+              body: notificationBody,
+              data: { type: "timer_complete", isBreak: isBreakSession },
+              sound: true,
+            },
+            trigger: null, // Send immediately when setTimeout fires
+          });
+          console.log("Timer notification sent after delay");
+        } catch (error) {
+          console.log("Error sending delayed timer notification:", error);
+        }
+      }, remainingSeconds * 1000);
+
+      // Store the timeout ID so we can cancel it if needed
+      setCurrentNotificationId(timeoutId);
+      console.log(
+        `Timer notification scheduled for ${remainingSeconds} seconds from now`
+      );
+    } catch (error) {
+      console.log("Error scheduling timer notification:", error);
+    }
   };
 
   // Helper to add a session to Firestore and update stats immediately
@@ -576,6 +648,9 @@ export function FocusTimerView({ navigation }) {
     timerStartRef.current = null;
     await clearTimerState();
 
+    // Cancel the current notification since timer has ended
+    await cancelTimerNotification();
+
     if (sessionStart) {
       if (!isBreak) {
         // Always use full Pomodoro duration for completed sessions
@@ -615,27 +690,32 @@ export function FocusTimerView({ navigation }) {
               duration: breakTimeSetting * 60,
             };
             setIsRunning(true);
+            // Reset session ended ref for new break session
+            sessionEndedRef.current = false;
+            // Schedule notification for break completion
+            scheduleTimerNotification(breakTimeSetting * 60, true);
           }, 500);
         }
         return;
       } else {
-        // If break ends, just transition to Pomodoro, no reflection
+        // If break ends, automatically start next work session (like work → break transition)
         setSessionStart(null);
         setIsBreak(false);
         setTimer(workTimeSetting * 60);
-        Alert.alert("Break over!", "Ready for another Pomodoro?");
-        if (autoStartNext) {
-          setTimeout(() => {
-            if (!showNoteModal) {
-              setIsRunning(true);
-              setSessionStart(Timestamp.now());
-              timerStartRef.current = {
-                start: Date.now(),
-                duration: workTimeSetting * 60,
-              };
-            }
-          }, 1200);
-        }
+
+        // Automatically start the next work session after a short delay
+        setTimeout(() => {
+          setIsRunning(true);
+          setSessionStart(Timestamp.now());
+          timerStartRef.current = {
+            start: Date.now(),
+            duration: workTimeSetting * 60,
+          };
+          // Reset session ended ref for new work session
+          sessionEndedRef.current = false;
+          // Schedule notification for work session completion
+          scheduleTimerNotification(workTimeSetting * 60, false);
+        }, 500);
         return;
       }
     }
@@ -657,25 +737,30 @@ export function FocusTimerView({ navigation }) {
               start: Date.now(),
               duration: breakTimeSetting * 60,
             };
+            // Reset session ended ref for new break session
+            sessionEndedRef.current = false;
+            // Schedule notification for break completion
+            scheduleTimerNotification(breakTimeSetting * 60, true);
           }
         }, 1200);
       }
     } else {
       setIsBreak(false);
       setTimer(workTimeSetting * 60);
-      Alert.alert("Break over!", "Ready for another Pomodoro?");
-      if (autoStartNext) {
-        setTimeout(() => {
-          if (!showNoteModal) {
-            setIsRunning(true);
-            setSessionStart(Timestamp.now());
-            timerStartRef.current = {
-              start: Date.now(),
-              duration: workTimeSetting * 60,
-            };
-          }
-        }, 1200);
-      }
+
+      // Automatically start the next work session after a short delay
+      setTimeout(() => {
+        setIsRunning(true);
+        setSessionStart(Timestamp.now());
+        timerStartRef.current = {
+          start: Date.now(),
+          duration: workTimeSetting * 60,
+        };
+        // Reset session ended ref for new work session
+        sessionEndedRef.current = false;
+        // Schedule notification for work session completion
+        scheduleTimerNotification(workTimeSetting * 60, false);
+      }, 500);
     }
   };
 
@@ -684,6 +769,9 @@ export function FocusTimerView({ navigation }) {
     setIsRunning(false);
     timerStartRef.current = null;
     await clearTimerState();
+
+    // Cancel notification when stopped
+    await cancelTimerNotification();
 
     if (sessionStart) {
       const now = Timestamp.now();
@@ -865,6 +953,12 @@ export function FocusTimerView({ navigation }) {
     };
     setTimer(duration);
     pausedTimeRef.current = null; // Clear after starting
+
+    // Reset session ended ref when starting new session
+    sessionEndedRef.current = false;
+
+    // Schedule notification for timer completion
+    scheduleTimerNotification(duration, isBreak);
   };
 
   // Pause handler: recalculate remaining time and persist
@@ -879,6 +973,9 @@ export function FocusTimerView({ navigation }) {
     }
     timerStartRef.current = null;
     setIsRunning(false);
+
+    // Cancel notification when paused
+    cancelTimerNotification();
   };
 
   // --- Save timer state on blur (tab switch/navigation away) ---
