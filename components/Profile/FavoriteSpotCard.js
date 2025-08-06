@@ -1,45 +1,14 @@
 import React from "react";
 import { TouchableOpacity, View, Text, Image } from "react-native";
-import { MapPin, Star, LockKey } from "phosphor-react-native";
+import { MapPin, LockKey } from "phosphor-react-native";
 
 export default function FavoriteSpotCard({
   spot,
   cachedImage,
   themeColors,
   onPress,
-  getLastUpdatedLabel,
   style,
 }) {
-  // Use the same label logic as RatingsDisplay
-  function getNoiseLabel(avg) {
-    if (avg === "N/A" || avg === "No rating yet" || avg == null) return "N/A";
-    if (typeof avg === "string") {
-      const normalized = avg.trim().toLowerCase();
-      if (["silent", "buzz", "loud"].includes(normalized)) {
-        return avg.charAt(0).toUpperCase() + avg.slice(1).toLowerCase();
-      }
-      avg = parseFloat(avg);
-    }
-    if (isNaN(avg)) return "N/A";
-    if (avg < 0.5) return "Silent";
-    if (avg < 1.5) return "Buzz";
-    return "Loud";
-  }
-  function getCrowdLabel(avg) {
-    if (avg === "N/A" || avg === "No rating yet" || avg == null) return "N/A";
-    if (typeof avg === "string") {
-      const normalized = avg.trim().toLowerCase();
-      if (["empty", "light", "busy"].includes(normalized)) {
-        return avg.charAt(0).toUpperCase() + avg.slice(1).toLowerCase();
-      }
-      avg = parseFloat(avg);
-    }
-    if (isNaN(avg)) return "N/A";
-    if (avg < 0.5) return "Empty";
-    if (avg < 1.5) return "Light";
-    return "Busy";
-  }
-
   return (
     <TouchableOpacity
       style={[
@@ -68,7 +37,7 @@ export default function FavoriteSpotCard({
       {spot.photoUrl ? (
         <View
           style={{
-            width: 75,
+            width: 95,
             height: 75,
             borderRadius: 8,
             overflow: "hidden",
@@ -91,7 +60,7 @@ export default function FavoriteSpotCard({
           style={{
             backgroundColor: themeColors.purple,
             borderRadius: 8,
-            width: 75,
+            width: 95,
             height: 75,
             alignItems: "center",
             justifyContent: "center",
@@ -106,7 +75,6 @@ export default function FavoriteSpotCard({
           style={{
             flexDirection: "row",
             alignItems: "center",
-            marginBottom: 6,
           }}
         >
           <Text
@@ -144,125 +112,6 @@ export default function FavoriteSpotCard({
             />
           )}
         </View>
-        <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-          {spot.tags && spot.tags.length > 0
-            ? [...spot.tags]
-                .sort((a, b) => String(a).localeCompare(String(b)))
-                .slice(0, 3)
-                .map((tag, idx) => (
-                  <View
-                    key={idx}
-                    style={{
-                      backgroundColor: themeColors.purple,
-                      borderRadius: 12,
-                      paddingHorizontal: 8,
-                      paddingVertical: 2,
-                      marginRight: 6,
-                      marginTop: 2,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: themeColors.white,
-                        fontSize: 11,
-                        fontWeight: "bold",
-                        fontFamily: "CarosSoft",
-                      }}
-                    >
-                      {tag}
-                    </Text>
-                  </View>
-                ))
-            : null}
-          {spot.tags && spot.tags.length > 3 && (
-            <Text
-              style={{
-                color: themeColors.purple,
-                fontSize: 11,
-                fontWeight: "bold",
-                marginTop: 2,
-                fontFamily: "CarosSoft",
-              }}
-            >
-              +{spot.tags.length - 3} more
-            </Text>
-          )}
-        </View>
-        <View style={{ flexDirection: "row", marginTop: 6 }}>
-          <Text
-            style={{
-              color: themeColors.purple,
-              fontSize: 13,
-              fontWeight: "bold",
-              marginRight: 12,
-              fontFamily: "CarosSoft",
-            }}
-          >
-            Noise: {getNoiseLabel(spot.ratings?.noise)}
-          </Text>
-          <Text
-            style={{
-              color: themeColors.purple,
-              fontSize: 13,
-              fontWeight: "bold",
-              fontFamily: "CarosSoft",
-            }}
-          >
-            Crowd: {getCrowdLabel(spot.ratings?.crowd)}
-          </Text>
-        </View>
-        {/* Table availability for Odegaard */}
-        {(spot.buildingName || spot.name || "")
-          .toLowerCase()
-          .includes("odegaard") &&
-          spot.ratings &&
-          typeof spot.ratings.tableAvailability !== "undefined" && (
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginTop: 4,
-                marginBottom: 4,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 13,
-                  color: themeColors.purple,
-                  fontWeight: "bold",
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                Tables Open:{" "}
-                {(() => {
-                  switch (spot.ratings.tableAvailability) {
-                    case 0:
-                      return "0";
-                    case 1:
-                      return "1-3";
-                    case 2:
-                      return "4-6";
-                    case 3:
-                      return "7+";
-                    default:
-                      return "N/A";
-                  }
-                })()}
-              </Text>
-            </View>
-          )}
-
-        <Text
-          style={{
-            fontSize: 11,
-            color: themeColors.darkGray,
-            marginTop: 2,
-            textAlign: "right",
-            fontFamily: "CarosSoft",
-          }}
-        >
-          {getLastUpdatedLabel(spot.ratings || {})}
-        </Text>
       </View>
     </TouchableOpacity>
   );

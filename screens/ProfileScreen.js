@@ -27,7 +27,6 @@ import {
   Moon,
   Sun,
   ShareNetwork,
-  Bell,
 } from "phosphor-react-native";
 import { ThemeContext } from "../App";
 import * as ImagePicker from "expo-image-picker";
@@ -35,12 +34,11 @@ import { getLastUpdatedLabel } from "../utils/lastUpdatedLabel";
 import { onSnapshot, doc } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { auth } from "../firebaseConfig"; // <-- Add this import
-import * as Notifications from "expo-notifications";
 
 // Hooks and components
 import { useProfileData } from "../hooks/useProfileData";
 import useFavoriteSpots from "../hooks/useFavoriteSpots";
-import useStudyStats from "../hooks/useStudyStats";
+
 import ProfilePicture from "../components/Profile/ProfilePicture";
 import FavoriteSpotCard from "../components/Profile/FavoriteSpotCard";
 import LogoutModal from "../components/Profile/LogoutModal";
@@ -95,7 +93,6 @@ export default function ProfileScreen({ navigation, route }) {
   } = useFavoriteSpots(targetUid);
 
   // Study stats
-  const { studyStats, fetchStudyStats } = useStudyStats(targetUid);
 
   // UI state
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -123,7 +120,7 @@ export default function ProfileScreen({ navigation, route }) {
     setRefreshing(true);
     await fetchUserData();
     await fetchFavoriteSpots();
-    await fetchStudyStats();
+
     setRefreshing(false);
   };
 
@@ -141,12 +138,7 @@ export default function ProfileScreen({ navigation, route }) {
     try {
       const user = auth.currentUser;
       if (user) {
-        const keysToRemove = [
-          `focusTimerState_${user.uid}`,
-          `focusTimerRunningState_${user.uid}`,
-          `nookHomeView`,
-          `nookCommunityTab`,
-        ];
+        const keysToRemove = [`nookHomeView`, `nookCommunityTab`];
 
         // Also remove any check in cooldowns for this user
         const allKeys = await AsyncStorage.getAllKeys();
@@ -352,48 +344,6 @@ export default function ProfileScreen({ navigation, route }) {
     setTimeout(() => setResetPasswordInfo(""), 4000);
   };
 
-  // --- Test Notification Handler ---
-  const handleTestNotification = async () => {
-    try {
-      // First, cancel any existing test notifications
-      const scheduledNotifications =
-        await Notifications.getAllScheduledNotificationsAsync();
-      const testNotifications = scheduledNotifications.filter(
-        (notification) => notification.content.data?.type === "test"
-      );
-
-      for (const notification of testNotifications) {
-        await Notifications.cancelScheduledNotificationAsync(
-          notification.identifier
-        );
-      }
-
-      setResetPasswordInfo("Test notification scheduled! Check in 3 seconds.");
-
-      // Use setTimeout to ensure the notification is sent after exactly 3 seconds
-      setTimeout(async () => {
-        try {
-          await Notifications.scheduleNotificationAsync({
-            content: {
-              title: "Test Notification",
-              body: "This is a test notification from Nook! 🎉",
-              data: { type: "test" },
-              sound: true,
-            },
-            trigger: null, // Send immediately when setTimeout fires
-          });
-          console.log("Test notification sent after 3 second delay");
-        } catch (error) {
-          console.log("Error sending delayed notification:", error);
-        }
-      }, 5000);
-    } catch (error) {
-      console.log("Error scheduling notification:", error);
-      setResetPasswordInfo("Failed to schedule test notification.");
-    }
-    setTimeout(() => setResetPasswordInfo(""), 4000);
-  };
-
   if (isLoading) return null;
 
   return (
@@ -561,36 +511,7 @@ export default function ProfileScreen({ navigation, route }) {
                 {isDarkMode ? "Light Mode" : "Dark Mode"}
               </Text>
             </TouchableOpacity>
-            {/* Test Notification */}
-            {isOwnProfile && (
-              <TouchableOpacity
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingVertical: 12,
-                  paddingHorizontal: 18,
-                }}
-                onPress={async () => {
-                  setMenuVisible(false);
-                  await handleTestNotification();
-                }}
-              >
-                <Bell
-                  size={20}
-                  color={themeColors.purple}
-                  style={{ marginRight: 10 }}
-                />
-                <Text
-                  style={{
-                    color: themeColors.purple,
-                    fontFamily: "CarosSoft",
-                    fontSize: 16,
-                  }}
-                >
-                  Test Notification
-                </Text>
-              </TouchableOpacity>
-            )}
+
             {/* Reset Password */}
             {isOwnProfile && (
               <TouchableOpacity
@@ -622,6 +543,7 @@ export default function ProfileScreen({ navigation, route }) {
                 </Text>
               </TouchableOpacity>
             )}
+
             {/* Log Out */}
             {isOwnProfile && (
               <TouchableOpacity
@@ -670,6 +592,7 @@ export default function ProfileScreen({ navigation, route }) {
           </Text>
         </View>
       ) : null}
+
       <ScrollView
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -769,80 +692,7 @@ export default function ProfileScreen({ navigation, route }) {
               </Text>
             </TouchableOpacity>
           </View>
-          {/* Study Stats - Only show for own profile */}
-          {isOwnProfile && (
-            <View
-              style={{
-                width: "100%",
-                borderRadius: 12,
-                padding: 14,
-                marginTop: 18,
-                marginBottom: 8,
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  fontWeight: "bold",
-                  fontSize: 16,
-                  color: themeColors.purple,
-                  marginBottom: 6,
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                Lifetime Focus Mode Summary
-              </Text>
-              <Text
-                style={{
-                  color: themeColors.black,
-                  fontSize: 15,
-                  marginBottom: 2,
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                Sessions logged:{" "}
-                <Text
-                  style={{
-                    fontWeight: "bold",
-                    color: themeColors.purple,
-                    fontFamily: "CarosSoft",
-                  }}
-                >
-                  {studyStats.totalSessions}
-                </Text>
-              </Text>
-              <Text
-                style={{
-                  color: themeColors.black,
-                  fontSize: 15,
-                  marginBottom: 2,
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                Time focused:{" "}
-                <Text
-                  style={{
-                    fontWeight: "bold",
-                    color: themeColors.purple,
-                    fontFamily: "CarosSoft",
-                  }}
-                >
-                  {(() => {
-                    const ms = studyStats.totalTimeStudied || 0;
-                    const totalSeconds = Math.floor(ms / 1000);
-                    const hours = Math.floor(totalSeconds / 3600);
-                    const minutes = Math.floor((totalSeconds % 3600) / 60);
-                    const seconds = totalSeconds % 60;
-                    let out = [];
-                    if (hours > 0) out.push(`${hours}h`);
-                    if (minutes > 0 || hours > 0) out.push(`${minutes}m`);
-                    out.push(`${seconds}s`);
-                    return out.join(" ");
-                  })()}
-                </Text>
-              </Text>
-            </View>
-          )}
+
           <View
             style={[styles.divider, { backgroundColor: themeColors.gray }]}
           />
@@ -978,13 +828,12 @@ export default function ProfileScreen({ navigation, route }) {
                     spot={favoriteSpots[0]}
                     cachedImage={cachedFavoriteSpotImages[favoriteSpots[0].id]}
                     themeColors={themeColors}
-                    getLastUpdatedLabel={getLastUpdatedLabel}
                     onPress={() =>
                       navigation.navigate("SpotDetail", {
                         spotId: favoriteSpots[0].id,
                       })
                     }
-                    style={{ width: "100%" }}
+                    style={{ width: "100%", marginRight: 0 }}
                   />
                 </View>
               ) : (
@@ -999,11 +848,10 @@ export default function ProfileScreen({ navigation, route }) {
                       spot={item}
                       cachedImage={cachedFavoriteSpotImages[item.id]}
                       themeColors={themeColors}
-                      getLastUpdatedLabel={getLastUpdatedLabel}
                       onPress={() =>
                         navigation.navigate("SpotDetail", { spotId: item.id })
                       }
-                      style={{ marginRight: 12, width: 200 }}
+                      style={{ marginRight: 12, width: 280 }}
                     />
                   )}
                 />

@@ -31,13 +31,7 @@ const slides = [
     image:
       "https://res.cloudinary.com/dxnd4aryf/image/upload/w_900,h_1200,c_fit,f_auto/v1752134055/mloewartesijk3mv7knr.png",
   },
-  {
-    title: "Focus Timer",
-    description:
-      "Use the built-in timer to boost productivity and log sessions.",
-    image:
-      "https://res.cloudinary.com/dxnd4aryf/image/upload/w_900,h_1200,c_fit,f_auto/v1752134242/qd52por8c61peefsu1rz.png",
-  },
+
   {
     title: "Community",
     description:

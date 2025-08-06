@@ -1,7 +1,6 @@
 import React from "react";
 import { View, TouchableOpacity, Text, Dimensions } from "react-native";
 import {
-  Timer,
   House,
   MagnifyingGlass,
   Chats,
@@ -10,13 +9,11 @@ import {
 } from "phosphor-react-native";
 
 const TAB_ICONS = {
-  focus: Timer,
   home: House,
   social: Chats,
 };
 
 const TAB_LABELS = {
-  focus: "Focus",
   home: "Home",
   social: "Groups",
 };

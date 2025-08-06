@@ -39,7 +39,6 @@ import {
   MagnifyingGlass,
   ExclamationMark,
   Rows, // <-- Use Rows icon for list view
-  Timer,
   Warning,
   List,
   MapTrifold,
@@ -61,7 +60,7 @@ import { useFonts } from "expo-font"; // <-- Add this import
 import Filters from "../components/Home/Filters"; // Import Filters component
 import StudySpotsList from "../components/Home/StudySpotsList";
 import StudySpotsMapView from "../components/Home/StudySpotsMapView"; // <-- new component
-import { FocusTimerView } from "../components/Home/FocusTimer"; // <-- Use correct import
+
 import AlertsModal from "../components/Home/AlertsModal"; // Import AlertsModal component
 import TabBar from "../components/Home/TabBar";
 
@@ -197,14 +196,7 @@ export default function HomeScreen({ navigation, route }) {
     isLoading: friendsLoading,
     refetch: refetchFriendsCheckIns,
   } = useFriendsCheckIns(); // Add friends check ins hook
-  const {
-    workTimeSetting,
-    setWorkTimeSetting,
-    breakTimeSetting,
-    setBreakTimeSetting,
-    reflectionsEnabled,
-    setReflectionsEnabled,
-  } = useProfileData(); // add
+  const { reflectionsEnabled, setReflectionsEnabled } = useProfileData(); // add
 
   // Add state for profile picture
   const [profilePic, setProfilePic] = useState(null);
@@ -695,14 +687,12 @@ export default function HomeScreen({ navigation, route }) {
   // TabView
   const layout = Dimensions.get("window");
   const [routes] = useState([
-    { key: "focus", title: "Focus" },
     { key: "home", title: "Home" },
     { key: "social", title: "Community" },
   ]);
 
   // Tab scene
   const renderScene = SceneMap({
-    focus: FocusTimerView,
     home: HomeTab,
     social: SocialTab,
   });

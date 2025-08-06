@@ -287,8 +287,3 @@ export default function useFavoriteSpots(targetUid = null) {
     fetchFavoriteSpots,
   };
 }
-
-// If you query focusSessions for a user, update like this:
-// const q = query(collection(db, "focusSessions"), where("userId", "==", uid));
-// becomes:
-// const q = collection(db, "users", uid, "focusSessions");

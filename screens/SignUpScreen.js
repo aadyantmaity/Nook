@@ -67,8 +67,7 @@ export default function SignUpScreen({ navigation }) {
         following: [],
         requireEmailVerification: true, // Add this field
         onboarded: false, // <-- Add this field
-        workTimeSetting: 25, // Add default work time setting
-        breakTimeSetting: 5, // Add default break time setting
+
         mapType: "hybrid", // Add default map type
         mapRegion: "UW", // Add default map region
         reflectionsEnabled: true, // Add default reflections setting

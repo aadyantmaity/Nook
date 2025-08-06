@@ -343,6 +343,3 @@ export default function useStudySpots() {
 
   return { studySpots, isLoading, fetchStudySpots };
 }
-
-// If you ever query focusSessions for a user, use:
-// collection(db, "users", userId, "focusSessions")

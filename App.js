@@ -18,17 +18,7 @@ import AppLoading from "expo-app-loading";
 import GroupDetailView from "./screens/GroupDetailView";
 import GroupDetailsScreen from "./screens/GroupDetailsScreen";
 import { HomeViewProvider } from "./components/Home/HomeViewContext";
-import * as Notifications from "expo-notifications";
 
-// Configure notifications
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
 
 const Stack = createStackNavigator();
 
@@ -81,18 +71,7 @@ export default function App() {
     return unsubscribe;
   }, []);
 
-  // Configure notifications on app start
-  useEffect(() => {
-    const configureNotifications = async () => {
-      if (Platform.OS === "ios") {
-        // Request permissions for iOS
-        const { status } = await Notifications.requestPermissionsAsync();
-        console.log("Notification permission status:", status);
-      }
-    };
 
-    configureNotifications();
-  }, []);
 
   if (!fontsLoaded || isAuthenticated === null) {
     return <AppLoading />;

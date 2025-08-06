@@ -21,8 +21,7 @@ export function useProfileData(targetUid = null) {
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
   const [isFollowing, setIsFollowing] = useState(false);
-  const [workTimeSetting, setWorkTimeSetting] = useState(null); // add
-  const [breakTimeSetting, setBreakTimeSetting] = useState(null); // add
+
   const [recentActivity, setRecentActivity] = useState([]); // add
   const [mapType, setMapType] = useState("hybrid");
   const [mapRegion, setMapRegion] = useState("UW");
@@ -44,8 +43,7 @@ export function useProfileData(targetUid = null) {
         setProfilePic(data.profilePic);
         setFollowers(data.followers || []);
         setFollowing(data.following || []);
-        setWorkTimeSetting(data.workTimeSetting || null);
-        setBreakTimeSetting(data.breakTimeSetting || null);
+
         setRecentActivity(data.recentActivity || []);
         setMapType(data.mapType || "hybrid");
         setMapRegion(data.mapRegion || "UW");
@@ -211,20 +209,6 @@ export function useProfileData(targetUid = null) {
     } catch {}
   };
 
-  // --- Add setters for Pomodoro settings (only for current user) ---
-  const setWorkTimeSettingFirestore = async (val) => {
-    const user = auth.currentUser;
-    if (user && (!targetUid || targetUid === user.uid)) {
-      await updateDoc(doc(db, "users", user.uid), { workTimeSetting: val });
-    }
-  };
-  const setBreakTimeSettingFirestore = async (val) => {
-    const user = auth.currentUser;
-    if (user && (!targetUid || targetUid === user.uid)) {
-      await updateDoc(doc(db, "users", user.uid), { breakTimeSetting: val });
-    }
-  };
-
   // --- Add setters for map settings (only for current user) ---
   const setMapTypeFirestore = async (val) => {
     const user = auth.currentUser;
@@ -265,10 +249,7 @@ export function useProfileData(targetUid = null) {
     isFollowing,
     followUser,
     unfollowUser,
-    workTimeSetting,
-    setWorkTimeSetting: setWorkTimeSettingFirestore,
-    breakTimeSetting,
-    setBreakTimeSetting: setBreakTimeSettingFirestore,
+
     recentActivity,
     setRecentActivity,
     mapType,

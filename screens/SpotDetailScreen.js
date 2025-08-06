@@ -60,7 +60,7 @@ import SpotGallery from "../components/SpotDetail/SpotGallery";
 import CheckInButton from "../components/SpotDetail/CheckInButton";
 import HomeLoadingScreen from "../components/Home/HomeLoadingScreen"; // Add this import
 import PrivateNookShareModal from "../components/SpotDetail/PrivateNookShareModal";
-import UserFocusStatsDropdown from "../components/SpotDetail/UserFocusStatsDropdown";
+
 import AddPrivateNookNoteInput from "../components/SpotDetail/AddPrivateNookNoteInput";
 import ShareNookToGroupModal from "../components/SpotDetail/ShareNookToGroupModal";
 import QRShareModal from "../components/SpotDetail/QRShareModal";
@@ -806,13 +806,6 @@ export default function SpotDetailScreen({ route, navigation }) {
             {/* Tags */}
             <TagList tags={tags} themeColors={themeColors} />
 
-            {/* User Focus Stats Dropdown (public and private nooks) */}
-            <UserFocusStatsDropdown
-              spotId={spotId}
-              themeColors={themeColors}
-              isPrivateNook={isPrivateNook}
-            />
-
             {/* Ratings */}
             {!isPrivateNook && (
               <View style={{ marginTop: 16 }}>
@@ -1256,13 +1249,6 @@ export default function SpotDetailScreen({ route, navigation }) {
 
             {/* Tags */}
             <TagList tags={tags} themeColors={themeColors} />
-
-            {/* User Focus Stats Dropdown (public and private nooks) */}
-            <UserFocusStatsDropdown
-              spotId={spotId}
-              themeColors={themeColors}
-              isPrivateNook={isPrivateNook}
-            />
 
             {/* Ratings */}
             {!isPrivateNook && (
