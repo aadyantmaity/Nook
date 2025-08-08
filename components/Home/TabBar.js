@@ -1,19 +1,15 @@
 import React from "react";
 import { View, TouchableOpacity, Text, Dimensions } from "react-native";
-import {
-  House,
-  MagnifyingGlass,
-  Chats,
-  Globe,
-  Rows,
-} from "phosphor-react-native";
+import { House, Chats, Rows, Timer as TimerIcon } from "phosphor-react-native";
 
 const TAB_ICONS = {
+  focus: TimerIcon,
   home: House,
   social: Chats,
 };
 
 const TAB_LABELS = {
+  focus: "Focus",
   home: "Home",
   social: "Groups",
 };

@@ -71,6 +71,9 @@ export default function SignUpScreen({ navigation }) {
         mapType: "hybrid", // Add default map type
         mapRegion: "UW", // Add default map region
         reflectionsEnabled: true, // Add default reflections setting
+
+        workDuration: 25 * 60, // Add default work duration (25 minutes = 1500 seconds)
+        breakDuration: 5 * 60, // Add default break duration (5 minutes = 300 seconds)
       });
 
       // Send email verification

@@ -77,6 +77,8 @@
     <false/>
 	<key>NSPhotoLibraryUsageDescription</key>
 <string>This app needs access to your photo library so you can upload images of study spots.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app uses the camera so you can take a photo of a study spot.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>This app needs your location to let you center the map on your current position.</string>
   </dict>

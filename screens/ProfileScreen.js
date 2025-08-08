@@ -9,6 +9,7 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { signOut, sendPasswordResetEmail } from "firebase/auth";
 import { colors } from "../constants/colors";
@@ -30,6 +31,7 @@ import {
 } from "phosphor-react-native";
 import { ThemeContext } from "../App";
 import * as ImagePicker from "expo-image-picker";
+
 import { getLastUpdatedLabel } from "../utils/lastUpdatedLabel";
 import { onSnapshot, doc } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -885,6 +887,7 @@ export default function ProfileScreen({ navigation, route }) {
               >
                 <PencilSimple size={20} color={themeColors.white} />
               </TouchableOpacity>
+              {/* Test Notification Button below edit */}
             </View>
           </View>
         )}

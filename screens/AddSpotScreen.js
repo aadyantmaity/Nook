@@ -192,6 +192,25 @@ export default function AddSpotScreen({ navigation, route }) {
   const isAmaity =
     auth.currentUser && auth.currentUser.email === "amaity@uw.edu";
 
+  const handleTakePhoto = async () => {
+    const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+    if (cameraPermission.status !== "granted") {
+      alert("Camera permission is required to take a photo.");
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [5, 2],
+      quality: 0.9,
+    });
+    if (result.canceled || result.cancelled) return;
+    const asset = result.assets ? result.assets[0] : result;
+    setCustomImage({
+      uri: asset.uri,
+      name: asset.fileName || `custom_${Date.now()}.jpg`,
+    });
+  };
+
   const handlePickCustomImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -555,6 +574,7 @@ export default function AddSpotScreen({ navigation, route }) {
           {(isAmaity && isUWBuilding) || !isUWBuilding ? (
             <ImagePickerButton
               onPickImage={handlePickCustomImage}
+              onTakePhoto={handleTakePhoto}
               customImage={customImage}
               themeColors={themeColors}
             />

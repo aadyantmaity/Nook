@@ -27,16 +27,15 @@
     "expo-linear-gradient": "^14.1.4",
     "expo-linking": "^7.1.5",
     "expo-location": "^18.1.5",
-
     "expo-splash-screen": "^0.30.9",
     "expo-status-bar": "~2.2.3",
     "firebase": "^11.8.1",
     "firebase-admin": "^13.4.0",
-
     "phosphor": "^0.7.1",
     "phosphor-react-native": "^2.3.1",
     "react": "19.0.0",
     "react-native": "0.79.2",
+    "react-native-countdown-circle-timer": "^3.2.1",
     "react-native-gesture-handler": "^2.27.1",
     "react-native-gifted-charts": "^1.4.61",
     "react-native-google-places-autocomplete": "^2.5.7",
@@ -44,7 +43,6 @@
     "react-native-image-picker": "^8.2.1",
     "react-native-linear-gradient": "^2.8.3",
     "react-native-maps": "1.20.1",
-
     "react-native-pager-view": "^6.8.1",
     "react-native-paper": "^5.14.5",
     "react-native-picker": "^4.3.7",

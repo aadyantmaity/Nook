@@ -1,36 +1,85 @@
-import React from "react";
-import { TouchableOpacity, Text, View, Image } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  TouchableOpacity,
+  Text,
+  View,
+  Image,
+  Modal,
+  TouchableWithoutFeedback,
+  Animated,
+  Dimensions,
+} from "react-native";
+import { Camera, ImageSquare } from "phosphor-react-native";
 
 export default function ImagePickerButton({
   onPickImage,
+  onTakePhoto,
   customImage,
   themeColors,
 }) {
+  const [showOptions, setShowOptions] = useState(false);
+  const windowHeight = Dimensions.get("window").height;
+  const sheetTranslateY = useRef(new Animated.Value(windowHeight)).current;
+
+  const openOptions = () => {
+    setShowOptions(true);
+  };
+
+  const closeOptions = (onClosed) => {
+    Animated.timing(sheetTranslateY, {
+      toValue: windowHeight,
+      duration: 220,
+      useNativeDriver: true,
+    }).start(() => {
+      setShowOptions(false);
+      if (onClosed) onClosed();
+    });
+  };
+
+  useEffect(() => {
+    if (showOptions) {
+      sheetTranslateY.setValue(windowHeight);
+      Animated.timing(sheetTranslateY, {
+        toValue: 0,
+        duration: 260,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [showOptions, sheetTranslateY, windowHeight]);
+
   return (
-    <View style={{ marginBottom: 16, alignItems: "center" }}>
+    <View style={{ marginBottom: 16, alignItems: "center", width: "100%" }}>
       <TouchableOpacity
-        onPress={onPickImage}
+        onPress={openOptions}
         style={{
-          backgroundColor: themeColors.purple,
-          borderRadius: 8,
+          backgroundColor: customImage?.uri
+            ? themeColors.white
+            : themeColors.purple,
+          borderRadius: 10,
           paddingVertical: 10,
-          paddingHorizontal: 18,
+          paddingHorizontal: 16,
           alignItems: "center",
+          borderWidth: 1,
+          borderColor: themeColors.purple,
+          minWidth: 160,
         }}
-        accessibilityLabel="Pick an image for this location"
+        accessibilityLabel={
+          customImage?.uri ? "Change or replace photo" : "Add a photo"
+        }
         accessible={true}
-        disabled={false} // If you want to add a disabled prop, update color below
       >
         <Text
           style={{
-            color: false ? themeColors.darkGray : themeColors.white,
+            color: customImage?.uri ? themeColors.purple : themeColors.white,
             fontWeight: "bold",
             fontFamily: "CarosSoft",
           }}
         >
-          {customImage && customImage.uri ? "Change Image" : "Upload Image"}
+          {customImage?.uri ? "Change Photo" : "Add Photo"}
         </Text>
       </TouchableOpacity>
+
+      {/* Preview */}
       {customImage && customImage.uri && (
         <View
           style={{
@@ -50,6 +99,188 @@ export default function ImagePickerButton({
           />
         </View>
       )}
+
+      {/* Bottom sheet options */}
+      <Modal visible={showOptions} transparent animationType="none">
+        <TouchableWithoutFeedback onPress={() => closeOptions()}>
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "flex-end",
+            }}
+          >
+            <TouchableWithoutFeedback>
+              <Animated.View
+                style={{
+                  backgroundColor: themeColors.white,
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  borderTopLeftRadius: 16,
+                  borderWidth: 1,
+                  borderColor: themeColors.black,
+                  borderTopRightRadius: 16,
+                  minHeight: 260,
+                  paddingBottom: 20,
+                  transform: [{ translateY: sheetTranslateY }],
+                }}
+              >
+                <View
+                  style={{
+                    alignItems: "center",
+                    paddingVertical: 6,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 36,
+                      height: 4,
+                      borderRadius: 2,
+                      backgroundColor: themeColors.gray,
+                    }}
+                  />
+                </View>
+
+                <Text
+                  style={{
+                    fontFamily: "CarosSoft",
+                    fontSize: 16,
+                    color: themeColors.black,
+                    textAlign: "center",
+                    marginBottom: 6,
+                  }}
+                >
+                  Add Photo
+                </Text>
+
+                {onTakePhoto && (
+                  <TouchableOpacity
+                    onPress={() => closeOptions(() => onTakePhoto?.())}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      paddingVertical: 12,
+                      paddingHorizontal: 10,
+                      borderRadius: 12,
+                      marginTop: 6,
+                    }}
+                    accessibilityLabel="Take a photo"
+                    accessible={true}
+                  >
+                    <View
+                      style={{
+                        width: 34,
+                        height: 34,
+                        borderRadius: 17,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: "rgba(0,0,0,0.06)",
+                      }}
+                    >
+                      <Camera size={20} color={themeColors.purple} />
+                    </View>
+                    <View style={{ marginLeft: 10, flex: 1 }}>
+                      <Text
+                        style={{
+                          color: themeColors.black,
+                          fontFamily: "CarosSoft",
+                          fontSize: 15,
+                          fontWeight: "600",
+                        }}
+                      >
+                        Take Photo
+                      </Text>
+                      <Text
+                        style={{
+                          marginTop: 1,
+                          color: themeColors.darkGray,
+                          fontFamily: "CarosSoft",
+                          fontSize: 12,
+                        }}
+                      >
+                        Use your camera
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
+
+                <TouchableOpacity
+                  onPress={() => closeOptions(() => onPickImage?.())}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 12,
+                    paddingHorizontal: 10,
+                    borderRadius: 12,
+                    marginTop: 8,
+                  }}
+                  accessibilityLabel="Choose from library"
+                  accessible={true}
+                >
+                  <View
+                    style={{
+                      width: 34,
+                      height: 34,
+                      borderRadius: 17,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: "rgba(0,0,0,0.06)",
+                    }}
+                  >
+                    <ImageSquare size={20} color={themeColors.purple} />
+                  </View>
+                  <View style={{ marginLeft: 10, flex: 1 }}>
+                    <Text
+                      style={{
+                        color: themeColors.black,
+                        fontFamily: "CarosSoft",
+                        fontSize: 15,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Choose from Library
+                    </Text>
+                    <Text
+                      style={{
+                        marginTop: 1,
+                        color: themeColors.darkGray,
+                        fontFamily: "CarosSoft",
+                        fontSize: 12,
+                      }}
+                    >
+                      Pick an existing photo
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+
+                <View style={{ height: 10 }} />
+
+                <TouchableOpacity
+                  onPress={() => closeOptions()}
+                  style={{
+                    marginTop: 8,
+                    paddingVertical: 14,
+                    alignItems: "center",
+                    borderRadius: 10,
+                  }}
+                  accessibilityLabel="Cancel"
+                  accessible={true}
+                >
+                  <Text
+                    style={{
+                      color: themeColors.darkGray,
+                      fontFamily: "CarosSoft",
+                      fontSize: 15,
+                      fontWeight: "600",
+                    }}
+                  >
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 }

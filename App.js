@@ -11,6 +11,7 @@ import EditSpotScreen from "./screens/EditSpotScreen";
 import SearchScreen from "./screens/SearchScreen";
 import { auth } from "./firebaseConfig";
 import { Appearance, Platform } from "react-native";
+import * as Notifications from "expo-notifications";
 import { colors, getThemeColors } from "./constants/colors";
 import * as Linking from "expo-linking";
 import * as Font from "expo-font";
@@ -19,13 +20,22 @@ import GroupDetailView from "./screens/GroupDetailView";
 import GroupDetailsScreen from "./screens/GroupDetailsScreen";
 import { HomeViewProvider } from "./components/Home/HomeViewContext";
 
-
 const Stack = createStackNavigator();
 
 export const ThemeContext = React.createContext({
   isDarkMode: false,
   setIsDarkMode: () => {},
   themeColors: colors,
+});
+
+// Ensure notifications present while app is foreground (iOS requires explicit handler)
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
 });
 
 const linking = {
@@ -70,8 +80,6 @@ export default function App() {
     });
     return unsubscribe;
   }, []);
-
-
 
   if (!fontsLoaded || isAuthenticated === null) {
     return <AppLoading />;

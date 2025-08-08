@@ -687,12 +687,17 @@ export default function HomeScreen({ navigation, route }) {
   // TabView
   const layout = Dimensions.get("window");
   const [routes] = useState([
+    { key: "focus", title: "Focus" },
     { key: "home", title: "Home" },
     { key: "social", title: "Community" },
   ]);
 
   // Tab scene
   const renderScene = SceneMap({
+    focus: () => {
+      const Focus = require("./FocusTimerScreen").default;
+      return <Focus />;
+    },
     home: HomeTab,
     social: SocialTab,
   });
@@ -972,7 +977,7 @@ export default function HomeScreen({ navigation, route }) {
               }}
               accessibilityLabel="Search"
             >
-              <MagnifyingGlass size={24} color={themeColors.purple} />
+              <MagnifyingGlass size={28} color={themeColors.purple} />
             </TouchableOpacity>
             {/* Profile picture button to open hamburger menu */}
             <TouchableOpacity
@@ -984,8 +989,8 @@ export default function HomeScreen({ navigation, route }) {
                 justifyContent: "center",
                 elevation: 2,
                 marginLeft: 4,
-                width: 34,
-                height: 34,
+                width: 40,
+                height: 40,
                 overflow: "hidden",
                 borderWidth: 1,
                 borderColor: themeColors.purple,
@@ -995,7 +1000,7 @@ export default function HomeScreen({ navigation, route }) {
               <ProfilePicture
                 profilePic={profilePic}
                 themeColors={themeColors}
-                size={34}
+                size={40}
                 isTouchable={false}
                 isLoading={isProfilePicLoading}
               />
