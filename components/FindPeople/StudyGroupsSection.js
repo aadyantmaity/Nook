@@ -36,7 +36,6 @@ import GroupFiltersModal from "./GroupFiltersModal";
 import GroupList from "./StudyGroups/GroupList";
 import CreateGroupModal from "./StudyGroups/CreateGroupModal";
 import ProfilePicture from "../Profile/ProfilePicture";
-import SuggestedPeopleAndGroups from "./SuggestedPeopleAndGroups";
 
 function getMutualFriends(users, currentUser) {
   // Show all users except the current user
@@ -119,15 +118,6 @@ export default function StudyGroupsSection({ navigation }) {
   const [selectedIcon, setSelectedIcon] = useState(null); // <-- icon state
   const [showIconModal, setShowIconModal] = useState(false); // <-- icon modal state
 
-  // --- Suggested users and groups state ---
-  const [suggested, setSuggested] = useState([]);
-  const [suggestedGroups, setSuggestedGroups] = useState([]); // <-- add this
-  const [suggestedLoading, setSuggestedLoading] = useState(true);
-  const [suggestedGroupsLoading, setSuggestedGroupsLoading] = useState(true); // <-- add this
-  const [followingIds, setFollowingIds] = useState([]);
-  const [followLoading, setFollowLoading] = useState({});
-  const [suggestedExpanded, setSuggestedExpanded] = useState(false);
-  const [suggestedWithPics, setSuggestedWithPics] = useState([]);
   const debounceTimer = useRef(null);
 
   // Fetch groups: public for all, private only if user is a member
@@ -431,104 +421,6 @@ export default function StudyGroupsSection({ navigation }) {
     return (a.name || "").localeCompare(b.name || "");
   });
 
-  // --- Suggested users and groups logic ---
-  const refreshSuggested = React.useCallback(async () => {
-    setSuggestedLoading(true);
-    setSuggestedGroupsLoading(true);
-    try {
-      // --- Suggested users ---
-      const q = collection(db, "users");
-      const snap = await getDocs(q);
-      // Exclude current user and users already followed
-      const users = snap.docs
-        .map((doc) => ({ uid: doc.id, ...doc.data() }))
-        .filter(
-          (u) =>
-            u.uid !== user?.uid &&
-            !(Array.isArray(followingIds) && followingIds.includes(u.uid))
-        );
-      // Shuffle and pick up to 8 users
-      for (let i = users.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [users[i], users[j]] = [users[j], users[i]];
-      }
-      const picked = users.slice(0, 8);
-      // --- Preload profile pictures ---
-      const withPics = await Promise.all(
-        picked.map(async (u) => {
-          if (!u.profilePic) return { ...u, _profilePicLoaded: true };
-          try {
-            await Image.prefetch(u.profilePic);
-            return { ...u, _profilePicLoaded: true };
-          } catch {
-            return { ...u, _profilePicLoaded: false };
-          }
-        })
-      );
-      setSuggestedWithPics(withPics);
-      setSuggested(picked);
-      setSuggestedLoading(false);
-
-      // --- Suggested groups: public groups user is NOT a member of ---
-      const groupsSnap = await getDocs(
-        query(collection(db, "studyGroups"), where("isPrivate", "==", false))
-      );
-      const notInGroups = groupsSnap.docs
-        .map((d) => ({ id: d.id, ...d.data() }))
-        .filter(
-          (g) =>
-            Array.isArray(g.memberUids) && !g.memberUids.includes(user?.uid)
-        );
-      // Shuffle and pick up to 8 groups
-      for (let i = notInGroups.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [notInGroups[i], notInGroups[j]] = [notInGroups[j], notInGroups[i]];
-      }
-      setSuggestedGroups(notInGroups.slice(0, 8));
-      setSuggestedGroupsLoading(false);
-    } catch {
-      setSuggested([]);
-      setSuggestedWithPics([]);
-      setSuggestedGroups([]);
-      setSuggestedLoading(false);
-      setSuggestedGroupsLoading(false);
-    }
-  }, [followingIds, user?.uid]);
-
-  // Fetch current user's following list for suggested users
-  const fetchFollowing = React.useCallback(async () => {
-    try {
-      const q = collection(db, "users");
-      const snap = await getDocs(q);
-      const me = snap.docs.find((d) => d.id === user?.uid);
-      if (me) {
-        setFollowingIds(me.data().following || []);
-      }
-    } catch {
-      setFollowingIds([]);
-    }
-  }, [user?.uid]);
-
-  useEffect(() => {
-    fetchFollowing();
-  }, [fetchFollowing]);
-
-  // --- Listen to followingIds in real-time ---
-  useEffect(() => {
-    if (!user?.uid) return;
-    const unsub = require("firebase/firestore").onSnapshot(
-      require("firebase/firestore").doc(db, "users", user.uid),
-      (docSnap) => {
-        if (docSnap.exists()) {
-          setFollowingIds(docSnap.data().following || []);
-        } else {
-          setFollowingIds([]);
-        }
-      }
-    );
-    return () => unsub();
-  }, [user?.uid]);
-
   const [joiningGroups, setJoiningGroups] = useState({});
 
   return (
@@ -627,25 +519,7 @@ export default function StudyGroupsSection({ navigation }) {
         handleCreateGroup={handleCreateGroup}
         themeColors={themeColors}
       />
-      {/* --- Suggested Users and Groups Dropdown --- */}
-      {groupSearch.length === 0 && (
-        <SuggestedPeopleAndGroups
-          suggestedExpanded={suggestedExpanded}
-          setSuggestedExpanded={setSuggestedExpanded}
-          fetchFollowing={fetchFollowing}
-          refreshSuggested={refreshSuggested}
-          suggestedWithPics={suggestedWithPics}
-          suggestedGroups={suggestedGroups}
-          suggestedLoading={suggestedLoading}
-          suggestedGroupsLoading={suggestedGroupsLoading}
-          followingIds={followingIds}
-          navigation={navigation}
-          themeColors={themeColors}
-          joiningGroups={joiningGroups}
-          setJoiningGroups={setJoiningGroups}
-          user={user}
-        />
-      )}
+
       {/* --- Main group list */}
       <GroupList
         loadingGroups={loadingGroups}

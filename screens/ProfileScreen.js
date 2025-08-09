@@ -434,6 +434,43 @@ export default function ProfileScreen({ navigation, route }) {
             }}
             onStartShouldSetResponder={() => true}
           >
+            {/* Edit Profile Option */}
+            <TouchableOpacity
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingVertical: 12,
+                paddingHorizontal: 18,
+              }}
+              onPress={() => {
+                setMenuVisible(false);
+                setEditedFirstName(
+                  firstName !== "No First Name" ? firstName : ""
+                );
+                setEditedLastName(lastName !== "No Last Name" ? lastName : "");
+                setEditedGradYear(
+                  userGradYear !== "No Grad Year" ? userGradYear : ""
+                );
+                setIsModalVisible(true);
+                setTimeout(() => setEditedProfilePic(null), 0);
+              }}
+            >
+              <PencilSimple
+                size={20}
+                color={themeColors.purple}
+                style={{ marginRight: 10 }}
+              />
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontFamily: "CarosSoft",
+                  fontSize: 16,
+                }}
+              >
+                Edit Profile
+              </Text>
+            </TouchableOpacity>
+
             {/* Share Profile Option */}
             <TouchableOpacity
               style={{
@@ -708,78 +745,81 @@ export default function ProfileScreen({ navigation, route }) {
             </TouchableOpacity>
           </View>
 
+          <View
+            style={[styles.divider, { backgroundColor: themeColors.gray }]}
+          />
+
           {/* Focus Stats Section */}
-          <View style={styles.followRow}>
-            <View style={styles.followColumn}>
-              <Clock
-                size={20}
-                color={themeColors.purple}
-                style={{ marginBottom: 4 }}
-              />
-              <Text
-                style={[
-                  styles.followLabel,
-                  { color: themeColors.darkGray, fontFamily: "CarosSoft" },
-                ]}
-              >
-                Total Focus
-              </Text>
-              <Text
-                style={[
-                  styles.followCount,
-                  { color: themeColors.black, fontFamily: "CarosSoft" },
-                ]}
-              >
-                {focusStatsLoading
-                  ? "..."
-                  : formatDuration(focusStats.totalFocusTime)}
-              </Text>
-            </View>
-            <View style={styles.followColumn}>
-              <CheckCircle
-                size={20}
-                color={themeColors.green}
-                style={{ marginBottom: 4 }}
-              />
-              <Text
-                style={[
-                  styles.followLabel,
-                  { color: themeColors.darkGray, fontFamily: "CarosSoft" },
-                ]}
-              >
-                Sessions
-              </Text>
-              <Text
-                style={[
-                  styles.followCount,
-                  { color: themeColors.black, fontFamily: "CarosSoft" },
-                ]}
-              >
-                {focusStatsLoading ? "..." : focusStats.totalSessions}
-              </Text>
-            </View>
-            <View style={styles.followColumn}>
-              <Trophy
-                size={20}
-                color={themeColors.orange}
-                style={{ marginBottom: 4 }}
-              />
-              <Text
-                style={[
-                  styles.followLabel,
-                  { color: themeColors.darkGray, fontFamily: "CarosSoft" },
-                ]}
-              >
-                Completed
-              </Text>
-              <Text
-                style={[
-                  styles.followCount,
-                  { color: themeColors.black, fontFamily: "CarosSoft" },
-                ]}
-              >
-                {focusStatsLoading ? "..." : focusStats.completedSessions}
-              </Text>
+          <View style={{ marginBottom: 18 }}>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "bold",
+                color: themeColors.black,
+                fontFamily: "CarosSoft",
+                textAlign: "center",
+                marginBottom: 24,
+                marginTop: 12,
+              }}
+            >
+              Focus Statistics
+            </Text>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "center",
+                width: "100%",
+                gap: 0, // Reduced gap between the two stats
+              }}
+            >
+              <View style={styles.followColumn}>
+                <Clock
+                  size={20}
+                  color={themeColors.purple}
+                  style={{ marginBottom: 4 }}
+                />
+                <Text
+                  style={[
+                    styles.followLabel,
+                    { color: themeColors.darkGray, fontFamily: "CarosSoft" },
+                  ]}
+                >
+                  Total Focus
+                </Text>
+                <Text
+                  style={[
+                    styles.followCount,
+                    { color: themeColors.black, fontFamily: "CarosSoft" },
+                  ]}
+                >
+                  {focusStatsLoading
+                    ? "..."
+                    : formatDuration(focusStats.totalFocusTime)}
+                </Text>
+              </View>
+              <View style={styles.followColumn}>
+                <CheckCircle
+                  size={20}
+                  color={themeColors.green}
+                  style={{ marginBottom: 4 }}
+                />
+                <Text
+                  style={[
+                    styles.followLabel,
+                    { color: themeColors.darkGray, fontFamily: "CarosSoft" },
+                  ]}
+                >
+                  Sessions
+                </Text>
+                <Text
+                  style={[
+                    styles.followCount,
+                    { color: themeColors.black, fontFamily: "CarosSoft" },
+                  ]}
+                >
+                  {focusStatsLoading ? "..." : focusStats.totalSessions}
+                </Text>
+              </View>
             </View>
           </View>
 
@@ -793,6 +833,7 @@ export default function ProfileScreen({ navigation, route }) {
               alignItems: "center",
               marginBottom: 16,
               justifyContent: "space-between",
+              marginTop: 12,
             }}
           >
             <TouchableOpacity
@@ -949,36 +990,7 @@ export default function ProfileScreen({ navigation, route }) {
             </View>
           )}
         </View>
-        {/* Buttons */}
-        {/* Only show edit button */}
-        {isOwnProfile && !isLoading && (
-          <View style={styles.optionsContainer}>
-            <View style={styles.buttonRow}>
-              <TouchableOpacity
-                style={[
-                  styles.editButton,
-                  { backgroundColor: themeColors.purple, width: "100%" },
-                ]}
-                onPress={() => {
-                  setEditedFirstName(
-                    firstName !== "No First Name" ? firstName : ""
-                  );
-                  setEditedLastName(
-                    lastName !== "No Last Name" ? lastName : ""
-                  );
-                  setEditedGradYear(
-                    userGradYear !== "No Grad Year" ? userGradYear : ""
-                  );
-                  setIsModalVisible(true);
-                  setTimeout(() => setEditedProfilePic(null), 0);
-                }}
-              >
-                <PencilSimple size={20} color={themeColors.white} />
-              </TouchableOpacity>
-              {/* Test Notification Button below edit */}
-            </View>
-          </View>
-        )}
+
         {/* Show follow/unfollow button for other users' profiles */}
         {!isOwnProfile && !isLoading && (
           <View style={styles.optionsContainer}>
