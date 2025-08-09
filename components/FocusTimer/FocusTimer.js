@@ -20,8 +20,11 @@ import {
   formatDuration,
 } from "../../services/focusSessions";
 import FocusSessionsModal from "./FocusSessionsModal";
+import { FocusGoalCard } from "./FocusGoalCard";
+import { FocusGoalModal } from "./FocusGoalModal";
+import LocationPickerModal from "./LocationPickerModal";
 import { auth, db } from "../../firebaseConfig";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 
 // presets removed
 
@@ -144,7 +147,7 @@ function CountdownDisplay({
         duration={duration}
         colors={colorSequence}
         colorsTime={colorsTime}
-        size={260}
+        size={230}
         strokeWidth={14}
         trailColor={colors.gray || colors.lightGray}
         onComplete={onComplete}
@@ -490,6 +493,14 @@ export default function FocusTimer() {
     completed: 0,
   });
 
+  // Goal state management
+  const [currentGoal, setCurrentGoal] = useState(null);
+  const [showGoalModal, setShowGoalModal] = useState(false);
+
+  // Location picker state
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+
   // Load user's timer settings from Firestore
   const loadUserTimerSettings = useCallback(async () => {
     try {
@@ -508,9 +519,11 @@ export default function FocusTimer() {
 
         setWorkDuration(userWorkDuration);
         setBreakDuration(userBreakDuration);
-        console.log(
-          `Loaded settings: work=${userWorkDuration}s, break=${userBreakDuration}s`
-        );
+
+        // Load current goal
+        if (userData.currentGoal) {
+          setCurrentGoal(userData.currentGoal);
+        }
       }
     } catch (error) {
       console.error("Failed to load user timer settings:", error);
@@ -518,6 +531,36 @@ export default function FocusTimer() {
       setIsLoadingSettings(false);
     }
   }, []);
+
+  // Save current goal to Firestore
+  const saveCurrentGoal = useCallback(async (goal) => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      await updateDoc(doc(db, "users", user.uid), {
+        currentGoal: goal,
+      });
+      setCurrentGoal(goal);
+    } catch (error) {
+      console.error("Failed to save current goal:", error);
+    }
+  }, []);
+
+  // Handle goal save from modal
+  const handleGoalSave = useCallback(
+    (goalData) => {
+      if (goalData === null) {
+        // Delete goal
+        saveCurrentGoal(null);
+      } else {
+        saveCurrentGoal(goalData);
+      }
+    },
+    [saveCurrentGoal]
+  );
+
+  // No goal progress logic needed for task-based goals
 
   // Save user's timer settings to Firestore
   const saveUserTimerSettings = useCallback(
@@ -565,6 +608,7 @@ export default function FocusTimer() {
     setIsPlaying(false);
     setSessionStartTime(null);
     setElapsedTime(0);
+    setSelectedLocation(null); // Reset location when resetting
     if (isPlaying) {
       // If timer is running, reset to user's saved settings for current timer
       if (mode === "work") {
@@ -583,14 +627,15 @@ export default function FocusTimer() {
   const saveSession = useCallback(
     async (duration, wasCompleted) => {
       try {
-        await saveFocusSession(duration, mode, wasCompleted);
+        await saveFocusSession(duration, mode, wasCompleted, selectedLocation);
+
         // Refresh weekly stats after saving a session
         calculateWeeklyStats();
       } catch (error) {
         console.error("Failed to save session:", error);
       }
     },
-    [mode, calculateWeeklyStats]
+    [mode, calculateWeeklyStats, selectedLocation]
   );
 
   const handleTimerComplete = useCallback(() => {
@@ -612,6 +657,7 @@ export default function FocusTimer() {
     setIsPlaying(false);
     setSessionStartTime(null);
     setElapsedTime(0);
+    setSelectedLocation(null); // Reset location when switching modes
     setTimerKey((k) => k + 1);
 
     // Automatically start break timer when work session completes
@@ -646,13 +692,19 @@ export default function FocusTimer() {
       if (sessionStartTime) {
         totalElapsed += Math.floor((Date.now() - sessionStartTime) / 1000);
       }
+
+      // Always save work time to focus stats when skipping work sessions
       if (totalElapsed > 0) {
         saveSession(totalElapsed, false);
       }
+      setElapsedTime(0);
+    } else {
+      // When skipping break, always reset elapsed time
+      setElapsedTime(0);
     }
+
     setIsPlaying(false);
     setSessionStartTime(null);
-    setElapsedTime(0);
     setMode((m) => (m === "work" ? "break" : "work"));
     setTimerKey((k) => k + 1);
   }, [sessionStartTime, mode, saveSession, elapsedTime]);
@@ -753,15 +805,8 @@ export default function FocusTimer() {
     }
 
     if (!isPlaying) {
-      // Starting timer
-      setSessionStartTime(Date.now());
-      // Schedule notification for timer completion with a small delay to ensure notification system is ready
-      setTimeout(() => {
-        scheduleTimerNotification(currentDuration, mode);
-        console.log(
-          `Scheduled notification for ${mode} timer completion (${currentDuration}s)`
-        );
-      }, 200);
+      // Before starting timer, show location picker
+      setShowLocationModal(true);
     } else {
       // Pausing timer - save elapsed time
       if (sessionStartTime) {
@@ -773,24 +818,35 @@ export default function FocusTimer() {
       setSessionStartTime(null);
       // Cancel notification when pausing
       Notifications.cancelAllScheduledNotificationsAsync();
+      setIsPlaying(false);
     }
-    setIsPlaying((p) => !p);
-  }, [
-    isPlaying,
-    sessionStartTime,
-    elapsedTime,
-    currentDuration,
-    mode,
-    scheduleTimerNotification,
-    isLoadingSettings, // Add to dependencies
-  ]);
+  }, [isPlaying, sessionStartTime, elapsedTime, isLoadingSettings]);
+
+  const startTimerWithLocation = useCallback(
+    (location) => {
+      setSelectedLocation(location);
+      setSessionStartTime(Date.now());
+      setIsPlaying(true);
+
+      // Schedule notification for timer completion with a small delay to ensure notification system is ready
+      setTimeout(() => {
+        scheduleTimerNotification(currentDuration, mode);
+        console.log(
+          `Scheduled notification for ${mode} timer completion (${currentDuration}s remaining) at ${
+            location?.name || "No location"
+          }`
+        );
+      }, 200);
+    },
+    [currentDuration, mode, scheduleTimerNotification]
+  );
 
   const currentDuration = mode === "work" ? workDuration : breakDuration;
 
   // Determine if editing should be enabled
-  // Enabled when timer is paused and no progress has been made
-  // Disabled when timer is running or progress has been made
-  const canEdit = !isPlaying && elapsedTime === 0;
+  // Enabled when timer is paused
+  // Disabled when timer is running
+  const canEdit = !isPlaying;
 
   // Calculate this week's stats (Monday to Sunday)
   const calculateWeeklyStats = useCallback(async () => {
@@ -841,15 +897,17 @@ export default function FocusTimer() {
     calculateWeeklyStats();
   }, [calculateWeeklyStats]);
 
+  // No live progress needed for task-based goals
+
   return (
-    <View style={{ flex: 1, backgroundColor: colors.white, paddingTop: 40 }}>
+    <View style={{ flex: 1, backgroundColor: colors.white, paddingTop: 60 }}>
       <View
         style={{
           flex: 1,
           alignItems: "center",
           justifyContent: "flex-start",
           paddingHorizontal: 20,
-          paddingTop: 60,
+          paddingTop: 16,
         }}
       >
         {isLoadingSettings ? (
@@ -862,6 +920,17 @@ export default function FocusTimer() {
           </View>
         ) : (
           <>
+            {/* Focus Goal Card */}
+            <FocusGoalCard
+              goal={currentGoal || {}}
+              setShowGoalModal={setShowGoalModal}
+              themeColors={colors}
+              onDelete={() => handleGoalSave(null)}
+              setGoal={setCurrentGoal}
+              saveGoal={saveCurrentGoal}
+              isRunning={isPlaying}
+            />
+
             <CountdownDisplay
               isPlaying={isPlaying}
               duration={currentDuration}
@@ -881,7 +950,7 @@ export default function FocusTimer() {
                   color: colors.darkGray,
                   fontFamily: "CarosSoft",
                   textAlign: "center",
-                  marginTop: 16,
+                  marginTop: 8,
                   opacity: 0.8,
                 }}
               >
@@ -901,15 +970,15 @@ export default function FocusTimer() {
             </View>
 
             {/* This Week's Stats */}
-            <View style={{ marginTop: 32, width: "100%" }}>
+            <View style={{ marginTop: 26, width: "100%" }}>
               <Text
                 style={{
-                  fontSize: 18,
+                  fontSize: 17,
                   fontWeight: "bold",
                   color: colors.black,
                   fontFamily: "CarosSoft",
                   textAlign: "center",
-                  marginBottom: 16,
+                  marginBottom: 8,
                 }}
               >
                 This Week's Stats
@@ -918,23 +987,17 @@ export default function FocusTimer() {
               <View
                 style={{
                   flexDirection: "row",
-                  justifyContent: "space-around",
+                  justifyContent: "space-evenly",
                   backgroundColor: colors.white,
                   borderRadius: 16,
-                  padding: 20,
-                  borderWidth: 1,
-                  borderColor: colors.gray || "#E5E7EB",
-                  shadowColor: colors.black,
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
-                  elevation: 3,
+                  paddingVertical: 10,
+                  paddingHorizontal: 20,
                 }}
               >
                 <View style={{ alignItems: "center" }}>
                   <Text
                     style={{
-                      fontSize: 24,
+                      fontSize: 20,
                       fontWeight: "bold",
                       color: colors.purple,
                       fontFamily: "CarosSoft",
@@ -957,7 +1020,7 @@ export default function FocusTimer() {
                 <View style={{ alignItems: "center" }}>
                   <Text
                     style={{
-                      fontSize: 24,
+                      fontSize: 20,
                       fontWeight: "bold",
                       color: colors.black,
                       fontFamily: "CarosSoft",
@@ -984,7 +1047,7 @@ export default function FocusTimer() {
               onPress={() => setArchiveVisible(true)}
               style={{
                 position: "absolute",
-                top: -10,
+                top: -40,
                 right: 20,
                 flexDirection: "row",
                 alignItems: "center",
@@ -1032,6 +1095,19 @@ export default function FocusTimer() {
       <FocusSessionsModal
         visible={archiveVisible}
         onClose={() => setArchiveVisible(false)}
+        colors={colors}
+      />
+      <FocusGoalModal
+        visible={showGoalModal}
+        onClose={() => setShowGoalModal(false)}
+        goal={currentGoal}
+        onSave={handleGoalSave}
+        themeColors={colors}
+      />
+      <LocationPickerModal
+        visible={showLocationModal}
+        onClose={() => setShowLocationModal(false)}
+        onLocationSelect={startTimerWithLocation}
         colors={colors}
       />
     </View>

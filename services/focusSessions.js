@@ -12,7 +12,12 @@ import {
 } from "firebase/firestore";
 
 // Save a focus session to Firebase
-export const saveFocusSession = async (duration, mode, wasCompleted = true) => {
+export const saveFocusSession = async (
+  duration,
+  mode,
+  wasCompleted = true,
+  location = null
+) => {
   try {
     const user = auth.currentUser;
     if (!user) {
@@ -27,6 +32,14 @@ export const saveFocusSession = async (duration, mode, wasCompleted = true) => {
       wasCompleted: wasCompleted, // true if timer ended naturally, false if skipped
       timestamp: serverTimestamp(),
       createdAt: new Date().toISOString(),
+      location: location
+        ? {
+            id: location.id,
+            name: location.name,
+            isPrivate: location.isPrivate || false,
+            address: location.address || "",
+          }
+        : null,
     };
 
     const userDocRef = doc(db, "users", user.uid);

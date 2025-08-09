@@ -15,6 +15,7 @@ import {
   ArrowRight,
   CaretDown,
   Trash,
+  MapPin,
 } from "phosphor-react-native";
 import {
   getFocusSessions,
@@ -23,10 +24,14 @@ import {
   getTotalFocusTime,
   deleteFocusSession,
 } from "../../services/focusSessions";
+import { auth, db } from "../../firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
 
 export default function FocusSessionsModal({ visible, onClose, colors }) {
   const [sessions, setSessions] = useState([]);
+  const [goals, setGoals] = useState([]);
   const [filteredSessions, setFilteredSessions] = useState([]);
+  const [filteredGoals, setFilteredGoals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [totalFocusTime, setTotalFocusTime] = useState(0);
   const [filteredFocusTime, setFilteredFocusTime] = useState(0);
@@ -34,18 +39,22 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
   // Filter states
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedType, setSelectedType] = useState("sessions"); // "sessions" or "goals"
   const [showYearDropdown, setShowYearDropdown] = useState(false);
   const [showMonthDropdown, setShowMonthDropdown] = useState(false);
+  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
 
   useEffect(() => {
     if (visible) {
       loadSessions();
+      loadGoals();
     }
   }, [visible]);
 
   useEffect(() => {
     filterSessions();
-  }, [sessions, selectedYear, selectedMonth]);
+    filterGoals();
+  }, [sessions, goals, selectedYear, selectedMonth]);
 
   const loadSessions = async () => {
     try {
@@ -60,6 +69,26 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
       console.error("Error loading sessions:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadGoals = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const archiveRef = doc(db, "goalArchives", user.uid);
+      const archiveDoc = await getDoc(archiveRef);
+
+      if (archiveDoc.exists()) {
+        const data = archiveDoc.data();
+        setGoals(data.goals || []);
+      } else {
+        setGoals([]);
+      }
+    } catch (error) {
+      console.error("Error loading goals:", error);
+      setGoals([]);
     }
   };
 
@@ -112,6 +141,24 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
       .filter((session) => session.mode === "work")
       .reduce((total, session) => total + session.duration, 0);
     setFilteredFocusTime(filteredTime);
+  };
+
+  const filterGoals = () => {
+    let filtered = goals;
+
+    // Filter by year
+    filtered = filtered.filter((goal) => {
+      const goalDate = new Date(goal.achievedAt);
+      return goalDate.getFullYear() === selectedYear;
+    });
+
+    // Filter by month
+    filtered = filtered.filter((goal) => {
+      const goalDate = new Date(goal.achievedAt);
+      return goalDate.getMonth() === selectedMonth;
+    });
+
+    setFilteredGoals(filtered);
   };
 
   const getAvailableYears = () => {
@@ -192,7 +239,10 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
       <CaretDown
         size={16}
         color={colors.purple}
-        style={{ transform: [{ rotate: isOpen ? "180deg" : "0deg" }] }}
+        style={{
+          transform: [{ rotate: isOpen ? "180deg" : "0deg" }],
+          marginLeft: 8,
+        }}
       />
     </TouchableOpacity>
   );
@@ -323,7 +373,9 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                   fontFamily: "CarosSoft",
                 }}
               >
-                Focus Sessions
+                {selectedType === "sessions"
+                  ? "Focus Sessions"
+                  : "Archived Goals"}
               </Text>
               <TouchableOpacity onPress={onClose} hitSlop={10}>
                 <X size={24} color={colors.black} />
@@ -334,11 +386,31 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
             <View
               style={{
                 flexDirection: "row",
-                gap: 8,
+                gap: 6,
                 paddingHorizontal: 20,
                 marginBottom: 16,
               }}
             >
+              {/* Type Dropdown */}
+              <View style={{ flex: 1, position: "relative" }}>
+                <DropdownButton
+                  label="Type"
+                  value={selectedType === "sessions" ? "Sessions" : "Goals"}
+                  onPress={() => {
+                    setShowTypeDropdown(!showTypeDropdown);
+                    setShowYearDropdown(false);
+                    setShowMonthDropdown(false);
+                  }}
+                  isOpen={showTypeDropdown}
+                />
+                <DropdownMenu
+                  items={["Sessions", "Goals"]}
+                  onSelect={(type) => setSelectedType(type.toLowerCase())}
+                  isVisible={showTypeDropdown}
+                  onClose={() => setShowTypeDropdown(false)}
+                />
+              </View>
+
               {/* Year Dropdown */}
               <View style={{ flex: 1, position: "relative" }}>
                 <DropdownButton
@@ -347,6 +419,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                   onPress={() => {
                     setShowYearDropdown(!showYearDropdown);
                     setShowMonthDropdown(false);
+                    setShowTypeDropdown(false);
                   }}
                   isOpen={showYearDropdown}
                 />
@@ -366,6 +439,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                   onPress={() => {
                     setShowMonthDropdown(!showMonthDropdown);
                     setShowYearDropdown(false);
+                    setShowTypeDropdown(false);
                   }}
                   isOpen={showMonthDropdown}
                 />
@@ -391,49 +465,99 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                   marginBottom: 12,
                 }}
               >
-                <View style={{ alignItems: "center", flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 20,
-                      fontWeight: "bold",
-                      color: colors.black,
-                      fontFamily: "CarosSoft",
-                    }}
-                  >
-                    {formatDuration(totalFocusTime)}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      color: colors.darkGray || "#6B7280",
-                      fontFamily: "CarosSoft",
-                    }}
-                  >
-                    Lifetime Focus
-                  </Text>
-                </View>
+                {selectedType === "sessions" ? (
+                  <>
+                    <View style={{ alignItems: "center", flex: 1 }}>
+                      <Text
+                        style={{
+                          fontSize: 20,
+                          fontWeight: "bold",
+                          color: colors.black,
+                          fontFamily: "CarosSoft",
+                        }}
+                      >
+                        {formatDuration(filteredFocusTime)}
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          color: colors.darkGray || "#6B7280",
+                          fontFamily: "CarosSoft",
+                        }}
+                      >
+                        Lifetime Focus
+                      </Text>
+                    </View>
 
-                <View style={{ alignItems: "center", flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 20,
-                      fontWeight: "bold",
-                      color: colors.black,
-                      fontFamily: "CarosSoft",
-                    }}
-                  >
-                    {sessions.length}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      color: colors.darkGray || "#6B7280",
-                      fontFamily: "CarosSoft",
-                    }}
-                  >
-                    Total Sessions
-                  </Text>
-                </View>
+                    <View style={{ alignItems: "center", flex: 1 }}>
+                      <Text
+                        style={{
+                          fontSize: 20,
+                          fontWeight: "bold",
+                          color: colors.black,
+                          fontFamily: "CarosSoft",
+                        }}
+                      >
+                        {filteredSessions.length}
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          color: colors.darkGray || "#6B7280",
+                          fontFamily: "CarosSoft",
+                        }}
+                      >
+                        Sessions
+                      </Text>
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <View style={{ alignItems: "center", flex: 1 }}>
+                      <Text
+                        style={{
+                          fontSize: 20,
+                          fontWeight: "bold",
+                          color: colors.black,
+                          fontFamily: "CarosSoft",
+                        }}
+                      >
+                        {filteredGoals.length}
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          color: colors.darkGray || "#6B7280",
+                          fontFamily: "CarosSoft",
+                        }}
+                      >
+                        Archived Goals
+                      </Text>
+                    </View>
+
+                    <View style={{ alignItems: "center", flex: 1 }}>
+                      <Text
+                        style={{
+                          fontSize: 20,
+                          fontWeight: "bold",
+                          color: colors.black,
+                          fontFamily: "CarosSoft",
+                        }}
+                      >
+                        {goals.length}
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          color: colors.darkGray || "#6B7280",
+                          fontFamily: "CarosSoft",
+                        }}
+                      >
+                        Total Goals
+                      </Text>
+                    </View>
+                  </>
+                )}
               </View>
             </View>
 
@@ -457,7 +581,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                   Loading sessions...
                 </Text>
               </View>
-            ) : filteredSessions.length === 0 ? (
+            ) : selectedType === "sessions" && filteredSessions.length === 0 ? (
               <View
                 style={{
                   alignItems: "center",
@@ -490,6 +614,39 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                   Try selecting a different time period
                 </Text>
               </View>
+            ) : selectedType === "goals" && filteredGoals.length === 0 ? (
+              <View
+                style={{
+                  alignItems: "center",
+                  padding: 40,
+                  paddingHorizontal: 20,
+                }}
+              >
+                <Clock size={48} color={colors.darkGray || "#6B7280"} />
+                <Text
+                  style={{
+                    marginTop: 12,
+                    fontSize: 16,
+                    color: colors.darkGray || "#6B7280",
+                    fontFamily: "CarosSoft",
+                    textAlign: "center",
+                  }}
+                >
+                  No archived goals in this period
+                </Text>
+                <Text
+                  style={{
+                    marginTop: 4,
+                    fontSize: 14,
+                    color: colors.darkGray || "#6B7280",
+                    fontFamily: "CarosSoft",
+                    textAlign: "center",
+                    opacity: 0.8,
+                  }}
+                >
+                  Complete some goals to see them here
+                </Text>
+              </View>
             ) : (
               <View style={{ flex: 1, paddingHorizontal: 20 }}>
                 <ScrollView
@@ -497,77 +654,174 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                   style={{ flex: 1 }}
                   contentContainerStyle={{ paddingBottom: 20 }}
                 >
-                  {filteredSessions.map((session, index) => (
-                    <TouchableOpacity
-                      key={session.id}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        paddingVertical: 12,
-                        paddingHorizontal: 16,
-                        backgroundColor: colors.white,
-                        borderRadius: 12,
-                        marginBottom: 8,
-                        borderWidth: 1,
-                        borderColor: colors.gray || "#E5E7EB",
-                      }}
-                      activeOpacity={1}
-                    >
-                      {/* Session Details */}
-                      <View style={{ flex: 1 }}>
-                        <View
+                  {selectedType === "sessions"
+                    ? filteredSessions.map((session, index) => (
+                        <TouchableOpacity
+                          key={session.id}
                           style={{
-                            flexDirection: "column",
-                            gap: 4,
+                            flexDirection: "row",
+                            alignItems: "center",
+                            paddingVertical: 12,
+                            paddingHorizontal: 16,
+                            backgroundColor: colors.white,
+                            borderRadius: 12,
+                            marginBottom: 8,
+                            borderWidth: 1,
+                            borderColor: colors.gray || "#E5E7EB",
                           }}
+                          activeOpacity={1}
                         >
-                          <Text
-                            style={{
-                              fontSize: 14,
-                              color: colors.darkGray || "#6B7280",
-                              fontFamily: "CarosSoft",
-                            }}
-                          >
-                            {formatTimestamp(session.timestamp)}
-                          </Text>
-                          <Text
-                            style={{
-                              fontSize: 16,
-                              fontWeight: "bold",
-                              color: getModeColor(session.mode),
-                              fontFamily: "CarosSoft",
-                            }}
-                          >
-                            {formatDuration(session.duration)}
-                          </Text>
-                          <View
-                            style={{
-                              flexDirection: "row",
-                              alignItems: "center",
-                              gap: 4,
-                            }}
-                          >
-                            <Text
+                          {/* Session Details */}
+                          <View style={{ flex: 1 }}>
+                            <View
                               style={{
-                                fontSize: 12,
-                                color: session.wasCompleted
-                                  ? colors.green || "#22C55E"
-                                  : colors.orange,
-                                fontFamily: "CarosSoft",
+                                flexDirection: "column",
+                                gap: 4,
                               }}
                             >
-                              {session.wasCompleted ? "Completed" : "Skipped"}
-                            </Text>
+                              <Text
+                                style={{
+                                  fontSize: 14,
+                                  color: colors.darkGray || "#6B7280",
+                                  fontFamily: "CarosSoft",
+                                }}
+                              >
+                                {formatTimestamp(session.timestamp)}
+                              </Text>
+                              <Text
+                                style={{
+                                  fontSize: 16,
+                                  fontWeight: "bold",
+                                  color: getModeColor(session.mode),
+                                  fontFamily: "CarosSoft",
+                                }}
+                              >
+                                {formatDuration(session.duration)}
+                              </Text>
+                              <View
+                                style={{
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                  gap: 4,
+                                }}
+                              >
+                                <Text
+                                  style={{
+                                    fontSize: 12,
+                                    color: session.wasCompleted
+                                      ? colors.green || "#22C55E"
+                                      : colors.orange,
+                                    fontFamily: "CarosSoft",
+                                  }}
+                                >
+                                  {session.wasCompleted
+                                    ? "Completed"
+                                    : "Skipped"}
+                                </Text>
+                              </View>
+                              {session.location && (
+                                <View
+                                  style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    gap: 4,
+                                    marginTop: 2,
+                                  }}
+                                >
+                                  <MapPin
+                                    size={12}
+                                    color={colors.darkGray || "#6B7280"}
+                                    weight="regular"
+                                  />
+                                  <Text
+                                    style={{
+                                      fontSize: 12,
+                                      color: colors.darkGray || "#6B7280",
+                                      fontFamily: "CarosSoft",
+                                      fontStyle: "italic",
+                                    }}
+                                  >
+                                    {session.location.name}
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
                           </View>
-                        </View>
-                      </View>
 
-                      {/* Trash Icon */}
-                      <View style={{ marginLeft: 12 }}>
-                        <Trash size={20} color={colors.red || "#EF4444"} />
-                      </View>
-                    </TouchableOpacity>
-                  ))}
+                          {/* Trash Icon */}
+                          <View style={{ marginLeft: 12 }}>
+                            <Trash size={20} color={colors.red || "#EF4444"} />
+                          </View>
+                        </TouchableOpacity>
+                      ))
+                    : filteredGoals.map((goal, index) => (
+                        <TouchableOpacity
+                          key={index}
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            paddingVertical: 12,
+                            paddingHorizontal: 16,
+                            backgroundColor: colors.white,
+                            borderRadius: 12,
+                            marginBottom: 8,
+                            borderWidth: 1,
+                            borderColor: colors.gray || "#E5E7EB",
+                          }}
+                          activeOpacity={0.7}
+                          onPress={() => {}}
+                        >
+                          {/* Goal Details */}
+                          <View style={{ flex: 1 }}>
+                            <View
+                              style={{
+                                flexDirection: "column",
+                                gap: 4,
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  fontSize: 14,
+                                  color: colors.darkGray || "#6B7280",
+                                  fontFamily: "CarosSoft",
+                                }}
+                              >
+                                {new Date(goal.achievedAt).toLocaleDateString()}
+                              </Text>
+                              <Text
+                                style={{
+                                  fontSize: 16,
+                                  fontWeight: "bold",
+                                  color: colors.purple,
+                                  fontFamily: "CarosSoft",
+                                }}
+                              >
+                                {goal.title}
+                              </Text>
+                              {goal.description && (
+                                <Text
+                                  style={{
+                                    fontSize: 14,
+                                    color: colors.darkGray || "#6B7280",
+                                    fontFamily: "CarosSoft",
+                                  }}
+                                >
+                                  {goal.description}
+                                </Text>
+                              )}
+                            </View>
+                          </View>
+
+                          {/* Completed Icon */}
+                          <View style={{ marginLeft: 12 }}>
+                            <CheckCircle
+                              size={24}
+                              color={colors.green || "#22C55E"}
+                              weight="fill"
+                            />
+                          </View>
+                        </TouchableOpacity>
+                      ))}
                 </ScrollView>
               </View>
             )}
