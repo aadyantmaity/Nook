@@ -28,6 +28,9 @@ import {
   Moon,
   Sun,
   ShareNetwork,
+  Clock,
+  CheckCircle,
+  Trophy,
 } from "phosphor-react-native";
 import { ThemeContext } from "../App";
 import * as ImagePicker from "expo-image-picker";
@@ -36,10 +39,12 @@ import { getLastUpdatedLabel } from "../utils/lastUpdatedLabel";
 import { onSnapshot, doc } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { auth } from "../firebaseConfig"; // <-- Add this import
+import { formatDuration } from "../services/focusSessions";
 
 // Hooks and components
 import { useProfileData } from "../hooks/useProfileData";
 import useFavoriteSpots from "../hooks/useFavoriteSpots";
+import useFocusStats from "../hooks/useFocusStats";
 
 import ProfilePicture from "../components/Profile/ProfilePicture";
 import FavoriteSpotCard from "../components/Profile/FavoriteSpotCard";
@@ -94,6 +99,13 @@ export default function ProfileScreen({ navigation, route }) {
     fetchFavoriteSpots,
   } = useFavoriteSpots(targetUid);
 
+  // Focus stats
+  const {
+    focusStats,
+    loading: focusStatsLoading,
+    refetch: refetchFocusStats,
+  } = useFocusStats(targetUid);
+
   // Study stats
 
   // UI state
@@ -122,6 +134,7 @@ export default function ProfileScreen({ navigation, route }) {
     setRefreshing(true);
     await fetchUserData();
     await fetchFavoriteSpots();
+    await refetchFocusStats();
 
     setRefreshing(false);
   };
@@ -693,6 +706,81 @@ export default function ProfileScreen({ navigation, route }) {
                 {following.length}
               </Text>
             </TouchableOpacity>
+          </View>
+
+          {/* Focus Stats Section */}
+          <View style={styles.followRow}>
+            <View style={styles.followColumn}>
+              <Clock
+                size={20}
+                color={themeColors.purple}
+                style={{ marginBottom: 4 }}
+              />
+              <Text
+                style={[
+                  styles.followLabel,
+                  { color: themeColors.darkGray, fontFamily: "CarosSoft" },
+                ]}
+              >
+                Total Focus
+              </Text>
+              <Text
+                style={[
+                  styles.followCount,
+                  { color: themeColors.black, fontFamily: "CarosSoft" },
+                ]}
+              >
+                {focusStatsLoading
+                  ? "..."
+                  : formatDuration(focusStats.totalFocusTime)}
+              </Text>
+            </View>
+            <View style={styles.followColumn}>
+              <CheckCircle
+                size={20}
+                color={themeColors.green}
+                style={{ marginBottom: 4 }}
+              />
+              <Text
+                style={[
+                  styles.followLabel,
+                  { color: themeColors.darkGray, fontFamily: "CarosSoft" },
+                ]}
+              >
+                Sessions
+              </Text>
+              <Text
+                style={[
+                  styles.followCount,
+                  { color: themeColors.black, fontFamily: "CarosSoft" },
+                ]}
+              >
+                {focusStatsLoading ? "..." : focusStats.totalSessions}
+              </Text>
+            </View>
+            <View style={styles.followColumn}>
+              <Trophy
+                size={20}
+                color={themeColors.orange}
+                style={{ marginBottom: 4 }}
+              />
+              <Text
+                style={[
+                  styles.followLabel,
+                  { color: themeColors.darkGray, fontFamily: "CarosSoft" },
+                ]}
+              >
+                Completed
+              </Text>
+              <Text
+                style={[
+                  styles.followCount,
+                  { color: themeColors.black, fontFamily: "CarosSoft" },
+                ]}
+              >
+                {focusStatsLoading ? "..." : focusStats.completedSessions}
+              </Text>
+            </View>
           </View>
 
           <View

@@ -32,9 +32,14 @@ import {
   Users,
   PlusMinus,
   PencilSimple,
+  Trophy,
+  Clock,
+  Medal,
 } from "phosphor-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import GroupShareModal from "../components/SpotDetail/GroupShareModal";
+import useGroupLeaderboard from "../hooks/useGroupLeaderboard";
+import { formatDuration } from "../services/focusSessions";
 
 export default function GroupDetailsScreen({ route, navigation }) {
   const { groupId } = route.params;
@@ -58,6 +63,13 @@ export default function GroupDetailsScreen({ route, navigation }) {
   const [editSaving, setEditSaving] = useState(false);
 
   const starredListRef = useRef(null);
+
+  // Weekly leaderboard
+  const {
+    leaderboard,
+    loading: leaderboardLoading,
+    refetch: refetchLeaderboard,
+  } = useGroupLeaderboard(groupId, group?.memberUids);
 
   // Open edit modal and pre-fill fields
   const openEditModal = () => {
@@ -347,6 +359,220 @@ export default function GroupDetailsScreen({ route, navigation }) {
             No description provided.
           </Text>
         )}
+
+        {/* Weekly Leaderboard */}
+        <View style={{ marginBottom: 24 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 12,
+            }}
+          >
+            <Trophy
+              size={20}
+              color={themeColors.orange}
+              style={{ marginRight: 8 }}
+            />
+            <Text
+              style={{
+                fontWeight: "bold",
+                color: themeColors.purple,
+                fontSize: 17,
+                fontFamily: "CarosSoft",
+              }}
+            >
+              This Week's Focus Leaders
+            </Text>
+          </View>
+
+          {leaderboardLoading ? (
+            <View style={{ alignItems: "center", padding: 20 }}>
+              <ActivityIndicator color={themeColors.purple} />
+            </View>
+          ) : leaderboard.length === 0 ? (
+            <Text
+              style={{
+                color: themeColors.darkGray,
+                fontFamily: "CarosSoft",
+                fontStyle: "italic",
+              }}
+            >
+              No focus activity this week yet. Start a timer to appear on the
+              leaderboard!
+            </Text>
+          ) : (
+            <View>
+              {leaderboard.map((member, index) => {
+                // Handle separator
+                if (member.isSeparator) {
+                  return (
+                    <View
+                      key={member.uid}
+                      style={{
+                        alignItems: "center",
+                        paddingVertical: 8,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          color: themeColors.darkGray,
+                          fontFamily: "CarosSoft",
+                          fontWeight: "500",
+                        }}
+                      >
+                        ⋯
+                      </Text>
+                    </View>
+                  );
+                }
+
+                const isCurrentUser = member.uid === auth.currentUser?.uid;
+                const rank = member.rank;
+
+                return (
+                  <TouchableOpacity
+                    key={member.uid}
+                    onPress={() =>
+                      navigation.navigate("Profile", { uid: member.uid })
+                    }
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      paddingVertical: 8,
+                      paddingHorizontal: 12,
+                      backgroundColor:
+                        rank === 1
+                          ? themeColors.orange + "10"
+                          : rank === 2
+                          ? themeColors.purple + "10"
+                          : isCurrentUser
+                          ? themeColors.blue + "10"
+                          : themeColors.gray + "50",
+                      borderRadius: 12,
+                      marginBottom: 8,
+                      borderWidth: rank <= 2 || isCurrentUser ? 1 : 0,
+                      borderColor:
+                        rank === 1
+                          ? themeColors.orange + "30"
+                          : rank === 2
+                          ? themeColors.purple + "30"
+                          : isCurrentUser
+                          ? themeColors.blue + "30"
+                          : "transparent",
+                    }}
+                  >
+                    {/* Rank */}
+                    <View
+                      style={{
+                        width: 32,
+                        alignItems: "center",
+                        marginRight: 12,
+                      }}
+                    >
+                      {rank === 1 ? (
+                        <Medal
+                          size={24}
+                          color={themeColors.orange}
+                          weight="fill"
+                        />
+                      ) : rank === 2 ? (
+                        <Medal
+                          size={24}
+                          color={themeColors.purple}
+                          weight="fill"
+                        />
+                      ) : rank === 3 ? (
+                        <Medal
+                          size={24}
+                          color={themeColors.darkGray}
+                          weight="fill"
+                        />
+                      ) : (
+                        <Text
+                          style={{
+                            fontSize: 16,
+                            fontWeight: "bold",
+                            color: isCurrentUser
+                              ? themeColors.blue
+                              : themeColors.darkGray,
+                            fontFamily: "CarosSoft",
+                          }}
+                        >
+                          {rank}
+                        </Text>
+                      )}
+                    </View>
+
+                    {/* Profile Picture */}
+                    <View
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 18,
+                        backgroundColor: isCurrentUser
+                          ? themeColors.blue
+                          : themeColors.purple,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginRight: 12,
+                        overflow: "hidden",
+                        borderWidth: isCurrentUser ? 2 : 0,
+                        borderColor: themeColors.blue,
+                      }}
+                    >
+                      {member.profilePic ? (
+                        <Image
+                          source={{ uri: member.profilePic }}
+                          style={{ width: 36, height: 36, borderRadius: 18 }}
+                        />
+                      ) : (
+                        <User size={20} color={themeColors.white} />
+                      )}
+                    </View>
+
+                    {/* Name and Stats */}
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: "600",
+                          color: themeColors.black,
+                          fontFamily: "CarosSoft",
+                        }}
+                      >
+                        {isCurrentUser
+                          ? "You"
+                          : `${member.firstName} ${member.lastName}`}
+                      </Text>
+                      <View
+                        style={{ flexDirection: "row", alignItems: "center" }}
+                      >
+                        <Clock
+                          size={14}
+                          color={themeColors.darkGray}
+                          style={{ marginRight: 4 }}
+                        />
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            color: themeColors.darkGray,
+                            fontFamily: "CarosSoft",
+                          }}
+                        >
+                          {formatDuration(member.weeklyFocusTime)} •{" "}
+                          {member.weeklySessions} sessions
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+        </View>
+
         {/* Members row */}
         <View
           style={{

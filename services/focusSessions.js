@@ -131,6 +131,98 @@ export const getTotalFocusTime = async () => {
   }
 };
 
+// Get focus stats for any user (for profile pages)
+export const getUserFocusStats = async (userId = null) => {
+  try {
+    const targetUserId = userId || auth.currentUser?.uid;
+    if (!targetUserId) {
+      console.error("No user ID provided");
+      return { totalFocusTime: 0, totalSessions: 0, completedSessions: 0 };
+    }
+
+    const userDocRef = doc(db, "users", targetUserId);
+    const focusSessionsRef = collection(userDocRef, "focusSessions");
+
+    // Get all work sessions
+    const workQuery = query(
+      focusSessionsRef,
+      where("mode", "==", "work"),
+      orderBy("timestamp", "desc")
+    );
+
+    const querySnapshot = await getDocs(workQuery);
+    let totalFocusTime = 0;
+    let totalSessions = 0;
+    let completedSessions = 0;
+
+    querySnapshot.forEach((doc) => {
+      const sessionData = doc.data();
+      totalFocusTime += sessionData.duration;
+      totalSessions++;
+      if (sessionData.wasCompleted) {
+        completedSessions++;
+      }
+    });
+
+    return {
+      totalFocusTime,
+      totalSessions,
+      completedSessions,
+    };
+  } catch (error) {
+    console.error("Error getting user focus stats: ", error);
+    return { totalFocusTime: 0, totalSessions: 0, completedSessions: 0 };
+  }
+};
+
+// Get weekly focus stats for leaderboard
+export const getWeeklyFocusStats = async (userId = null) => {
+  try {
+    const targetUserId = userId || auth.currentUser?.uid;
+    if (!targetUserId) {
+      console.error("No user ID provided");
+      return { weeklyFocusTime: 0, weeklySessions: 0 };
+    }
+
+    // Calculate start of current week (Monday)
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const daysToMonday = (dayOfWeek + 6) % 7; // Monday = 0, Sunday = 6
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - daysToMonday);
+    monday.setHours(0, 0, 0, 0);
+
+    const userDocRef = doc(db, "users", targetUserId);
+    const focusSessionsRef = collection(userDocRef, "focusSessions");
+
+    // Get work sessions from this week
+    const workQuery = query(
+      focusSessionsRef,
+      where("mode", "==", "work"),
+      where("timestamp", ">=", monday),
+      orderBy("timestamp", "desc")
+    );
+
+    const querySnapshot = await getDocs(workQuery);
+    let weeklyFocusTime = 0;
+    let weeklySessions = 0;
+
+    querySnapshot.forEach((doc) => {
+      const sessionData = doc.data();
+      weeklyFocusTime += sessionData.duration;
+      weeklySessions++;
+    });
+
+    return {
+      weeklyFocusTime,
+      weeklySessions,
+    };
+  } catch (error) {
+    console.error("Error getting weekly focus stats: ", error);
+    return { weeklyFocusTime: 0, weeklySessions: 0 };
+  }
+};
+
 // Format duration from seconds to human readable string
 export const formatDuration = (seconds) => {
   const hours = Math.floor(seconds / 3600);
