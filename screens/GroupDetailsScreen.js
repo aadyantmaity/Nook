@@ -518,7 +518,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
                         justifyContent: "center",
                         marginRight: 12,
                         overflow: "hidden",
-                        borderWidth: isCurrentUser ? 2 : 0,
+                        borderWidth: isCurrentUser ? 1 : 0,
                         borderColor: themeColors.blue,
                       }}
                     >

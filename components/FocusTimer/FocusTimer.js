@@ -664,12 +664,7 @@ export default function FocusTimer() {
     if (mode === "work") {
       // Use setTimeout to ensure state updates are processed first
       setTimeout(() => {
-        setIsPlaying(true);
-        setSessionStartTime(Date.now());
-        // Schedule notification for break timer with a small delay
-        setTimeout(() => {
-          scheduleTimerNotification(breakDuration, "break");
-        }, 200);
+        startBreakTimer();
       }, 100);
     }
 
@@ -797,6 +792,26 @@ export default function FocusTimer() {
     }
   }, []);
 
+  const startBreakTimer = useCallback(() => {
+    setSessionStartTime(Date.now());
+    setIsPlaying(true);
+
+    // Schedule notification for break timer completion
+    setTimeout(() => {
+      // Ensure we have valid break duration settings
+      if (breakDuration > 0) {
+        scheduleTimerNotification(breakDuration, "break");
+        console.log(
+          `Scheduled notification for break timer completion (${breakDuration}s remaining)`
+        );
+      } else {
+        console.warn(
+          "Invalid break duration detected, skipping notification scheduling"
+        );
+      }
+    }, 200);
+  }, [breakDuration, scheduleTimerNotification]);
+
   const handleToggle = useCallback(() => {
     // Prevent starting timer while settings are loading
     if (isLoadingSettings) {
@@ -805,8 +820,13 @@ export default function FocusTimer() {
     }
 
     if (!isPlaying) {
-      // Before starting timer, show location picker
-      setShowLocationModal(true);
+      // Only show location picker for work timers
+      if (mode === "work") {
+        setShowLocationModal(true);
+      } else {
+        // For break timers, start immediately without location
+        startBreakTimer();
+      }
     } else {
       // Pausing timer - save elapsed time
       if (sessionStartTime) {
@@ -820,7 +840,14 @@ export default function FocusTimer() {
       Notifications.cancelAllScheduledNotificationsAsync();
       setIsPlaying(false);
     }
-  }, [isPlaying, sessionStartTime, elapsedTime, isLoadingSettings]);
+  }, [
+    isPlaying,
+    sessionStartTime,
+    elapsedTime,
+    isLoadingSettings,
+    mode,
+    startBreakTimer,
+  ]);
 
   const startTimerWithLocation = useCallback(
     (location) => {
@@ -830,15 +857,25 @@ export default function FocusTimer() {
 
       // Schedule notification for timer completion with a small delay to ensure notification system is ready
       setTimeout(() => {
-        scheduleTimerNotification(currentDuration, mode);
-        console.log(
-          `Scheduled notification for ${mode} timer completion (${currentDuration}s remaining) at ${
-            location?.name || "No location"
-          }`
-        );
+        // Calculate current duration at the time of scheduling to ensure we use the latest settings
+        const durationToUse = mode === "work" ? workDuration : breakDuration;
+
+        // Double-check that we have valid settings loaded
+        if (durationToUse > 0) {
+          scheduleTimerNotification(durationToUse, mode);
+          console.log(
+            `Scheduled notification for ${mode} timer completion (${durationToUse}s remaining) at ${
+              location?.name || "No location"
+            }`
+          );
+        } else {
+          console.warn(
+            "Invalid duration detected, skipping notification scheduling"
+          );
+        }
       }, 200);
     },
-    [currentDuration, mode, scheduleTimerNotification]
+    [mode, workDuration, breakDuration, scheduleTimerNotification]
   );
 
   const currentDuration = mode === "work" ? workDuration : breakDuration;
