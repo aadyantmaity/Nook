@@ -189,8 +189,14 @@ export default function HomeScreen({ navigation, route }) {
   const { favorites, toggleFavorite, favoriteGroups, toggleFavoriteGroup } =
     useFavorites(); // <-- destructure favorites
   const { studySpots, isLoading, fetchStudySpots } = useStudySpots();
-  const { filters, setFilters, filteredSpots, sortBy, setSortBy } =
-    useSearchAndFilters(studySpots, favorites); // <-- pass favorites
+  const {
+    filters,
+    setFilters,
+    filteredSpots,
+    sortBy,
+    setSortBy,
+    hasFavoritesFilter,
+  } = useSearchAndFilters(studySpots); // <-- get hasFavoritesFilter
   const {
     friendsCheckIns,
     isLoading: friendsLoading,
@@ -626,6 +632,7 @@ export default function HomeScreen({ navigation, route }) {
           setShowMapView={handleSetShowMapView}
           sortBy={sortBy}
           setSortBy={setSortBy}
+          hasFavoritesFilter={hasFavoritesFilter}
           ListHeaderComponent={
             <StudySpotsHeader
               showMapView={showMapView}

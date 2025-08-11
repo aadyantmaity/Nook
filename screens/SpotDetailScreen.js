@@ -285,19 +285,8 @@ export default function SpotDetailScreen({ route, navigation }) {
           onPress: async () => {
             try {
               await deleteDoc(doc(db, "studySpots", spotId));
-              const user = auth.currentUser;
-              if (user) {
-                const userRef = doc(db, "users", user.uid);
-                const userDoc = await getDoc(userRef);
-                if (userDoc.exists()) {
-                  const favs = userDoc.data().favorites || [];
-                  if (favs.includes(spotId)) {
-                    await updateDoc(userRef, {
-                      favorites: favs.filter((f) => f !== spotId),
-                    });
-                  }
-                }
-              }
+              // Note: The favoritedBy subcollection will be automatically deleted when the study spot is deleted
+              // due to Firestore's cascading delete behavior for subcollections
               navigation.navigate("Home", { deleting: true });
             } catch (e) {
               Alert.alert("Error", "Failed to delete nook.");

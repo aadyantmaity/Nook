@@ -75,9 +75,7 @@ export default function Filters({
       return;
     }
     const normalized =
-      label === "Favorites"
-        ? "favorites"
-        : label === "No Husky Card"
+      label === "No Husky Card"
         ? "no-husky-card"
         : label === "Private"
         ? "private"
@@ -93,9 +91,7 @@ export default function Filters({
   const isSelected = (label) => {
     if (label === "All") return localFilters.length === 0;
     const normalized =
-      label === "Favorites"
-        ? "favorites"
-        : label === "No Husky Card"
+      label === "No Husky Card"
         ? "no-husky-card"
         : label === "Private"
         ? "private"

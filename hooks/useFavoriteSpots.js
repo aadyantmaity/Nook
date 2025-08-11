@@ -28,17 +28,38 @@ export default function useFavoriteSpots(targetUid = null) {
         setFavoriteSpotsLoading(false);
         return;
       }
-      const userDoc = await getDoc(doc(db, "users", uid));
-      let favIds = [];
-      if (userDoc.exists()) {
-        favIds = userDoc.data().favorites || [];
+
+      // Get all study spots and check which ones the user has favorited
+      const spotsSnapshot = await getDocs(collection(db, "studySpots"));
+      const favIds = [];
+
+      // Check each spot's favoritedBy subcollection for the user
+      for (const spotDoc of spotsSnapshot.docs) {
+        try {
+          const favoritedByDoc = await getDoc(
+            doc(db, "studySpots", spotDoc.id, "favoritedBy", uid)
+          );
+
+          if (favoritedByDoc.exists()) {
+            favIds.push(spotDoc.id);
+          }
+        } catch (error) {
+          console.error(
+            "Error checking favoritedBy for spot:",
+            spotDoc.id,
+            error
+          );
+        }
       }
+
       setFavorites(favIds);
+
       if (favIds.length === 0) {
         setFavoriteSpots([]);
         setFavoriteSpotsLoading(false);
         return;
       }
+
       // Fetch all favorite spots in parallel
       const spotDocs = await Promise.all(
         favIds.map((id) => getDoc(doc(db, "studySpots", id)))

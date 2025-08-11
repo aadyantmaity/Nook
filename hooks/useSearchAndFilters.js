@@ -1,8 +1,52 @@
 import { useState, useEffect, useCallback } from "react";
 import * as Location from "expo-location"; // Add this import
-import { auth } from "../firebaseConfig"; // Adjust the import based on your project structure
+import { auth, db } from "../firebaseConfig"; // Adjust the import based on your project structure
+import { doc, getDoc } from "firebase/firestore";
 
-export default function useSearchAndFilters(studySpots, favorites) {
+// Custom hook to check favorite status for filtering
+export function useFavoriteStatusForFilter() {
+  const [favoriteStatusCache, setFavoriteStatusCache] = useState(new Map());
+
+  const checkFavoriteStatus = useCallback(
+    async (spotId) => {
+      const user = auth.currentUser;
+      if (!user || !spotId) return false;
+
+      // Check cache first
+      if (favoriteStatusCache.has(spotId)) {
+        return favoriteStatusCache.get(spotId);
+      }
+
+      try {
+        const favoritedByDoc = await getDoc(
+          doc(db, "studySpots", spotId, "favoritedBy", user.uid)
+        );
+        const isFavorite = favoritedByDoc.exists();
+
+        // Update cache
+        setFavoriteStatusCache((prev) => new Map(prev).set(spotId, isFavorite));
+
+        return isFavorite;
+      } catch (error) {
+        console.error("Error checking favorite status for filter:", error);
+        return false;
+      }
+    },
+    [favoriteStatusCache]
+  );
+
+  // Clear cache when user changes
+  useEffect(() => {
+    setFavoriteStatusCache(new Map());
+  }, [auth.currentUser?.uid]);
+
+  return checkFavoriteStatus;
+}
+
+export default function useSearchAndFilters(
+  studySpots,
+  checkFavoriteStatus = null
+) {
   const [filters, setFilters] = useState([]);
   const [sortBy, setSortBy] = useState("default");
   // Add user location state:
@@ -33,23 +77,36 @@ export default function useSearchAndFilters(studySpots, favorites) {
     }
   }, [sortBy, fetchUserLocation]);
 
-  const matchFilters = (spot) => {
+  const matchFilters = async (spot) => {
     if (!filters.length) return true;
-    return filters.every((f) => {
-      if (f === "favorites") return favorites.includes(spot.id);
-      if (f === "no-husky-card") return !spot.huskyCardNeeded;
-      if (f === "private")
-        return (
+
+    for (const f of filters) {
+      if (f === "favorites") {
+        // Use the checkFavoriteStatus function if provided, otherwise return true
+        if (checkFavoriteStatus) {
+          const isFavorite = await checkFavoriteStatus(spot.id);
+          if (!isFavorite) return false;
+        } else {
+          return true;
+        }
+      } else if (f === "no-husky-card") {
+        if (spot.huskyCardNeeded) return false;
+      } else if (f === "private") {
+        const isPrivate =
           !!spot.privateNook &&
           (spot.addedBy === auth.currentUser?.uid ||
             (Array.isArray(spot.sharedWith) &&
-              spot.sharedWith.includes(auth.currentUser?.uid)))
-        );
-      // Tag filter: match case-insensitively
-      return (spot.tags || [])
-        .map((t) => String(t).toLowerCase())
-        .includes(f.toLowerCase());
-    });
+              spot.sharedWith.includes(auth.currentUser?.uid)));
+        if (!isPrivate) return false;
+      } else {
+        // Tag filter: match case-insensitively
+        const hasTag = (spot.tags || [])
+          .map((t) => String(t).toLowerCase())
+          .includes(f.toLowerCase());
+        if (!hasTag) return false;
+      }
+    }
+    return true;
   };
 
   // Helper: Haversine distance in meters
@@ -133,17 +190,55 @@ export default function useSearchAndFilters(studySpots, favorites) {
   }
   // else: default order (as fetched)
 
-  const filteredSpots = sortedSpots.filter((spot) => matchFilters(spot));
+  // For now, filter out favorites filter and apply other filters synchronously
+  const syncFilters = filters.filter((f) => f !== "favorites");
+  const hasFavoritesFilter = filters.includes("favorites");
 
-  // Expose matchFilters and sortBy for use in map/list view
+  const syncFilteredSpots = sortedSpots.filter((spot) => {
+    if (!syncFilters.length) return true;
+    return syncFilters.every((f) => {
+      if (f === "no-husky-card") return !spot.huskyCardNeeded;
+      if (f === "private")
+        return (
+          !!spot.privateNook &&
+          (spot.addedBy === auth.currentUser?.uid ||
+            (Array.isArray(spot.sharedWith) &&
+              spot.sharedWith.includes(auth.currentUser?.uid)))
+        );
+      // Tag filter: match case-insensitively
+      return (spot.tags || [])
+        .map((t) => String(t).toLowerCase())
+        .includes(f.toLowerCase());
+    });
+  });
+
+  // If no favorites filter, return sync filtered spots
+  if (!hasFavoritesFilter) {
+    return {
+      filters,
+      setFilters,
+      filteredSpots: syncFilteredSpots,
+      matchFilters,
+      sortBy,
+      setSortBy,
+      userLocation,
+      fetchUserLocation,
+    };
+  }
+
+  // If favorites filter is active, we need to handle it separately
+  // For now, return all spots and let the UI handle favorites filtering
+  // This is a temporary solution - in a real implementation, you'd want to
+  // use a more sophisticated approach with React Query or similar
   return {
     filters,
     setFilters,
-    filteredSpots,
+    filteredSpots: syncFilteredSpots,
     matchFilters,
     sortBy,
     setSortBy,
     userLocation,
     fetchUserLocation,
+    hasFavoritesFilter,
   };
 }

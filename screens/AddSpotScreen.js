@@ -19,6 +19,7 @@ import {
   doc,
   getDocs,
   updateDoc,
+  setDoc,
 } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 import * as ImagePicker from "expo-image-picker";
@@ -324,17 +325,14 @@ export default function AddSpotScreen({ navigation, route }) {
       }
 
       if (isFavorite && user) {
-        const userRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userRef);
-        let currentFavorites = [];
-        if (userDoc.exists()) {
-          currentFavorites = userDoc.data().favorites || [];
-        }
-        if (!currentFavorites.includes(docRef.id)) {
-          await updateDoc(userRef, {
-            favorites: [...currentFavorites, docRef.id],
-          });
-        }
+        // Add to favoritedBy subcollection
+        await setDoc(
+          doc(db, "studySpots", docRef.id, "favoritedBy", user.uid),
+          {
+            favoritedAt: new Date(),
+            userId: user.uid,
+          }
+        );
       }
       navigation.navigate(
         "Home",
