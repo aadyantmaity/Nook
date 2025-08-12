@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   TextInput,
   FlatList,
-  ActivityIndicator,
   Alert,
   Image,
 } from "react-native";
@@ -22,6 +21,7 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { MagnifyingGlass, MapPin, X, Share } from "phosphor-react-native";
+import CircleLoader from "../common/CircleLoader";
 
 export default function ShareNookModal({
   visible,
@@ -413,17 +413,10 @@ export default function ShareNookModal({
                   paddingHorizontal: 24,
                 }}
               >
-                <ActivityIndicator size="large" color={themeColors.purple} />
-                <Text
-                  style={{
-                    color: themeColors.darkGray,
-                    fontSize: 16,
-                    fontFamily: "CarosSoft",
-                    marginTop: 16,
-                  }}
-                >
-                  Loading study spots...
-                </Text>
+                <CircleLoader
+                  themeColors={themeColors}
+                  text="Loading study spots..."
+                />
               </View>
             ) : filteredNooks.length === 0 ? (
               <View

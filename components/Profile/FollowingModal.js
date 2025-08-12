@@ -6,10 +6,10 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
-  ActivityIndicator,
 } from "react-native";
 import ProfilePicture from "../Profile/ProfilePicture";
 import { UserMinus } from "phosphor-react-native";
+import CircleLoader from "../common/CircleLoader";
 
 export default function FollowingModal({
   visible,
@@ -65,7 +65,12 @@ export default function FollowingModal({
             Following
           </Text>
           {listLoading ? (
-            <ActivityIndicator color={themeColors.purple} />
+            <View style={{ alignItems: "center", padding: 20 }}>
+              <CircleLoader
+                themeColors={themeColors}
+                text="Loading following..."
+              />
+            </View>
           ) : (
             <FlatList
               data={userList}

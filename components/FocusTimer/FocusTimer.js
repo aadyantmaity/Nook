@@ -1,8 +1,16 @@
-import React, { useMemo, useState, useContext, useCallback } from "react";
+import React, {
+  useMemo,
+  useState,
+  useContext,
+  useCallback,
+  useRef,
+  useEffect,
+} from "react";
 import { View, Text, TouchableOpacity, Modal, TextInput } from "react-native";
 import { CountdownCircleTimer } from "react-native-countdown-circle-timer";
 import { ThemeContext } from "../../App";
 import * as Notifications from "expo-notifications";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   Play,
   Pause,
@@ -13,6 +21,7 @@ import {
   Coffee,
   ArrowRight,
   Archive,
+  ChartBar,
 } from "phosphor-react-native";
 import {
   saveFocusSession,
@@ -23,6 +32,7 @@ import FocusSessionsModal from "./FocusSessionsModal";
 import { FocusGoalCard } from "./FocusGoalCard";
 import { FocusGoalModal } from "./FocusGoalModal";
 import LocationPickerModal from "./LocationPickerModal";
+import FocusStatsWidgets from "./FocusStatsWidgets";
 import { auth, db } from "../../firebaseConfig";
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 
@@ -463,7 +473,7 @@ function EditTimesModal({
   );
 }
 
-export default function FocusTimer() {
+export default function FocusTimer({ navigation, route }) {
   const { themeColors } = useContext(ThemeContext) || {};
   const colors = themeColors || {
     purple: "#6C63FF",
@@ -476,6 +486,76 @@ export default function FocusTimer() {
     red: "#EF4444",
     blue: "#3B82F6",
   };
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState("timer"); // 'timer' | 'dashboard'
+  const hasProcessedShowDashboard = useRef(false);
+
+  // Focus view persistence
+  const FOCUS_VIEW_KEY = "nookFocusView";
+  const user = auth.currentUser;
+  const userSpecificFocusViewKey = user
+    ? `${FOCUS_VIEW_KEY}_${user.uid}`
+    : FOCUS_VIEW_KEY;
+
+  // Load user's preferred focus view on mount
+  useEffect(() => {
+    const fetchUserFocusView = async () => {
+      try {
+        // 1. Try AsyncStorage first
+        const stored = await AsyncStorage.getItem(userSpecificFocusViewKey);
+        if (stored === "dashboard") {
+          setActiveTab("dashboard");
+          return;
+        }
+        if (stored === "timer") {
+          setActiveTab("timer");
+          return;
+        }
+        // 2. Fallback to Firestore
+        if (!user) return;
+        const userRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          const pref = userDoc.data().focusView;
+          if (pref === "dashboard") setActiveTab("dashboard");
+          else setActiveTab("timer");
+        }
+      } catch {}
+    };
+    fetchUserFocusView();
+  }, [userSpecificFocusViewKey, user]);
+
+  // Save user's preferred focus view when changed
+  const handleSetActiveTab = async (tab) => {
+    setActiveTab(tab);
+    try {
+      await AsyncStorage.setItem(userSpecificFocusViewKey, tab);
+      if (!user) return;
+      const userRef = doc(db, "users", user.uid);
+      await updateDoc(userRef, { focusView: tab });
+    } catch {}
+  };
+
+  // Handle route params to show dashboard
+  React.useEffect(() => {
+    if (route?.params?.showDashboard && !hasProcessedShowDashboard.current) {
+      console.log("Setting active tab to dashboard");
+      hasProcessedShowDashboard.current = true;
+      handleSetActiveTab("dashboard");
+      // Clear the param after using it
+      if (navigation && navigation.setParams) {
+        navigation.setParams({ showDashboard: undefined });
+      }
+    }
+  }, [route?.params?.showDashboard, navigation]);
+
+  // Reset the ref when component unmounts or route changes
+  React.useEffect(() => {
+    return () => {
+      hasProcessedShowDashboard.current = false;
+    };
+  }, [route?.params]);
 
   const [mode, setMode] = useState("work"); // 'work' | 'break'
   const [workDuration, setWorkDuration] = useState(25 * 60);
@@ -937,14 +1017,77 @@ export default function FocusTimer() {
   // No live progress needed for task-based goals
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.white, paddingTop: 60 }}>
+    <View style={{ flex: 1, backgroundColor: colors.white }}>
+      {/* Tab Bar */}
+      <View style={{ paddingTop: 16 }}>
+        <View style={{ paddingHorizontal: 20 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 16,
+              zIndex: 20,
+              justifyContent: "space-between",
+            }}
+          >
+            {/* Left: View Toggles */}
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
+              <TouchableOpacity
+                onPress={() => handleSetActiveTab("timer")}
+                style={{
+                  backgroundColor:
+                    activeTab === "timer" ? colors.purple : colors.white,
+                  padding: 10,
+                  borderRadius: 8,
+                  marginRight: 8,
+                  minWidth: 48,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: 42,
+                }}
+              >
+                <Clock
+                  size={22}
+                  color={activeTab === "timer" ? colors.white : colors.purple}
+                  weight={activeTab === "timer" ? "fill" : "regular"}
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => handleSetActiveTab("dashboard")}
+                style={{
+                  backgroundColor:
+                    activeTab === "dashboard" ? colors.purple : colors.white,
+                  padding: 10,
+                  borderRadius: 8,
+                  minWidth: 48,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: 42,
+                }}
+              >
+                <ChartBar
+                  size={22}
+                  color={
+                    activeTab === "dashboard" ? colors.white : colors.purple
+                  }
+                  weight={activeTab === "dashboard" ? "fill" : "regular"}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </View>
+
       <View
         style={{
           flex: 1,
           alignItems: "center",
           justifyContent: "flex-start",
           paddingHorizontal: 20,
-          paddingTop: 16,
+          paddingTop: 0,
         }}
       >
         {isLoadingSettings ? (
@@ -955,7 +1098,7 @@ export default function FocusTimer() {
               Loading settings...
             </Text>
           </View>
-        ) : (
+        ) : activeTab === "timer" ? (
           <>
             {/* Focus Goal Card */}
             <FocusGoalCard
@@ -995,7 +1138,7 @@ export default function FocusTimer() {
               </Text>
             )}
 
-            <View style={{ marginTop: 16 }}>
+            <View style={{ marginTop: 8 }}>
               <TimerControls
                 isPlaying={isPlaying}
                 onToggle={handleToggle}
@@ -1005,118 +1148,60 @@ export default function FocusTimer() {
                 mode={mode}
               />
             </View>
-
-            {/* This Week's Stats */}
-            <View style={{ marginTop: 26, width: "100%" }}>
-              <Text
-                style={{
-                  fontSize: 17,
-                  fontWeight: "bold",
-                  color: colors.black,
-                  fontFamily: "CarosSoft",
-                  textAlign: "center",
-                  marginBottom: 8,
-                }}
-              >
-                This Week's Stats
-              </Text>
-
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-evenly",
-                  backgroundColor: colors.white,
-                  borderRadius: 16,
-                  paddingVertical: 10,
-                  paddingHorizontal: 20,
-                }}
-              >
-                <View style={{ alignItems: "center" }}>
-                  <Text
-                    style={{
-                      fontSize: 20,
-                      fontWeight: "bold",
-                      color: colors.purple,
-                      fontFamily: "CarosSoft",
-                    }}
-                  >
-                    {formatDuration(weeklyStats.focusTime)}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      color: colors.darkGray || "#6B7280",
-                      fontFamily: "CarosSoft",
-                      textAlign: "center",
-                    }}
-                  >
-                    Focus Time
-                  </Text>
-                </View>
-
-                <View style={{ alignItems: "center" }}>
-                  <Text
-                    style={{
-                      fontSize: 20,
-                      fontWeight: "bold",
-                      color: colors.black,
-                      fontFamily: "CarosSoft",
-                    }}
-                  >
-                    {weeklyStats.sessions}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      color: colors.darkGray || "#6B7280",
-                      fontFamily: "CarosSoft",
-                      textAlign: "center",
-                    }}
-                  >
-                    Sessions
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Archive Button */}
-            <TouchableOpacity
-              onPress={() => setArchiveVisible(true)}
-              style={{
-                position: "absolute",
-                top: -40,
-                right: 20,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                borderRadius: 25,
-                backgroundColor: colors.white,
-                shadowColor: colors.black,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 4,
-                elevation: 3,
-              }}
-              accessibilityLabel="View focus sessions archive"
-            >
-              <Archive size={18} color={colors.purple} weight="bold" />
-              <Text
-                style={{
-                  marginLeft: 8,
-                  fontSize: 16,
-                  fontWeight: "600",
-                  color: colors.purple,
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                Archive
-              </Text>
-            </TouchableOpacity>
           </>
+        ) : (
+          // Dashboard View
+          <FocusStatsWidgets
+            themeColors={colors}
+            userId={auth.currentUser?.uid}
+            navigation={navigation}
+          />
         )}
       </View>
+
+      {/* Archive FAB */}
+      {activeTab === "timer" && (
+        <View
+          style={{
+            position: "absolute",
+            bottom: 75,
+            right: 16,
+            zIndex: 20,
+          }}
+        >
+          <TouchableOpacity
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              backgroundColor: colors.purple,
+              borderRadius: 50,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.2,
+              shadowRadius: 4,
+              elevation: 3,
+            }}
+            onPress={() => setArchiveVisible(true)}
+            activeOpacity={0.85}
+            accessibilityLabel="View focus sessions archive"
+          >
+            <Archive size={24} color={colors.white} weight="bold" />
+            <Text
+              style={{
+                color: colors.white,
+                fontWeight: "bold",
+                fontSize: 14,
+                marginLeft: 8,
+                fontFamily: "CarosSoft",
+              }}
+            >
+              Archive
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
       <EditTimesModal
         visible={settingsVisible}
         onClose={() => setSettingsVisible(false)}

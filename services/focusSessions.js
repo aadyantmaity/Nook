@@ -54,16 +54,16 @@ export const saveFocusSession = async (
   }
 };
 
-// Get all focus sessions for the current user
-export const getFocusSessions = async () => {
+// Get all focus sessions for a user (current user by default)
+export const getFocusSessions = async (userId = null) => {
   try {
-    const user = auth.currentUser;
-    if (!user) {
-      console.error("No authenticated user found");
+    const targetUserId = userId || auth.currentUser?.uid;
+    if (!targetUserId) {
+      console.error("No user ID provided");
       return [];
     }
 
-    const userDocRef = doc(db, "users", user.uid);
+    const userDocRef = doc(db, "users", targetUserId);
     const focusSessionsRef = collection(userDocRef, "focusSessions");
 
     const q = query(focusSessionsRef, orderBy("timestamp", "desc"));
@@ -85,16 +85,16 @@ export const getFocusSessions = async () => {
   }
 };
 
-// Get focus sessions by mode (work or break)
-export const getFocusSessionsByMode = async (mode) => {
+// Get focus sessions by mode (work or break) for a user
+export const getFocusSessionsByMode = async (mode, userId = null) => {
   try {
-    const user = auth.currentUser;
-    if (!user) {
-      console.error("No authenticated user found");
+    const targetUserId = userId || auth.currentUser?.uid;
+    if (!targetUserId) {
+      console.error("No user ID provided");
       return [];
     }
 
-    const userDocRef = doc(db, "users", user.uid);
+    const userDocRef = doc(db, "users", targetUserId);
     const focusSessionsRef = collection(userDocRef, "focusSessions");
 
     const q = query(
@@ -120,10 +120,10 @@ export const getFocusSessionsByMode = async (mode) => {
   }
 };
 
-// Get total focus time for the current user
-export const getTotalFocusTime = async () => {
+// Get total focus time for a user
+export const getTotalFocusTime = async (userId = null) => {
   try {
-    const sessions = await getFocusSessionsByMode("work");
+    const sessions = await getFocusSessionsByMode("work", userId);
     return sessions.reduce((total, session) => total + session.duration, 0);
   } catch (error) {
     console.error("Error getting total focus time: ", error);

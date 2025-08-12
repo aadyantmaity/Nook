@@ -31,6 +31,7 @@ import {
   Clock,
   CheckCircle,
   Trophy,
+  ChartBar,
 } from "phosphor-react-native";
 import { ThemeContext } from "../App";
 import * as ImagePicker from "expo-image-picker";
@@ -55,7 +56,7 @@ import FollowingModal from "../components/Profile/FollowingModal";
 import UnfollowConfirmModal from "../components/Profile/UnfollowConfirmModal";
 import { FlatList } from "react-native-gesture-handler";
 import GeneralReportModal from "../components/Home/GeneralReportModal";
-import ProfileShareModal from "../components/Profile/ProfileShareModal"; // <-- Add this import
+import ProfileShareModal from "../components/Profile/ProfileShareModal";
 
 export default function ProfileScreen({ navigation, route }) {
   const themeCtx = useContext(ThemeContext);
@@ -99,7 +100,7 @@ export default function ProfileScreen({ navigation, route }) {
     fetchFavoriteSpots,
   } = useFavoriteSpots(targetUid);
 
-  // Focus stats
+  // Focus stats (keeping for potential future use)
   const {
     focusStats,
     loading: focusStatsLoading,
@@ -135,6 +136,7 @@ export default function ProfileScreen({ navigation, route }) {
     await fetchUserData();
     await fetchFavoriteSpots();
     await refetchFocusStats();
+    // FocusStatsGraphs will refresh automatically when sessions change
 
     setRefreshing(false);
   };
@@ -499,6 +501,38 @@ export default function ProfileScreen({ navigation, route }) {
                 Share Profile
               </Text>
             </TouchableOpacity>
+
+            {/* Focus Statistics Option */}
+            <TouchableOpacity
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingVertical: 12,
+                paddingHorizontal: 18,
+              }}
+              onPress={() => {
+                setMenuVisible(false);
+                navigation.navigate("Home", {
+                  screen: "focus",
+                  params: { showDashboard: true },
+                });
+              }}
+            >
+              <Clock
+                size={20}
+                color={themeColors.purple}
+                style={{ marginRight: 10 }}
+              />
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontFamily: "CarosSoft",
+                  fontSize: 16,
+                }}
+              >
+                Focus Statistics
+              </Text>
+            </TouchableOpacity>
             {/* Report Option */}
             <TouchableOpacity
               style={{
@@ -758,7 +792,7 @@ export default function ProfileScreen({ navigation, route }) {
                 color: themeColors.black,
                 fontFamily: "CarosSoft",
                 textAlign: "center",
-                marginBottom: 24,
+                marginBottom: 16,
                 marginTop: 12,
               }}
             >
@@ -769,7 +803,7 @@ export default function ProfileScreen({ navigation, route }) {
                 flexDirection: "row",
                 justifyContent: "center",
                 width: "100%",
-                gap: 0, // Reduced gap between the two stats
+                gap: 0,
               }}
             >
               <View style={styles.followColumn}>
@@ -821,6 +855,8 @@ export default function ProfileScreen({ navigation, route }) {
                 </Text>
               </View>
             </View>
+
+            {/* Single Dashboard Navigation Button */}
           </View>
 
           <View

@@ -10,7 +10,6 @@ import {
   ScrollView,
   Linking,
   Image,
-  ActivityIndicator,
 } from "react-native";
 import MapView, { Marker, Callout, PROVIDER_GOOGLE } from "react-native-maps";
 import { auth, db } from "../../firebaseConfig";
@@ -24,6 +23,7 @@ import {
   User,
   LockKey,
 } from "phosphor-react-native";
+import CircleLoader from "../common/CircleLoader";
 
 // Helper: Haversine distance in meters
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -837,7 +837,10 @@ export default function StudySpotsMapView({
               justifyContent: "center",
             }}
           >
-            <ActivityIndicator size="large" color={themeColors.purple} />
+            <CircleLoader
+              themeColors={themeColors}
+              text={showFriendsView ? "Loading friends..." : "Loading spots..."}
+            />
           </View>
         )}
         {/* Legend removed */}

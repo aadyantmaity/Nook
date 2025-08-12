@@ -6,10 +6,10 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
-  ActivityIndicator,
 } from "react-native";
 import ProfilePicture from "../Profile/ProfilePicture";
 import { Trash } from "phosphor-react-native";
+import CircleLoader from "../common/CircleLoader";
 
 export default function FollowersModal({
   visible,
@@ -64,7 +64,12 @@ export default function FollowersModal({
             Followers
           </Text>
           {listLoading ? (
-            <ActivityIndicator color={themeColors.purple} />
+            <View style={{ alignItems: "center", padding: 20 }}>
+              <CircleLoader
+                themeColors={themeColors}
+                text="Loading followers..."
+              />
+            </View>
           ) : (
             <FlatList
               data={userList}

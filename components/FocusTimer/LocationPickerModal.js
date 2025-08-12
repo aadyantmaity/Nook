@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Modal,
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-} from "react-native";
+import { Modal, View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { X, MapPin, Users, Lock } from "phosphor-react-native";
 import { auth, db } from "../../firebaseConfig";
 import {
@@ -18,6 +11,7 @@ import {
   getDocs,
   onSnapshot,
 } from "firebase/firestore";
+import CircleLoader from "../common/CircleLoader";
 
 export default function LocationPickerModal({
   visible,
@@ -198,16 +192,7 @@ export default function LocationPickerModal({
                 padding: 40,
               }}
             >
-              <ActivityIndicator size="large" color={colors.purple} />
-              <Text
-                style={{
-                  marginTop: 12,
-                  color: colors.darkGray || "#6B7280",
-                  fontFamily: "CarosSoft",
-                }}
-              >
-                Loading locations...
-              </Text>
+              <CircleLoader themeColors={colors} text="Loading locations..." />
             </View>
           ) : (
             <ScrollView

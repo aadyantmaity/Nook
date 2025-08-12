@@ -5,7 +5,6 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
   Alert,
 } from "react-native";
 import {
@@ -26,6 +25,7 @@ import {
 } from "../../services/focusSessions";
 import { auth, db } from "../../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
+import CircleLoader from "../common/CircleLoader";
 
 export default function FocusSessionsModal({ visible, onClose, colors }) {
   const [sessions, setSessions] = useState([]);
@@ -570,16 +570,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                   paddingHorizontal: 20,
                 }}
               >
-                <ActivityIndicator size="large" color={colors.purple} />
-                <Text
-                  style={{
-                    marginTop: 12,
-                    color: colors.darkGray || "#6B7280",
-                    fontFamily: "CarosSoft",
-                  }}
-                >
-                  Loading sessions...
-                </Text>
+                <CircleLoader themeColors={colors} text="Loading sessions..." />
               </View>
             ) : selectedType === "sessions" && filteredSessions.length === 0 ? (
               <View

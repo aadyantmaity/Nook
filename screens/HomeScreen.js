@@ -270,6 +270,17 @@ export default function HomeScreen({ navigation, route }) {
     }
   }, [route?.params?.view, userSpecificHomeViewKey, user]);
 
+  // --- Handle tabIndex parameter from route params ---
+  useEffect(() => {
+    if (route?.params?.tabIndex !== undefined) {
+      setTabIndex(route.params.tabIndex);
+      // Clear the param after using it
+      if (navigation && navigation.setParams) {
+        navigation.setParams({ tabIndex: undefined });
+      }
+    }
+  }, [route?.params?.tabIndex, navigation]);
+
   // --- Refresh data when initially loading map view ---
   useEffect(() => {
     if (showMapView) {
@@ -703,7 +714,7 @@ export default function HomeScreen({ navigation, route }) {
   const renderScene = SceneMap({
     focus: () => {
       const Focus = require("./FocusTimerScreen").default;
-      return <Focus />;
+      return <Focus navigation={navigation} route={route} />;
     },
     home: HomeTab,
     social: SocialTab,

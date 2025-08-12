@@ -18,6 +18,7 @@ import * as Font from "expo-font";
 import AppLoading from "expo-app-loading";
 import GroupDetailView from "./screens/GroupDetailView";
 import GroupDetailsScreen from "./screens/GroupDetailsScreen";
+
 import { HomeViewProvider } from "./components/Home/HomeViewContext";
 
 const Stack = createStackNavigator();
@@ -50,6 +51,7 @@ const linking = {
         path: "/profile/:uid",
         parse: { uid: (id) => id },
       },
+
       Home: "/",
     },
   },

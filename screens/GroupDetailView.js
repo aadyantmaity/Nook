@@ -10,7 +10,6 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   Alert,
   TextInput,
   TouchableOpacity,
@@ -57,6 +56,7 @@ import PollModal from "../components/Groups/PollModal";
 import GroupTaskModal from "../components/Groups/GroupTaskModal";
 import GroupShareModal from "../components/SpotDetail/GroupShareModal";
 import ShareNookModal from "../components/Groups/ShareNookModal";
+import CircleLoader from "../components/common/CircleLoader";
 
 export default function GroupDetailView({ navigation, route }) {
   const { groupId } = route.params;
@@ -788,7 +788,10 @@ export default function GroupDetailView({ navigation, route }) {
                     alignItems: "center",
                   }}
                 >
-                  <ActivityIndicator color={themeColors.purple} />
+                  <CircleLoader
+                    themeColors={themeColors}
+                    text="Loading messages..."
+                  />
                 </View>
               ) : (
                 <>
@@ -956,7 +959,10 @@ export default function GroupDetailView({ navigation, route }) {
                     alignItems: "center",
                   }}
                 >
-                  <ActivityIndicator color={themeColors.purple} />
+                  <CircleLoader
+                    themeColors={themeColors}
+                    text="Loading messages..."
+                  />
                 </View>
               ) : (
                 <>

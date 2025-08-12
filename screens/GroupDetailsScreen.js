@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
-  ActivityIndicator,
   Image,
   Alert,
   TextInput,
@@ -40,6 +39,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import GroupShareModal from "../components/SpotDetail/GroupShareModal";
 import useGroupLeaderboard from "../hooks/useGroupLeaderboard";
 import { formatDuration } from "../services/focusSessions";
+import CircleLoader from "../components/common/CircleLoader";
 
 export default function GroupDetailsScreen({ route, navigation }) {
   const { groupId } = route.params;
@@ -294,7 +294,10 @@ export default function GroupDetailsScreen({ route, navigation }) {
           alignItems: "center",
         }}
       >
-        <ActivityIndicator color={themeColors.purple} />
+        <CircleLoader
+          themeColors={themeColors}
+          text="Loading group details..."
+        />
       </View>
     );
   }
@@ -388,7 +391,10 @@ export default function GroupDetailsScreen({ route, navigation }) {
 
           {leaderboardLoading ? (
             <View style={{ alignItems: "center", padding: 20 }}>
-              <ActivityIndicator color={themeColors.purple} />
+              <CircleLoader
+                themeColors={themeColors}
+                text="Loading leaderboard..."
+              />
             </View>
           ) : leaderboard.length === 0 ? (
             <Text
