@@ -8,6 +8,7 @@ import {
   Alert,
 } from "react-native";
 import { db, auth } from "../../firebaseConfig";
+import { FONTS } from "../../constants/fonts";
 import {
   collection,
   addDoc,
@@ -133,7 +134,7 @@ export default function GroupTaskModal({
               color: themeColors.purple,
               marginBottom: 10,
               textAlign: "center",
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Create Group Task
@@ -150,7 +151,7 @@ export default function GroupTaskModal({
               width: "100%",
               marginBottom: 10,
               color: themeColors.black,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               fontSize: 16,
             }}
             placeholderTextColor={themeColors.darkGray}
@@ -175,7 +176,7 @@ export default function GroupTaskModal({
                 style={{
                   color: themeColors.purple,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Cancel
@@ -201,7 +202,7 @@ export default function GroupTaskModal({
                       ? themeColors.darkGray
                       : themeColors.white,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {submitting ? "Creating..." : "Create"}

@@ -9,6 +9,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Target, X } from "phosphor-react-native";
+import { FONTS } from "../../constants/fonts";
 
 export function FocusGoalModal({
   visible,
@@ -116,7 +117,7 @@ export function FocusGoalModal({
                 fontWeight: "600",
                 color: themeColors.black,
                 marginBottom: 8,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               Goal Title
@@ -128,7 +129,7 @@ export function FocusGoalModal({
                 borderRadius: 10,
                 padding: 12,
                 fontSize: 16,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
                 color: themeColors.black,
                 backgroundColor: themeColors.white,
                 marginBottom: 16,
@@ -147,7 +148,7 @@ export function FocusGoalModal({
                 fontWeight: "600",
                 color: themeColors.black,
                 marginBottom: 8,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               Description (Optional)
@@ -159,7 +160,7 @@ export function FocusGoalModal({
                 borderRadius: 10,
                 padding: 12,
                 fontSize: 16,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
                 color: themeColors.black,
                 backgroundColor: themeColors.white,
                 marginBottom: 20,
@@ -191,7 +192,7 @@ export function FocusGoalModal({
                     color: themeColors.purple,
                     fontSize: 16,
                     fontWeight: "bold",
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   Cancel
@@ -214,7 +215,7 @@ export function FocusGoalModal({
                     color: themeColors.white,
                     fontSize: 16,
                     fontWeight: "bold",
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   Save

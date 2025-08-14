@@ -36,6 +36,7 @@ import GroupFiltersModal from "./GroupFiltersModal";
 import GroupList from "./StudyGroups/GroupList";
 import CreateGroupModal from "./StudyGroups/CreateGroupModal";
 import ProfilePicture from "../Profile/ProfilePicture";
+import { FONTS } from "../../constants/fonts";
 
 function getMutualFriends(users, currentUser) {
   // Show all users except the current user
@@ -463,7 +464,7 @@ export default function StudyGroupsSection({ navigation }) {
               fontSize: 16,
               color: themeColors.black,
               height: 44,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               backgroundColor: themeColors.white,
             }}
             placeholderTextColor={themeColors.darkGray}
@@ -536,7 +537,7 @@ export default function StudyGroupsSection({ navigation }) {
       <View
         style={{
           position: "absolute",
-          bottom: 75,
+          bottom: 80,
           right: 22,
           zIndex: 20,
         }}
@@ -565,7 +566,7 @@ export default function StudyGroupsSection({ navigation }) {
               fontWeight: "bold",
               fontSize: 14,
               marginLeft: 8,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Add Group

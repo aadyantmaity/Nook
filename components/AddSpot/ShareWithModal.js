@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { FONTS } from "../../constants/fonts";
 import {
   Modal,
   View,
@@ -60,7 +61,7 @@ export default function ShareWithModal({
               color: themeColors.purple,
               marginBottom: 10,
               textAlign: "center",
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Share this Nook with people you follow
@@ -71,7 +72,7 @@ export default function ShareWithModal({
             <Text
               style={{
                 color: themeColors.darkGray,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               You are not following anyone yet.
@@ -125,7 +126,7 @@ export default function ShareWithModal({
                   <Text
                     style={{
                       color: themeColors.black,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     {/* Show first name and last initial */}
@@ -161,7 +162,7 @@ export default function ShareWithModal({
               style={{
                 color: false ? themeColors.darkGray : themeColors.white,
                 fontWeight: "bold",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               Done

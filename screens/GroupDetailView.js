@@ -57,6 +57,7 @@ import GroupTaskModal from "../components/Groups/GroupTaskModal";
 import GroupShareModal from "../components/SpotDetail/GroupShareModal";
 import ShareNookModal from "../components/Groups/ShareNookModal";
 import CircleLoader from "../components/common/CircleLoader";
+import { FONTS } from "../constants/fonts";
 
 export default function GroupDetailView({ navigation, route }) {
   const { groupId } = route.params;
@@ -500,7 +501,7 @@ export default function GroupDetailView({ navigation, route }) {
                 fontSize: 18,
                 fontWeight: "bold",
                 color: themeColors.purple,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
                 textAlign: "center",
                 maxWidth: 200,
               }}
@@ -521,7 +522,7 @@ export default function GroupDetailView({ navigation, route }) {
       headerTitleStyle: {
         color: themeColors.purple,
         fontWeight: "bold",
-        fontFamily: "CarosSoft",
+        fontFamily: FONTS.PRIMARY,
         fontSize: 18,
       },
       headerLeft: () => (
@@ -672,7 +673,7 @@ export default function GroupDetailView({ navigation, route }) {
             color: themeColors.purple,
             fontWeight: "bold",
             fontSize: 12,
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
           }}
           numberOfLines={1}
         >
@@ -682,7 +683,7 @@ export default function GroupDetailView({ navigation, route }) {
           style={{
             color: themeColors.darkGray,
             fontSize: 11,
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
           }}
           numberOfLines={1}
         >
@@ -911,7 +912,7 @@ export default function GroupDetailView({ navigation, route }) {
                                     color: themeColors.white,
                                     fontWeight: "bold",
                                     fontSize: 16,
-                                    fontFamily: "CarosSoft",
+                                    fontFamily: FONTS.PRIMARY,
                                   }}
                                 >
                                   {u.name.charAt(0).toUpperCase()}
@@ -921,7 +922,7 @@ export default function GroupDetailView({ navigation, route }) {
                             <Text
                               style={{
                                 color: themeColors.purple,
-                                fontFamily: "CarosSoft",
+                                fontFamily: FONTS.PRIMARY,
                                 fontSize: 16,
                                 fontWeight: "bold",
                               }}

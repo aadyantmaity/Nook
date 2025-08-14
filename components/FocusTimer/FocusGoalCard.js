@@ -10,6 +10,7 @@ import {
 import { Trophy, Trash, Check } from "phosphor-react-native";
 import { db, auth } from "../../firebaseConfig";
 import { doc, setDoc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { FONTS } from "../../constants/fonts";
 
 export function FocusGoalCard({
   goal,
@@ -94,7 +95,7 @@ export function FocusGoalCard({
             fontWeight: "bold",
             fontSize: 17,
             color: themeColors.purple,
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
             textAlign: "left",
           }}
         >
@@ -171,7 +172,7 @@ export function FocusGoalCard({
               color: themeColors.darkGray,
               fontSize: 15,
               marginBottom: 4,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               textAlign: "left",
               fontStyle: "italic",
             }}
@@ -184,7 +185,7 @@ export function FocusGoalCard({
               style={{
                 fontSize: 14,
                 color: themeColors.darkGray,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
                 lineHeight: 18,
               }}
             >
@@ -200,7 +201,7 @@ export function FocusGoalCard({
               color: themeColors.purple,
               fontWeight: "bold",
               fontSize: 12,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Goal archived!

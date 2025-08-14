@@ -45,7 +45,8 @@ import {
   MapPin,
   UsersThree,
 } from "phosphor-react-native"; // Add Heart icon
-import { colors } from "../constants/colors"; // Import colors
+import { colors } from "../constants/colors";
+import { FONTS } from "../constants/fonts"; // Import colors
 import { auth, db } from "../firebaseConfig"; // Import Firebase
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system"; // <-- Add this import
@@ -663,7 +664,7 @@ export default function HomeScreen({ navigation, route }) {
       <View
         style={{
           position: "absolute",
-          bottom: 75, // <-- move up to avoid tab bar overlap (was 25)
+          bottom: 80, // <-- move up to avoid tab bar overlap (was 25)
           right: 16,
           zIndex: 20,
         }}
@@ -1046,7 +1047,7 @@ export default function HomeScreen({ navigation, route }) {
               position: "absolute",
               left: 0,
               right: 0,
-              bottom: 0,
+              bottom: 5,
               zIndex: 100,
               backgroundColor: themeColors.white,
               elevation: 8,
@@ -1060,7 +1061,7 @@ export default function HomeScreen({ navigation, route }) {
               }}
               themeColors={themeColors}
               currentIndex={tabIndex}
-              labelStyle={{ fontFamily: "CarosSoft" }}
+              labelStyle={{ fontFamily: FONTS.PRIMARY }}
             />
           </View>
         </View>

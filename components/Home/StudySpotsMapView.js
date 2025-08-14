@@ -24,6 +24,7 @@ import {
   LockKey,
 } from "phosphor-react-native";
 import CircleLoader from "../common/CircleLoader";
+import { FONTS } from "../../constants/fonts";
 
 // Helper: Haversine distance in meters
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -503,7 +504,7 @@ export default function StudySpotsMapView({
                 fontSize: 24,
                 marginBottom: 16,
                 color: themeColors.purple,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
                 letterSpacing: 0.2,
               }}
             >
@@ -516,7 +517,7 @@ export default function StudySpotsMapView({
                 fontWeight: "bold",
                 fontSize: 15,
                 marginBottom: 8,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
                 alignSelf: "flex-start",
                 marginLeft: 2,
                 marginTop: 12,
@@ -558,7 +559,7 @@ export default function StudySpotsMapView({
                             : themeColors.purple,
                         fontWeight: "bold",
                         fontSize: 13,
-                        fontFamily: "CarosSoft",
+                        fontFamily: FONTS.PRIMARY,
                         letterSpacing: 0.1,
                       }}
                     >
@@ -575,7 +576,7 @@ export default function StudySpotsMapView({
                 fontWeight: "bold",
                 fontSize: 15,
                 marginBottom: 8,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
                 alignSelf: "flex-start",
                 marginLeft: 2,
                 marginTop: 12,
@@ -618,7 +619,7 @@ export default function StudySpotsMapView({
                           ? themeColors.white
                           : themeColors.purple,
                       fontWeight: "bold",
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                       fontSize: 13,
                     }}
                   >
@@ -649,7 +650,7 @@ export default function StudySpotsMapView({
                         ? themeColors.white
                         : themeColors.purple,
                       fontWeight: "bold",
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                       fontSize: 13,
                     }}
                   >
@@ -685,7 +686,7 @@ export default function StudySpotsMapView({
               <Text
                 style={{
                   color: themeColors.white,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   fontSize: 16,
                   fontWeight: "bold",
                   letterSpacing: 0.1,
@@ -873,7 +874,7 @@ export default function StudySpotsMapView({
                   color: themeColors.purple,
                   fontWeight: "bold",
                   fontSize: 16,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {friendsCheckIns.length}
@@ -882,7 +883,7 @@ export default function StudySpotsMapView({
                 style={{
                   color: themeColors.darkGray,
                   fontSize: 13,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Active Friends
@@ -894,7 +895,7 @@ export default function StudySpotsMapView({
                   color: themeColors.purple,
                   fontWeight: "bold",
                   fontSize: 16,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {new Set(friendsCheckIns.map((f) => f.spotId)).size}
@@ -903,7 +904,7 @@ export default function StudySpotsMapView({
                 style={{
                   color: themeColors.darkGray,
                   fontSize: 13,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Nooks
@@ -919,7 +920,7 @@ export default function StudySpotsMapView({
                   color: themeColors.purple,
                   fontWeight: "bold",
                   fontSize: 16,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {totalNooks}
@@ -928,7 +929,7 @@ export default function StudySpotsMapView({
                 style={{
                   color: themeColors.darkGray,
                   fontSize: 13,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Nooks
@@ -940,7 +941,7 @@ export default function StudySpotsMapView({
                   color: themeColors.purple,
                   fontWeight: "bold",
                   fontSize: 16,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {nooksWithAlertsToday}
@@ -949,7 +950,7 @@ export default function StudySpotsMapView({
                 style={{
                   color: themeColors.darkGray,
                   fontSize: 13,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Alerts Today
@@ -1004,7 +1005,7 @@ export default function StudySpotsMapView({
                 color: themeColors.purple,
                 marginBottom: 10,
                 textAlign: "center",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               {buildingModal.buildingName}
@@ -1039,7 +1040,7 @@ export default function StudySpotsMapView({
                         style={{
                           color: themeColors.purple,
                           fontWeight: "bold",
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                           fontSize: 16,
                         }}
                       >
@@ -1091,7 +1092,7 @@ export default function StudySpotsMapView({
                           style={{
                             color: themeColors.purple,
                             fontSize: 11,
-                            fontFamily: "CarosSoft",
+                            fontFamily: FONTS.PRIMARY,
                             marginTop: 2,
                           }}
                         >
@@ -1127,7 +1128,7 @@ export default function StudySpotsMapView({
                           style={{
                             color: themeColors.orange,
                             fontSize: 11,
-                            fontFamily: "CarosSoft",
+                            fontFamily: FONTS.PRIMARY,
                             marginTop: 2,
                           }}
                         >
@@ -1156,7 +1157,7 @@ export default function StudySpotsMapView({
                   color: themeColors.white,
                   fontWeight: "bold",
                   fontSize: 16,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Close
@@ -1213,7 +1214,7 @@ export default function StudySpotsMapView({
                   fontWeight: "bold",
                   color: themeColors.purple,
                   textAlign: "center",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {selectedPin?.buildingName}
@@ -1254,7 +1255,7 @@ export default function StudySpotsMapView({
                   style={{
                     color: themeColors.purple,
                     fontSize: 12,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                     marginTop: 2,
                   }}
                 >
@@ -1288,7 +1289,7 @@ export default function StudySpotsMapView({
                   style={{
                     color: themeColors.orange,
                     fontSize: 12,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                     marginTop: 2,
                   }}
                 >
@@ -1314,7 +1315,7 @@ export default function StudySpotsMapView({
                   color: themeColors.white,
                   fontWeight: "bold",
                   fontSize: 16,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Close
@@ -1375,7 +1376,7 @@ export default function StudySpotsMapView({
                   fontWeight: "bold",
                   color: themeColors.purple,
                   textAlign: "left",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   // Remove flex: 1 to allow button to be right next to name
                 }}
                 numberOfLines={1}
@@ -1469,7 +1470,7 @@ export default function StudySpotsMapView({
                           fontSize: 16,
                           fontWeight: "bold",
                           color: themeColors.black,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                         }}
                       >
                         {friend.friendName}
@@ -1478,7 +1479,7 @@ export default function StudySpotsMapView({
                         style={{
                           fontSize: 13,
                           color: themeColors.darkGray,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                           marginTop: 2,
                         }}
                       >
@@ -1547,7 +1548,7 @@ export default function StudySpotsMapView({
                           fontSize: 16,
                           fontWeight: "bold",
                           color: themeColors.black,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                         }}
                       >
                         {friend.friendName}
@@ -1556,7 +1557,7 @@ export default function StudySpotsMapView({
                         style={{
                           fontSize: 13,
                           color: themeColors.darkGray,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                           marginTop: 2,
                         }}
                       >
@@ -1590,7 +1591,7 @@ export default function StudySpotsMapView({
                   color: themeColors.white,
                   fontWeight: "bold",
                   fontSize: 16,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Close

@@ -15,6 +15,7 @@ import {
 import { db } from "../firebaseConfig"; // Import Firestore
 import { doc, setDoc } from "firebase/firestore"; // Import Firestore functions
 import { colors } from "../constants/colors";
+import { FONTS } from "../constants/fonts";
 import { auth } from "../firebaseConfig"; // Import the initialized auth
 
 export default function SignUpScreen({ navigation }) {
@@ -117,7 +118,7 @@ export default function SignUpScreen({ navigation }) {
             {
               color: themeColors.black,
               textAlign: "center",
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             },
           ]}
         >
@@ -282,6 +283,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 32,
+    fontFamily: FONTS.PRIMARY,
   },
   formContainer: {
     width: "100%",
@@ -294,7 +296,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginBottom: 12,
-    fontFamily: "CarosSoft",
+    fontFamily: FONTS.PRIMARY,
   },
   button: {
     width: "100%",
@@ -304,7 +306,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   buttonText: {
-    fontFamily: "CarosSoft",
+    fontFamily: FONTS.PRIMARY,
     fontSize: 16,
   },
   secondaryButton: {
@@ -312,7 +314,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   secondaryButtonText: {
-    fontFamily: "CarosSoft",
+    fontFamily: FONTS.PRIMARY,
     fontSize: 16,
   },
 });

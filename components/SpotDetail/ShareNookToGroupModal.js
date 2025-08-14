@@ -20,6 +20,7 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { UsersThree } from "phosphor-react-native";
+import { FONTS } from "../../constants/fonts";
 
 export default function ShareNookToGroupModal({
   visible,
@@ -148,7 +149,7 @@ export default function ShareNookToGroupModal({
               color: themeColors.purple,
               marginBottom: 10,
               textAlign: "center",
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Share this Nook to a Group
@@ -157,7 +158,7 @@ export default function ShareNookToGroupModal({
             <ActivityIndicator color={themeColors.purple} />
           ) : groups.length === 0 ? (
             <Text
-              style={{ color: themeColors.darkGray, fontFamily: "CarosSoft" }}
+              style={{ color: themeColors.darkGray, fontFamily: FONTS.PRIMARY }}
             >
               You are not a member of any groups.
             </Text>
@@ -185,7 +186,7 @@ export default function ShareNookToGroupModal({
                   <Text
                     style={{
                       color: themeColors.black,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                       fontSize: 16,
                     }}
                   >
@@ -212,7 +213,7 @@ export default function ShareNookToGroupModal({
               style={{
                 color: sending ? themeColors.darkGray : themeColors.white,
                 fontWeight: "bold",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               Cancel

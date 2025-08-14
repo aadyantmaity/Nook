@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Modal, View, Text, TextInput, TouchableOpacity } from "react-native";
 import PrimaryActionButton from "../PrimaryActionButton";
+import { FONTS } from "../../constants/fonts";
 
 export default function ReportModal({
   visible,
@@ -57,7 +58,7 @@ export default function ReportModal({
               fontWeight: "bold",
               marginBottom: 12,
               color: themeColors.black,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Report Incorrect Information
@@ -66,11 +67,11 @@ export default function ReportModal({
             style={{
               color: themeColors.black,
               marginBottom: 8,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Spot:{" "}
-            <Text style={{ fontWeight: "bold", fontFamily: "CarosSoft" }}>
+            <Text style={{ fontWeight: "bold", fontFamily: FONTS.PRIMARY }}>
               {spotName}
             </Text>
           </Text>
@@ -88,7 +89,7 @@ export default function ReportModal({
               marginBottom: 16,
               color: themeColors.black,
               backgroundColor: themeColors.white,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
             multiline
           />
@@ -117,7 +118,7 @@ export default function ReportModal({
                 style={{
                   color: themeColors.purple,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Cancel

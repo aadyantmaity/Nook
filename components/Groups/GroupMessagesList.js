@@ -21,6 +21,7 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import GroupTaskPinned from "./GroupTaskPinned";
+import { FONTS } from "../../constants/fonts";
 
 // --- Import extracted components ---
 import {
@@ -122,7 +123,7 @@ const GroupMessagesList = memo(
                 color: themeColors.purple,
                 fontWeight: "bold",
                 fontSize: 12,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
               numberOfLines={1}
             >
@@ -132,7 +133,7 @@ const GroupMessagesList = memo(
               style={{
                 color: themeColors.darkGray,
                 fontSize: 11,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
               numberOfLines={1}
             >
@@ -293,7 +294,7 @@ const GroupMessagesList = memo(
                   color: themeColors.purple,
                   fontWeight: "bold",
                   fontSize: 13,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {thisDate}
@@ -554,7 +555,7 @@ const GroupMessagesList = memo(
                   fontWeight: "bold",
                   color: themeColors.purple,
                   marginBottom: 8,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {modalInfo.name}
@@ -564,7 +565,7 @@ const GroupMessagesList = memo(
                   fontSize: 15,
                   color: themeColors.darkGray,
                   marginBottom: 2,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {modalInfo.time}
@@ -573,7 +574,7 @@ const GroupMessagesList = memo(
                 style={{
                   fontSize: 15,
                   color: themeColors.darkGray,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {modalInfo.date}

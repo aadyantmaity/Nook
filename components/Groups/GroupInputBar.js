@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { FONTS } from "../../constants/fonts";
 import {
   View,
   TextInput,
@@ -57,7 +58,7 @@ export default function GroupInputBar({
                 color: themeColors.purple,
                 fontWeight: "bold",
                 fontSize: 13,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
               numberOfLines={1}
             >
@@ -67,7 +68,7 @@ export default function GroupInputBar({
               style={{
                 color: themeColors.darkGray,
                 fontSize: 12,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
               numberOfLines={1}
             >
@@ -93,7 +94,7 @@ export default function GroupInputBar({
           flexDirection: "row",
           alignItems: "center",
           paddingHorizontal: 12,
-          paddingVertical: 8,
+          paddingVertical: 12,
         }}
       >
         <TextInput
@@ -109,13 +110,15 @@ export default function GroupInputBar({
             flex: 1,
             borderRadius: 20,
             paddingHorizontal: 16,
-            paddingVertical: 8,
-            fontSize: 16,
+            paddingVertical: 10,
+            fontSize: 15,
             maxHeight: 100,
             color: themeColors.black,
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
             marginRight: 8,
             backgroundColor: themeColors.lightGray,
+            borderWidth: 1,
+            borderColor: themeColors.darkGray + "40",
           }}
           editable={!sending}
           returnKeyType="send"
@@ -145,7 +148,7 @@ export default function GroupInputBar({
               style={{
                 color: themeColors.white,
                 fontWeight: "bold",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
                 fontSize: 14,
               }}
             >
@@ -175,7 +178,7 @@ export default function GroupInputBar({
               style={{
                 color: themeColors.white,
                 fontWeight: "bold",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
                 fontSize: 14,
               }}
             >
@@ -275,7 +278,7 @@ export default function GroupInputBar({
                 fontWeight: "bold",
                 color: themeColors.purple,
                 marginBottom: 12,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               Create...
@@ -306,7 +309,7 @@ export default function GroupInputBar({
                 style={{
                   color: themeColors.white,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   fontSize: 16,
                 }}
               >
@@ -339,7 +342,7 @@ export default function GroupInputBar({
                 style={{
                   color: themeColors.white,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   fontSize: 16,
                 }}
               >
@@ -371,7 +374,7 @@ export default function GroupInputBar({
                 style={{
                   color: themeColors.white,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   fontSize: 16,
                 }}
               >

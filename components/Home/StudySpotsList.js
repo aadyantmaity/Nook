@@ -14,6 +14,7 @@ import {
 import Filters from "./Filters";
 import HomeLoadingScreen from "./HomeLoadingScreen"; // Import the loading screen
 import useFavoriteStatus from "../../hooks/useFavoriteStatus";
+import { FONTS } from "../../constants/fonts";
 import { auth, db } from "../../firebaseConfig"; // Added for favorite functionality
 import { doc, getDoc, deleteDoc, setDoc } from "firebase/firestore"; // Added for favorite functionality
 
@@ -221,7 +222,7 @@ const StudySpotItem = React.memo(
                   color: themeColors.white,
                   fontSize: 10,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {todaysAlerts.length}
@@ -262,7 +263,7 @@ const StudySpotItem = React.memo(
               <Text
                 style={{
                   color: themeColors.black,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 No Image
@@ -303,7 +304,7 @@ const StudySpotItem = React.memo(
             marginBottom: 6,
             flexDirection: "row",
             alignItems: "center",
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
           }}
         >
           {item.name}
@@ -313,7 +314,7 @@ const StudySpotItem = React.memo(
                 fontSize: 18,
                 color: themeColors.black,
                 fontWeight: "bold",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               {" - Floor "}
@@ -353,7 +354,7 @@ const StudySpotItem = React.memo(
               marginBottom: 8,
               marginTop: 2,
               fontWeight: item.huskyCardNeeded ? "bold" : "normal",
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             {item.huskyCardNeeded && "Husky Card Required"}
@@ -362,7 +363,7 @@ const StudySpotItem = React.memo(
                 style={{
                   color: themeColors.darkGray,
                   fontWeight: "normal",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {" "}
@@ -374,7 +375,7 @@ const StudySpotItem = React.memo(
                 style={{
                   color: themeColors.darkGray,
                   fontWeight: "normal",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Department: {item.department}
@@ -412,7 +413,7 @@ const StudySpotItem = React.memo(
                       color: themeColors.white || "#fff",
                       fontSize: 12,
                       fontWeight: "bold",
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     {tag}
@@ -424,7 +425,7 @@ const StudySpotItem = React.memo(
               style={{
                 color: themeColors.darkGray || "#AAA",
                 fontSize: 12,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               No tags
@@ -452,7 +453,7 @@ const StudySpotItem = React.memo(
                     style={{
                       fontSize: 15,
                       color: themeColors.darkGray,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     Noise Level
@@ -462,7 +463,7 @@ const StudySpotItem = React.memo(
                       fontSize: 16,
                       fontWeight: "bold",
                       color: themeColors.purple,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     {getNoiseLabel(item.ratings?.noise)}
@@ -474,7 +475,7 @@ const StudySpotItem = React.memo(
                     style={{
                       fontSize: 15,
                       color: themeColors.darkGray,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     Crowd Level
@@ -484,7 +485,7 @@ const StudySpotItem = React.memo(
                       fontSize: 16,
                       fontWeight: "bold",
                       color: themeColors.purple,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     {getCrowdLabel(item.ratings?.crowd)}
@@ -499,7 +500,7 @@ const StudySpotItem = React.memo(
                         style={{
                           fontSize: 15,
                           color: themeColors.darkGray,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                         }}
                       >
                         Tables Open
@@ -509,7 +510,7 @@ const StudySpotItem = React.memo(
                           fontSize: 16,
                           fontWeight: "bold",
                           color: themeColors.purple,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                         }}
                       >
                         {(() => {
@@ -534,7 +535,7 @@ const StudySpotItem = React.memo(
                         style={{
                           fontSize: 15,
                           color: themeColors.darkGray,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                         }}
                       >
                         {/* Empty label for alignment */}
@@ -543,7 +544,7 @@ const StudySpotItem = React.memo(
                         style={{
                           fontSize: 16,
                           color: "transparent",
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                         }}
                       >
                         -
@@ -568,7 +569,7 @@ const StudySpotItem = React.memo(
                     style={{
                       fontSize: 15,
                       color: themeColors.darkGray,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     Noise Level
@@ -578,7 +579,7 @@ const StudySpotItem = React.memo(
                       fontSize: 16,
                       fontWeight: "bold",
                       color: themeColors.purple,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     {getNoiseLabel(item.ratings?.noise)}
@@ -590,7 +591,7 @@ const StudySpotItem = React.memo(
                     style={{
                       fontSize: 15,
                       color: themeColors.darkGray,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     Crowd Level
@@ -600,7 +601,7 @@ const StudySpotItem = React.memo(
                       fontSize: 16,
                       fontWeight: "bold",
                       color: themeColors.purple,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     {getCrowdLabel(item.ratings?.crowd)}
@@ -615,7 +616,7 @@ const StudySpotItem = React.memo(
                 color: themeColors.darkGray,
                 marginTop: 6,
                 textAlign: "right",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               {getLastUpdatedLabel && item.ratings
@@ -631,7 +632,7 @@ const StudySpotItem = React.memo(
               fontSize: 13,
               color: "#888",
               marginBottom: 4,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               textAlign: "right",
             }}
           >
@@ -645,7 +646,7 @@ const StudySpotItem = React.memo(
             style={{
               fontSize: 11,
               color: themeColors.darkGray,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             {getLastUpdatedLabel(item)}

@@ -20,6 +20,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { User, Check } from "phosphor-react-native";
+import { FONTS } from "../../constants/fonts";
 
 export default function GroupShareModal({
   visible,
@@ -186,7 +187,7 @@ export default function GroupShareModal({
               color: themeColors.purple,
               marginBottom: 10,
               textAlign: "center",
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Manage Group Members
@@ -195,7 +196,7 @@ export default function GroupShareModal({
             <ActivityIndicator color={themeColors.purple} />
           ) : followingList.length === 0 ? (
             <Text
-              style={{ color: themeColors.darkGray, fontFamily: "CarosSoft" }}
+              style={{ color: themeColors.darkGray, fontFamily: FONTS.PRIMARY }}
             >
               You are not following anyone yet.
             </Text>
@@ -269,7 +270,7 @@ export default function GroupShareModal({
                     <Text
                       style={{
                         color: themeColors.black,
-                        fontFamily: "CarosSoft",
+                        fontFamily: FONTS.PRIMARY,
                         flex: 1,
                       }}
                       numberOfLines={1}
@@ -307,7 +308,7 @@ export default function GroupShareModal({
               style={{
                 color: updating ? themeColors.darkGray : themeColors.white,
                 fontWeight: "bold",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               Done

@@ -1,5 +1,6 @@
 import React from "react";
 import { View, TouchableOpacity, Text } from "react-native";
+import { FONTS } from "../../constants/fonts";
 
 export default function TagSelector({
   tags,
@@ -44,7 +45,7 @@ export default function TagSelector({
                 : themeColors.purple,
               fontSize: 14,
               fontWeight: "bold",
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             {tag}

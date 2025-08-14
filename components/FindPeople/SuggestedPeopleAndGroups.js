@@ -25,6 +25,7 @@ import {
   arrayUnion,
 } from "firebase/firestore";
 import { db, auth } from "../../firebaseConfig";
+import { FONTS } from "../../constants/fonts";
 
 export default function SuggestedPeopleAndGroups({
   suggestedExpanded,
@@ -120,7 +121,7 @@ export default function SuggestedPeopleAndGroups({
             style={{
               fontSize: 17,
               color: themeColors.purple,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               marginRight: 6,
             }}
           >
@@ -142,7 +143,7 @@ export default function SuggestedPeopleAndGroups({
               style={{
                 color: themeColors.darkGray,
                 fontSize: 15,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
                 marginBottom: 16,
                 marginTop: -8,
               }}
@@ -202,7 +203,7 @@ export default function SuggestedPeopleAndGroups({
                             color: themeColors.black,
                             fontWeight: "bold",
                             fontSize: 15,
-                            fontFamily: "CarosSoft",
+                            fontFamily: FONTS.PRIMARY,
                             textAlign: "center",
                             marginTop: 8,
                           }}
@@ -230,7 +231,7 @@ export default function SuggestedPeopleAndGroups({
                                 : themeColors.white,
                               fontWeight: "bold",
                               fontSize: 14,
-                              fontFamily: "CarosSoft",
+                              fontFamily: FONTS.PRIMARY,
                             }}
                           >
                             {followingIds.includes(item.uid)
@@ -411,7 +412,7 @@ export default function SuggestedPeopleAndGroups({
                             color: themeColors.black,
                             fontWeight: "bold",
                             fontSize: 15,
-                            fontFamily: "CarosSoft",
+                            fontFamily: FONTS.PRIMARY,
                             textAlign: "center",
                             marginTop: 8,
                           }}
@@ -423,7 +424,7 @@ export default function SuggestedPeopleAndGroups({
                           style={{
                             color: themeColors.darkGray,
                             fontSize: 13,
-                            fontFamily: "CarosSoft",
+                            fontFamily: FONTS.PRIMARY,
                             textAlign: "center",
                           }}
                           numberOfLines={1}
@@ -449,7 +450,7 @@ export default function SuggestedPeopleAndGroups({
                                 color: themeColors.white,
                                 fontWeight: "bold",
                                 fontSize: 14,
-                                fontFamily: "CarosSoft",
+                                fontFamily: FONTS.PRIMARY,
                               }}
                             >
                               {joining ? "Joining..." : "Join"}

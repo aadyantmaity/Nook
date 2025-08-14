@@ -70,6 +70,7 @@ import * as Clipboard from "expo-clipboard";
 import useSpotDetails from "../hooks/useSpotDetails";
 
 import QRCode from "react-native-qrcode-svg";
+import { FONTS } from "../constants/fonts";
 
 export default function SpotDetailScreen({ route, navigation }) {
   const themeCtx = useContext(ThemeContext);
@@ -488,7 +489,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                             color: themeColors.purple,
                             fontWeight: "bold",
                             fontSize: 15,
-                            fontFamily: "CarosSoft",
+                            fontFamily: FONTS.PRIMARY,
                           }}
                         >
                           Share Link
@@ -528,7 +529,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                               color: themeColors.purple,
                               fontWeight: "bold",
                               fontSize: 15,
-                              fontFamily: "CarosSoft",
+                              fontFamily: FONTS.PRIMARY,
                             }}
                           >
                             Share to Group
@@ -565,7 +566,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                             color: themeColors.purple,
                             fontWeight: "bold",
                             fontSize: 15,
-                            fontFamily: "CarosSoft",
+                            fontFamily: FONTS.PRIMARY,
                           }}
                         >
                           Report
@@ -604,7 +605,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                               color: themeColors.purple,
                               fontWeight: "bold",
                               fontSize: 15,
-                              fontFamily: "CarosSoft",
+                              fontFamily: FONTS.PRIMARY,
                             }}
                           >
                             Manage Sharing
@@ -652,7 +653,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                               color: themeColors.purple,
                               fontWeight: "bold",
                               fontSize: 15,
-                              fontFamily: "CarosSoft",
+                              fontFamily: FONTS.PRIMARY,
                             }}
                           >
                             Edit Nook
@@ -694,7 +695,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                               color: themeColors.red,
                               fontWeight: "bold",
                               fontSize: 15,
-                              fontFamily: "CarosSoft",
+                              fontFamily: FONTS.PRIMARY,
                             }}
                           >
                             Delete Nook
@@ -733,7 +734,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                 marginTop: 8,
                 flexDirection: "row",
                 alignItems: "center",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               {spot.buildingName}
@@ -743,7 +744,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                     fontSize: 24,
                     color: themeColors.black,
                     fontWeight: "bold",
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   {" - Floor "}
@@ -762,7 +763,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                   marginBottom: 8,
                   marginTop: 2,
                   fontWeight: spot.huskyCardNeeded ? "bold" : "normal",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {spot.huskyCardNeeded && "Husky Card Required"}
@@ -771,7 +772,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                     style={{
                       color: themeColors.darkGray,
                       fontWeight: "normal",
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     {" "}
@@ -783,7 +784,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                     style={{
                       color: themeColors.darkGray,
                       fontWeight: "normal",
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     Department: {spot.department}
@@ -808,7 +809,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                     style={{
                       color: themeColors.darkGray,
                       fontSize: 13,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     {getLastUpdatedLabel(spot.ratings)}
@@ -1009,7 +1010,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                             color: themeColors.purple,
                             fontWeight: "bold",
                             fontSize: 15,
-                            fontFamily: "CarosSoft",
+                            fontFamily: FONTS.PRIMARY,
                           }}
                         >
                           Report
@@ -1048,7 +1049,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                               color: themeColors.purple,
                               fontWeight: "bold",
                               fontSize: 15,
-                              fontFamily: "CarosSoft",
+                              fontFamily: FONTS.PRIMARY,
                             }}
                           >
                             Manage Sharing
@@ -1096,7 +1097,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                               color: themeColors.purple,
                               fontWeight: "bold",
                               fontSize: 15,
-                              fontFamily: "CarosSoft",
+                              fontFamily: FONTS.PRIMARY,
                             }}
                           >
                             Edit Nook
@@ -1138,7 +1139,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                               color: themeColors.red,
                               fontWeight: "bold",
                               fontSize: 15,
-                              fontFamily: "CarosSoft",
+                              fontFamily: FONTS.PRIMARY,
                             }}
                           >
                             Delete Nook
@@ -1177,7 +1178,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                 marginTop: 8,
                 flexDirection: "row",
                 alignItems: "center",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               {spot.buildingName}
@@ -1187,7 +1188,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                     fontSize: 24,
                     color: themeColors.black,
                     fontWeight: "bold",
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   {" - Floor "}
@@ -1206,7 +1207,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                   marginBottom: 8,
                   marginTop: 2,
                   fontWeight: spot.huskyCardNeeded ? "bold" : "normal",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {spot.huskyCardNeeded && "Husky Card Required"}
@@ -1215,7 +1216,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                     style={{
                       color: themeColors.darkGray,
                       fontWeight: "normal",
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     {" "}
@@ -1227,7 +1228,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                     style={{
                       color: themeColors.darkGray,
                       fontWeight: "normal",
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     Department: {spot.department}
@@ -1252,7 +1253,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                     style={{
                       color: themeColors.darkGray,
                       fontSize: 13,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     {getLastUpdatedLabel(spot.ratings)}
@@ -1381,7 +1382,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                                     color: themeColors.black,
                                     fontSize: 13,
                                     marginBottom: 2,
-                                    fontFamily: "CarosSoft",
+                                    fontFamily: FONTS.PRIMARY,
                                     flex: 1,
                                     flexWrap: "wrap",
                                   }}
@@ -1393,7 +1394,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                                     color: themeColors.darkGray,
                                     fontSize: 12,
                                     marginLeft: 10,
-                                    fontFamily: "CarosSoft",
+                                    fontFamily: FONTS.PRIMARY,
                                     textAlign: "right",
                                     minWidth: 80,
                                   }}
@@ -1415,7 +1416,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                                 style={{
                                   fontSize: 12,
                                   color: themeColors.darkGray,
-                                  fontFamily: "CarosSoft",
+                                  fontFamily: FONTS.PRIMARY,
                                   marginTop: 4,
                                 }}
                               >
@@ -1428,7 +1429,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                           style={{
                             color: themeColors.darkGray,
                             fontSize: 15,
-                            fontFamily: "CarosSoft",
+                            fontFamily: FONTS.PRIMARY,
                           }}
                         >
                           No notes yet.
@@ -1499,7 +1500,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                   fontWeight: "bold",
                   fontSize: 14,
                   marginLeft: 8,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Add Alert

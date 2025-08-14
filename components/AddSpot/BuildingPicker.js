@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { TextInput, View } from "react-native";
 import { Picker } from "@react-native-picker/picker";
+import { FONTS } from "../../constants/fonts";
 
 export default function BuildingPicker({
   isUWBuilding,
@@ -58,12 +59,12 @@ export default function BuildingPicker({
           borderColor: themeColors.black,
           borderWidth: 0.5,
           borderRadius: 8,
-          fontFamily: "CarosSoft",
+          fontFamily: FONTS.PRIMARY,
         }}
         itemStyle={{
           fontSize: 18,
           color: themeColors.purple,
-          fontFamily: "CarosSoft",
+          fontFamily: FONTS.PRIMARY,
         }}
       >
         <Picker.Item
@@ -72,7 +73,7 @@ export default function BuildingPicker({
           style={{
             fontSize: 18,
             color: themeColors.purple,
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
           }}
         />
         {BUILDINGS.map((building) => (
@@ -83,7 +84,7 @@ export default function BuildingPicker({
             style={{
               fontSize: 18,
               color: themeColors.purple,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           />
         ))}
@@ -108,7 +109,7 @@ export default function BuildingPicker({
           marginBottom: -8,
           backgroundColor: themeColors.white,
           color: themeColors.purple,
-          fontFamily: "CarosSoft",
+          fontFamily: FONTS.PRIMARY,
         }}
       />
     </View>
@@ -127,7 +128,7 @@ export default function BuildingPicker({
           marginBottom: 16,
           backgroundColor: themeColors.white,
           color: themeColors.purple,
-          fontFamily: "CarosSoft",
+          fontFamily: FONTS.PRIMARY,
         }}
       />
       {/* Floor/Room Number Input for custom locations */}
@@ -149,7 +150,7 @@ export default function BuildingPicker({
           marginBottom: 16,
           backgroundColor: themeColors.white,
           color: themeColors.purple,
-          fontFamily: "CarosSoft",
+          fontFamily: FONTS.PRIMARY,
         }}
       />
     </>

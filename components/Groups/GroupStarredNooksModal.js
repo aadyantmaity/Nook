@@ -8,6 +8,7 @@ import {
   FlatList,
 } from "react-native";
 import { Star, MapPin } from "phosphor-react-native";
+import { FONTS } from "../../constants/fonts";
 
 export default function GroupStarredNooksModal({
   visible,
@@ -57,7 +58,7 @@ export default function GroupStarredNooksModal({
               fontWeight: "bold",
               color: themeColors.purple,
               marginBottom: 12,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Starred Nooks
@@ -66,7 +67,7 @@ export default function GroupStarredNooksModal({
             <Text
               style={{
                 color: themeColors.darkGray,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
                 marginBottom: 12,
               }}
             >
@@ -123,7 +124,7 @@ export default function GroupStarredNooksModal({
                         color: themeColors.purple,
                         fontWeight: "bold",
                         fontSize: 16,
-                        fontFamily: "CarosSoft",
+                        fontFamily: FONTS.PRIMARY,
                         flexShrink: 1,
                       }}
                       numberOfLines={2}

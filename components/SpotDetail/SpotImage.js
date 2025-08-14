@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Image, Text } from "react-native";
+import { FONTS } from "../../constants/fonts";
 
 export default function SpotImage({ photoUrl, themeColors }) {
   return (
@@ -37,7 +38,7 @@ export default function SpotImage({ photoUrl, themeColors }) {
             marginBottom: 16,
           }}
         >
-          <Text style={{ color: themeColors.black, fontFamily: "CarosSoft" }}>
+          <Text style={{ color: themeColors.black, fontFamily: FONTS.PRIMARY }}>
             No Image
           </Text>
         </View>

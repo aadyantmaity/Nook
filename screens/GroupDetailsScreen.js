@@ -40,6 +40,7 @@ import GroupShareModal from "../components/SpotDetail/GroupShareModal";
 import useGroupLeaderboard from "../hooks/useGroupLeaderboard";
 import { formatDuration } from "../services/focusSessions";
 import CircleLoader from "../components/common/CircleLoader";
+import { FONTS } from "../constants/fonts";
 
 export default function GroupDetailsScreen({ route, navigation }) {
   const { groupId } = route.params;
@@ -245,7 +246,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
               fontSize: 18,
               fontWeight: "bold",
               color: themeColors.purple,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               textAlign: "center",
               maxWidth: 200,
             }}
@@ -265,7 +266,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
       headerTitleStyle: {
         color: themeColors.purple,
         fontWeight: "bold",
-        fontFamily: "CarosSoft",
+        fontFamily: FONTS.PRIMARY,
         fontSize: 18,
       },
       headerLeft: () => (
@@ -313,7 +314,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
               fontSize: 22,
               fontWeight: "bold",
               color: themeColors.purple,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               marginBottom: 8,
               flex: 1,
             }}
@@ -344,7 +345,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
             style={{
               color: themeColors.black,
               fontSize: 15,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               marginBottom: 32,
             }}
           >
@@ -355,7 +356,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
             style={{
               color: themeColors.darkGray,
               fontSize: 15,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               marginBottom: 32,
             }}
           >
@@ -382,7 +383,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
                 fontWeight: "bold",
                 color: themeColors.purple,
                 fontSize: 17,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               This Week's Focus Leaders
@@ -400,7 +401,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
             <Text
               style={{
                 color: themeColors.darkGray,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
                 fontStyle: "italic",
               }}
             >
@@ -424,7 +425,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
                         style={{
                           fontSize: 14,
                           color: themeColors.darkGray,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                           fontWeight: "500",
                         }}
                       >
@@ -503,7 +504,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
                             color: isCurrentUser
                               ? themeColors.blue
                               : themeColors.darkGray,
-                            fontFamily: "CarosSoft",
+                            fontFamily: FONTS.PRIMARY,
                           }}
                         >
                           {rank}
@@ -545,7 +546,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
                           fontSize: 16,
                           fontWeight: "600",
                           color: themeColors.black,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                         }}
                       >
                         {isCurrentUser
@@ -564,7 +565,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
                           style={{
                             fontSize: 14,
                             color: themeColors.darkGray,
-                            fontFamily: "CarosSoft",
+                            fontFamily: FONTS.PRIMARY,
                           }}
                         >
                           {formatDuration(member.weeklyFocusTime)} •{" "}
@@ -592,7 +593,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
               fontWeight: "bold",
               color: themeColors.purple,
               fontSize: 17,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Members{" "}
@@ -621,7 +622,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
           <Text
             style={{
               color: themeColors.darkGray,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               marginBottom: 12,
             }}
           >
@@ -660,7 +661,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
           fontWeight: "bold",
           color: themeColors.purple,
           fontSize: 17,
-          fontFamily: "CarosSoft",
+          fontFamily: FONTS.PRIMARY,
           marginTop: 24,
           marginBottom: 6,
         }}
@@ -671,7 +672,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
         <Text
           style={{
             color: themeColors.darkGray,
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
             marginBottom: 90,
           }}
         >
@@ -797,7 +798,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
                       color: themeColors.purple,
                       fontWeight: "bold",
                       fontSize: 16,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                       flexShrink: 1,
                     }}
                     numberOfLines={2}
@@ -862,7 +863,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
                   color: themeColors.purple,
                   marginBottom: 10,
                   textAlign: "center",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Edit Group Details
@@ -879,7 +880,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
                   width: "100%",
                   marginBottom: 10,
                   color: themeColors.black,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   fontSize: 16,
                 }}
                 placeholderTextColor={themeColors.darkGray}
@@ -897,7 +898,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
                   width: "100%",
                   marginBottom: 10,
                   color: themeColors.black,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   fontSize: 15,
                 }}
                 placeholderTextColor={themeColors.darkGray}
@@ -924,7 +925,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
                     style={{
                       color: themeColors.purple,
                       fontWeight: "bold",
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     Cancel
@@ -947,7 +948,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
                     style={{
                       color: themeColors.white,
                       fontWeight: "bold",
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     {editSaving ? "Saving..." : "Save"}
@@ -1020,7 +1021,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
                 style={{
                   color: themeColors.black,
                   fontSize: 16,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {item.uid !== auth.currentUser?.uid && (
@@ -1063,7 +1064,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
                       color: themeColors.white,
                       fontWeight: "bold",
                       fontSize: 14,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     Unfollow
@@ -1091,7 +1092,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
                       color: themeColors.white,
                       fontWeight: "bold",
                       fontSize: 14,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     Follow
@@ -1104,7 +1105,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
           <Text
             style={{
               color: themeColors.darkGray,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               marginBottom: 12,
               paddingHorizontal: 24,
             }}

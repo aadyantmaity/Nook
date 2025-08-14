@@ -1,5 +1,6 @@
 import React from "react";
 import { Modal, Pressable, View, Text, TouchableOpacity } from "react-native";
+import { FONTS } from "../../constants/fonts";
 
 export default function LogoutModal({
   visible,
@@ -44,7 +45,7 @@ export default function LogoutModal({
               fontWeight: "bold",
               marginBottom: 12,
               color: themeColors.black,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Confirm Logout
@@ -54,7 +55,7 @@ export default function LogoutModal({
               fontSize: 15,
               color: themeColors.purple,
               marginBottom: 20,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Are you sure you want to log out?
@@ -81,7 +82,7 @@ export default function LogoutModal({
                 style={{
                   color: themeColors.white,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Log Out
@@ -101,7 +102,7 @@ export default function LogoutModal({
                 style={{
                   color: themeColors.white,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Cancel

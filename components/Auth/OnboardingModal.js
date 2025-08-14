@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { CaretLeft } from "phosphor-react-native";
+import { FONTS } from "../../constants/fonts";
 
 const slides = [
   {
@@ -149,7 +150,7 @@ export default function OnboardingModal({ visible, onFinish, themeColors }) {
                 color: themeColors.purple,
                 marginBottom: 10,
                 textAlign: "center",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               {slides[index].title}
@@ -160,7 +161,7 @@ export default function OnboardingModal({ visible, onFinish, themeColors }) {
                 fontSize: 16,
                 marginBottom: 18,
                 textAlign: "center",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               {slides[index].description}
@@ -200,7 +201,7 @@ export default function OnboardingModal({ visible, onFinish, themeColors }) {
                   style={{
                     color: themeColors.purple,
                     fontWeight: "bold",
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   Skip
@@ -219,7 +220,7 @@ export default function OnboardingModal({ visible, onFinish, themeColors }) {
                   style={{
                     color: themeColors.white,
                     fontWeight: "bold",
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   {index === slides.length - 1 ? "Finish" : "Next"}

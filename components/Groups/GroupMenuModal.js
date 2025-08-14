@@ -1,6 +1,7 @@
 import React from "react";
 import { Modal, TouchableOpacity, View, Text } from "react-native";
 import { Star, SignOut, Trash, Info } from "phosphor-react-native";
+import { FONTS } from "../../constants/fonts";
 
 export default function GroupMenuModal({
   visible,
@@ -79,7 +80,7 @@ export default function GroupMenuModal({
             <Text
               style={{
                 color: themeColors.purple,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
                 fontSize: 16,
                 fontWeight: "bold",
               }}
@@ -108,7 +109,7 @@ export default function GroupMenuModal({
               style={{
                 color: themeColors.red,
                 fontWeight: "bold",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
                 fontSize: 15,
               }}
             >
@@ -137,7 +138,7 @@ export default function GroupMenuModal({
                 style={{
                   color: themeColors.red,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   fontSize: 15,
                 }}
               >

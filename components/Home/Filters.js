@@ -9,6 +9,7 @@ import {
   UIManager,
 } from "react-native";
 import { FadersHorizontal } from "phosphor-react-native";
+import { FONTS } from "../../constants/fonts";
 
 const TAGS = [
   "All",
@@ -152,7 +153,7 @@ export default function Filters({
                 fontWeight: "bold",
                 color: themeColors.purple,
                 marginBottom: 12,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               Filters
@@ -209,7 +210,7 @@ export default function Filters({
                           : themeColors.purple,
                         fontWeight: "bold",
                         fontSize: 12.5,
-                        fontFamily: "CarosSoft",
+                        fontFamily: FONTS.PRIMARY,
                       }}
                       numberOfLines={1}
                       ellipsizeMode="tail"
@@ -228,7 +229,7 @@ export default function Filters({
                   fontWeight: "bold",
                   color: themeColors.purple,
                   marginBottom: 12,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   alignSelf: "center",
                 }}
               >
@@ -277,7 +278,7 @@ export default function Filters({
                               : themeColors.purple,
                           fontWeight: "bold",
                           fontSize: 12.5,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                         }}
                       >
                         {opt.label}
@@ -308,7 +309,7 @@ export default function Filters({
                   color: themeColors.purple,
                   fontSize: 16,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Reset Filters
@@ -336,7 +337,7 @@ export default function Filters({
                   style={{
                     color: themeColors.purple,
                     fontWeight: "bold",
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   Cancel
@@ -361,7 +362,7 @@ export default function Filters({
                   style={{
                     color: themeColors.white,
                     fontWeight: "bold",
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   Submit

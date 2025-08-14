@@ -1,5 +1,6 @@
 import React from "react";
 import { TouchableOpacity, Text, ActivityIndicator } from "react-native";
+import { FONTS } from "../constants/fonts";
 
 export default function PrimaryActionButton({
   label,
@@ -35,7 +36,7 @@ export default function PrimaryActionButton({
           style={{
             color: disabled ? themeColors.darkGray : themeColors.white,
             fontWeight: "bold",
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
             fontSize: 16,
           }}
         >

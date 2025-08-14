@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, Modal } from "react-native";
+import { FONTS } from "../../constants/fonts";
 
 export default function GroupFiltersModal({
   visible,
@@ -98,7 +99,7 @@ export default function GroupFiltersModal({
               fontWeight: "bold",
               color: themeColors.purple,
               marginBottom: 12,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Group Filters
@@ -144,7 +145,7 @@ export default function GroupFiltersModal({
                       : themeColors.purple,
                     fontWeight: "bold",
                     fontSize: 13,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                   numberOfLines={1}
                   ellipsizeMode="tail"
@@ -170,7 +171,7 @@ export default function GroupFiltersModal({
               style={{
                 color: themeColors.purple,
                 fontWeight: "bold",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               Reset Filters
@@ -201,7 +202,7 @@ export default function GroupFiltersModal({
                 style={{
                   color: themeColors.purple,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Cancel
@@ -231,7 +232,7 @@ export default function GroupFiltersModal({
                 style={{
                   color: themeColors.white,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Done

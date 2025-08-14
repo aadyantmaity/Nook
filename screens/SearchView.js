@@ -24,6 +24,7 @@ import {
   setDoc,
 } from "firebase/firestore";
 import { MagnifyingGlass, User, ArrowLeft } from "phosphor-react-native";
+import { FONTS } from "../constants/fonts";
 
 export default function SearchView() {
   const navigation = useNavigation();
@@ -262,7 +263,7 @@ export default function SearchView() {
             color: themeColors.black,
             fontSize: isGrid ? 14 : 16,
             fontWeight: "bold",
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
             textAlign: isGrid ? "center" : "left",
             marginBottom: isGrid ? 8 : 0,
           }}
@@ -295,7 +296,7 @@ export default function SearchView() {
             color: themeColors.white,
             fontWeight: "bold",
             fontSize: isGrid ? 12 : 14,
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
           }}
         >
           {following.includes(item.uid) ? "Unfollow" : "Follow"}
@@ -363,7 +364,7 @@ export default function SearchView() {
             fontSize: 16,
             color: themeColors.black,
             height: 44,
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
             paddingVertical: 0,
           }}
           placeholder="Search people..."
@@ -384,7 +385,7 @@ export default function SearchView() {
               color: themeColors.purple,
               marginHorizontal: 16,
               marginBottom: 12,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Suggested for you

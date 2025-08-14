@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { X, ShareNetwork, User } from "phosphor-react-native";
 import QRCode from "react-native-qrcode-svg";
+import { FONTS } from "../../constants/fonts";
 
 export default function ProfileShareModal({
   visible,
@@ -90,7 +91,7 @@ export default function ProfileShareModal({
               color: themeColors.purple,
               marginBottom: 16,
               textAlign: "center",
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Share Profile
@@ -142,7 +143,7 @@ export default function ProfileShareModal({
                   color: themeColors.white,
                   fontWeight: "bold",
                   fontSize: 16,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Share

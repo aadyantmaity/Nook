@@ -6,10 +6,12 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
+  Alert,
 } from "react-native";
 import ProfilePicture from "../Profile/ProfilePicture";
 import { UserMinus } from "phosphor-react-native";
 import CircleLoader from "../common/CircleLoader";
+import { FONTS } from "../../constants/fonts";
 
 export default function FollowingModal({
   visible,
@@ -21,6 +23,7 @@ export default function FollowingModal({
   isOwnProfile,
   handleUnfollowFromModal,
   unfollowingUid,
+  currentUserFollowing, // Add this prop to check if current user follows them
 }) {
   return (
     <Modal
@@ -59,7 +62,7 @@ export default function FollowingModal({
               fontSize: 18,
               color: themeColors.purple,
               marginBottom: 8,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Following
@@ -103,7 +106,7 @@ export default function FollowingModal({
                       style={{
                         color: themeColors.black,
                         fontSize: 16,
-                        fontFamily: "CarosSoft",
+                        fontFamily: FONTS.PRIMARY,
                         marginLeft: 8,
                       }}
                     >
@@ -112,11 +115,43 @@ export default function FollowingModal({
                   </TouchableOpacity>
                   {isOwnProfile && (
                     <TouchableOpacity
-                      onPress={() => handleUnfollowFromModal(item.uid)}
+                      onPress={() => {
+                        // Check if current user follows this person (they are in current user's following list)
+                        const isFriend =
+                          currentUserFollowing &&
+                          currentUserFollowing.includes(item.uid);
+
+                        if (isFriend) {
+                          // Show confirmation for unfollowing a friend
+                          Alert.alert(
+                            "Unfollow Friend",
+                            "Are you sure you want to unfollow this friend?",
+                            [
+                              {
+                                text: "Cancel",
+                                style: "cancel",
+                              },
+                              {
+                                text: "Unfollow",
+                                style: "destructive",
+                                onPress: () =>
+                                  handleUnfollowFromModal(item.uid),
+                              },
+                            ]
+                          );
+                        } else {
+                          // Direct unfollow for non-friends
+                          handleUnfollowFromModal(item.uid);
+                        }
+                      }}
                       disabled={unfollowingUid === item.uid}
                       style={{
                         marginLeft: 12,
-                        backgroundColor: themeColors.red,
+                        backgroundColor:
+                          currentUserFollowing &&
+                          currentUserFollowing.includes(item.uid)
+                            ? themeColors.purple
+                            : themeColors.red,
                         borderRadius: 6,
                         paddingVertical: 6,
                         paddingHorizontal: 14,
@@ -125,28 +160,35 @@ export default function FollowingModal({
                         flexDirection: "row",
                       }}
                     >
-                      <UserMinus
-                        size={18}
-                        color={
-                          unfollowingUid === item.uid
-                            ? themeColors.darkGray
-                            : themeColors.white
-                        }
-                      />
-                      <Text
-                        style={{
-                          marginLeft: 6,
-                          color:
-                            unfollowingUid === item.uid
-                              ? themeColors.darkGray
-                              : themeColors.white,
-                          fontWeight: "bold",
-                          fontSize: 14,
-                          fontFamily: "CarosSoft",
-                        }}
-                      >
-                        Unfollow
-                      </Text>
+                      {currentUserFollowing &&
+                      currentUserFollowing.includes(item.uid) ? (
+                        // Show "Friends" for people the current user follows
+                        <Text
+                          style={{
+                            color: themeColors.white,
+                            fontWeight: "bold",
+                            fontSize: 14,
+                            fontFamily: FONTS.PRIMARY,
+                          }}
+                        >
+                          Friends
+                        </Text>
+                      ) : (
+                        // Show "Following" for non-friends (no icon)
+                        <Text
+                          style={{
+                            color:
+                              unfollowingUid === item.uid
+                                ? themeColors.darkGray
+                                : themeColors.white,
+                            fontWeight: "bold",
+                            fontSize: 14,
+                            fontFamily: FONTS.PRIMARY,
+                          }}
+                        >
+                          Following
+                        </Text>
+                      )}
                     </TouchableOpacity>
                   )}
                 </View>
@@ -167,7 +209,7 @@ export default function FollowingModal({
               style={{
                 color: themeColors.white,
                 fontWeight: "bold",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               Close

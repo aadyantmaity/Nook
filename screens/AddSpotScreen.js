@@ -34,6 +34,7 @@ import FavoriteToggle from "../components/AddSpot/FavoriteToggle";
 import MapLocationPicker from "../components/AddSpot/MapLocationPicker";
 // --- Add import for ShareWithModal ---
 import ShareWithModal from "../components/AddSpot/ShareWithModal";
+import { FONTS } from "../constants/fonts";
 
 const TAGS = [
   "Quiet",
@@ -429,7 +430,7 @@ export default function AddSpotScreen({ navigation, route }) {
                 style={{
                   color: isUWBuilding ? themeColors.white : themeColors.purple,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 UW Building
@@ -454,7 +455,7 @@ export default function AddSpotScreen({ navigation, route }) {
                 style={{
                   color: !isUWBuilding ? themeColors.white : themeColors.purple,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Custom Location
@@ -467,7 +468,7 @@ export default function AddSpotScreen({ navigation, route }) {
               fontSize: 20,
               marginBottom: 8,
               color: themeColors.black,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             {isUWBuilding ? "Select Building:" : "Enter Location Name:"}
@@ -509,7 +510,7 @@ export default function AddSpotScreen({ navigation, route }) {
                     marginRight: 8,
                     backgroundColor: themeColors.white,
                     color: themeColors.purple,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 />
                 <TouchableOpacity
@@ -538,7 +539,7 @@ export default function AddSpotScreen({ navigation, route }) {
                       color: themeColors.white,
                       marginLeft: 6,
                       fontSize: 13,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                       fontWeight: "bold",
                     }}
                   >
@@ -562,7 +563,7 @@ export default function AddSpotScreen({ navigation, route }) {
                   color: themeColors.purple,
                   // Match width to name input
                   width: "100%",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               />
             </>
@@ -604,7 +605,7 @@ export default function AddSpotScreen({ navigation, route }) {
                   fontSize: 19,
                   marginBottom: 8,
                   color: themeColors.black,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Husky Card Needed:
@@ -637,7 +638,7 @@ export default function AddSpotScreen({ navigation, route }) {
                       color: !huskyCardNeeded
                         ? themeColors.white
                         : themeColors.purple,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                       fontSize: 15,
                     }}
                   >
@@ -665,7 +666,7 @@ export default function AddSpotScreen({ navigation, route }) {
                       color: huskyCardNeeded
                         ? themeColors.white
                         : themeColors.purple,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                       fontSize: 15,
                     }}
                   >
@@ -689,7 +690,7 @@ export default function AddSpotScreen({ navigation, route }) {
                 marginBottom: 16,
                 backgroundColor: themeColors.white,
                 color: themeColors.purple,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             />
           )}
@@ -700,7 +701,7 @@ export default function AddSpotScreen({ navigation, route }) {
               fontSize: 20,
               marginBottom: 8,
               color: themeColors.black,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Tags:
@@ -744,7 +745,7 @@ export default function AddSpotScreen({ navigation, route }) {
                     color: privateNook ? themeColors.white : themeColors.purple,
                     fontWeight: "bold",
                     marginRight: 6,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   Private Nook
@@ -817,7 +818,7 @@ export default function AddSpotScreen({ navigation, route }) {
                   fontWeight: "bold",
                   fontSize: 16,
                   textAlign: "center",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   letterSpacing: 0.1,
                 }}
               >
@@ -851,7 +852,7 @@ export default function AddSpotScreen({ navigation, route }) {
                   fontWeight: "bold",
                   fontSize: 16,
                   textAlign: "center",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   letterSpacing: 0.1,
                 }}
               >

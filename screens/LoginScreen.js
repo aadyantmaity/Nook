@@ -12,6 +12,7 @@ import {
   sendPasswordResetEmail,
 } from "firebase/auth"; // Import Firebase Auth and sendPasswordResetEmail
 import { colors } from "../constants/colors";
+import { FONTS } from "../constants/fonts";
 import { auth } from "../firebaseConfig"; // Import the initialized auth
 
 export default function LoginScreen({ navigation }) {
@@ -89,7 +90,7 @@ export default function LoginScreen({ navigation }) {
               color: themeColors.red,
               marginBottom: 8,
               textAlign: "center",
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             {error}
@@ -100,7 +101,7 @@ export default function LoginScreen({ navigation }) {
             styles.title,
             {
               color: themeColors.black,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               textAlign: "center",
             },
           ]}
@@ -146,7 +147,7 @@ export default function LoginScreen({ navigation }) {
           <Text
             style={{
               color: themeColors.purple,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               fontSize: 14,
             }}
           >
@@ -158,7 +159,7 @@ export default function LoginScreen({ navigation }) {
           <Text
             style={{
               color: themeColors.purple,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               fontSize: 14,
               marginBottom: 8,
               textAlign: "center",
@@ -245,7 +246,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 32,
-    fontFamily: "CarosSoft",
+    fontFamily: FONTS.PRIMARY,
   },
   formContainer: {
     width: "100%",
@@ -258,7 +259,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
-    fontFamily: "CarosSoft",
+    fontFamily: FONTS.PRIMARY,
   },
   button: {
     width: "100%",
@@ -270,7 +271,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontWeight: "bold",
     fontSize: 16,
-    fontFamily: "CarosSoft",
+    fontFamily: FONTS.PRIMARY,
   },
   secondaryButton: {
     marginTop: 16,
@@ -279,6 +280,6 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     fontWeight: "bold",
     fontSize: 16,
-    fontFamily: "CarosSoft",
+    fontFamily: FONTS.PRIMARY,
   },
 });

@@ -1,6 +1,7 @@
 import React from "react";
 import { TouchableOpacity, Text, View } from "react-native";
 import { Heart } from "phosphor-react-native";
+import { FONTS } from "../../constants/fonts";
 
 export default function FavoriteToggle({
   isFavorite,
@@ -41,7 +42,7 @@ export default function FavoriteToggle({
         style={{
           color: themeColors.black,
           fontSize: 14.5,
-          fontFamily: "CarosSoft",
+          fontFamily: FONTS.PRIMARY,
         }}
       >
         Mark this spot as a favorite

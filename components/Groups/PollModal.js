@@ -9,6 +9,7 @@ import {
   ScrollView,
 } from "react-native";
 import { X, Plus } from "phosphor-react-native";
+import { FONTS } from "../../constants/fonts";
 
 export default function PollModal({ visible, onClose, onSubmit, themeColors }) {
   const [question, setQuestion] = useState("");
@@ -120,7 +121,7 @@ export default function PollModal({ visible, onClose, onSubmit, themeColors }) {
               fontWeight: "bold",
               color: themeColors.purple,
               marginBottom: 18,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               letterSpacing: 0.5,
             }}
           >
@@ -138,7 +139,7 @@ export default function PollModal({ visible, onClose, onSubmit, themeColors }) {
               width: "100%",
               marginBottom: 18,
               color: themeColors.black,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               fontSize: 16,
             }}
             placeholderTextColor={themeColors.darkGray}
@@ -174,7 +175,7 @@ export default function PollModal({ visible, onClose, onSubmit, themeColors }) {
                     borderRadius: 8,
                     padding: 10,
                     color: themeColors.black,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                     fontSize: 15,
                   }}
                   placeholderTextColor={themeColors.darkGray}
@@ -237,7 +238,7 @@ export default function PollModal({ visible, onClose, onSubmit, themeColors }) {
               style={{
                 color: submitting ? themeColors.darkGray : themeColors.white,
                 fontWeight: "bold",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
                 fontSize: 17,
                 letterSpacing: 0.2,
               }}

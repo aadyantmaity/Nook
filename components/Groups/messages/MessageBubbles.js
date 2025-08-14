@@ -4,6 +4,7 @@ import ProfilePicture from "../../Profile/ProfilePicture";
 import { MapPin, Star } from "phosphor-react-native";
 import { db } from "../../../firebaseConfig";
 import { doc, updateDoc } from "firebase/firestore";
+import { FONTS } from "../../../constants/fonts";
 
 // --- MyMessageBubble ---
 export const MyMessageBubble = memo(
@@ -85,7 +86,7 @@ export const MyMessageBubble = memo(
                     style={{
                       color: themeColors.white,
                       fontSize: 15,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                       flexShrink: 1,
                       flexWrap: "wrap",
                     }}
@@ -133,7 +134,7 @@ export const OtherMessageBubble = memo(
           alignItems: "flex-end",
           marginBottom: 5,
           maxWidth: "80%",
-          marginLeft: -5,
+          marginLeft: 0,
         }}
       >
         {showProfilePic ? (
@@ -194,7 +195,7 @@ export const OtherMessageBubble = memo(
                     style={{
                       color: themeColors.black,
                       fontSize: 15,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                       flexShrink: 1,
                       flexWrap: "wrap",
                     }}
@@ -218,7 +219,7 @@ export const OtherMessageBubble = memo(
                     fontWeight: "bold",
                     fontSize: 11,
                     marginRight: 2,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   {/* Show first name and last initial */}
@@ -272,7 +273,7 @@ export const SystemMessage = memo(({ item, themeColors }) => (
           style={{
             color: themeColors.darkGray,
             fontSize: 14,
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
             textAlign: "center",
             fontStyle: "italic",
           }}
@@ -315,7 +316,7 @@ export const NookShareMessage = memo(
           alignSelf: "flex-start",
           marginBottom: 5 + addGap,
           maxWidth: "80%",
-          marginLeft: -5,
+          marginLeft: 0,
         };
 
     return (
@@ -394,7 +395,7 @@ export const NookShareMessage = memo(
                   color: themeColors.purple,
                   fontWeight: "bold",
                   fontSize: 16,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
                 numberOfLines={1}
               >
@@ -426,7 +427,7 @@ export const NookShareMessage = memo(
                   fontWeight: "bold",
                   fontSize: 11,
                   marginRight: 2,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {getUserName()}
@@ -489,7 +490,7 @@ export const PollMessage = memo(
           alignItems: "flex-end",
           marginBottom: 5,
           maxWidth: "80%",
-          marginLeft: -5,
+          marginLeft: 0,
         };
 
     return (
@@ -518,7 +519,6 @@ export const PollMessage = memo(
                 backgroundColor: themeColors.lightGray + "CC",
                 borderRadius: 12,
                 padding: 10,
-                marginVertical: 8,
                 alignSelf: "stretch",
                 width: "100%",
                 borderWidth: 1,
@@ -535,7 +535,7 @@ export const PollMessage = memo(
                   color: themeColors.purple,
                   fontWeight: "bold",
                   fontSize: 15,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   marginBottom: 6,
                   marginLeft: 2,
                 }}
@@ -586,7 +586,7 @@ export const PollMessage = memo(
                             ? themeColors.white
                             : themeColors.purple,
                           fontWeight: "bold",
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                           fontSize: 14,
                           flex: 1,
                           flexWrap: "wrap",
@@ -604,7 +604,7 @@ export const PollMessage = memo(
                             : themeColors.purple,
                           fontSize: 12,
                           marginLeft: 8,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                         }}
                       >
                         {count} vote{count !== 1 ? "s" : ""}
@@ -619,7 +619,7 @@ export const PollMessage = memo(
                     color: themeColors.darkGray,
                     fontSize: 11,
                     marginTop: 4,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                     textAlign: "right",
                   }}
                 >
@@ -641,7 +641,7 @@ export const PollMessage = memo(
                     fontWeight: "bold",
                     fontSize: 11,
                     marginRight: 2,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   {/* Show first name and last initial */}

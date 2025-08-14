@@ -9,6 +9,7 @@ import {
 import { Clock, CheckCircle, Trophy, Calendar } from "phosphor-react-native";
 import { getFocusSessions } from "../../services/focusSessions";
 import CircleLoader from "../common/CircleLoader";
+import { FONTS } from "../../constants/fonts";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -333,7 +334,7 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
                         style={{
                           fontSize: widget.width === "full" ? 14 : 12,
                           color: themeColors.darkGray,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                           textAlign: "center",
                         }}
                       >
@@ -343,7 +344,7 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
                         style={{
                           fontSize: widget.width === "full" ? 12 : 10,
                           color: themeColors.black,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                           fontWeight: "bold",
                           marginTop: 2,
                         }}
@@ -370,7 +371,7 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
                   fontSize: 36,
                   fontWeight: "bold",
                   color: widget.color,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   marginBottom: 8,
                 }}
               >
@@ -382,7 +383,7 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
                 style={{
                   fontSize: 14,
                   color: themeColors.darkGray,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   textAlign: "center",
                   marginBottom: 4,
                 }}
@@ -409,7 +410,7 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
                   fontSize: 36,
                   fontWeight: "bold",
                   color: widget.color,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   marginBottom: 8,
                 }}
               >
@@ -419,7 +420,7 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
                 style={{
                   fontSize: 14,
                   color: themeColors.darkGray,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   textAlign: "center",
                   marginBottom: 4,
                 }}
@@ -460,7 +461,7 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
                         fontSize: widget.width === "full" ? 20 : 16,
                         fontWeight: "bold",
                         color: widget.color,
-                        fontFamily: "CarosSoft",
+                        fontFamily: FONTS.PRIMARY,
                         marginBottom: 4,
                       }}
                     >
@@ -470,7 +471,7 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
                       style={{
                         fontSize: widget.width === "full" ? 12 : 10,
                         color: themeColors.darkGray,
-                        fontFamily: "CarosSoft",
+                        fontFamily: FONTS.PRIMARY,
                         textAlign: "center",
                       }}
                     >
@@ -519,7 +520,7 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
                           fontSize: widget.width === "full" ? 18 : 14,
                           fontWeight: "bold",
                           color: widget.color,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                           marginBottom: 4,
                         }}
                       >
@@ -529,7 +530,7 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
                         style={{
                           fontSize: widget.width === "full" ? 12 : 10,
                           color: themeColors.darkGray,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                           textAlign: "center",
                         }}
                       >
@@ -584,7 +585,7 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
               fontSize: 16,
               fontWeight: "bold",
               color: themeColors.black,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               flex: 1,
             }}
           >
@@ -598,7 +599,7 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
           style={{
             fontSize: 12,
             color: themeColors.darkGray,
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
             marginBottom: widget.subtitle ? 12 : 0,
           }}
         >
@@ -658,7 +659,7 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
             fontSize: 18,
             fontWeight: "bold",
             color: themeColors.black,
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
             textAlign: "center",
             marginBottom: 8,
           }}
@@ -669,7 +670,7 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
           style={{
             fontSize: 14,
             color: themeColors.darkGray,
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
             textAlign: "center",
             lineHeight: 20,
           }}

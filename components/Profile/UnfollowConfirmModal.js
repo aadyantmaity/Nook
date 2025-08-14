@@ -1,5 +1,6 @@
 import React from "react";
 import { Modal, Pressable, View, Text, TouchableOpacity } from "react-native";
+import { FONTS } from "../../constants/fonts";
 
 export default function UnfollowConfirmModal({
   visible,
@@ -46,7 +47,7 @@ export default function UnfollowConfirmModal({
               fontWeight: "bold",
               marginBottom: 12,
               color: themeColors.black,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Unfollow User?
@@ -57,7 +58,7 @@ export default function UnfollowConfirmModal({
               color: themeColors.purple,
               marginBottom: 20,
               textAlign: "center",
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Are you sure you want to unfollow this user?
@@ -84,7 +85,7 @@ export default function UnfollowConfirmModal({
                 style={{
                   color: themeColors.white,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Unfollow
@@ -104,7 +105,7 @@ export default function UnfollowConfirmModal({
                 style={{
                   color: themeColors.white,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Cancel

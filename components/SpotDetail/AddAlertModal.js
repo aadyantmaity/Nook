@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { FONTS } from "../../constants/fonts";
 import {
   Modal,
   View,
@@ -77,7 +78,7 @@ export default function AddAlertModal({
               fontWeight: "bold",
               marginBottom: 12,
               color: themeColors.black,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Add Alert
@@ -96,7 +97,7 @@ export default function AddAlertModal({
               marginBottom: 16,
               color: themeColors.black,
               backgroundColor: themeColors.white,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
             multiline
           />
@@ -125,7 +126,7 @@ export default function AddAlertModal({
                 style={{
                   color: themeColors.purple,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Cancel
@@ -147,7 +148,7 @@ export default function AddAlertModal({
                 style={{
                   color: themeColors.white,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Add

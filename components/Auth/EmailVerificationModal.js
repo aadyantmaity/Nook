@@ -18,6 +18,7 @@ import {
 import { colors } from "../../constants/colors";
 import { db, auth } from "../../firebaseConfig";
 import { addDoc, collection, Timestamp } from "firebase/firestore";
+import { FONTS } from "../../constants/fonts";
 
 export default function EmailVerificationModal({
   isVisible,
@@ -129,7 +130,7 @@ export default function EmailVerificationModal({
                   style={{
                     marginLeft: 4,
                     color: colors.purple,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                     fontSize: 13,
                     fontWeight: "bold",
                   }}
@@ -161,7 +162,7 @@ export default function EmailVerificationModal({
               <View style={{ marginBottom: 2, width: "100%" }}>
                 <Text
                   style={{
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                     fontWeight: "700",
                     fontSize: 20,
                     color: colors.purple,
@@ -174,7 +175,7 @@ export default function EmailVerificationModal({
                 <Text
                   style={{
                     fontSize: 14,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                     textAlign: "center",
                     color: colors.purple,
                     marginVertical: 2,
@@ -187,7 +188,7 @@ export default function EmailVerificationModal({
                 <Text
                   style={{
                     fontSize: 13,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                     textAlign: "center",
                     color: colors.darkGray,
                     marginTop: 4,
@@ -237,7 +238,7 @@ export default function EmailVerificationModal({
                   </TouchableOpacity>
                   <Text
                     style={{
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                       fontSize: 13,
                       color: colors.black,
                       flexShrink: 1,
@@ -271,7 +272,7 @@ export default function EmailVerificationModal({
                       color: colors.red,
                       marginBottom: 2,
                       textAlign: "center",
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                       fontWeight: "600",
                       fontSize: 13,
                     }}
@@ -324,7 +325,7 @@ export default function EmailVerificationModal({
                     >
                       <Text
                         style={{
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                           fontSize: 15,
                           fontWeight: "500",
                           marginLeft: 4,
@@ -360,7 +361,7 @@ export default function EmailVerificationModal({
                     >
                       <Text
                         style={{
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                           fontSize: 15,
                           fontWeight: "500",
                           marginLeft: 4,
@@ -415,7 +416,7 @@ export default function EmailVerificationModal({
                   fontWeight: "bold",
                   marginBottom: 12,
                   color: colors.black,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   textAlign: "center",
                 }}
               >
@@ -435,7 +436,7 @@ export default function EmailVerificationModal({
                   marginBottom: 16,
                   color: colors.black,
                   backgroundColor: colors.white,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   minHeight: 60,
                   textAlignVertical: "top",
                 }}
@@ -471,7 +472,7 @@ export default function EmailVerificationModal({
                     style={{
                       color: colors.purple,
                       fontWeight: "bold",
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     Cancel
@@ -496,7 +497,7 @@ export default function EmailVerificationModal({
                     style={{
                       color: colors.white,
                       fontWeight: "bold",
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     {submitting ? "Submitting..." : "Submit"}

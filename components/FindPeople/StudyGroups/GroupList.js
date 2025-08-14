@@ -12,6 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as PhosphorIcons from "phosphor-react-native";
 import { LockKey } from "phosphor-react-native";
 import { db, auth } from "../../../firebaseConfig";
+import { FONTS } from "../../../constants/fonts";
 import {
   doc,
   getDoc,
@@ -129,7 +130,7 @@ export default function GroupList({
             color: themeColors.purple,
             fontWeight: "bold",
             fontSize: 16,
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
             marginBottom: 4,
           }}
         >
@@ -138,7 +139,7 @@ export default function GroupList({
         <Text
           style={{
             color: themeColors.darkGray,
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
             textAlign: "center",
             marginTop: 4,
           }}
@@ -331,7 +332,7 @@ export default function GroupList({
                       color: themeColors.purple,
                       fontWeight: "bold",
                       fontSize: 18,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     {item.name}
@@ -354,7 +355,7 @@ export default function GroupList({
                     style={{
                       color: themeColors.black,
                       fontSize: 15,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                       marginBottom: 4,
                     }}
                   >
@@ -383,7 +384,7 @@ export default function GroupList({
                         color: themeColors.white,
                         fontWeight: "bold",
                         fontSize: 13,
-                        fontFamily: "CarosSoft",
+                        fontFamily: FONTS.PRIMARY,
                       }}
                     >
                       {unreadCount}

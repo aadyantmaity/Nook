@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Image } from "react-native";
 import { Heart, Warning, Star } from "phosphor-react-native";
+import { FONTS } from "../../constants/fonts";
 
 export default function StudySpotCard({
   spot,
@@ -109,7 +110,7 @@ export default function StudySpotCard({
                   fontSize: 11,
                   fontWeight: "bold",
                   textAlign: "center",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {todaysAlerts.length}
@@ -145,7 +146,7 @@ export default function StudySpotCard({
             resizeMode="cover"
           />
         ) : (
-          <Text style={{ color: themeColors.black, fontFamily: "CarosSoft" }}>
+          <Text style={{ color: themeColors.black, fontFamily: FONTS.PRIMARY }}>
             No Image
           </Text>
         )}
@@ -183,7 +184,7 @@ export default function StudySpotCard({
           marginBottom: 6,
           flexDirection: "row",
           alignItems: "center",
-          fontFamily: "CarosSoft",
+          fontFamily: FONTS.PRIMARY,
         }}
       >
         {spot.name}
@@ -194,7 +195,7 @@ export default function StudySpotCard({
               color: themeColors.black,
               fontWeight: "bold",
               marginLeft: 8,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             {" \u2022 Private"}
@@ -206,7 +207,7 @@ export default function StudySpotCard({
               fontSize: 18,
               color: themeColors.black,
               fontWeight: "bold",
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             {" - Floor "}
@@ -226,7 +227,7 @@ export default function StudySpotCard({
             marginBottom: 8,
             marginTop: 2,
             fontWeight: spot.huskyCardNeeded ? "bold" : "normal",
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
           }}
         >
           {spot.huskyCardNeeded && "Husky Card Required"}
@@ -235,7 +236,7 @@ export default function StudySpotCard({
               style={{
                 color: themeColors.darkGray,
                 fontWeight: "normal",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               {" "}
@@ -247,7 +248,7 @@ export default function StudySpotCard({
               style={{
                 color: themeColors.darkGray,
                 fontWeight: "normal",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               Department: {spot.department}
@@ -285,7 +286,7 @@ export default function StudySpotCard({
                     color: themeColors.white || "#fff",
                     fontSize: 12,
                     fontWeight: "bold",
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   {tag}
@@ -297,7 +298,7 @@ export default function StudySpotCard({
             style={{
               color: themeColors.darkGray || "#AAA",
               fontSize: 12,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             No tags
@@ -327,7 +328,7 @@ export default function StudySpotCard({
                   style={{
                     fontSize: 15,
                     color: themeColors.darkGray,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   Noise Level
@@ -337,7 +338,7 @@ export default function StudySpotCard({
                     fontSize: 16,
                     fontWeight: "bold",
                     color: themeColors.purple,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   {getNoiseLabel(spot.ratings?.noise)}
@@ -349,7 +350,7 @@ export default function StudySpotCard({
                   style={{
                     fontSize: 15,
                     color: themeColors.darkGray,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   Crowd Level
@@ -359,7 +360,7 @@ export default function StudySpotCard({
                     fontSize: 16,
                     fontWeight: "bold",
                     color: themeColors.purple,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   {getCrowdLabel(spot.ratings?.crowd)}
@@ -374,7 +375,7 @@ export default function StudySpotCard({
                       style={{
                         fontSize: 15,
                         color: themeColors.darkGray,
-                        fontFamily: "CarosSoft",
+                        fontFamily: FONTS.PRIMARY,
                       }}
                     >
                       Tables Open
@@ -384,7 +385,7 @@ export default function StudySpotCard({
                         fontSize: 16,
                         fontWeight: "bold",
                         color: themeColors.purple,
-                        fontFamily: "CarosSoft",
+                        fontFamily: FONTS.PRIMARY,
                       }}
                     >
                       {(() => {
@@ -409,7 +410,7 @@ export default function StudySpotCard({
                       style={{
                         fontSize: 15,
                         color: themeColors.darkGray,
-                        fontFamily: "CarosSoft",
+                        fontFamily: FONTS.PRIMARY,
                       }}
                     >
                       {/* Empty label for alignment */}
@@ -418,7 +419,7 @@ export default function StudySpotCard({
                       style={{
                         fontSize: 16,
                         color: "transparent",
-                        fontFamily: "CarosSoft",
+                        fontFamily: FONTS.PRIMARY,
                       }}
                     >
                       -
@@ -443,7 +444,7 @@ export default function StudySpotCard({
                   style={{
                     fontSize: 15,
                     color: themeColors.darkGray,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   Noise Level
@@ -453,7 +454,7 @@ export default function StudySpotCard({
                     fontSize: 16,
                     fontWeight: "bold",
                     color: themeColors.purple,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   {getNoiseLabel(spot.ratings?.noise)}
@@ -465,7 +466,7 @@ export default function StudySpotCard({
                   style={{
                     fontSize: 15,
                     color: themeColors.darkGray,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   Crowd Level
@@ -475,7 +476,7 @@ export default function StudySpotCard({
                     fontSize: 16,
                     fontWeight: "bold",
                     color: themeColors.purple,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   {getCrowdLabel(spot.ratings?.crowd)}
@@ -490,7 +491,7 @@ export default function StudySpotCard({
               color: themeColors.darkGray,
               marginTop: 6,
               textAlign: "right",
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             {getLastUpdatedLabel && spot.ratings

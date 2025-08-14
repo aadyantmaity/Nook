@@ -26,6 +26,7 @@ import {
 import { auth, db } from "../../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import CircleLoader from "../common/CircleLoader";
+import { FONTS } from "../../constants/fonts";
 
 export default function FocusSessionsModal({ visible, onClose, colors }) {
   const [sessions, setSessions] = useState([]);
@@ -230,7 +231,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
       <Text
         style={{
           color: colors.black,
-          fontFamily: "CarosSoft",
+          fontFamily: FONTS.PRIMARY,
           fontSize: 14,
         }}
       >
@@ -288,7 +289,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
               <Text
                 style={{
                   color: colors.black,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   fontSize: 14,
                 }}
               >
@@ -370,7 +371,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                   fontSize: 20,
                   fontWeight: "bold",
                   color: colors.black,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {selectedType === "sessions"
@@ -473,7 +474,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                           fontSize: 20,
                           fontWeight: "bold",
                           color: colors.black,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                         }}
                       >
                         {formatDuration(filteredFocusTime)}
@@ -482,7 +483,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                         style={{
                           fontSize: 12,
                           color: colors.darkGray || "#6B7280",
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                         }}
                       >
                         Lifetime Focus
@@ -495,7 +496,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                           fontSize: 20,
                           fontWeight: "bold",
                           color: colors.black,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                         }}
                       >
                         {filteredSessions.length}
@@ -504,7 +505,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                         style={{
                           fontSize: 12,
                           color: colors.darkGray || "#6B7280",
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                         }}
                       >
                         Sessions
@@ -519,7 +520,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                           fontSize: 20,
                           fontWeight: "bold",
                           color: colors.black,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                         }}
                       >
                         {filteredGoals.length}
@@ -528,7 +529,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                         style={{
                           fontSize: 12,
                           color: colors.darkGray || "#6B7280",
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                         }}
                       >
                         Archived Goals
@@ -541,7 +542,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                           fontSize: 20,
                           fontWeight: "bold",
                           color: colors.black,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                         }}
                       >
                         {goals.length}
@@ -550,7 +551,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                         style={{
                           fontSize: 12,
                           color: colors.darkGray || "#6B7280",
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                         }}
                       >
                         Total Goals
@@ -586,7 +587,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                     marginTop: 12,
                     fontSize: 16,
                     color: colors.darkGray || "#6B7280",
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                     textAlign: "center",
                   }}
                 >
@@ -597,7 +598,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                     marginTop: 4,
                     fontSize: 14,
                     color: colors.darkGray || "#6B7280",
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                     textAlign: "center",
                     opacity: 0.8,
                   }}
@@ -619,7 +620,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                     marginTop: 12,
                     fontSize: 16,
                     color: colors.darkGray || "#6B7280",
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                     textAlign: "center",
                   }}
                 >
@@ -630,7 +631,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                     marginTop: 4,
                     fontSize: 14,
                     color: colors.darkGray || "#6B7280",
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                     textAlign: "center",
                     opacity: 0.8,
                   }}
@@ -674,7 +675,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                                 style={{
                                   fontSize: 14,
                                   color: colors.darkGray || "#6B7280",
-                                  fontFamily: "CarosSoft",
+                                  fontFamily: FONTS.PRIMARY,
                                 }}
                               >
                                 {formatTimestamp(session.timestamp)}
@@ -684,7 +685,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                                   fontSize: 16,
                                   fontWeight: "bold",
                                   color: getModeColor(session.mode),
-                                  fontFamily: "CarosSoft",
+                                  fontFamily: FONTS.PRIMARY,
                                 }}
                               >
                                 {formatDuration(session.duration)}
@@ -702,7 +703,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                                     color: session.wasCompleted
                                       ? colors.green || "#22C55E"
                                       : colors.orange,
-                                    fontFamily: "CarosSoft",
+                                    fontFamily: FONTS.PRIMARY,
                                   }}
                                 >
                                   {session.wasCompleted
@@ -728,7 +729,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                                     style={{
                                       fontSize: 12,
                                       color: colors.darkGray || "#6B7280",
-                                      fontFamily: "CarosSoft",
+                                      fontFamily: FONTS.PRIMARY,
                                       fontStyle: "italic",
                                     }}
                                   >
@@ -774,7 +775,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                                 style={{
                                   fontSize: 14,
                                   color: colors.darkGray || "#6B7280",
-                                  fontFamily: "CarosSoft",
+                                  fontFamily: FONTS.PRIMARY,
                                 }}
                               >
                                 {new Date(goal.achievedAt).toLocaleDateString()}
@@ -784,7 +785,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                                   fontSize: 16,
                                   fontWeight: "bold",
                                   color: colors.purple,
-                                  fontFamily: "CarosSoft",
+                                  fontFamily: FONTS.PRIMARY,
                                 }}
                               >
                                 {goal.title}
@@ -794,7 +795,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
                                   style={{
                                     fontSize: 14,
                                     color: colors.darkGray || "#6B7280",
-                                    fontFamily: "CarosSoft",
+                                    fontFamily: FONTS.PRIMARY,
                                   }}
                                 >
                                   {goal.description}

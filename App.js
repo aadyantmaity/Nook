@@ -70,6 +70,7 @@ export default function App() {
     const loadFonts = async () => {
       await Font.loadAsync({
         CarosSoft: require("./assets/fonts/CarosSoftBold.otf"),
+        "SF-Pro-Display-Regular": require("./assets/fonts/SF-Pro-Display-Regular.otf"),
       });
       setFontsLoaded(true);
     };

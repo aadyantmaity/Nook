@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import { View, Text, Animated, Easing } from "react-native";
 import { MapPin } from "phosphor-react-native";
+import { FONTS } from "../../constants/fonts";
 
 function HomeLoadingScreen({ themeColors, loadingMessage }) {
   const pinPulse = useRef(new Animated.Value(1)).current;
@@ -96,7 +97,7 @@ function HomeLoadingScreen({ themeColors, loadingMessage }) {
           marginTop: 18,
           fontSize: 18,
           color: themeColors.darkGray,
-          fontFamily: "CarosSoft",
+          fontFamily: FONTS.PRIMARY,
           fontWeight: "bold",
           textAlign: "center",
           letterSpacing: 0.1,

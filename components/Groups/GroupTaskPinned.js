@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
+import { FONTS } from "../../constants/fonts";
 import {
   CheckCircle,
   Circle,
@@ -75,7 +76,7 @@ export default function GroupTaskPinned({
               color: themeColors.purple,
               fontWeight: "bold",
               fontSize: 16,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               marginBottom: 2,
               flex: 1,
             }}
@@ -130,7 +131,7 @@ export default function GroupTaskPinned({
               style={{
                 color: themeColors.darkGray,
                 fontSize: 13,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               {checkedCount} of {total} checked off ({percent}%)

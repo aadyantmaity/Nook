@@ -35,6 +35,7 @@ import LocationPickerModal from "./LocationPickerModal";
 import FocusStatsWidgets from "./FocusStatsWidgets";
 import { auth, db } from "../../firebaseConfig";
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
+import { FONTS } from "../../constants/fonts";
 
 // presets removed
 
@@ -88,7 +89,7 @@ function TimeAdjustRow({ label, seconds, onChange, colors }) {
           style={{
             fontSize: 14,
             color: colors.black,
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
           }}
         >
           {label} (min)
@@ -103,7 +104,7 @@ function TimeAdjustRow({ label, seconds, onChange, colors }) {
           paddingHorizontal: 12,
           color: colors.black,
           backgroundColor: colors.white,
-          fontFamily: "CarosSoft",
+          fontFamily: FONTS.PRIMARY,
           fontSize: 16,
         }}
         keyboardType="decimal-pad"
@@ -172,7 +173,7 @@ function CountdownDisplay({
                 fontSize: 54,
                 color: colors.black,
                 fontWeight: "bold",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               {formatHhMmSs(remainingTime)}
@@ -181,7 +182,7 @@ function CountdownDisplay({
               style={{
                 fontSize: 20,
                 color: colors.darkGray || "#6B7280",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
                 marginTop: 4,
               }}
             >
@@ -281,7 +282,7 @@ function TimerControls({ isPlaying, onToggle, onReset, onSkip, colors, mode }) {
           <Text
             style={{
               color: colors.darkGray || "#6B7280",
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               fontSize: 12,
               textAlign: "center",
             }}
@@ -293,7 +294,7 @@ function TimerControls({ isPlaying, onToggle, onReset, onSkip, colors, mode }) {
           <Text
             style={{
               color: colors.darkGray || "#6B7280",
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               fontSize: 12,
               textAlign: "center",
             }}
@@ -305,7 +306,7 @@ function TimerControls({ isPlaying, onToggle, onReset, onSkip, colors, mode }) {
           <Text
             style={{
               color: colors.darkGray || "#6B7280",
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               fontSize: 12,
               textAlign: "center",
             }}
@@ -382,7 +383,7 @@ function EditTimesModal({
               fontWeight: "bold",
               marginBottom: 12,
               color: colors.black,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Timer Settings
@@ -420,7 +421,7 @@ function EditTimesModal({
                 style={{
                   color: colors.purple,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Cancel
@@ -460,7 +461,7 @@ function EditTimesModal({
                 style={{
                   color: colors.white,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {isSaving ? "Saving..." : "Save"}
@@ -1128,7 +1129,7 @@ export default function FocusTimer({ navigation, route }) {
                 style={{
                   fontSize: 15,
                   color: colors.darkGray,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   textAlign: "center",
                   marginTop: 8,
                   opacity: 0.8,
@@ -1164,7 +1165,7 @@ export default function FocusTimer({ navigation, route }) {
         <View
           style={{
             position: "absolute",
-            bottom: 75,
+            bottom: 80,
             right: 16,
             zIndex: 20,
           }}
@@ -1194,7 +1195,7 @@ export default function FocusTimer({ navigation, route }) {
                 fontWeight: "bold",
                 fontSize: 14,
                 marginLeft: 8,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               Archive

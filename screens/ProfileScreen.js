@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { signOut, sendPasswordResetEmail } from "firebase/auth";
 import { colors } from "../constants/colors";
+import { FONTS } from "../constants/fonts";
 import {
   ArrowLeft,
   SignOut,
@@ -129,6 +130,7 @@ export default function ProfileScreen({ navigation, route }) {
   const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
   const [resetPasswordInfo, setResetPasswordInfo] = useState(""); // Info message
   const [showProfileShare, setShowProfileShare] = useState(false); // <-- Add this state
+  const [currentUserFollowing, setCurrentUserFollowing] = useState([]); // Add this to track current user's following
 
   // Refresh handler
   const onRefresh = async () => {
@@ -249,6 +251,10 @@ export default function ProfileScreen({ navigation, route }) {
     if (followingUnsub) followingUnsub();
     const { db } = await import("../firebaseConfig");
     const uid = targetUid || currentUserUid;
+
+    // Fetch current user's following list for mutual follow detection
+    await fetchCurrentUserFollowing();
+
     // Listen to changes in following array
     const unsub = onSnapshot(doc(db, "users", uid), async (userDoc) => {
       if (userDoc.exists()) {
@@ -276,6 +282,31 @@ export default function ProfileScreen({ navigation, route }) {
       setFollowingUnsub(null);
     }
   }, [showFollowingModal]);
+
+  // Fetch current user's following list for mutual follow detection
+  const fetchCurrentUserFollowing = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const { db } = await import("../firebaseConfig");
+      const { getDoc, doc } = await import("firebase/firestore");
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        setCurrentUserFollowing(data.following || []);
+      }
+    } catch (error) {
+      console.log("Error fetching current user following:", error);
+    }
+  };
+
+  // Fetch current user's following list when profile loads
+  React.useEffect(() => {
+    if (!isOwnProfile && targetUid) {
+      fetchCurrentUserFollowing();
+    }
+  }, [targetUid, isOwnProfile]);
 
   // Unfollow handler for modal
   const handleUnfollowFromModal = async (uid) => {
@@ -465,7 +496,7 @@ export default function ProfileScreen({ navigation, route }) {
               <Text
                 style={{
                   color: themeColors.purple,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   fontSize: 16,
                 }}
               >
@@ -494,7 +525,7 @@ export default function ProfileScreen({ navigation, route }) {
               <Text
                 style={{
                   color: themeColors.purple,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   fontSize: 16,
                 }}
               >
@@ -502,37 +533,6 @@ export default function ProfileScreen({ navigation, route }) {
               </Text>
             </TouchableOpacity>
 
-            {/* Focus Statistics Option */}
-            <TouchableOpacity
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingVertical: 12,
-                paddingHorizontal: 18,
-              }}
-              onPress={() => {
-                setMenuVisible(false);
-                navigation.navigate("Home", {
-                  screen: "focus",
-                  params: { showDashboard: true },
-                });
-              }}
-            >
-              <Clock
-                size={20}
-                color={themeColors.purple}
-                style={{ marginRight: 10 }}
-              />
-              <Text
-                style={{
-                  color: themeColors.purple,
-                  fontFamily: "CarosSoft",
-                  fontSize: 16,
-                }}
-              >
-                Focus Statistics
-              </Text>
-            </TouchableOpacity>
             {/* Report Option */}
             <TouchableOpacity
               style={{
@@ -554,7 +554,7 @@ export default function ProfileScreen({ navigation, route }) {
               <Text
                 style={{
                   color: themeColors.purple,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   fontSize: 16,
                 }}
               >
@@ -590,7 +590,7 @@ export default function ProfileScreen({ navigation, route }) {
               <Text
                 style={{
                   color: themeColors.purple,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   fontSize: 16,
                 }}
               >
@@ -621,7 +621,7 @@ export default function ProfileScreen({ navigation, route }) {
                 <Text
                   style={{
                     color: themeColors.purple,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                     fontSize: 16,
                   }}
                 >
@@ -652,7 +652,7 @@ export default function ProfileScreen({ navigation, route }) {
                 <Text
                   style={{
                     color: themeColors.red,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                     fontSize: 16,
                   }}
                 >
@@ -673,7 +673,9 @@ export default function ProfileScreen({ navigation, route }) {
       {/* Show info message for reset password */}
       {resetPasswordInfo ? (
         <View style={{ alignItems: "center", marginTop: 8 }}>
-          <Text style={{ color: themeColors.purple, fontFamily: "CarosSoft" }}>
+          <Text
+            style={{ color: themeColors.purple, fontFamily: FONTS.PRIMARY }}
+          >
             {resetPasswordInfo}
           </Text>
         </View>
@@ -687,12 +689,7 @@ export default function ProfileScreen({ navigation, route }) {
         keyboardShouldPersistTaps="handled"
       >
         {/* Profile Picture */}
-        <View
-          style={[
-            styles.profilePictureContainer,
-            { backgroundColor: themeColors.purple },
-          ]}
-        >
+        <View style={[styles.profilePictureContainer]}>
           <ProfilePicture
             profilePic={profilePic}
             onPick={handlePickProfilePic}
@@ -704,7 +701,7 @@ export default function ProfileScreen({ navigation, route }) {
           <Text
             style={[
               styles.userName,
-              { color: themeColors.black, fontFamily: "CarosSoft" },
+              { color: themeColors.black, fontFamily: FONTS.PRIMARY },
             ]}
           >
             {firstName} {lastName}
@@ -714,7 +711,7 @@ export default function ProfileScreen({ navigation, route }) {
             <Text
               style={[
                 styles.userEmail,
-                { color: themeColors.black, fontFamily: "CarosSoft" },
+                { color: themeColors.black, fontFamily: FONTS.PRIMARY },
               ]}
             >
               {userEmail}
@@ -725,7 +722,7 @@ export default function ProfileScreen({ navigation, route }) {
             <Text
               style={[
                 styles.userGradYear,
-                { color: themeColors.black, fontFamily: "CarosSoft" },
+                { color: themeColors.black, fontFamily: FONTS.PRIMARY },
               ]}
             >
               {userGradYear}
@@ -741,7 +738,7 @@ export default function ProfileScreen({ navigation, route }) {
               <Text
                 style={[
                   styles.followLabel,
-                  { color: themeColors.darkGray, fontFamily: "CarosSoft" },
+                  { color: themeColors.darkGray, fontFamily: FONTS.PRIMARY },
                 ]}
               >
                 Followers
@@ -749,7 +746,7 @@ export default function ProfileScreen({ navigation, route }) {
               <Text
                 style={[
                   styles.followCount,
-                  { color: themeColors.black, fontFamily: "CarosSoft" },
+                  { color: themeColors.black, fontFamily: FONTS.PRIMARY },
                 ]}
               >
                 {followers.length}
@@ -763,7 +760,7 @@ export default function ProfileScreen({ navigation, route }) {
               <Text
                 style={[
                   styles.followLabel,
-                  { color: themeColors.darkGray, fontFamily: "CarosSoft" },
+                  { color: themeColors.darkGray, fontFamily: FONTS.PRIMARY },
                 ]}
               >
                 Following
@@ -771,7 +768,7 @@ export default function ProfileScreen({ navigation, route }) {
               <Text
                 style={[
                   styles.followCount,
-                  { color: themeColors.black, fontFamily: "CarosSoft" },
+                  { color: themeColors.black, fontFamily: FONTS.PRIMARY },
                 ]}
               >
                 {following.length}
@@ -790,7 +787,7 @@ export default function ProfileScreen({ navigation, route }) {
                 fontSize: 18,
                 fontWeight: "bold",
                 color: themeColors.black,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
                 textAlign: "center",
                 marginBottom: 16,
                 marginTop: 12,
@@ -815,7 +812,7 @@ export default function ProfileScreen({ navigation, route }) {
                 <Text
                   style={[
                     styles.followLabel,
-                    { color: themeColors.darkGray, fontFamily: "CarosSoft" },
+                    { color: themeColors.darkGray, fontFamily: FONTS.PRIMARY },
                   ]}
                 >
                   Total Focus
@@ -823,7 +820,7 @@ export default function ProfileScreen({ navigation, route }) {
                 <Text
                   style={[
                     styles.followCount,
-                    { color: themeColors.black, fontFamily: "CarosSoft" },
+                    { color: themeColors.black, fontFamily: FONTS.PRIMARY },
                   ]}
                 >
                   {focusStatsLoading
@@ -840,7 +837,7 @@ export default function ProfileScreen({ navigation, route }) {
                 <Text
                   style={[
                     styles.followLabel,
-                    { color: themeColors.darkGray, fontFamily: "CarosSoft" },
+                    { color: themeColors.darkGray, fontFamily: FONTS.PRIMARY },
                   ]}
                 >
                   Sessions
@@ -848,7 +845,7 @@ export default function ProfileScreen({ navigation, route }) {
                 <Text
                   style={[
                     styles.followCount,
-                    { color: themeColors.black, fontFamily: "CarosSoft" },
+                    { color: themeColors.black, fontFamily: FONTS.PRIMARY },
                   ]}
                 >
                   {focusStatsLoading ? "..." : focusStats.totalSessions}
@@ -895,7 +892,7 @@ export default function ProfileScreen({ navigation, route }) {
                       marginLeft: 8,
                       marginRight: 8,
                       color: themeColors.black,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     },
                   ]}
                 >
@@ -983,7 +980,7 @@ export default function ProfileScreen({ navigation, route }) {
                     {
                       color: themeColors.darkGray,
                       padding: 16,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     },
                   ]}
                 >
@@ -1031,45 +1028,82 @@ export default function ProfileScreen({ navigation, route }) {
         {!isOwnProfile && !isLoading && (
           <View style={styles.optionsContainer}>
             <View style={styles.buttonRow}>
-              {isFollowing ? (
-                <TouchableOpacity
-                  style={[
-                    styles.editButton,
-                    { backgroundColor: themeColors.red, width: "100%" },
-                  ]}
-                  onPress={handleUnfollowButton}
-                >
-                  <Text
-                    style={{
-                      color: themeColors.white,
-                      fontWeight: "bold",
-                      fontSize: 16,
-                      fontFamily: "CarosSoft",
-                    }}
-                  >
-                    Unfollow
-                  </Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  style={[
-                    styles.editButton,
-                    { backgroundColor: themeColors.purple, width: "100%" },
-                  ]}
-                  onPress={followUser}
-                >
-                  <Text
-                    style={{
-                      color: themeColors.white,
-                      fontWeight: "bold",
-                      fontSize: 16,
-                      fontFamily: "CarosSoft",
-                    }}
-                  >
-                    Follow
-                  </Text>
-                </TouchableOpacity>
-              )}
+              {(() => {
+                // Determine the relationship status
+                const isFriend =
+                  isFollowing &&
+                  currentUserFollowing &&
+                  currentUserFollowing.includes(targetUid);
+                const isFollowingThem = isFollowing && !isFriend;
+
+                if (isFriend) {
+                  // Friends (mutual follow) - show "Friends" button
+                  return (
+                    <TouchableOpacity
+                      style={[
+                        styles.editButton,
+                        { backgroundColor: themeColors.purple, width: "100%" },
+                      ]}
+                      onPress={handleUnfollowButton}
+                    >
+                      <Text
+                        style={{
+                          color: themeColors.white,
+                          fontWeight: "bold",
+                          fontSize: 16,
+                          fontFamily: FONTS.PRIMARY,
+                        }}
+                      >
+                        Friends
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                } else if (isFollowingThem) {
+                  // Following them but not friends - show "Following" button
+                  return (
+                    <TouchableOpacity
+                      style={[
+                        styles.editButton,
+                        { backgroundColor: themeColors.red, width: "100%" },
+                      ]}
+                      onPress={handleUnfollowButton}
+                    >
+                      <Text
+                        style={{
+                          color: themeColors.white,
+                          fontWeight: "bold",
+                          fontSize: 16,
+                          fontFamily: FONTS.PRIMARY,
+                        }}
+                      >
+                        Following
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                } else {
+                  // Not following - show "Follow" button
+                  return (
+                    <TouchableOpacity
+                      style={[
+                        styles.editButton,
+                        { backgroundColor: themeColors.purple, width: "100%" },
+                      ]}
+                      onPress={followUser}
+                    >
+                      <Text
+                        style={{
+                          color: themeColors.white,
+                          fontWeight: "bold",
+                          fontSize: 16,
+                          fontFamily: FONTS.PRIMARY,
+                        }}
+                      >
+                        Follow
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                }
+              })()}
             </View>
           </View>
         )}
@@ -1113,6 +1147,7 @@ export default function ProfileScreen({ navigation, route }) {
         isOwnProfile={isOwnProfile}
         handleUnfollowFromModal={handleUnfollowFromModal}
         unfollowingUid={unfollowingUid}
+        currentUserFollowing={currentUserFollowing} // Pass the current user's following list
       />
       {/* Unfollow Confirmation Modal */}
       <UnfollowConfirmModal
@@ -1147,7 +1182,7 @@ const styles = StyleSheet.create({
     flex: 1,
     // backgroundColor: colors.white, // Remove, handled by themeColors
     padding: 16,
-    fontFamily: "CarosSoft",
+    fontFamily: FONTS.PRIMARY,
   },
   backButton: {
     position: "absolute",
@@ -1184,7 +1219,7 @@ const styles = StyleSheet.create({
     // color: colors.purple, // Remove, handled inline
     marginBottom: 8,
     paddingTop: 16,
-    fontFamily: "CarosSoft",
+    fontFamily: FONTS.PRIMARY,
   },
   detailRow: {
     flexDirection: "row",
@@ -1196,14 +1231,14 @@ const styles = StyleSheet.create({
     // color: themeColors.darkGray, // Remove, handled inline
     marginLeft: 8,
     textAlign: "center",
-    fontFamily: "CarosSoft",
+    fontFamily: FONTS.PRIMARY,
   },
   userGradYear: {
     fontSize: 16,
     // color: themeColors.darkGray, // Remove, handled inline
     marginLeft: 8,
     textAlign: "center",
-    fontFamily: "CarosSoft",
+    fontFamily: FONTS.PRIMARY,
   },
   divider: {
     height: 1,
@@ -1303,14 +1338,14 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     // color: colors.purple, // Remove, handled inline
     alignSelf: "flex-start",
-    fontFamily: "CarosSoft",
+    fontFamily: FONTS.PRIMARY,
   },
   noFavoritesText: {
     fontSize: 15,
     // color: colors.darkGray, // Remove, handled inline
     marginBottom: 8,
     alignSelf: "flex-start",
-    fontFamily: "CarosSoft",
+    fontFamily: FONTS.PRIMARY,
   },
   favoriteSpotContainer: {
     backgroundColor: colors.gray,
@@ -1323,7 +1358,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     // color: colors.darkGray, // Remove, handled inline
     marginTop: 2,
-    fontFamily: "CarosSoft",
+    fontFamily: FONTS.PRIMARY,
   },
   followRow: {
     flexDirection: "row",
@@ -1340,12 +1375,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     marginBottom: 4,
-    fontFamily: "CarosSoft",
+    fontFamily: FONTS.PRIMARY,
   },
   followCount: {
     fontSize: 16,
     fontWeight: "bold",
-    fontFamily: "CarosSoft",
+    fontFamily: FONTS.PRIMARY,
   },
 });
 // backgroundColor: colors.white, // Remove, handled inline

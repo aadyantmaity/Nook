@@ -31,6 +31,7 @@ import BuildingPicker from "../components/AddSpot/BuildingPicker";
 import ImagePickerButton from "../components/AddSpot/ImagePickerButton";
 import FavoriteToggle from "../components/AddSpot/FavoriteToggle";
 import MapLocationPicker from "../components/AddSpot/MapLocationPicker";
+import { FONTS } from "../constants/fonts";
 
 const TAGS = [
   "Quiet",
@@ -487,7 +488,7 @@ export default function EditSpotScreen({ navigation, route }) {
               fontSize: 20,
               marginBottom: 8,
               color: themeColors.black,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             {isUWBuilding ? "Building:" : "Location Name:"}
@@ -501,7 +502,7 @@ export default function EditSpotScreen({ navigation, route }) {
                     color: themeColors.darkGray,
                     fontSize: 13,
                     marginBottom: 4,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   Building and floor/room cannot be changed.
@@ -529,7 +530,7 @@ export default function EditSpotScreen({ navigation, route }) {
                     color: themeColors.darkGray,
                     fontSize: 13,
                     marginBottom: 4,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   Location name and floor cannot be changed.
@@ -560,7 +561,7 @@ export default function EditSpotScreen({ navigation, route }) {
                       ? themeColors.darkGray
                       : themeColors.purple,
                     width: "100%",
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                   editable={!isEditing}
                 />
@@ -581,7 +582,7 @@ export default function EditSpotScreen({ navigation, route }) {
                     : themeColors.white,
                   color: isEditing ? themeColors.darkGray : themeColors.purple,
                   width: "100%",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
                 editable={!isEditing}
               />
@@ -622,7 +623,7 @@ export default function EditSpotScreen({ navigation, route }) {
                 fontSize: 19,
                 marginBottom: 8,
                 color: themeColors.black,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               Husky Card Needed:
@@ -655,7 +656,7 @@ export default function EditSpotScreen({ navigation, route }) {
                     color: !huskyCardNeeded
                       ? themeColors.white
                       : themeColors.purple,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                     fontSize: 15,
                   }}
                 >
@@ -683,7 +684,7 @@ export default function EditSpotScreen({ navigation, route }) {
                     color: huskyCardNeeded
                       ? themeColors.white
                       : themeColors.purple,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                     fontSize: 15,
                   }}
                 >
@@ -706,7 +707,7 @@ export default function EditSpotScreen({ navigation, route }) {
                 marginBottom: 16,
                 backgroundColor: themeColors.white,
                 color: themeColors.purple,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             />
           )}
@@ -717,7 +718,7 @@ export default function EditSpotScreen({ navigation, route }) {
               fontSize: 19,
               marginBottom: 8,
               color: themeColors.black,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Tags:
@@ -748,7 +749,7 @@ export default function EditSpotScreen({ navigation, route }) {
               marginBottom: 16,
               backgroundColor: themeColors.white,
               color: themeColors.purple,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
             accessibilityLabel="Open or Quiet Hours"
             accessible={true}
@@ -846,7 +847,7 @@ export default function EditSpotScreen({ navigation, route }) {
                   fontWeight: "bold",
                   fontSize: 16,
                   textAlign: "center",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   letterSpacing: 0.1,
                 }}
               >
@@ -879,7 +880,7 @@ export default function EditSpotScreen({ navigation, route }) {
                   fontWeight: "bold",
                   fontSize: 16,
                   textAlign: "center",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   letterSpacing: 0.1,
                 }}
               >

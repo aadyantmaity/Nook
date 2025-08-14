@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { FONTS } from "../../constants/fonts";
 import {
   Modal,
   View,
@@ -103,7 +104,7 @@ export default function AlertsModal({ visible, onClose, alerts, themeColors }) {
               color: themeColors.purple,
               marginBottom: 8,
               textAlign: "center",
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Location Alerts
@@ -114,7 +115,7 @@ export default function AlertsModal({ visible, onClose, alerts, themeColors }) {
               fontSize: 14,
               marginBottom: 10,
               textAlign: "center",
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             {filteredAlerts.length === 1
@@ -162,7 +163,7 @@ export default function AlertsModal({ visible, onClose, alerts, themeColors }) {
                           fontSize: 16,
                           color: themeColors.black,
                           marginBottom: 2,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                         }}
                       >
                         {displayText}
@@ -172,7 +173,7 @@ export default function AlertsModal({ visible, onClose, alerts, themeColors }) {
                               color: themeColors.purple,
                               fontSize: 14,
                               fontWeight: "bold",
-                              fontFamily: "CarosSoft",
+                              fontFamily: FONTS.PRIMARY,
                             }}
                             onPress={() =>
                               setExpanded((prev) => ({
@@ -190,7 +191,7 @@ export default function AlertsModal({ visible, onClose, alerts, themeColors }) {
                           fontSize: 13,
                           color: themeColors.darkGray,
                           marginTop: 2,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                         }}
                       >
                         {addedLabel}
@@ -204,7 +205,7 @@ export default function AlertsModal({ visible, onClose, alerts, themeColors }) {
                 style={{
                   fontSize: 16,
                   color: themeColors.darkGray,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 No alerts available.
@@ -229,7 +230,7 @@ export default function AlertsModal({ visible, onClose, alerts, themeColors }) {
               style={{
                 color: themeColors.purple,
                 fontWeight: "bold",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               Close

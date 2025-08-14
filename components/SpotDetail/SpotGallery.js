@@ -23,6 +23,7 @@ import {
 import { db } from "../../firebaseConfig";
 import { Plus, Trash } from "phosphor-react-native";
 import { getAuth } from "firebase/auth";
+import { FONTS } from "../../constants/fonts";
 import * as FileSystem from "expo-file-system"; // <-- add for file size
 
 export default function SpotGallery({
@@ -284,7 +285,7 @@ export default function SpotGallery({
                     color: themeColors.black,
                     fontWeight: "bold",
                     fontSize: 16,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   Added by: {selectedImage.authorName || "Unknown"}
@@ -294,7 +295,7 @@ export default function SpotGallery({
                     color: themeColors.darkGray,
                     fontSize: 13,
                     marginTop: 4,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   {formatTimestamp(selectedImage.createdAt)}
@@ -313,7 +314,7 @@ export default function SpotGallery({
                     style={{
                       color: themeColors.white,
                       fontWeight: "bold",
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     Close
@@ -332,7 +333,7 @@ export default function SpotGallery({
             fontSize: 17,
             fontWeight: "bold",
             color: themeColors.purple,
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
             marginRight: 10,
           }}
         >
@@ -412,7 +413,7 @@ export default function SpotGallery({
       ) : (
         <View style={{ marginBottom: 16 }}>
           <Text
-            style={{ color: themeColors.darkGray, fontFamily: "CarosSoft" }}
+            style={{ color: themeColors.darkGray, fontFamily: FONTS.PRIMARY }}
           >
             No gallery images yet.
           </Text>

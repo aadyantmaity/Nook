@@ -13,6 +13,7 @@ import { colors } from "../../constants/colors";
 import { db, auth } from "../../firebaseConfig";
 import { addDoc, collection, Timestamp } from "firebase/firestore";
 import PrimaryActionButton from "../PrimaryActionButton";
+import { FONTS } from "../../constants/fonts";
 
 export default function GeneralReportModal({
   visible,
@@ -91,7 +92,7 @@ export default function GeneralReportModal({
               fontWeight: "bold",
               marginBottom: 12,
               color: themeColors.black,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Suggestion / Report an Issue
@@ -106,7 +107,7 @@ export default function GeneralReportModal({
               marginBottom: 16,
               color: themeColors.black,
               backgroundColor: themeColors.white,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               minHeight: 80,
               textAlignVertical: "top",
             }}
@@ -143,7 +144,7 @@ export default function GeneralReportModal({
                 style={{
                   color: submitting ? themeColors.darkGray : themeColors.purple,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Cancel

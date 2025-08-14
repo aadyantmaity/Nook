@@ -12,6 +12,7 @@ import {
 import { db, auth } from "../../firebaseConfig";
 import { doc, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
 import { User, Check } from "phosphor-react-native";
+import { FONTS } from "../../constants/fonts";
 
 export default function PrivateNookShareModal({
   visible,
@@ -132,7 +133,7 @@ export default function PrivateNookShareModal({
               color: themeColors.purple,
               marginBottom: 10,
               textAlign: "center",
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Manage Shared Users
@@ -141,7 +142,7 @@ export default function PrivateNookShareModal({
             <ActivityIndicator color={themeColors.purple} />
           ) : followingList.length === 0 ? (
             <Text
-              style={{ color: themeColors.darkGray, fontFamily: "CarosSoft" }}
+              style={{ color: themeColors.darkGray, fontFamily: FONTS.PRIMARY }}
             >
               You are not following anyone yet.
             </Text>
@@ -212,7 +213,7 @@ export default function PrivateNookShareModal({
                   <Text
                     style={{
                       color: themeColors.black,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                       flex: 1,
                     }}
                     numberOfLines={1}
@@ -250,7 +251,7 @@ export default function PrivateNookShareModal({
               style={{
                 color: updating ? themeColors.darkGray : themeColors.white,
                 fontWeight: "bold",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               Done

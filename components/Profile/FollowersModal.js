@@ -6,10 +6,11 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
+  Alert,
 } from "react-native";
 import ProfilePicture from "../Profile/ProfilePicture";
-import { Trash } from "phosphor-react-native";
 import CircleLoader from "../common/CircleLoader";
+import { FONTS } from "../../constants/fonts";
 
 export default function FollowersModal({
   visible,
@@ -58,7 +59,7 @@ export default function FollowersModal({
               fontSize: 18,
               color: themeColors.purple,
               marginBottom: 8,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Followers
@@ -102,7 +103,7 @@ export default function FollowersModal({
                       style={{
                         color: themeColors.black,
                         fontSize: 16,
-                        fontFamily: "CarosSoft",
+                        fontFamily: FONTS.PRIMARY,
                         marginLeft: 8,
                       }}
                     >
@@ -111,7 +112,23 @@ export default function FollowersModal({
                   </TouchableOpacity>
                   {isOwnProfile && (
                     <TouchableOpacity
-                      onPress={() => handleRemoveFollower(item.uid)}
+                      onPress={() => {
+                        Alert.alert(
+                          "Remove Follower",
+                          "Are you sure you want to remove this follower?",
+                          [
+                            {
+                              text: "Cancel",
+                              style: "cancel",
+                            },
+                            {
+                              text: "Remove",
+                              style: "destructive",
+                              onPress: () => handleRemoveFollower(item.uid),
+                            },
+                          ]
+                        );
+                      }}
                       style={{
                         marginLeft: 12,
                         backgroundColor: themeColors.red,
@@ -120,16 +137,13 @@ export default function FollowersModal({
                         paddingHorizontal: 14,
                         alignItems: "center",
                         justifyContent: "center",
-                        flexDirection: "row",
                       }}
                     >
-                      <Trash size={18} color={themeColors.white} />
                       <Text
                         style={{
                           color: themeColors.white,
                           fontWeight: "bold",
-                          fontFamily: "CarosSoft",
-                          marginLeft: 6,
+                          fontFamily: FONTS.PRIMARY,
                           fontSize: 13,
                         }}
                       >
@@ -155,7 +169,7 @@ export default function FollowersModal({
               style={{
                 color: themeColors.white,
                 fontWeight: "bold",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               Close

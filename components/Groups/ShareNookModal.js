@@ -22,6 +22,7 @@ import {
 } from "firebase/firestore";
 import { MagnifyingGlass, MapPin, X, Share } from "phosphor-react-native";
 import CircleLoader from "../common/CircleLoader";
+import { FONTS } from "../../constants/fonts";
 
 export default function ShareNookModal({
   visible,
@@ -222,7 +223,7 @@ export default function ShareNookModal({
             style={{
               color: themeColors.black,
               fontSize: 17,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               marginBottom: 4,
             }}
           >
@@ -234,7 +235,7 @@ export default function ShareNookModal({
                 color: themeColors.purple,
                 fontSize: 14,
                 fontWeight: "600",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
                 marginBottom: 2,
               }}
             >
@@ -246,7 +247,7 @@ export default function ShareNookModal({
               style={{
                 color: themeColors.darkGray,
                 fontSize: 13,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
               numberOfLines={1}
             >
@@ -322,7 +323,7 @@ export default function ShareNookModal({
                   fontSize: 20,
                   fontWeight: "bold",
                   color: themeColors.purple,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Share a Nook
@@ -370,7 +371,7 @@ export default function ShareNookModal({
                 paddingHorizontal: 12,
                 fontSize: 16,
                 color: themeColors.black,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             />
           </View>
@@ -393,7 +394,7 @@ export default function ShareNookModal({
                   color: themeColors.white,
                   fontSize: 14,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {filteredNooks.length} result
@@ -446,7 +447,7 @@ export default function ShareNookModal({
                     fontSize: 18,
                     fontWeight: "bold",
                     textAlign: "center",
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                     marginBottom: 8,
                   }}
                 >
@@ -459,7 +460,7 @@ export default function ShareNookModal({
                     color: themeColors.darkGray,
                     fontSize: 14,
                     textAlign: "center",
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                     lineHeight: 20,
                   }}
                 >

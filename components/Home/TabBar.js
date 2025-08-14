@@ -1,6 +1,7 @@
 import React from "react";
 import { View, TouchableOpacity, Text, Dimensions } from "react-native";
 import { House, Chats, Rows, Timer as TimerIcon } from "phosphor-react-native";
+import { FONTS } from "../../constants/fonts";
 
 const TAB_ICONS = {
   focus: TimerIcon,
@@ -75,7 +76,7 @@ export default function TabBar({
                       ? themeColors.purple
                       : themeColors.darkGray,
                   fontSize: 11,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                   marginTop: 2,
                   fontWeight: currentIndex === i ? "bold" : "normal",
                 }}

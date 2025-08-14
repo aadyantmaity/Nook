@@ -11,6 +11,7 @@ import {
 import * as PhosphorIcons from "phosphor-react-native";
 import IconPickerModal from "./IconPickerModal";
 import * as ImagePicker from "expo-image-picker";
+import { FONTS } from "../../../constants/fonts";
 
 export default function CreateGroupModal({
   visible,
@@ -94,7 +95,7 @@ export default function CreateGroupModal({
               color: themeColors.purple,
               marginBottom: 10,
               textAlign: "center",
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Create Study Group
@@ -143,7 +144,7 @@ export default function CreateGroupModal({
                     style={{
                       color: themeColors.white,
                       fontWeight: "bold",
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                       fontSize: 14,
                     }}
                   >
@@ -200,7 +201,7 @@ export default function CreateGroupModal({
                       style={{
                         color: themeColors.white,
                         fontWeight: "bold",
-                        fontFamily: "CarosSoft",
+                        fontFamily: FONTS.PRIMARY,
                         fontSize: 14,
                         textAlign: "center",
                       }}
@@ -227,7 +228,7 @@ export default function CreateGroupModal({
                       style={{
                         color: themeColors.white,
                         fontWeight: "bold",
-                        fontFamily: "CarosSoft",
+                        fontFamily: FONTS.PRIMARY,
                         fontSize: 14,
                         textAlign: "center",
                       }}
@@ -259,7 +260,7 @@ export default function CreateGroupModal({
               width: "100%",
               marginBottom: 10,
               color: themeColors.black,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               maxLength: 50,
             }}
             placeholderTextColor={themeColors.darkGray}
@@ -276,7 +277,7 @@ export default function CreateGroupModal({
               width: "100%",
               marginBottom: 10,
               color: themeColors.black,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               maxLength: 50,
             }}
             placeholderTextColor={themeColors.darkGray}
@@ -332,7 +333,7 @@ export default function CreateGroupModal({
                 style={{
                   color: !isPrivate ? themeColors.purple : themeColors.darkGray,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Public
@@ -378,7 +379,7 @@ export default function CreateGroupModal({
                 style={{
                   color: isPrivate ? themeColors.purple : themeColors.darkGray,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Private
@@ -391,7 +392,7 @@ export default function CreateGroupModal({
               color: themeColors.purple,
               marginBottom: 6,
               marginTop: 10,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Add Friends
@@ -404,7 +405,7 @@ export default function CreateGroupModal({
               <Text
                 style={{
                   color: themeColors.darkGray,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 No mutual friends found.
@@ -455,7 +456,7 @@ export default function CreateGroupModal({
                   <Text
                     style={{
                       color: themeColors.black,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     {u.firstName} {u.lastName} ({u.email})
@@ -482,7 +483,7 @@ export default function CreateGroupModal({
                 style={{
                   color: themeColors.purple,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Cancel
@@ -505,7 +506,7 @@ export default function CreateGroupModal({
                 style={{
                   color: creating ? themeColors.darkGray : themeColors.white,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {creating ? "Creating..." : "Create"}

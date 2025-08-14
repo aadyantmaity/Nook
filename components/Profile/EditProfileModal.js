@@ -9,6 +9,7 @@ import {
   Image,
 } from "react-native";
 import { X, User } from "phosphor-react-native";
+import { FONTS } from "../../constants/fonts";
 
 export default function EditProfileModal({
   visible,
@@ -76,7 +77,7 @@ export default function EditProfileModal({
               fontWeight: "bold",
               color: themeColors.black,
               marginBottom: 16,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Edit Profile
@@ -94,7 +95,7 @@ export default function EditProfileModal({
                   fontSize: 12,
                   color: themeColors.darkGray,
                   marginBottom: 4,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Current
@@ -133,7 +134,7 @@ export default function EditProfileModal({
                   fontSize: 12,
                   color: themeColors.darkGray,
                   marginBottom: 4,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 New
@@ -183,7 +184,7 @@ export default function EditProfileModal({
                   color: themeColors.white,
                   fontWeight: "bold",
                   fontSize: 13,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Change Picture
@@ -200,7 +201,7 @@ export default function EditProfileModal({
               marginBottom: 16,
               color: themeColors.black,
               backgroundColor: themeColors.white,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
             placeholder="First Name"
             value={editedFirstName}
@@ -217,7 +218,7 @@ export default function EditProfileModal({
               marginBottom: 16,
               color: themeColors.black,
               backgroundColor: themeColors.white,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
             placeholder="Last Name"
             value={editedLastName}
@@ -234,7 +235,7 @@ export default function EditProfileModal({
               marginBottom: 16,
               color: themeColors.black,
               backgroundColor: themeColors.white,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
             placeholder="Graduation Year"
             value={editedGradYear}
@@ -266,7 +267,7 @@ export default function EditProfileModal({
                 style={{
                   color: themeColors.purple,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Cancel
@@ -287,7 +288,7 @@ export default function EditProfileModal({
                 style={{
                   color: themeColors.white,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Save

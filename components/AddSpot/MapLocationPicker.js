@@ -11,6 +11,7 @@ import {
   Platform,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
+import { FONTS } from "../../constants/fonts";
 
 // Utility to safely parse latitude/longitude
 function parseCoordinate(value) {
@@ -165,7 +166,7 @@ export default function MapLocationPicker({
           <Text
             style={[
               styles.title,
-              { color: themeColors.purple, fontFamily: "CarosSoft" },
+              { color: themeColors.purple, fontFamily: FONTS.PRIMARY },
             ]}
           >
             Search Location
@@ -175,7 +176,7 @@ export default function MapLocationPicker({
               style={{
                 ...styles.searchInput,
                 backgroundColor: themeColors.white,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
                 color: themeColors.black, // Set input text color
               }}
               placeholder="Search for a place..."
@@ -198,7 +199,7 @@ export default function MapLocationPicker({
                       color: "#888",
                       textAlign: "center",
                       marginTop: 8,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     Loading...
@@ -221,7 +222,7 @@ export default function MapLocationPicker({
                       <Text
                         style={[
                           styles.suggestionText,
-                          { fontFamily: "CarosSoft" },
+                          { fontFamily: FONTS.PRIMARY },
                         ]}
                         numberOfLines={2}
                       >
@@ -239,7 +240,7 @@ export default function MapLocationPicker({
                       color: "#888",
                       textAlign: "center",
                       marginTop: 8,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                     }}
                   >
                     No results found
@@ -270,7 +271,7 @@ export default function MapLocationPicker({
                 />
               </MapView>
               <Text
-                style={[styles.mapPreviewLabel, { fontFamily: "CarosSoft" }]}
+                style={[styles.mapPreviewLabel, { fontFamily: FONTS.PRIMARY }]}
                 numberOfLines={2}
               >
                 {selectedLocation.name}
@@ -284,7 +285,7 @@ export default function MapLocationPicker({
                 color: "red",
                 marginVertical: 8,
                 textAlign: "center",
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               Could not find a valid location for this address.
@@ -307,7 +308,7 @@ export default function MapLocationPicker({
                 style={{
                   color: themeColors.purple,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Cancel
@@ -333,7 +334,7 @@ export default function MapLocationPicker({
                     ? themeColors.darkGray
                     : themeColors.white,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Pick Location
@@ -351,7 +352,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 8,
-    fontFamily: "CarosSoft",
+    fontFamily: FONTS.PRIMARY,
   },
   searchContainer: {
     width: "100%",
@@ -368,12 +369,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     fontSize: 15,
     color: "#222",
-    fontFamily: "CarosSoft",
+    fontFamily: FONTS.PRIMARY,
   },
   loadingText: {
     marginLeft: 8,
     color: "#888",
-    fontFamily: "CarosSoft",
+    fontFamily: FONTS.PRIMARY,
   },
   suggestionsBox: {
     width: "100%",
@@ -405,7 +406,7 @@ const styles = StyleSheet.create({
   suggestionText: {
     fontSize: 14,
     color: "#222",
-    fontFamily: "CarosSoft",
+    fontFamily: FONTS.PRIMARY,
   },
   buttonRow: {
     flexDirection: "row",
@@ -438,6 +439,6 @@ const styles = StyleSheet.create({
     color: "#444",
     textAlign: "center",
     width: "100%",
-    fontFamily: "CarosSoft",
+    fontFamily: FONTS.PRIMARY,
   },
 });

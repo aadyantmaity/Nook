@@ -1,6 +1,7 @@
 import React from "react";
 import { View, TouchableOpacity, Text } from "react-native";
 import { Warning } from "phosphor-react-native";
+import { FONTS } from "../../constants/fonts";
 
 export default function ActionButtons({ onAddAlert, themeColors }) {
   return (
@@ -44,7 +45,7 @@ export default function ActionButtons({ onAddAlert, themeColors }) {
             color: "#FFFFFF",
             fontWeight: "bold",
             fontSize: 16,
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
           }}
         >
           Add Alert

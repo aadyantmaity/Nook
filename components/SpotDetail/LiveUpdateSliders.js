@@ -10,6 +10,7 @@ import {
   Check,
 } from "phosphor-react-native";
 import * as Location from "expo-location";
+import { FONTS } from "../../constants/fonts";
 
 const NOISE_OPTIONS = [
   { label: "Silent", value: 0, icon: <SpeakerSimpleNone size={23} /> },
@@ -140,7 +141,7 @@ export default function LiveUpdateSliders({
           color: themeColors.black,
           marginBottom: 11,
           textAlign: "center",
-          fontFamily: "CarosSoft",
+          fontFamily: FONTS.PRIMARY,
         }}
       >
         Live Update
@@ -156,7 +157,7 @@ export default function LiveUpdateSliders({
               marginBottom: 8,
               textAlign: "center",
               letterSpacing: 0.2,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Tables Open
@@ -194,7 +195,7 @@ export default function LiveUpdateSliders({
                         : themeColors.black,
                     fontWeight:
                       tableAvailability === opt.value ? "bold" : "normal",
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   {opt.label}
@@ -214,7 +215,7 @@ export default function LiveUpdateSliders({
               fontWeight: "700",
               fontSize: 15,
               letterSpacing: 0.2,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Noise
@@ -261,7 +262,7 @@ export default function LiveUpdateSliders({
                         : themeColors.black,
                     fontSize: 13,
                     fontWeight: liveNoise === opt.value ? "bold" : "normal",
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   {opt.label}
@@ -279,7 +280,7 @@ export default function LiveUpdateSliders({
               fontWeight: "700",
               fontSize: 15,
               letterSpacing: 0.2,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Crowd
@@ -326,7 +327,7 @@ export default function LiveUpdateSliders({
                         : themeColors.black,
                     fontSize: 13,
                     fontWeight: liveCrowd === opt.value ? "bold" : "normal",
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   {opt.label}
@@ -382,7 +383,7 @@ export default function LiveUpdateSliders({
                   : themeColors.white,
               fontWeight: "bold",
               fontSize: 13,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             {isSubmittingLive ? "Submitting..." : "Submit"}
@@ -397,7 +398,7 @@ export default function LiveUpdateSliders({
             fontSize: 13,
             marginTop: 6,
             textAlign: "center",
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
           }}
         >
           {getCooldownLabel()}
@@ -411,7 +412,7 @@ export default function LiveUpdateSliders({
             fontSize: 13,
             marginTop: 6,
             textAlign: "center",
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
           }}
         >
           Please update all options.

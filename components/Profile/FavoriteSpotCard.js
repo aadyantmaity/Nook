@@ -1,6 +1,7 @@
 import React from "react";
 import { TouchableOpacity, View, Text, Image } from "react-native";
 import { MapPin, LockKey } from "phosphor-react-native";
+import { FONTS } from "../../constants/fonts";
 
 export default function FavoriteSpotCard({
   spot,
@@ -82,7 +83,7 @@ export default function FavoriteSpotCard({
               fontSize: 18,
               fontWeight: "bold",
               color: themeColors.black,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             {spot.buildingName}
@@ -92,7 +93,7 @@ export default function FavoriteSpotCard({
                   fontSize: 18,
                   color: themeColors.black,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {" - Floor "}

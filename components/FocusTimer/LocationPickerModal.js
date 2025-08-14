@@ -12,6 +12,7 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import CircleLoader from "../common/CircleLoader";
+import { FONTS } from "../../constants/fonts";
 
 export default function LocationPickerModal({
   visible,
@@ -174,7 +175,7 @@ export default function LocationPickerModal({
                 fontSize: 20,
                 fontWeight: "bold",
                 color: colors.black,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               Select Study Location
@@ -229,7 +230,7 @@ export default function LocationPickerModal({
                         fontSize: 16,
                         fontWeight: "600",
                         color: colors.black,
-                        fontFamily: "CarosSoft",
+                        fontFamily: FONTS.PRIMARY,
                         marginBottom: 2,
                       }}
                     >
@@ -242,7 +243,7 @@ export default function LocationPickerModal({
                           color: location.isPrivate
                             ? colors.orange
                             : colors.purple,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                           marginTop: 2,
                           fontWeight: "500",
                         }}
@@ -266,7 +267,7 @@ export default function LocationPickerModal({
                     style={{
                       fontSize: 15,
                       color: colors.darkGray || "#6B7280",
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                       textAlign: "center",
                     }}
                   >

@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text } from "react-native";
+import { FONTS } from "../../constants/fonts";
 
 export default function TagList({ tags, themeColors }) {
   return (
@@ -22,7 +23,7 @@ export default function TagList({ tags, themeColors }) {
                 style={{
                   color: themeColors.white,
                   fontSize: 14,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {String(tag)}
@@ -34,7 +35,7 @@ export default function TagList({ tags, themeColors }) {
             style={{
               fontSize: 16,
               color: themeColors.black,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             No tags available

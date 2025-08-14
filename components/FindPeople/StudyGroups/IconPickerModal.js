@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Modal, TouchableOpacity, View, Text } from "react-native";
 import * as PhosphorIcons from "phosphor-react-native";
+import { FONTS } from "../../../constants/fonts";
 
 const GROUP_ICONS = [
   "UsersThree",
@@ -89,7 +90,7 @@ export default function IconPickerModal({
               fontSize: 18,
               fontWeight: "bold",
               color: themeColors.purple,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               marginBottom: 12,
             }}
           >
@@ -158,7 +159,7 @@ export default function IconPickerModal({
                 style={{
                   color: themeColors.purple,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Cancel
@@ -179,7 +180,7 @@ export default function IconPickerModal({
                 style={{
                   color: themeColors.white,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Done

@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text } from "react-native";
 import { SpeakerHigh, UsersThree } from "phosphor-react-native";
+import { FONTS } from "../../constants/fonts";
 
 // Helper functions to map average to label
 function getNoiseLabel(avg) {
@@ -63,7 +64,7 @@ export default function RatingsDisplay({
               fontSize: 16,
               fontWeight: "bold",
               marginTop: 8,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Noise: {getNoiseLabel(ratings?.noise)}
@@ -73,7 +74,7 @@ export default function RatingsDisplay({
               style={{
                 color: themeColors.darkGray,
                 fontSize: 12,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               ({ratings.noise.toFixed(1)} avg)
@@ -96,7 +97,7 @@ export default function RatingsDisplay({
               fontSize: 16,
               fontWeight: "bold",
               marginTop: 8,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Crowd: {getCrowdLabel(ratings?.crowd)}
@@ -106,7 +107,7 @@ export default function RatingsDisplay({
               style={{
                 color: themeColors.darkGray,
                 fontSize: 12,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
               }}
             >
               ({ratings.crowd.toFixed(1)} avg)

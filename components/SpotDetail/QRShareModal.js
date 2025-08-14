@@ -11,6 +11,7 @@ import {
 import { X, ShareNetwork } from "phosphor-react-native";
 import QRCode from "react-native-qrcode-svg";
 import * as Clipboard from "expo-clipboard";
+import { FONTS } from "../../constants/fonts";
 
 export default function QRShareModal({
   visible,
@@ -92,7 +93,7 @@ export default function QRShareModal({
               color: themeColors.purple,
               marginBottom: 8,
               textAlign: "center",
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Share Nook
@@ -105,7 +106,7 @@ export default function QRShareModal({
               color: themeColors.black,
               marginBottom: 20,
               textAlign: "center",
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             {spotName}
@@ -158,7 +159,7 @@ export default function QRShareModal({
                   color: themeColors.white,
                   fontWeight: "bold",
                   fontSize: 16,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Share

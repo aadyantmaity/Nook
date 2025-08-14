@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Alert } from "react-native";
 import { ThumbsUp, ThumbsDown } from "phosphor-react-native";
 import { db, auth } from "../../firebaseConfig";
 import { addDoc, collection, Timestamp } from "firebase/firestore";
+import { FONTS } from "../../constants/fonts";
 
 export default function SpotFeedback({ spotId, themeColors }) {
   const [submitted, setSubmitted] = useState(false);
@@ -48,7 +49,7 @@ export default function SpotFeedback({ spotId, themeColors }) {
           fontSize: 15,
           fontWeight: "bold",
           marginBottom: 8,
-          fontFamily: "CarosSoft",
+          fontFamily: FONTS.PRIMARY,
         }}
       >
         Did the noise & crowd ratings match your expectations?
@@ -114,7 +115,7 @@ export default function SpotFeedback({ spotId, themeColors }) {
             fontSize: 13,
             marginTop: 8,
             fontWeight: "bold",
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
           }}
         >
           Thank you for your feedback!

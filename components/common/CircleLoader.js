@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { View, Text, Animated } from "react-native";
+import { FONTS } from "../../constants/fonts";
 
 export default function CircleLoader({
   themeColors,
@@ -48,7 +49,7 @@ export default function CircleLoader({
           style={[
             {
               color: themeColors.darkGray,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
               marginTop: 16,
               fontSize: 14,
             },

@@ -10,6 +10,7 @@ import {
 import { db, auth } from "../../firebaseConfig";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { PaperPlaneRight } from "phosphor-react-native";
+import { FONTS } from "../../constants/fonts";
 
 export default function AddPrivateNookNoteInput({
   spotId,
@@ -66,7 +67,7 @@ export default function AddPrivateNookNoteInput({
           borderRadius: 8,
           padding: 10,
           color: themeColors.black,
-          fontFamily: "CarosSoft",
+          fontFamily: FONTS.PRIMARY,
           minHeight: 40,
           flex: 1,
           marginRight: 8,

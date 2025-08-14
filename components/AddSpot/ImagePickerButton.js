@@ -10,6 +10,7 @@ import {
   Dimensions,
 } from "react-native";
 import { Camera, ImageSquare } from "phosphor-react-native";
+import { FONTS } from "../../constants/fonts";
 
 export default function ImagePickerButton({
   onPickImage,
@@ -72,7 +73,7 @@ export default function ImagePickerButton({
           style={{
             color: customImage?.uri ? themeColors.purple : themeColors.white,
             fontWeight: "bold",
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
           }}
         >
           {customImage?.uri ? "Change Photo" : "Add Photo"}
@@ -142,7 +143,7 @@ export default function ImagePickerButton({
 
                 <Text
                   style={{
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                     fontSize: 16,
                     color: themeColors.black,
                     textAlign: "center",
@@ -182,7 +183,7 @@ export default function ImagePickerButton({
                       <Text
                         style={{
                           color: themeColors.black,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                           fontSize: 15,
                           fontWeight: "600",
                         }}
@@ -193,7 +194,7 @@ export default function ImagePickerButton({
                         style={{
                           marginTop: 1,
                           color: themeColors.darkGray,
-                          fontFamily: "CarosSoft",
+                          fontFamily: FONTS.PRIMARY,
                           fontSize: 12,
                         }}
                       >
@@ -232,7 +233,7 @@ export default function ImagePickerButton({
                     <Text
                       style={{
                         color: themeColors.black,
-                        fontFamily: "CarosSoft",
+                        fontFamily: FONTS.PRIMARY,
                         fontSize: 15,
                         fontWeight: "600",
                       }}
@@ -243,7 +244,7 @@ export default function ImagePickerButton({
                       style={{
                         marginTop: 1,
                         color: themeColors.darkGray,
-                        fontFamily: "CarosSoft",
+                        fontFamily: FONTS.PRIMARY,
                         fontSize: 12,
                       }}
                     >
@@ -268,7 +269,7 @@ export default function ImagePickerButton({
                   <Text
                     style={{
                       color: themeColors.darkGray,
-                      fontFamily: "CarosSoft",
+                      fontFamily: FONTS.PRIMARY,
                       fontSize: 15,
                       fontWeight: "600",
                     }}

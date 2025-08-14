@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { db, auth } from "../../firebaseConfig";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { FONTS } from "../../constants/fonts";
 
 export default function PrivateNookNotesModal({
   visible,
@@ -103,7 +104,7 @@ export default function PrivateNookNotesModal({
               fontWeight: "bold",
               color: themeColors.purple,
               marginBottom: 8,
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
           >
             Notes
@@ -120,7 +121,7 @@ export default function PrivateNookNotesModal({
               backgroundColor: themeColors.white,
               marginBottom: 12,
               textAlignVertical: "top",
-              fontFamily: "CarosSoft",
+              fontFamily: FONTS.PRIMARY,
             }}
             placeholder="Write your notes for this Nook..."
             placeholderTextColor={themeColors.darkGray}
@@ -148,7 +149,7 @@ export default function PrivateNookNotesModal({
                 style={{
                   color: saving ? themeColors.darkGray : themeColors.purple,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 Cancel
@@ -170,7 +171,7 @@ export default function PrivateNookNotesModal({
                 style={{
                   color: saving ? themeColors.darkGray : themeColors.white,
                   fontWeight: "bold",
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {saving ? "Saving..." : "Save"}

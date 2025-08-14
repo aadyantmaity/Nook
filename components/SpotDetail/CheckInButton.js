@@ -11,6 +11,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { auth } from "../../firebaseConfig";
 import { doc, updateDoc } from "firebase/firestore";
 import * as Location from "expo-location";
+import { FONTS } from "../../constants/fonts";
 
 export default function CheckInButton({ spot, spotId, themeColors }) {
   const user = auth.currentUser;
@@ -276,7 +277,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
                     fontWeight: "bold",
                     fontSize: 15,
                     marginLeft: 8,
-                    fontFamily: "CarosSoft",
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   Check Out
@@ -291,7 +292,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
                 color: themeColors.darkGray,
                 fontSize: 12,
                 marginTop: 8,
-                fontFamily: "CarosSoft",
+                fontFamily: FONTS.PRIMARY,
                 textAlign: "center",
               }}
             >
@@ -325,7 +326,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
                   fontWeight: "bold",
                   fontSize: 15,
                   marginLeft: 8,
-                  fontFamily: "CarosSoft",
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
                 {isCheckingIn
@@ -345,7 +346,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
             color: themeColors.darkGray,
             fontSize: 12,
             marginTop: 4,
-            fontFamily: "CarosSoft",
+            fontFamily: FONTS.PRIMARY,
           }}
         >
           {checkInDisabledReason}
