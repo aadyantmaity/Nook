@@ -68,7 +68,14 @@
         }
       ],
       "expo-font",
-
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/NewNook.png",
+          "color": "#ffffff",
+          "sounds": ["./assets/notification.wav"]
+        }
+      ]
     ],
     "extra": {
       "eas": {

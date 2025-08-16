@@ -36,6 +36,7 @@ import FocusStatsWidgets from "./FocusStatsWidgets";
 import { auth, db } from "../../firebaseConfig";
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import { FONTS } from "../../constants/fonts";
+import CircleLoader from "../common/CircleLoader";
 
 // presets removed
 
@@ -200,7 +201,7 @@ function TimerControls({ isPlaying, onToggle, onReset, onSkip, colors, mode }) {
     <View
       style={{
         alignItems: "center",
-        marginTop: 0,
+        marginTop: 16,
       }}
     >
       <View
@@ -567,7 +568,7 @@ export default function FocusTimer({ navigation, route }) {
   const [archiveVisible, setArchiveVisible] = useState(false);
   const [sessionStartTime, setSessionStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [isLoadingSettings, setIsLoadingSettings] = useState(true); // Add loading state
+  const [isLoadingSettings, setIsLoadingSettings] = useState(false); // Start with false, only show loading if no cached data
   const [weeklyStats, setWeeklyStats] = useState({
     focusTime: 0,
     sessions: 0,
@@ -585,13 +586,41 @@ export default function FocusTimer({ navigation, route }) {
   // Load user's timer settings from Firestore
   const loadUserTimerSettings = useCallback(async () => {
     try {
-      setIsLoadingSettings(true);
       const user = auth.currentUser;
       if (!user) {
         setIsLoadingSettings(false);
         return;
       }
 
+      // First try to load from AsyncStorage for instant display
+      try {
+        const cachedWork = await AsyncStorage.getItem(
+          `workDuration_${user.uid}`
+        );
+        const cachedBreak = await AsyncStorage.getItem(
+          `breakDuration_${user.uid}`
+        );
+
+        if (cachedWork && cachedBreak) {
+          const workDuration = parseInt(cachedWork);
+          const breakDuration = parseInt(cachedBreak);
+
+          if (workDuration > 0 && breakDuration > 0) {
+            setWorkDuration(workDuration);
+            setBreakDuration(breakDuration);
+            setIsLoadingSettings(false); // We have cached data, no need to show loading
+          } else {
+            setIsLoadingSettings(true); // Invalid cached data, show loading
+          }
+        } else {
+          setIsLoadingSettings(true); // No cached data, show loading
+        }
+      } catch (error) {
+        console.log("No cached timer settings found");
+        setIsLoadingSettings(true); // Error reading cache, show loading
+      }
+
+      // Then load from Firestore in background
       const userDoc = await getDoc(doc(db, "users", user.uid));
       if (userDoc.exists()) {
         const userData = userDoc.data();
@@ -600,6 +629,23 @@ export default function FocusTimer({ navigation, route }) {
 
         setWorkDuration(userWorkDuration);
         setBreakDuration(userBreakDuration);
+
+        // Cache the settings for next time
+        try {
+          await AsyncStorage.setItem(
+            `workDuration_${user.uid}`,
+            userWorkDuration.toString()
+          );
+          await AsyncStorage.setItem(
+            `breakDuration_${user.uid}`,
+            userBreakDuration.toString()
+          );
+        } catch (error) {
+          console.log("Failed to cache timer settings");
+        }
+
+        // Increment timer key to ensure timer re-renders with new duration
+        setTimerKey((k) => k + 1);
 
         // Load current goal
         if (userData.currentGoal) {
@@ -654,6 +700,20 @@ export default function FocusTimer({ navigation, route }) {
           workDuration: workSeconds,
           breakDuration: breakSeconds,
         });
+
+        // Cache the settings for instant loading next time
+        try {
+          await AsyncStorage.setItem(
+            `workDuration_${user.uid}`,
+            workSeconds.toString()
+          );
+          await AsyncStorage.setItem(
+            `breakDuration_${user.uid}`,
+            breakSeconds.toString()
+          );
+        } catch (error) {
+          console.log("Failed to cache timer settings");
+        }
       } catch (error) {
         console.error("Failed to save user timer settings:", error);
       }
@@ -1091,15 +1151,7 @@ export default function FocusTimer({ navigation, route }) {
           paddingTop: 0,
         }}
       >
-        {isLoadingSettings ? (
-          <View
-            style={{ alignItems: "center", justifyContent: "center", flex: 1 }}
-          >
-            <Text style={{ fontSize: 20, color: colors.darkGray }}>
-              Loading settings...
-            </Text>
-          </View>
-        ) : activeTab === "timer" ? (
+        {activeTab === "timer" ? (
           <>
             {/* Focus Goal Card */}
             <FocusGoalCard
@@ -1112,19 +1164,39 @@ export default function FocusTimer({ navigation, route }) {
               isRunning={isPlaying}
             />
 
-            <CountdownDisplay
-              isPlaying={isPlaying}
-              duration={currentDuration}
-              timerKey={timerKey}
-              colors={colors}
-              mode={mode}
-              onComplete={handleTimerComplete}
-              onEditPress={() => setSettingsVisible(true)}
-              canEdit={canEdit}
-            />
+            {isLoadingSettings ? (
+              <View
+                style={{
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: 230,
+                }}
+              >
+                <CircleLoader
+                  themeColors={colors}
+                  size={60}
+                  text="Loading timer..."
+                  textStyle={{
+                    fontSize: 16,
+                    color: colors.darkGray || "#6B7280",
+                  }}
+                />
+              </View>
+            ) : (
+              <CountdownDisplay
+                isPlaying={isPlaying}
+                duration={currentDuration}
+                timerKey={timerKey}
+                colors={colors}
+                mode={mode}
+                onComplete={handleTimerComplete}
+                onEditPress={() => setSettingsVisible(true)}
+                canEdit={canEdit && !isLoadingSettings}
+              />
+            )}
 
             {/* Tap to edit text */}
-            {canEdit && (
+            {canEdit && !isLoadingSettings && (
               <Text
                 style={{
                   fontSize: 15,

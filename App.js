@@ -18,10 +18,15 @@ import * as Font from "expo-font";
 import AppLoading from "expo-app-loading";
 import GroupDetailView from "./screens/GroupDetailView";
 import GroupDetailsScreen from "./screens/GroupDetailsScreen";
+import notificationService from "./services/notifications";
+import { setupNotificationResponseListener } from "./services/notificationHandler";
 
 import { HomeViewProvider } from "./components/Home/HomeViewContext";
 
 const Stack = createStackNavigator();
+
+// Create a navigation ref for handling deep links and notifications
+export const navigationRef = React.createRef();
 
 export const ThemeContext = React.createContext({
   isDarkMode: false,
@@ -78,10 +83,26 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       setIsAuthenticated(!!user);
+
+      // Initialize notifications when user logs in
+      if (user) {
+        try {
+          await notificationService.initialize();
+          await notificationService.saveTokenToFirestore(user.uid);
+        } catch (error) {
+          console.error("Error setting up notifications:", error);
+        }
+      }
     });
     return unsubscribe;
+  }, []);
+
+  // Set up notification response listener
+  useEffect(() => {
+    const subscription = setupNotificationResponseListener();
+    return () => subscription?.remove();
   }, []);
 
   if (!fontsLoaded || isAuthenticated === null) {
@@ -114,7 +135,7 @@ export default function App() {
   return (
     <HomeViewProvider>
       <ThemeContext.Provider value={{ isDarkMode, setIsDarkMode, themeColors }}>
-        <NavigationContainer linking={linking}>
+        <NavigationContainer ref={navigationRef} linking={linking}>
           {isAuthenticated ? <MainStack /> : <AuthStack />}
         </NavigationContainer>
       </ThemeContext.Provider>
