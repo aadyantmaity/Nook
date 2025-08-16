@@ -902,6 +902,16 @@ export default function HomeScreen({ navigation, route }) {
     );
   }
 
+  // --- Show loading while checking email verification status ---
+  if (user && userRequireEmailVerification === undefined) {
+    return (
+      <HomeLoadingScreen
+        themeColors={themeColors}
+        loadingMessage="Checking verification status..."
+      />
+    );
+  }
+
   // --- Show onboarding modal if user is not onboarded ---
   // Only check onboarding if user is verified
   if (
@@ -909,7 +919,12 @@ export default function HomeScreen({ navigation, route }) {
     user.emailVerified && // <-- Only check onboarding if verified
     (checkingOnboarded || userOnboarded === undefined)
   ) {
-    return null;
+    return (
+      <HomeLoadingScreen
+        themeColors={themeColors}
+        loadingMessage="Checking onboarding status..."
+      />
+    );
   }
   if (
     user &&

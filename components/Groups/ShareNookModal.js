@@ -122,6 +122,15 @@ export default function ShareNookModal({
   const handleShare = async (nook) => {
     if (!nook?.id || !groupId) return;
 
+    // Prevent sharing private nooks to groups
+    if (nook.privateNook) {
+      Alert.alert(
+        "Cannot Share",
+        "Private nooks cannot be shared to group chats."
+      );
+      return;
+    }
+
     // Close modal first
     onClose && onClose();
 

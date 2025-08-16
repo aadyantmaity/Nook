@@ -69,6 +69,16 @@ export default function ShareNookToGroupModal({
 
   const handleShare = async (group) => {
     if (!spot || !spotId || !group?.id) return;
+
+    // Prevent sharing private nooks to groups
+    if (spot.privateNook) {
+      Alert.alert(
+        "Cannot Share",
+        "Private nooks cannot be shared to group chats."
+      );
+      return;
+    }
+
     setSending(true);
     try {
       // --- Fetch current user's name from Firestore ---

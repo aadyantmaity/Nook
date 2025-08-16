@@ -388,7 +388,14 @@ export default function AddSpotScreen({ navigation, route }) {
             }}
           >
             <TouchableOpacity
-              onPress={() => navigation.goBack()}
+              onPress={() => {
+                // If we can go back, do so. Otherwise, navigate to Home
+                if (navigation.canGoBack()) {
+                  navigation.goBack();
+                } else {
+                  navigation.navigate("Home");
+                }
+              }}
               style={{
                 flexDirection: "row",
                 alignItems: "center",

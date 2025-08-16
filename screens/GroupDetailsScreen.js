@@ -271,7 +271,14 @@ export default function GroupDetailsScreen({ route, navigation }) {
       },
       headerLeft: () => (
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            // If we can go back, do so. Otherwise, navigate to Home
+            if (navigation.canGoBack()) {
+              navigation.goBack();
+            } else {
+              navigation.navigate("Home");
+            }
+          }}
           style={{
             paddingHorizontal: 16,
             paddingVertical: 8,

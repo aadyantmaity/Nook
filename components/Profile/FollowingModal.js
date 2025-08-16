@@ -24,6 +24,7 @@ export default function FollowingModal({
   handleUnfollowFromModal,
   unfollowingUid,
   currentUserFollowing, // Add this prop to check if current user follows them
+  currentUserFollowers, // Add this prop to check if they follow current user
 }) {
   return (
     <Modal
@@ -118,40 +119,37 @@ export default function FollowingModal({
                       onPress={() => {
                         // Check if current user follows this person (they are in current user's following list)
                         const isFriend =
-                          currentUserFollowing &&
-                          currentUserFollowing.includes(item.uid);
+                          currentUserFollowers &&
+                          currentUserFollowers.includes(item.uid);
 
-                        if (isFriend) {
-                          // Show confirmation for unfollowing a friend
-                          Alert.alert(
-                            "Unfollow Friend",
-                            "Are you sure you want to unfollow this friend?",
-                            [
-                              {
-                                text: "Cancel",
-                                style: "cancel",
-                              },
-                              {
-                                text: "Unfollow",
-                                style: "destructive",
-                                onPress: () =>
-                                  handleUnfollowFromModal(item.uid),
-                              },
-                            ]
-                          );
-                        } else {
-                          // Direct unfollow for non-friends
-                          handleUnfollowFromModal(item.uid);
-                        }
+                        // Show confirmation for all unfollow actions
+                        const alertTitle = isFriend
+                          ? "Unfollow Friend"
+                          : "Unfollow User";
+                        const alertMessage = isFriend
+                          ? "Are you sure you want to unfollow this friend?"
+                          : "Are you sure you want to unfollow this user?";
+
+                        Alert.alert(alertTitle, alertMessage, [
+                          {
+                            text: "Cancel",
+                            style: "cancel",
+                          },
+                          {
+                            text: "Unfollow",
+                            style: "destructive",
+                            onPress: () => handleUnfollowFromModal(item.uid),
+                          },
+                        ]);
                       }}
                       disabled={unfollowingUid === item.uid}
                       style={{
                         marginLeft: 12,
                         backgroundColor:
-                          currentUserFollowing &&
-                          currentUserFollowing.includes(item.uid)
+                          currentUserFollowers &&
+                          currentUserFollowers.includes(item.uid)
                             ? themeColors.purple
-                            : themeColors.red,
+                            : themeColors.purple,
                         borderRadius: 6,
                         paddingVertical: 6,
                         paddingHorizontal: 14,
@@ -160,9 +158,9 @@ export default function FollowingModal({
                         flexDirection: "row",
                       }}
                     >
-                      {currentUserFollowing &&
-                      currentUserFollowing.includes(item.uid) ? (
-                        // Show "Friends" for people the current user follows
+                      {currentUserFollowers &&
+                      currentUserFollowers.includes(item.uid) ? (
+                        // Show "Friends" for mutual follow relationship
                         <Text
                           style={{
                             color: themeColors.white,

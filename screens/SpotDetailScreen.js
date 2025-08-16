@@ -572,8 +572,8 @@ export default function SpotDetailScreen({ route, navigation }) {
                           Report
                         </Text>
                       </TouchableOpacity>
-                      {/* Divider */}
-                      {isOwner && (
+                      {/* Divider - only show if there's content between Report and Edit Nook */}
+                      {isOwner && !isPrivateNook && (
                         <View
                           style={{
                             height: 1,
@@ -612,8 +612,8 @@ export default function SpotDetailScreen({ route, navigation }) {
                           </Text>
                         </TouchableOpacity>
                       )}
-                      {/* Divider */}
-                      {isOwner && (
+                      {/* Divider - only show if there's content between Report and Edit Nook */}
+                      {isOwner && isPrivateNook && (
                         <View
                           style={{
                             height: 1,

@@ -131,6 +131,7 @@ export default function ProfileScreen({ navigation, route }) {
   const [resetPasswordInfo, setResetPasswordInfo] = useState(""); // Info message
   const [showProfileShare, setShowProfileShare] = useState(false); // <-- Add this state
   const [currentUserFollowing, setCurrentUserFollowing] = useState([]); // Add this to track current user's following
+  const [currentUserFollowers, setCurrentUserFollowers] = useState([]); // Add this to track current user's followers
 
   // Refresh handler
   const onRefresh = async () => {
@@ -250,10 +251,11 @@ export default function ProfileScreen({ navigation, route }) {
     // Unsubscribe previous listener if any
     if (followingUnsub) followingUnsub();
     const { db } = await import("../firebaseConfig");
+    const { onSnapshot, doc } = await import("firebase/firestore");
     const uid = targetUid || currentUserUid;
 
-    // Fetch current user's following list for mutual follow detection
-    await fetchCurrentUserFollowing();
+    // Fetch current user's data for mutual follow detection
+    await fetchCurrentUserData();
 
     // Listen to changes in following array
     const unsub = onSnapshot(doc(db, "users", uid), async (userDoc) => {
@@ -283,8 +285,8 @@ export default function ProfileScreen({ navigation, route }) {
     }
   }, [showFollowingModal]);
 
-  // Fetch current user's following list for mutual follow detection
-  const fetchCurrentUserFollowing = async () => {
+  // Fetch current user's following and followers lists for mutual follow detection
+  const fetchCurrentUserData = async () => {
     try {
       const user = auth.currentUser;
       if (!user) return;
@@ -295,16 +297,17 @@ export default function ProfileScreen({ navigation, route }) {
       if (userDoc.exists()) {
         const data = userDoc.data();
         setCurrentUserFollowing(data.following || []);
+        setCurrentUserFollowers(data.followers || []);
       }
     } catch (error) {
-      console.log("Error fetching current user following:", error);
+      console.log("Error fetching current user data:", error);
     }
   };
 
-  // Fetch current user's following list when profile loads
+  // Fetch current user's data when profile loads
   React.useEffect(() => {
     if (!isOwnProfile && targetUid) {
-      fetchCurrentUserFollowing();
+      fetchCurrentUserData();
     }
   }, [targetUid, isOwnProfile]);
 
@@ -733,7 +736,6 @@ export default function ProfileScreen({ navigation, route }) {
             <TouchableOpacity
               style={styles.followColumn}
               onPress={openFollowers}
-              disabled={followers.length === 0}
             >
               <Text
                 style={[
@@ -755,7 +757,6 @@ export default function ProfileScreen({ navigation, route }) {
             <TouchableOpacity
               style={styles.followColumn}
               onPress={openFollowing}
-              disabled={following.length === 0}
             >
               <Text
                 style={[
@@ -1029,42 +1030,14 @@ export default function ProfileScreen({ navigation, route }) {
           <View style={styles.optionsContainer}>
             <View style={styles.buttonRow}>
               {(() => {
-                // Determine the relationship status
-                const isFriend =
-                  isFollowing &&
-                  currentUserFollowing &&
-                  currentUserFollowing.includes(targetUid);
-                const isFollowingThem = isFollowing && !isFriend;
-
-                if (isFriend) {
-                  // Friends (mutual follow) - show "Friends" button
+                // For other users' profiles, only show Following or Follow
+                if (isFollowing) {
+                  // Following them - show "Following" button
                   return (
                     <TouchableOpacity
                       style={[
                         styles.editButton,
                         { backgroundColor: themeColors.purple, width: "100%" },
-                      ]}
-                      onPress={handleUnfollowButton}
-                    >
-                      <Text
-                        style={{
-                          color: themeColors.white,
-                          fontWeight: "bold",
-                          fontSize: 16,
-                          fontFamily: FONTS.PRIMARY,
-                        }}
-                      >
-                        Friends
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                } else if (isFollowingThem) {
-                  // Following them but not friends - show "Following" button
-                  return (
-                    <TouchableOpacity
-                      style={[
-                        styles.editButton,
-                        { backgroundColor: themeColors.red, width: "100%" },
                       ]}
                       onPress={handleUnfollowButton}
                     >
@@ -1148,6 +1121,7 @@ export default function ProfileScreen({ navigation, route }) {
         handleUnfollowFromModal={handleUnfollowFromModal}
         unfollowingUid={unfollowingUid}
         currentUserFollowing={currentUserFollowing} // Pass the current user's following list
+        currentUserFollowers={currentUserFollowers} // Pass the current user's followers list
       />
       {/* Unfollow Confirmation Modal */}
       <UnfollowConfirmModal
