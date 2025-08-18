@@ -163,12 +163,19 @@ export default function EditSpotScreen({ navigation, route }) {
   };
 
   const handlePickCustomImage = async () => {
+    const mediaLibraryPermission =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (mediaLibraryPermission.status !== "granted") {
+      alert("Media library permission is required to select a photo.");
+      return;
+    }
+
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [5, 2],
     });
-    if (!result.cancelled) {
+    if (!result.canceled && !result.cancelled) {
       const asset = result.assets ? result.assets[0] : result;
       setCustomImage({
         uri: asset.uri,
@@ -382,7 +389,7 @@ export default function EditSpotScreen({ navigation, route }) {
 
   return (
     <View
-      style={{ flex: 1, backgroundColor: themeColors.white, paddingTop: 48 }}
+      style={{ flex: 1, backgroundColor: themeColors.white, paddingTop: 36 }}
     >
       <ScrollView
         contentContainerStyle={{
@@ -400,20 +407,29 @@ export default function EditSpotScreen({ navigation, route }) {
               flexDirection: "row",
               alignItems: "center",
               marginBottom: 16,
+              marginLeft: -8,
             }}
           >
             <TouchableOpacity
-              onPress={() => navigation.navigate("Home")}
+              onPress={() => {
+                // If we can go back, do so. Otherwise, navigate to Home
+                if (navigation.canGoBack()) {
+                  navigation.goBack();
+                } else {
+                  navigation.navigate("Home");
+                }
+              }}
               style={{
                 flexDirection: "row",
                 alignItems: "center",
+                padding: 10,
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.2,
                 shadowRadius: 4,
               }}
             >
-              <ArrowLeft size={20} color={themeColors.purple} />
+              <ArrowLeft size={24} color={themeColors.purple} />
             </TouchableOpacity>
           </View>
 
@@ -491,7 +507,7 @@ export default function EditSpotScreen({ navigation, route }) {
               fontFamily: FONTS.PRIMARY,
             }}
           >
-            {isUWBuilding ? "Building:" : "Location Name:"}
+            {isUWBuilding ? "Select Building:" : "Enter Location Name:"}
           </Text>
           {/* Building/Floor/Map Row */}
           {isUWBuilding ? (
@@ -567,7 +583,7 @@ export default function EditSpotScreen({ navigation, route }) {
                 />
               </View>
               <TextInput
-                placeholder="N/A"
+                placeholder="Floor number (if applicable)"
                 placeholderTextColor={themeColors.darkGray}
                 value={roomNumber}
                 onChangeText={isEditing ? () => {} : setRoomNumber}
@@ -590,14 +606,12 @@ export default function EditSpotScreen({ navigation, route }) {
           )}
 
           {/* Image Picker */}
-          {(isAmaity && isUWBuilding) || !isUWBuilding ? (
-            <ImagePickerButton
-              onPickImage={handlePickCustomImage}
-              onTakePhoto={handleTakePhoto}
-              customImage={customImage}
-              themeColors={themeColors}
-            />
-          ) : null}
+          <ImagePickerButton
+            onPickImage={handlePickCustomImage}
+            onTakePhoto={handleTakePhoto}
+            customImage={customImage}
+            themeColors={themeColors}
+          />
 
           {/* Map Picker Modal */}
           <MapLocationPicker
@@ -617,83 +631,85 @@ export default function EditSpotScreen({ navigation, route }) {
           />
 
           {/* Husky Card Needed */}
-          <View style={{ marginBottom: 16 }}>
-            <Text
-              style={{
-                fontSize: 19,
-                marginBottom: 8,
-                color: themeColors.black,
-                fontFamily: FONTS.PRIMARY,
-              }}
-            >
-              Husky Card Needed:
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                gap: 8,
-              }}
-            >
-              <TouchableOpacity
-                onPress={() => setHuskyCardNeeded(false)}
+          {isUWBuilding && (
+            <View style={{ marginBottom: 16 }}>
+              <Text
                 style={{
-                  flex: 1,
-                  alignItems: "center",
-                  paddingVertical: 8,
-                  paddingHorizontal: 0,
-                  marginRight: 4,
-                  backgroundColor: !huskyCardNeeded
-                    ? themeColors.purple
-                    : themeColors.white,
-                  borderRadius: 8,
-                  borderColor: themeColors.black,
-                  borderWidth: 0.5,
+                  fontSize: 19,
+                  marginBottom: 8,
+                  color: themeColors.black,
+                  fontFamily: FONTS.PRIMARY,
                 }}
               >
-                <Text
-                  style={{
-                    color: !huskyCardNeeded
-                      ? themeColors.white
-                      : themeColors.purple,
-                    fontFamily: FONTS.PRIMARY,
-                    fontSize: 15,
-                  }}
-                >
-                  No
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setHuskyCardNeeded(true)}
+                Husky Card Needed:
+              </Text>
+              <View
                 style={{
-                  flex: 1,
-                  alignItems: "center",
-                  paddingVertical: 10,
-                  paddingHorizontal: 0,
-                  marginLeft: 4,
-                  backgroundColor: huskyCardNeeded
-                    ? themeColors.purple
-                    : themeColors.white,
-                  borderRadius: 8,
-                  borderColor: themeColors.black,
-                  borderWidth: 0.5,
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  gap: 8,
                 }}
               >
-                <Text
+                <TouchableOpacity
+                  onPress={() => setHuskyCardNeeded(false)}
                   style={{
-                    color: huskyCardNeeded
-                      ? themeColors.white
-                      : themeColors.purple,
-                    fontFamily: FONTS.PRIMARY,
-                    fontSize: 15,
+                    flex: 1,
+                    alignItems: "center",
+                    paddingVertical: 8,
+                    paddingHorizontal: 0,
+                    marginRight: 4,
+                    backgroundColor: !huskyCardNeeded
+                      ? themeColors.purple
+                      : themeColors.white,
+                    borderRadius: 8,
+                    borderColor: themeColors.black,
+                    borderWidth: 0.5,
                   }}
                 >
-                  Yes
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={{
+                      color: !huskyCardNeeded
+                        ? themeColors.white
+                        : themeColors.purple,
+                      fontFamily: FONTS.PRIMARY,
+                      fontSize: 15,
+                    }}
+                  >
+                    No
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setHuskyCardNeeded(true)}
+                  style={{
+                    flex: 1,
+                    alignItems: "center",
+                    paddingVertical: 10,
+                    paddingHorizontal: 0,
+                    marginLeft: 4,
+                    backgroundColor: huskyCardNeeded
+                      ? themeColors.purple
+                      : themeColors.white,
+                    borderRadius: 8,
+                    borderColor: themeColors.black,
+                    borderWidth: 0.5,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: huskyCardNeeded
+                        ? themeColors.white
+                        : themeColors.purple,
+                      fontFamily: FONTS.PRIMARY,
+                      fontSize: 15,
+                    }}
+                  >
+                    Yes
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-          {huskyCardNeeded && (
+          )}
+          {isUWBuilding && huskyCardNeeded && (
             <TextInput
               placeholder="Department (if applicable)"
               placeholderTextColor={themeColors.darkGray}
@@ -737,31 +753,14 @@ export default function EditSpotScreen({ navigation, route }) {
             themeColors={themeColors}
           />
 
-          {/* Open/Quiet Hours */}
-          <TextInput
-            placeholder="Open/Quiet Hours (e.g. 8am-10pm, Quiet at 6pm)"
-            placeholderTextColor={themeColors.darkGray}
-            style={{
-              borderWidth: 0.5,
-              borderColor: themeColors.black,
-              borderRadius: 8,
-              padding: 12,
-              marginBottom: 16,
-              backgroundColor: themeColors.white,
-              color: themeColors.purple,
-              fontFamily: FONTS.PRIMARY,
-            }}
-            accessibilityLabel="Open or Quiet Hours"
-            accessible={true}
-          />
-
-          {/* Private Nook toggle - hide for editing */}
+          {/* Only show private toggle for custom locations */}
           {!isUWBuilding && !isEditing && (
             <View
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                marginBottom: 12,
+                marginBottom: 36,
+                marginTop: 20,
               }}
             >
               <TouchableOpacity
@@ -786,6 +785,7 @@ export default function EditSpotScreen({ navigation, route }) {
                     color: privateNook ? themeColors.white : themeColors.purple,
                     fontWeight: "bold",
                     marginRight: 6,
+                    fontFamily: FONTS.PRIMARY,
                   }}
                 >
                   Private Nook
@@ -803,9 +803,6 @@ export default function EditSpotScreen({ navigation, route }) {
                   }}
                 />
               </TouchableOpacity>
-              <Text style={{ color: themeColors.darkGray, fontSize: 13 }}>
-                Only you will see this nook
-              </Text>
             </View>
           )}
 
@@ -828,6 +825,7 @@ export default function EditSpotScreen({ navigation, route }) {
                 borderWidth: 1,
                 borderRadius: 8,
                 paddingVertical: 10,
+                paddingHorizontal: 24,
                 alignItems: "center",
                 justifyContent: "center",
                 marginRight: 8,
@@ -861,6 +859,7 @@ export default function EditSpotScreen({ navigation, route }) {
                 backgroundColor: themeColors.purple,
                 borderRadius: 8,
                 paddingVertical: 10,
+                paddingHorizontal: 24,
                 alignItems: "center",
                 justifyContent: "center",
                 marginLeft: 8,
@@ -876,7 +875,7 @@ export default function EditSpotScreen({ navigation, route }) {
             >
               <Text
                 style={{
-                  color: "white",
+                  color: themeColors.white,
                   fontWeight: "bold",
                   fontSize: 16,
                   textAlign: "center",

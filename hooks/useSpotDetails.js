@@ -197,42 +197,6 @@ export default function useSpotDetails(spotId) {
               }
             }
 
-            // For Odegaard: aggregate tableAvailability (most recent)
-            let tableAvailability = undefined;
-            if (
-              (spotData.buildingName || spotData.name || "")
-                .toLowerCase()
-                .includes("odegaard")
-            ) {
-              let latestTable = null;
-              let latestTs = null;
-              snapshot.forEach((doc) => {
-                const data = doc.data();
-                if (
-                  typeof data.tableAvailability !== "undefined" &&
-                  data.timestamp
-                ) {
-                  const ts = data.timestamp.toMillis();
-                  if (latestTs === null || ts > latestTs) {
-                    latestTable = data.tableAvailability;
-                    latestTs = ts;
-                  }
-                }
-              });
-              // --- Clear tableAvailability if no ratings from today ---
-              let hasTodayRating = false;
-              snapshot.forEach((doc) => {
-                const data = doc.data();
-                if (
-                  data.timestamp &&
-                  data.timestamp.toMillis() >= todayStartMillis
-                ) {
-                  hasTodayRating = true;
-                }
-              });
-              tableAvailability = hasTodayRating ? latestTable : "N/A";
-            }
-
             setSpot((prev) => ({
               ...prev,
               ratings: {
@@ -241,9 +205,6 @@ export default function useSpotDetails(spotId) {
                 lastUpdated,
                 lastUpdatedType,
                 lastWindowHours,
-                ...(typeof tableAvailability !== "undefined"
-                  ? { tableAvailability }
-                  : {}),
               },
             }));
           });

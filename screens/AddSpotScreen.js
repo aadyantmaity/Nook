@@ -214,12 +214,19 @@ export default function AddSpotScreen({ navigation, route }) {
   };
 
   const handlePickCustomImage = async () => {
+    const mediaLibraryPermission =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (mediaLibraryPermission.status !== "granted") {
+      alert("Media library permission is required to select a photo.");
+      return;
+    }
+
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [5, 2],
     });
-    if (!result.cancelled) {
+    if (!result.canceled && !result.cancelled) {
       const asset = result.assets ? result.assets[0] : result;
       setCustomImage({
         uri: asset.uri,
@@ -406,7 +413,7 @@ export default function AddSpotScreen({ navigation, route }) {
                 shadowRadius: 4,
               }}
             >
-              <ArrowLeft size={20} color={themeColors.purple} />
+              <ArrowLeft size={24} color={themeColors.purple} />
             </TouchableOpacity>
           </View>
 
@@ -577,14 +584,12 @@ export default function AddSpotScreen({ navigation, route }) {
           )}
 
           {/* Image Picker */}
-          {(isAmaity && isUWBuilding) || !isUWBuilding ? (
-            <ImagePickerButton
-              onPickImage={handlePickCustomImage}
-              onTakePhoto={handleTakePhoto}
-              customImage={customImage}
-              themeColors={themeColors}
-            />
-          ) : null}
+          <ImagePickerButton
+            onPickImage={handlePickCustomImage}
+            onTakePhoto={handleTakePhoto}
+            customImage={customImage}
+            themeColors={themeColors}
+          />
 
           {/* Map Picker Modal */}
           <MapLocationPicker

@@ -15,7 +15,8 @@ export default function GroupMenuModal({
   fetchMembersList,
   handleLeaveGroup,
   handleDeleteGroup,
-  navigation, // <-- add this line
+  navigation,
+  isOwner,
 }) {
   return (
     <Modal
@@ -38,7 +39,7 @@ export default function GroupMenuModal({
           style={{
             backgroundColor: themeColors.white,
             borderRadius: 12,
-            marginTop: 54,
+            marginTop: 80,
             marginRight: 12,
             minWidth: 180,
             paddingVertical: 6,
@@ -69,7 +70,7 @@ export default function GroupMenuModal({
             }}
             onPress={() => {
               onClose?.();
-              navigation.navigate("GroupDetails", { groupId: group?.id });
+              navigation.navigate("GroupInfo", { groupId: group?.id });
             }}
           >
             <Info
@@ -88,6 +89,7 @@ export default function GroupMenuModal({
               Details
             </Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             onPress={() => {
               onClose();

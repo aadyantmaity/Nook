@@ -1237,7 +1237,7 @@ export default function FocusTimer({ navigation, route }) {
         <View
           style={{
             position: "absolute",
-            bottom: 80,
+            bottom: 90,
             right: 16,
             zIndex: 20,
           }}

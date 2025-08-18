@@ -391,7 +391,14 @@ export default function SpotDetailScreen({ route, navigation }) {
               }}
             >
               <TouchableOpacity
-                onPress={() => navigation.goBack()}
+                onPress={() => {
+                  // If we can go back, do so. Otherwise, navigate to Home
+                  if (navigation.canGoBack()) {
+                    navigation.goBack();
+                  } else {
+                    navigation.navigate("Home");
+                  }
+                }}
                 style={{
                   alignSelf: "flex-start",
                   flexDirection: "row",
@@ -912,7 +919,12 @@ export default function SpotDetailScreen({ route, navigation }) {
             >
               <TouchableOpacity
                 onPress={() => {
-                  navigation.goBack();
+                  // If we can go back, do so. Otherwise, navigate to Home
+                  if (navigation.canGoBack()) {
+                    navigation.goBack();
+                  } else {
+                    navigation.navigate("Home");
+                  }
                 }}
                 style={{
                   alignSelf: "flex-start",

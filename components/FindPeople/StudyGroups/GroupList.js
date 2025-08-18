@@ -242,7 +242,7 @@ export default function GroupList({
                             }
                           }
                         });
-                        navigation.navigate("GroupDetail", {
+                        navigation.navigate("GroupChat", {
                           groupId: item.id,
                         });
                       } catch (e) {
@@ -253,7 +253,7 @@ export default function GroupList({
                 ]
               );
             } else {
-              navigation.navigate("GroupDetail", { groupId: item.id });
+              navigation.navigate("GroupChat", { groupId: item.id });
             }
           };
           const unreadCount = getUnreadCount(item.id, isMember);

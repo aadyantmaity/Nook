@@ -333,7 +333,7 @@ export default function SuggestedPeopleAndGroups({
                                   }
                                 }
                               });
-                              navigation.navigate("GroupDetail", {
+                              navigation.navigate("GroupChat", {
                                 groupId: item.id,
                               });
                             } catch (e) {
@@ -353,7 +353,7 @@ export default function SuggestedPeopleAndGroups({
                     if (isPublic && !isMember) {
                       // Do nothing, user should use Join button
                     } else {
-                      navigation.navigate("GroupDetail", {
+                      navigation.navigate("GroupChat", {
                         groupId: item.id,
                       });
                     }

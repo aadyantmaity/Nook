@@ -8,6 +8,7 @@ import {
   Alert,
   TextInput,
   Modal,
+  SafeAreaView,
 } from "react-native";
 import { db, auth } from "../firebaseConfig";
 import {
@@ -23,7 +24,6 @@ import {
 import { ThemeContext } from "../App";
 import { colors } from "../constants/colors";
 import {
-  ArrowLeft,
   Star,
   MapPin,
   UserPlus,
@@ -40,6 +40,7 @@ import GroupShareModal from "../components/SpotDetail/GroupShareModal";
 import useGroupLeaderboard from "../hooks/useGroupLeaderboard";
 import { formatDuration } from "../services/focusSessions";
 import CircleLoader from "../components/common/CircleLoader";
+import GroupHeader from "../components/common/GroupHeader";
 import { FONTS } from "../constants/fonts";
 
 export default function GroupDetailsScreen({ route, navigation }) {
@@ -52,6 +53,7 @@ export default function GroupDetailsScreen({ route, navigation }) {
   const [starredNooks, setStarredNooks] = useState([]);
   const [starredNooksData, setStarredNooksData] = useState([]);
   const [following, setFollowing] = useState([]);
+  const [followers, setFollowers] = useState([]);
   const [followingLoading, setFollowingLoading] = useState(false);
   const [showLeftGradient, setShowLeftGradient] = useState(false);
   const [showRightGradient, setShowRightGradient] = useState(false);
@@ -131,12 +133,13 @@ export default function GroupDetailsScreen({ route, navigation }) {
     return () => unsub();
   }, [groupId]);
 
-  // Fetch current user's following list
+  // Fetch current user's following and followers lists
   useEffect(() => {
     if (!auth.currentUser) return;
     setFollowingLoading(true);
     const unsub = onSnapshot(doc(db, "users", auth.currentUser.uid), (snap) => {
       setFollowing(snap.exists() ? snap.data().following || [] : []);
+      setFollowers(snap.exists() ? snap.data().followers || [] : []);
       setFollowingLoading(false);
     });
     return () => unsub();
@@ -234,63 +237,6 @@ export default function GroupDetailsScreen({ route, navigation }) {
       Alert.alert("Error", "Failed to unfollow user.");
     }
   };
-
-  // Set navigation header to match GroupDetailView (no DotsThreeVertical)
-  React.useLayoutEffect(() => {
-    navigation.setOptions({
-      headerShown: true,
-      headerTitle: () => (
-        <View style={{ alignItems: "center" }}>
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "bold",
-              color: themeColors.purple,
-              fontFamily: FONTS.PRIMARY,
-              textAlign: "center",
-              maxWidth: 200,
-            }}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            Group Details
-          </Text>
-        </View>
-      ),
-      headerTitleAlign: "center",
-      headerStyle: {
-        backgroundColor: themeColors.white,
-        shadowColor: "transparent",
-        elevation: 0,
-      },
-      headerTitleStyle: {
-        color: themeColors.purple,
-        fontWeight: "bold",
-        fontFamily: FONTS.PRIMARY,
-        fontSize: 18,
-      },
-      headerLeft: () => (
-        <TouchableOpacity
-          onPress={() => {
-            // If we can go back, do so. Otherwise, navigate to Home
-            if (navigation.canGoBack()) {
-              navigation.goBack();
-            } else {
-              navigation.navigate("Home");
-            }
-          }}
-          style={{
-            paddingHorizontal: 16,
-            paddingVertical: 8,
-          }}
-          accessibilityLabel="Back"
-        >
-          <ArrowLeft size={24} color={themeColors.purple} />
-        </TouchableOpacity>
-      ),
-      headerRight: () => null, // No DotsThreeVertical
-    });
-  }, [navigation, group, themeColors, members.length]);
 
   if (loading) {
     return (
@@ -834,293 +780,304 @@ export default function GroupDetailsScreen({ route, navigation }) {
   // --- Main FlatList for members, with header/footer for group info and starred nooks ---
   return (
     <>
-      {/* --- Edit Group Modal (owner only) --- */}
-      {group?.createdBy === auth.currentUser?.uid && (
-        <Modal
-          visible={editModalVisible}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setEditModalVisible(false)}
-        >
-          <TouchableOpacity
-            style={{
-              flex: 1,
-              backgroundColor: "rgba(0,0,0,0.3)",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-            activeOpacity={1}
-            onPressOut={() => setEditModalVisible(false)}
+      <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
+        {/* Header */}
+        <GroupHeader
+          navigation={navigation}
+          groupName={group?.name}
+          themeColors={themeColors}
+          showMenuButton={false}
+        />
+
+        {/* --- Edit Group Modal (owner only) --- */}
+        {group?.createdBy === auth.currentUser?.uid && (
+          <Modal
+            visible={editModalVisible}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setEditModalVisible(false)}
           >
+            <TouchableOpacity
+              style={{
+                flex: 1,
+                backgroundColor: "rgba(0,0,0,0.3)",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+              activeOpacity={1}
+              onPressOut={() => setEditModalVisible(false)}
+            >
+              <View
+                style={{
+                  backgroundColor: themeColors.white,
+                  borderRadius: 16,
+                  padding: 24,
+                  width: "85%",
+                  maxWidth: 400,
+                  alignItems: "center",
+                }}
+                onStartShouldSetResponder={() => true}
+              >
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "bold",
+                    color: themeColors.purple,
+                    marginBottom: 10,
+                    textAlign: "center",
+                    fontFamily: FONTS.PRIMARY,
+                  }}
+                >
+                  Edit Group Details
+                </Text>
+                <TextInput
+                  value={editName}
+                  onChangeText={setEditName}
+                  placeholder="Group Name"
+                  style={{
+                    borderWidth: 1,
+                    borderColor: themeColors.darkGray,
+                    borderRadius: 8,
+                    padding: 10,
+                    width: "100%",
+                    marginBottom: 10,
+                    color: themeColors.black,
+                    fontFamily: FONTS.PRIMARY,
+                    fontSize: 16,
+                  }}
+                  placeholderTextColor={themeColors.darkGray}
+                  maxLength={50}
+                />
+                <TextInput
+                  value={editDesc}
+                  onChangeText={setEditDesc}
+                  placeholder="Description (optional)"
+                  style={{
+                    borderWidth: 1,
+                    borderColor: themeColors.darkGray,
+                    borderRadius: 8,
+                    padding: 10,
+                    width: "100%",
+                    marginBottom: 10,
+                    color: themeColors.black,
+                    fontFamily: FONTS.PRIMARY,
+                    fontSize: 15,
+                  }}
+                  placeholderTextColor={themeColors.darkGray}
+                  maxLength={50}
+                />
+                <View
+                  style={{ flexDirection: "row", marginTop: 8, width: "100%" }}
+                >
+                  <TouchableOpacity
+                    onPress={() => setEditModalVisible(false)}
+                    style={{
+                      flex: 1,
+                      backgroundColor: themeColors.white,
+                      borderColor: themeColors.purple,
+                      borderWidth: 1,
+                      borderRadius: 8,
+                      alignItems: "center",
+                      paddingVertical: 10,
+                      marginRight: 8,
+                    }}
+                    disabled={editSaving}
+                  >
+                    <Text
+                      style={{
+                        color: themeColors.purple,
+                        fontWeight: "bold",
+                        fontFamily: FONTS.PRIMARY,
+                      }}
+                    >
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleSaveEdit}
+                    disabled={editSaving || !editName.trim()}
+                    style={{
+                      flex: 1,
+                      backgroundColor: themeColors.purple,
+                      borderRadius: 8,
+                      paddingVertical: 10,
+                      alignItems: "center",
+                      marginLeft: 8,
+                      opacity: editSaving ? 0.7 : 1,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: themeColors.white,
+                        fontWeight: "bold",
+                        fontFamily: FONTS.PRIMARY,
+                      }}
+                    >
+                      {editSaving ? "Saving..." : "Save"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </Modal>
+        )}
+        {/* Manage Members Modal (owner only, uses PrivateNookShareModal in group mode) */}
+        {group?.createdBy === auth.currentUser?.uid && (
+          <GroupShareModal
+            visible={showMembersModal}
+            onClose={() => setShowMembersModal(false)}
+            spotId={groupId}
+            themeColors={themeColors}
+            ownerUid={group?.createdBy}
+            collectionName="studyGroups"
+            fieldName="memberUids"
+          />
+        )}
+        {/* Main FlatList */}
+        <FlatList
+          style={{ flex: 1, backgroundColor: themeColors.white }}
+          showsVerticalScrollIndicator={false}
+          data={members}
+          keyExtractor={(item) => item.uid}
+          ListHeaderComponent={listHeader}
+          ListFooterComponent={listFooter}
+          renderItem={({ item }) => (
             <View
               style={{
-                backgroundColor: themeColors.white,
-                borderRadius: 16,
-                padding: 24,
-                width: "85%",
-                maxWidth: 400,
+                flexDirection: "row",
                 alignItems: "center",
+                marginBottom: 10,
+                paddingHorizontal: 24,
               }}
-              onStartShouldSetResponder={() => true}
             >
-              <Text
+              {/* Make pfp clickable */}
+              <TouchableOpacity
+                onPress={() =>
+                  navigation.navigate("Profile", { uid: item.uid })
+                }
                 style={{
-                  fontSize: 18,
-                  fontWeight: "bold",
-                  color: themeColors.purple,
-                  marginBottom: 10,
-                  textAlign: "center",
-                  fontFamily: FONTS.PRIMARY,
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  backgroundColor: themeColors.purple,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 12,
+                  overflow: "hidden",
                 }}
               >
-                Edit Group Details
-              </Text>
-              <TextInput
-                value={editName}
-                onChangeText={setEditName}
-                placeholder="Group Name"
-                style={{
-                  borderWidth: 1,
-                  borderColor: themeColors.darkGray,
-                  borderRadius: 8,
-                  padding: 10,
-                  width: "100%",
-                  marginBottom: 10,
-                  color: themeColors.black,
-                  fontFamily: FONTS.PRIMARY,
-                  fontSize: 16,
-                }}
-                placeholderTextColor={themeColors.darkGray}
-                maxLength={50}
-              />
-              <TextInput
-                value={editDesc}
-                onChangeText={setEditDesc}
-                placeholder="Description (optional)"
-                style={{
-                  borderWidth: 1,
-                  borderColor: themeColors.darkGray,
-                  borderRadius: 8,
-                  padding: 10,
-                  width: "100%",
-                  marginBottom: 10,
-                  color: themeColors.black,
-                  fontFamily: FONTS.PRIMARY,
-                  fontSize: 15,
-                }}
-                placeholderTextColor={themeColors.darkGray}
-                maxLength={50}
-              />
-              <View
-                style={{ flexDirection: "row", marginTop: 8, width: "100%" }}
+                {item.profilePic ? (
+                  <Image
+                    source={{ uri: item.profilePic }}
+                    style={{ width: 36, height: 36, borderRadius: 18 }}
+                  />
+                ) : (
+                  <User size={22} color={themeColors.white} />
+                )}
+              </TouchableOpacity>
+              {/* Make name clickable */}
+              <TouchableOpacity
+                onPress={() =>
+                  navigation.navigate("Profile", { uid: item.uid })
+                }
+                style={{ flex: 1 }}
               >
-                <TouchableOpacity
-                  onPress={() => setEditModalVisible(false)}
+                <Text
                   style={{
-                    flex: 1,
-                    backgroundColor: themeColors.white,
-                    borderColor: themeColors.purple,
-                    borderWidth: 1,
-                    borderRadius: 8,
-                    alignItems: "center",
-                    paddingVertical: 10,
-                    marginRight: 8,
+                    color: themeColors.black,
+                    fontSize: 16,
+                    fontFamily: FONTS.PRIMARY,
                   }}
-                  disabled={editSaving}
                 >
-                  <Text
-                    style={{
-                      color: themeColors.purple,
-                      fontWeight: "bold",
-                      fontFamily: FONTS.PRIMARY,
-                    }}
-                  >
-                    Cancel
-                  </Text>
-                </TouchableOpacity>
+                  {item.uid !== auth.currentUser?.uid && (
+                    <Text style={{ color: themeColors.purple }}>
+                      {/* Show first name and last initial */}
+                      {item.firstName}{" "}
+                      {item.lastName && item.lastName.length > 0
+                        ? item.lastName[0] + "."
+                        : ""}
+                    </Text>
+                  )}
+                  {item.uid === auth.currentUser?.uid && (
+                    <Text style={{ color: themeColors.purple }}>You</Text>
+                  )}
+                  {group?.createdBy === item.uid && (
+                    <Text style={{ color: themeColors.purple }}> (Owner)</Text>
+                  )}
+                </Text>
+              </TouchableOpacity>
+              {item.uid !== auth.currentUser?.uid && (
                 <TouchableOpacity
-                  onPress={handleSaveEdit}
-                  disabled={editSaving || !editName.trim()}
+                  onPress={() => {
+                    const isFollowing = following.includes(item.uid);
+                    const isFriend = followers.includes(item.uid);
+
+                    if (isFollowing) {
+                      // Show confirmation for unfollow
+                      const alertTitle = isFriend
+                        ? "Unfollow Friend"
+                        : "Unfollow User";
+                      const alertMessage = isFriend
+                        ? "Are you sure you want to unfollow this friend?"
+                        : "Are you sure you want to unfollow this user?";
+
+                      Alert.alert(alertTitle, alertMessage, [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Unfollow",
+                          style: "destructive",
+                          onPress: () => handleUnfollow(item.uid),
+                        },
+                      ]);
+                    } else {
+                      handleFollow(item.uid);
+                    }
+                  }}
+                  disabled={followingLoading}
                   style={{
-                    flex: 1,
                     backgroundColor: themeColors.purple,
-                    borderRadius: 8,
-                    paddingVertical: 10,
+                    borderRadius: 6,
+                    paddingVertical: 6,
+                    paddingHorizontal: 14,
                     alignItems: "center",
+                    justifyContent: "center",
                     marginLeft: 8,
-                    opacity: editSaving ? 0.7 : 1,
+                    opacity: followingLoading ? 0.6 : 1,
+                    width: 100,
                   }}
                 >
                   <Text
                     style={{
                       color: themeColors.white,
                       fontWeight: "bold",
+                      fontSize: 14,
                       fontFamily: FONTS.PRIMARY,
                     }}
                   >
-                    {editSaving ? "Saving..." : "Save"}
+                    {following.includes(item.uid)
+                      ? followers.includes(item.uid)
+                        ? "Friends"
+                        : "Following"
+                      : "Follow"}
                   </Text>
                 </TouchableOpacity>
-              </View>
-            </View>
-          </TouchableOpacity>
-        </Modal>
-      )}
-      {/* Manage Members Modal (owner only, uses PrivateNookShareModal in group mode) */}
-      {group?.createdBy === auth.currentUser?.uid && (
-        <GroupShareModal
-          visible={showMembersModal}
-          onClose={() => setShowMembersModal(false)}
-          spotId={groupId}
-          themeColors={themeColors}
-          ownerUid={group?.createdBy}
-          collectionName="studyGroups"
-          fieldName="memberUids"
-        />
-      )}
-      {/* Main FlatList */}
-      <FlatList
-        style={{ flex: 1, backgroundColor: themeColors.white }}
-        contentContainerStyle={{ paddingTop: 32 }}
-        showsVerticalScrollIndicator={false}
-        data={members}
-        keyExtractor={(item) => item.uid}
-        ListHeaderComponent={listHeader}
-        ListFooterComponent={listFooter}
-        renderItem={({ item }) => (
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 10,
-              paddingHorizontal: 24,
-            }}
-          >
-            {/* Make pfp clickable */}
-            <TouchableOpacity
-              onPress={() => navigation.navigate("Profile", { uid: item.uid })}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                backgroundColor: themeColors.purple,
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: 12,
-                overflow: "hidden",
-              }}
-            >
-              {item.profilePic ? (
-                <Image
-                  source={{ uri: item.profilePic }}
-                  style={{ width: 36, height: 36, borderRadius: 18 }}
-                />
-              ) : (
-                <User size={22} color={themeColors.white} />
               )}
-            </TouchableOpacity>
-            {/* Make name clickable */}
-            <TouchableOpacity
-              onPress={() => navigation.navigate("Profile", { uid: item.uid })}
-              style={{ flex: 1 }}
+            </View>
+          )}
+          ListEmptyComponent={
+            <Text
+              style={{
+                color: themeColors.darkGray,
+                fontFamily: FONTS.PRIMARY,
+                marginBottom: 12,
+                paddingHorizontal: 24,
+              }}
             >
-              <Text
-                style={{
-                  color: themeColors.black,
-                  fontSize: 16,
-                  fontFamily: FONTS.PRIMARY,
-                }}
-              >
-                {item.uid !== auth.currentUser?.uid && (
-                  <Text style={{ color: themeColors.purple }}>
-                    {/* Show first name and last initial */}
-                    {item.firstName}{" "}
-                    {item.lastName && item.lastName.length > 0
-                      ? item.lastName[0] + "."
-                      : ""}
-                  </Text>
-                )}
-                {item.uid === auth.currentUser?.uid && (
-                  <Text style={{ color: themeColors.purple }}>You</Text>
-                )}
-                {group?.createdBy === item.uid && (
-                  <Text style={{ color: themeColors.purple }}> (Owner)</Text>
-                )}
-              </Text>
-            </TouchableOpacity>
-            {item.uid !== auth.currentUser?.uid &&
-              (following.includes(item.uid) ? (
-                <TouchableOpacity
-                  onPress={() => handleUnfollow(item.uid)}
-                  disabled={followingLoading}
-                  style={{
-                    backgroundColor: themeColors.red,
-                    borderRadius: 6,
-                    paddingVertical: 6,
-                    paddingHorizontal: 14,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginLeft: 8,
-                    opacity: followingLoading ? 0.6 : 1,
-                    minWidth: 80, // <-- ensure same width
-                    width: 90, // <-- set fixed width for both buttons
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: themeColors.white,
-                      fontWeight: "bold",
-                      fontSize: 14,
-                      fontFamily: FONTS.PRIMARY,
-                    }}
-                  >
-                    Unfollow
-                  </Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  onPress={() => handleFollow(item.uid)}
-                  disabled={followingLoading}
-                  style={{
-                    backgroundColor: themeColors.purple,
-                    borderRadius: 6,
-                    paddingVertical: 6,
-                    paddingHorizontal: 14,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginLeft: 8,
-                    opacity: followingLoading ? 0.6 : 1,
-                    minWidth: 80, // <-- ensure same width
-                    width: 90, // <-- set fixed width for both buttons
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: themeColors.white,
-                      fontWeight: "bold",
-                      fontSize: 14,
-                      fontFamily: FONTS.PRIMARY,
-                    }}
-                  >
-                    Follow
-                  </Text>
-                </TouchableOpacity>
-              ))}
-          </View>
-        )}
-        ListEmptyComponent={
-          <Text
-            style={{
-              color: themeColors.darkGray,
-              fontFamily: FONTS.PRIMARY,
-              marginBottom: 12,
-              paddingHorizontal: 24,
-            }}
-          >
-            No members.
-          </Text>
-        }
-      />
+              No members.
+            </Text>
+          }
+        />
+      </SafeAreaView>
     </>
   );
 }

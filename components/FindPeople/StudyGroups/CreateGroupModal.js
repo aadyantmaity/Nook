@@ -12,6 +12,7 @@ import * as PhosphorIcons from "phosphor-react-native";
 import IconPickerModal from "./IconPickerModal";
 import * as ImagePicker from "expo-image-picker";
 import { FONTS } from "../../../constants/fonts";
+import ProfilePicture from "../../Profile/ProfilePicture";
 
 export default function CreateGroupModal({
   visible,
@@ -427,6 +428,22 @@ export default function CreateGroupModal({
                     paddingVertical: 8,
                   }}
                 >
+                  <View style={{ marginRight: 8 }}>
+                    <ProfilePicture
+                      size={32}
+                      profilePic={u.profilePic}
+                      themeColors={themeColors}
+                    />
+                  </View>
+                  <Text
+                    style={{
+                      color: themeColors.black,
+                      fontFamily: FONTS.PRIMARY,
+                      flex: 1,
+                    }}
+                  >
+                    {u.firstName} {u.lastName}
+                  </Text>
                   <View
                     style={{
                       width: 22,
@@ -437,7 +454,7 @@ export default function CreateGroupModal({
                       backgroundColor: selectedMembers.includes(u.uid)
                         ? themeColors.purple
                         : themeColors.white,
-                      marginRight: 12,
+                      marginLeft: 12,
                       alignItems: "center",
                       justifyContent: "center",
                     }}
@@ -453,14 +470,6 @@ export default function CreateGroupModal({
                       </Text>
                     )}
                   </View>
-                  <Text
-                    style={{
-                      color: themeColors.black,
-                      fontFamily: FONTS.PRIMARY,
-                    }}
-                  >
-                    {u.firstName} {u.lastName} ({u.email})
-                  </Text>
                 </TouchableOpacity>
               ))
             )}

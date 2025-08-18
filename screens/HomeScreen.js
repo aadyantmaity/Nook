@@ -638,7 +638,7 @@ export default function HomeScreen({ navigation, route }) {
           setFilters={setFilters}
           setCurrentAlerts={setCurrentAlerts}
           setShowAlertsModal={setShowAlertsModal}
-          contentContainerStyle={{ paddingBottom: 120 }}
+          contentContainerStyle={{ paddingBottom: 130 }}
           getLastUpdatedLabel={getLastUpdatedLabel}
           showMapView={showMapView}
           setShowMapView={handleSetShowMapView}
@@ -664,7 +664,7 @@ export default function HomeScreen({ navigation, route }) {
       <View
         style={{
           position: "absolute",
-          bottom: 80, // <-- move up to avoid tab bar overlap (was 25)
+          bottom: 90, // <-- move up to avoid tab bar overlap (was 25)
           right: 16,
           zIndex: 20,
         }}

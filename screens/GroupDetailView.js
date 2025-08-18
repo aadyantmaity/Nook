@@ -16,8 +16,8 @@ import {
   Text,
   ScrollView,
   Image,
-  Keyboard, // <-- Add Keyboard import
-  TouchableWithoutFeedback, // <-- Add this import
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { ThemeContext } from "../App";
 import { colors } from "../constants/colors";
@@ -36,12 +36,10 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import {
-  ArrowLeft,
   PaperPlaneRight,
-  DotsThreeVertical,
   MapPin,
   UsersThree,
-  ShareNetwork, // <-- This is the icon used for "Manage Sharing" in SpotDetailScreen
+  ShareNetwork,
   SignOut,
   Trash,
   Users,
@@ -57,9 +55,16 @@ import GroupTaskModal from "../components/Groups/GroupTaskModal";
 import GroupShareModal from "../components/SpotDetail/GroupShareModal";
 import ShareNookModal from "../components/Groups/ShareNookModal";
 import CircleLoader from "../components/common/CircleLoader";
+import GroupHeader from "../components/common/GroupHeader";
 import { FONTS } from "../constants/fonts";
 
-export default function GroupDetailView({ navigation, route }) {
+export default function GroupDetailView({
+  navigation,
+  route,
+  showMenu = false,
+  setShowMenu = () => {},
+  onShowDetails,
+}) {
   const { groupId } = route.params;
   const themeCtx = useContext(ThemeContext);
   const themeColors = themeCtx?.themeColors ?? colors;
@@ -68,7 +73,6 @@ export default function GroupDetailView({ navigation, route }) {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [input, setInput] = useState(""); // ensure this is defined
-  const [showMenu, setShowMenu] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
@@ -484,80 +488,6 @@ export default function GroupDetailView({ navigation, route }) {
     }
   };
 
-  // Header with back arrow, group name/members, and Dots menu for owner
-  React.useLayoutEffect(() => {
-    navigation.setOptions({
-      headerShown: true,
-      headerTitle: () => (
-        <TouchableOpacity
-          onPress={() =>
-            navigation.navigate("GroupDetails", { groupId: group?.id })
-          }
-          activeOpacity={0.7}
-        >
-          <View style={{ alignItems: "center" }}>
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "bold",
-                color: themeColors.purple,
-                fontFamily: FONTS.PRIMARY,
-                textAlign: "center",
-                maxWidth: 200,
-              }}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {group?.name || "Group"}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      ),
-      headerTitleAlign: "center",
-      headerStyle: {
-        backgroundColor: themeColors.white,
-        shadowColor: "transparent",
-        elevation: 0,
-      },
-      headerTitleStyle: {
-        color: themeColors.purple,
-        fontWeight: "bold",
-        fontFamily: FONTS.PRIMARY,
-        fontSize: 18,
-      },
-      headerLeft: () => (
-        <TouchableOpacity
-          onPress={() => {
-            // If we can go back, do so. Otherwise, navigate to Home
-            if (navigation.canGoBack()) {
-              navigation.goBack();
-            } else {
-              navigation.navigate("Home");
-            }
-          }}
-          style={{
-            paddingHorizontal: 16,
-            paddingVertical: 8,
-          }}
-          accessibilityLabel="Back"
-        >
-          <ArrowLeft size={24} color={themeColors.purple} />
-        </TouchableOpacity>
-      ),
-      headerRight: () => (
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <TouchableOpacity
-            onPress={() => setShowMenu(true)}
-            style={{ paddingHorizontal: 16, paddingVertical: 8 }}
-            accessibilityLabel="More"
-          >
-            <DotsThreeVertical size={26} color={themeColors.purple} />
-          </TouchableOpacity>
-        </View>
-      ),
-    });
-  }, [navigation, group, themeColors, favoriteGroups]);
-
   // --- Delete group handler ---
   const handleDeleteGroup = async () => {
     Alert.alert(
@@ -728,6 +658,14 @@ export default function GroupDetailView({ navigation, route }) {
   return (
     <>
       <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>
+        {/* Header */}
+        <GroupHeader
+          navigation={navigation}
+          groupName={group?.name}
+          themeColors={themeColors}
+          onMenuPress={() => setShowMenu(true)}
+        />
+
         {/* Menu Modal */}
         <GroupMenuModal
           visible={showMenu}
@@ -746,6 +684,7 @@ export default function GroupDetailView({ navigation, route }) {
               : undefined
           }
           navigation={navigation}
+          onShowDetails={onShowDetails}
         />
         {/* Share Modal */}
         <GroupShareModal

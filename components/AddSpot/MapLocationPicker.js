@@ -174,15 +174,22 @@ export default function MapLocationPicker({
           <View style={styles.searchContainer}>
             <TextInput
               style={{
-                ...styles.searchInput,
-                backgroundColor: themeColors.white,
+                borderWidth: 1,
+                borderColor: themeColors.darkGray,
+                borderRadius: 12,
+                paddingHorizontal: 14,
+                paddingVertical: 10,
+                width: "100%",
+                fontSize: 16,
+                color: themeColors.black,
+                height: 44,
                 fontFamily: FONTS.PRIMARY,
-                color: themeColors.black, // Set input text color
+                backgroundColor: themeColors.white,
               }}
               placeholder="Search for a place..."
               value={search}
               onChangeText={fetchSuggestions}
-              placeholderTextColor="#888"
+              placeholderTextColor={themeColors.darkGray}
               autoCorrect={false}
               autoCapitalize="none"
               clearButtonMode="while-editing"

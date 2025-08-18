@@ -61,11 +61,18 @@ export default function GroupShareModal({
         const following = userDoc.data().following || [];
         const followers = userDoc.data().followers || [];
         const mutualUids = following.filter((uid) => followers.includes(uid));
+
+        // Get all users to show: current group members + friends
+        const allUids = [...new Set([...sharedWith, ...mutualUids])];
         const users = [];
+
         await Promise.all(
-          mutualUids.map(async (uid) => {
+          allUids.map(async (uid) => {
             const uDoc = await getDoc(doc(db, "users", uid));
             if (uDoc.exists()) {
+              const isGroupMember = sharedWith.includes(uid);
+              const isFriend = mutualUids.includes(uid);
+
               users.push({
                 uid,
                 name:
@@ -73,6 +80,8 @@ export default function GroupShareModal({
                     uDoc.data().lastName || ""
                   }`.trim() || uDoc.data().email,
                 profilePic: uDoc.data().profilePic || null,
+                isGroupMember,
+                isFriend,
               });
             }
           })
@@ -84,7 +93,7 @@ export default function GroupShareModal({
       setLoading(false);
     });
     return () => unsub();
-  }, [ownerUid, visible]);
+  }, [ownerUid, visible, sharedWith]);
 
   const handleDone = async () => {
     setUpdating(true);
@@ -198,97 +207,126 @@ export default function GroupShareModal({
             <Text
               style={{ color: themeColors.darkGray, fontFamily: FONTS.PRIMARY }}
             >
-              You are not following anyone yet.
+              No users to manage.
             </Text>
           ) : (
             <ScrollView style={{ width: "100%" }}>
               {followingList
                 .filter((u) => u.uid !== auth.currentUser?.uid)
-                .map((user) => (
-                  <TouchableOpacity
-                    key={user.uid}
-                    onPress={() => handleToggleUser(user.uid)}
-                    activeOpacity={0.7}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      paddingVertical: 10,
-                      borderBottomWidth: 1,
-                      borderBottomColor: themeColors.gray,
-                      opacity: updating ? 0.6 : 1,
-                    }}
-                    disabled={updating}
-                  >
-                    {/* Select/Deselect */}
-                    <View
+                .map((user) => {
+                  // Can remove if they're a group member, can add if they're a friend
+                  const canRemove = user.isGroupMember;
+                  const canAdd = user.isFriend && !user.isGroupMember;
+                  const isSelected = pendingSharedWith.includes(user.uid);
+
+                  return (
+                    <TouchableOpacity
+                      key={user.uid}
+                      onPress={() => {
+                        // Only allow toggling if they can be added or removed
+                        if (canAdd || canRemove) {
+                          handleToggleUser(user.uid);
+                        }
+                      }}
+                      activeOpacity={canAdd || canRemove ? 0.7 : 1}
                       style={{
-                        width: 22,
-                        height: 22,
-                        borderRadius: 11,
-                        borderWidth: 1,
-                        borderColor: themeColors.purple,
-                        backgroundColor: pendingSharedWith.includes(user.uid)
-                          ? themeColors.purple
-                          : themeColors.white,
+                        flexDirection: "row",
                         alignItems: "center",
-                        justifyContent: "center",
-                        marginRight: 8,
+                        paddingVertical: 10,
+                        borderBottomWidth: 1,
+                        borderBottomColor: themeColors.gray,
+                        opacity: updating ? 0.6 : canAdd || canRemove ? 1 : 0.5,
                       }}
+                      disabled={updating || (!canAdd && !canRemove)}
                     >
-                      {pendingSharedWith.includes(user.uid) && (
-                        <Check
-                          size={16}
-                          color={themeColors.white}
-                          weight="bold"
-                        />
-                      )}
-                    </View>
-                    {/* Profile Picture */}
-                    <View
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 16,
-                        backgroundColor: themeColors.purple,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginRight: 12,
-                        overflow: "hidden",
-                      }}
-                    >
-                      {user.profilePic ? (
-                        <Image
-                          source={{ uri: user.profilePic }}
-                          style={{ width: 32, height: 32, borderRadius: 16 }}
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <User size={20} color={themeColors.white} />
-                      )}
-                    </View>
-                    {/* Name only */}
-                    <Text
-                      style={{
-                        color: themeColors.black,
-                        fontFamily: FONTS.PRIMARY,
-                        flex: 1,
-                      }}
-                      numberOfLines={1}
-                    >
-                      {user.name
-                        ? (() => {
-                            const parts = user.name.split(" ");
-                            const first = parts[0] || "";
-                            const lastInitial =
-                              parts.length > 1 && parts[1]
-                                ? parts[1][0] + "."
-                                : "";
-                            return `${first} ${lastInitial}`;
-                          })()
-                        : ""}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                      {/* Select/Deselect */}
+                      <View
+                        style={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: 11,
+                          borderWidth: 1,
+                          borderColor:
+                            canAdd || canRemove
+                              ? themeColors.purple
+                              : themeColors.gray,
+                          backgroundColor: isSelected
+                            ? themeColors.purple
+                            : themeColors.white,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          marginRight: 8,
+                        }}
+                      >
+                        {isSelected && (
+                          <Check
+                            size={16}
+                            color={themeColors.white}
+                            weight="bold"
+                          />
+                        )}
+                      </View>
+                      {/* Profile Picture */}
+                      <View
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 16,
+                          backgroundColor: themeColors.purple,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          marginRight: 12,
+                          overflow: "hidden",
+                        }}
+                      >
+                        {user.profilePic ? (
+                          <Image
+                            source={{ uri: user.profilePic }}
+                            style={{ width: 32, height: 32, borderRadius: 16 }}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <User size={20} color={themeColors.white} />
+                        )}
+                      </View>
+                      {/* Name and Status */}
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{
+                            color: themeColors.black,
+                            fontFamily: FONTS.PRIMARY,
+                          }}
+                          numberOfLines={1}
+                        >
+                          {user.name
+                            ? (() => {
+                                const parts = user.name.split(" ");
+                                const first = parts[0] || "";
+                                const lastInitial =
+                                  parts.length > 1 && parts[1]
+                                    ? parts[1][0] + "."
+                                    : "";
+                                return `${first} ${lastInitial}`;
+                              })()
+                            : ""}
+                        </Text>
+                        <Text
+                          style={{
+                            color: themeColors.darkGray,
+                            fontFamily: FONTS.PRIMARY,
+                            fontSize: 12,
+                          }}
+                        >
+                          {user.isGroupMember
+                            ? "Group Member"
+                            : user.isFriend
+                            ? "Friend"
+                            : "User"}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
             </ScrollView>
           )}
           <TouchableOpacity

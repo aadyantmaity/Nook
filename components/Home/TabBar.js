@@ -29,13 +29,16 @@ export default function TabBar({
       style={{
         backgroundColor: themeColors.white,
         paddingHorizontal: 0,
-        paddingBottom: 10,
+        paddingTop: 5,
+        paddingBottom: 15,
+        borderTopWidth: 1,
+        borderTopColor: themeColors.darkGray + "50",
         zIndex: 100,
         elevation: 8,
         alignSelf: "center",
         alignItems: "center",
         width: "100%",
-        marginBottom: 0,
+        marginBottom: -5,
       }}
     >
       <View

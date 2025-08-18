@@ -39,7 +39,7 @@ import ProfilePicture from "../Profile/ProfilePicture";
 import { FONTS } from "../../constants/fonts";
 
 function getMutualFriends(users, currentUser) {
-  // Show all users except the current user
+  // Show people the current user follows
   if (!currentUser) return [];
   return users.filter((u) => u.uid !== currentUser.uid);
 }
@@ -182,7 +182,16 @@ export default function StudyGroupsSection({ navigation }) {
         ...d.data(),
       }));
       setAllUsers(users);
-      setMutualFriends(getMutualFriends(users, user)); // Now includes all users
+
+      // Get current user's following list
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      const following = userDoc.exists() ? userDoc.data().following || [] : [];
+
+      // Filter to only show people the user follows
+      const followingUsers = users.filter(
+        (u) => u.uid !== user.uid && following.includes(u.uid)
+      );
+      setMutualFriends(followingUsers);
     })();
   }, [user]);
 
@@ -429,7 +438,7 @@ export default function StudyGroupsSection({ navigation }) {
       style={{
         backgroundColor: themeColors.white,
         borderRadius: 16,
-        paddingBottom: 24,
+        paddingBottom: 34,
         paddingTop: 16,
         paddingHorizontal: 16,
         marginHorizontal: 0,
@@ -537,7 +546,7 @@ export default function StudyGroupsSection({ navigation }) {
       <View
         style={{
           position: "absolute",
-          bottom: 80,
+          bottom: 90,
           right: 22,
           zIndex: 20,
         }}
@@ -556,7 +565,16 @@ export default function StudyGroupsSection({ navigation }) {
             shadowRadius: 4,
             elevation: 3,
           }}
-          onPress={() => setShowCreateModal(true)}
+          onPress={() => {
+            // Reset all form fields when opening modal
+            setGroupName("");
+            setGroupDesc("");
+            setSelectedMembers([]);
+            setGroupProfilePic(null);
+            setIsPrivate(false);
+            setSelectedIcon(null);
+            setShowCreateModal(true);
+          }}
           activeOpacity={0.85}
         >
           <Plus size={24} color={themeColors.white} />

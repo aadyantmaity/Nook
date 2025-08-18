@@ -16,10 +16,8 @@ import { colors, getThemeColors } from "./constants/colors";
 import * as Linking from "expo-linking";
 import * as Font from "expo-font";
 import AppLoading from "expo-app-loading";
-import GroupDetailView from "./screens/GroupDetailView";
-import GroupDetailsScreen from "./screens/GroupDetailsScreen";
-import notificationService from "./services/notifications";
-import { setupNotificationResponseListener } from "./services/notificationHandler";
+import GroupChatScreen from "./screens/GroupChatScreen";
+import GroupInfoScreen from "./screens/GroupInfoScreen";
 
 import { HomeViewProvider } from "./components/Home/HomeViewContext";
 
@@ -85,26 +83,9 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       setIsAuthenticated(!!user);
-
-      // Initialize notifications when user logs in
-      if (user) {
-        try {
-          await notificationService.initialize();
-          await notificationService.saveTokenToFirestore(user.uid);
-        } catch (error) {
-          console.error("Error setting up notifications:", error);
-        }
-      }
     });
     return unsubscribe;
   }, []);
-
-  // Set up notification response listener
-  useEffect(() => {
-    const subscription = setupNotificationResponseListener();
-    return () => subscription?.remove();
-  }, []);
-
   if (!fontsLoaded || isAuthenticated === null) {
     return <AppLoading />;
   }
@@ -126,8 +107,8 @@ export default function App() {
       <Stack.Screen name="AddSpot" component={AddSpotScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="EditSpot" component={EditSpotScreen} />
-      <Stack.Screen name="GroupDetail" component={GroupDetailView} />
-      <Stack.Screen name="GroupDetails" component={GroupDetailsScreen} />
+      <Stack.Screen name="GroupChat" component={GroupChatScreen} />
+      <Stack.Screen name="GroupInfo" component={GroupInfoScreen} />
       <Stack.Screen name="Search" component={SearchScreen} />
     </Stack.Navigator>
   );

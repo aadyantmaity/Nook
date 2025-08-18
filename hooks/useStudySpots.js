@@ -73,42 +73,6 @@ export default function useStudySpots() {
             const unsubRating = onSnapshot(
               ratingsQuery,
               async (ratingsSnapshot) => {
-                // For Odegaard: aggregate tableAvailability (most recent)
-                let tableAvailability = undefined;
-                if (
-                  (spotData.buildingName || spotData.name || "")
-                    .toLowerCase()
-                    .includes("odegaard")
-                ) {
-                  let latestTable = null;
-                  let latestTs = null;
-                  ratingsSnapshot.forEach((ratingDoc) => {
-                    const ratingData = ratingDoc.data();
-                    if (
-                      typeof ratingData.tableAvailability !== "undefined" &&
-                      ratingData.timestamp
-                    ) {
-                      const ts = ratingData.timestamp.toMillis();
-                      if (latestTs === null || ts > latestTs) {
-                        latestTable = ratingData.tableAvailability;
-                        latestTs = ts;
-                      }
-                    }
-                  });
-                  // --- Clear tableAvailability if no ratings from today ---
-                  let hasTodayRating = false;
-                  ratingsSnapshot.forEach((ratingDoc) => {
-                    const ratingData = ratingDoc.data();
-                    if (
-                      ratingData.timestamp &&
-                      ratingData.timestamp.toMillis() >= todayStartMillis
-                    ) {
-                      hasTodayRating = true;
-                    }
-                  });
-                  tableAvailability = hasTodayRating ? latestTable : "N/A";
-                }
-
                 const now = Date.now();
                 const thirtyMinutesAgo = now - 30 * 60 * 1000;
                 const todayStart = new Date();
@@ -281,9 +245,6 @@ export default function useStudySpots() {
                       lastUpdated: null,
                       lastUpdatedType: null,
                       lastWindowHours: null,
-                      ...(typeof tableAvailability !== "undefined"
-                        ? { tableAvailability }
-                        : {}),
                     },
                     averageOverallRating: 0,
                     overallRatingsCount: 0,
@@ -303,9 +264,6 @@ export default function useStudySpots() {
                     lastUpdated,
                     lastUpdatedType,
                     lastWindowHours,
-                    ...(typeof tableAvailability !== "undefined"
-                      ? { tableAvailability }
-                      : {}),
                   },
                   averageOverallRating,
                   overallRatingsCount,
