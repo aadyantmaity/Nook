@@ -32,7 +32,13 @@ const slides = [
     image:
       "https://res.cloudinary.com/dxnd4aryf/image/upload/w_900,h_1200,c_fit,f_auto/v1752134055/mloewartesijk3mv7knr.png",
   },
-
+  {
+    title: "Focus Timer",
+    description:
+      "Stay productive with our built-in focus timer. Set work sessions and track your study time.",
+    image:
+      "https://res.cloudinary.com/dxnd4aryf/image/upload/w_900,h_1200,c_fit,f_auto/v1755328319/jtdi9qnsr5burmqlcgte.png",
+  },
   {
     title: "Community",
     description:

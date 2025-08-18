@@ -33,6 +33,7 @@ import {
   CheckCircle,
   Trophy,
   ChartBar,
+  Gear,
 } from "phosphor-react-native";
 import { ThemeContext } from "../App";
 import * as ImagePicker from "expo-image-picker";
@@ -420,7 +421,7 @@ export default function ProfileScreen({ navigation, route }) {
         >
           <ArrowLeft size={24} color={themeColors.purple} />
         </TouchableOpacity>
-        {/* Only show DotsThreeVertical/settings icon if own profile */}
+        {/* Only show Gear/settings icon if own profile */}
         {isOwnProfile && (
           <TouchableOpacity
             style={{
@@ -431,7 +432,7 @@ export default function ProfileScreen({ navigation, route }) {
             accessibilityLabel="Profile Menu"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <DotsThreeVertical size={26} color={themeColors.purple} />
+            <Gear size={26} color={themeColors.purple} />
           </TouchableOpacity>
         )}
       </View>

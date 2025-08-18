@@ -1,7 +1,7 @@
 export const colors = {
   purple: "#32006e", // University of Washington purple
   gold: "#B7A57A", // University of Washington gold
-  white: "#FFFFFF", // Fix: set white to actual white FFFaf4
+  white: "#fffaf4", // Fix: set white to actual white FFFaf4
   black: "#000000", // Use for high-contrast text/icons
   gray: "#F0F0F0",
   darkGray: "#b0b0b0",

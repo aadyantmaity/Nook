@@ -13,6 +13,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.aadyant.nook",
+      "usesNotifications": true,
       "buildNumber": "1.0.8",
       "supportsTablet": true,
       "associatedDomains": ["applinks:nook-web.netlify.app"],
@@ -72,8 +73,7 @@
         "expo-notifications",
         {
           "icon": "./assets/NewNook.png",
-          "color": "#ffffff",
-          "sounds": ["./assets/notification.wav"]
+          "color": "#ffffff"
         }
       ]
     ],
