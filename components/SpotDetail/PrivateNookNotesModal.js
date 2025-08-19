@@ -90,7 +90,7 @@ export default function PrivateNookNotesModal({
             width: "88%",
             alignItems: "center",
             borderWidth: 1,
-            borderColor: themeColors.black,
+            borderColor: themeColors.gray + "70",
             shadowColor: themeColors.black,
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.25,

@@ -93,7 +93,7 @@ export default function PollModal({ visible, onClose, onSubmit, themeColors }) {
             elevation: 8,
             marginBottom: 250, // <-- move modal up by 60px
             borderWidth: 1,
-            borderColor: themeColors.black,
+            borderColor: themeColors.gray + "70",
             shadowColor: themeColors.black,
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.25,

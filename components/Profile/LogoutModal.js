@@ -31,7 +31,7 @@ export default function LogoutModal({
             alignItems: "center",
             minWidth: 240,
             borderWidth: 1,
-            borderColor: themeColors.black,
+            borderColor: themeColors.gray + "70",
             shadowColor: themeColors.black,
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.25,

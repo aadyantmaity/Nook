@@ -396,7 +396,7 @@ export default function GroupList({
           );
         }}
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
         onScroll={(e) => {
           const offsetY = e.nativeEvent.contentOffset.y;

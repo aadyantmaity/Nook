@@ -186,6 +186,8 @@ export default function GroupShareModal({
             width: "85%",
             maxHeight: "70%",
             alignItems: "center",
+            borderWidth: 1,
+            borderColor: themeColors.gray + "70",
           }}
           onStartShouldSetResponder={() => true}
         >

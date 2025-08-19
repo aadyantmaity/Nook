@@ -546,7 +546,7 @@ export default function StudyGroupsSection({ navigation }) {
       <View
         style={{
           position: "absolute",
-          bottom: 90,
+          bottom: 95,
           right: 22,
           zIndex: 20,
         }}

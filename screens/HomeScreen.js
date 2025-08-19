@@ -126,11 +126,22 @@ export default function HomeScreen({ navigation, route }) {
 
   // Animate toggle when showFriendsView changes
   useEffect(() => {
-    Animated.timing(slideAnim, {
+    // Stop any ongoing animation first
+    slideAnim.stopAnimation();
+
+    const animation = Animated.spring(slideAnim, {
       toValue: showFriendsView ? 1 : 0,
-      duration: 300,
       useNativeDriver: false,
-    }).start();
+      tension: 100,
+      friction: 8,
+    });
+
+    animation.start();
+
+    // Cleanup function to stop animation on unmount
+    return () => {
+      animation.stop();
+    };
   }, [showFriendsView]);
 
   // Social tab selectedTab state
@@ -312,16 +323,19 @@ export default function HomeScreen({ navigation, route }) {
   const handleSetShowFriendsView = (val) => {
     setShowFriendsView(val);
 
-    // Refresh data when switching modes if on map view
-    if (showMapView) {
-      if (val) {
-        // Switching to friends view - refresh friends data
-        refetchFriendsCheckIns();
-      } else {
-        // Switching to nooks view - refresh study spots
-        fetchStudySpots();
+    // Add a small delay to ensure the slider animation completes before refreshing data
+    setTimeout(() => {
+      // Refresh data when switching modes if on map view
+      if (showMapView) {
+        if (val) {
+          // Switching to friends view - refresh friends data
+          refetchFriendsCheckIns();
+        } else {
+          // Switching to nooks view - refresh study spots
+          fetchStudySpots();
+        }
       }
-    }
+    }, 350); // Slightly longer than animation duration
   };
 
   // --- Reusable Header (toggle only, no filters) ---
@@ -638,7 +652,7 @@ export default function HomeScreen({ navigation, route }) {
           setFilters={setFilters}
           setCurrentAlerts={setCurrentAlerts}
           setShowAlertsModal={setShowAlertsModal}
-          contentContainerStyle={{ paddingBottom: 130 }}
+          contentContainerStyle={{ paddingBottom: 140 }}
           getLastUpdatedLabel={getLastUpdatedLabel}
           showMapView={showMapView}
           setShowMapView={handleSetShowMapView}
@@ -664,7 +678,7 @@ export default function HomeScreen({ navigation, route }) {
       <View
         style={{
           position: "absolute",
-          bottom: 90, // <-- move up to avoid tab bar overlap (was 25)
+          bottom: 95, // <-- move up to avoid tab bar overlap (was 25)
           right: 16,
           zIndex: 20,
         }}

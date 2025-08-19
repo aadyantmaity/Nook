@@ -91,7 +91,7 @@ export function FocusGoalModal({
           style={{
             backgroundColor: themeColors.white,
             borderWidth: 1,
-            borderColor: themeColors.black,
+            borderColor: themeColors.gray + "70",
             borderRadius: 16,
             width: "100%",
             maxWidth: 400,

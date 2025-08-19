@@ -33,7 +33,7 @@ export default function UnfollowConfirmModal({
             width: "100%",
             maxWidth: 400,
             borderWidth: 1,
-            borderColor: themeColors.black,
+            borderColor: themeColors.gray + "70",
             shadowColor: themeColors.black,
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.25,

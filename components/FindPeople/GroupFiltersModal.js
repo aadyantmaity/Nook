@@ -81,7 +81,7 @@ export default function GroupFiltersModal({
             borderRadius: 16,
             padding: 24,
             borderWidth: 1,
-            borderColor: themeColors.black,
+            borderColor: themeColors.gray + "70",
             width: "88%",
             maxWidth: 400,
             alignItems: "center",

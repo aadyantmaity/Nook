@@ -57,12 +57,12 @@ const BUILDINGS = [
     longitude: -122.3057,
   },
   {
-    name: "Paul G. Allen Center (CSE)",
+    name: "Paul G. Allen Center",
     latitude: 47.6532,
     longitude: -122.306,
   },
   {
-    name: "Bill‑Melinda Gates Center (CSE)",
+    name: "Bill‑Melinda Gates Center",
     latitude: 47.6532,
     longitude: -122.3042,
   },

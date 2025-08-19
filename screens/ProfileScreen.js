@@ -697,7 +697,21 @@ export default function ProfileScreen({ navigation, route }) {
           <ProfilePicture
             profilePic={profilePic}
             onPick={handlePickProfilePic}
+            onPress={() => {
+              if (isOwnProfile) {
+                setEditedFirstName(
+                  firstName !== "No First Name" ? firstName : ""
+                );
+                setEditedLastName(lastName !== "No Last Name" ? lastName : "");
+                setEditedGradYear(
+                  userGradYear !== "No Grad Year" ? userGradYear : ""
+                );
+                setIsModalVisible(true);
+                setTimeout(() => setEditedProfilePic(null), 0);
+              }
+            }}
             themeColors={themeColors}
+            isTouchable={isOwnProfile}
           />
         </View>
         {/* Profile Details */}

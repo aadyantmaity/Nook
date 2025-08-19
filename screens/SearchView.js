@@ -36,6 +36,7 @@ export default function SearchView() {
   const [suggestedPeople, setSuggestedPeople] = useState([]);
   const [loading, setLoading] = useState(false);
   const [following, setFollowing] = useState([]);
+  const [followers, setFollowers] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
 
   // Fetch current user's following list and all users
@@ -44,12 +45,16 @@ export default function SearchView() {
       if (!auth.currentUser) return;
 
       try {
-        // Get current user's following list
+        // Get current user's following and followers lists
         const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
         const userFollowing = userDoc.exists()
           ? userDoc.data().following || []
           : [];
+        const userFollowers = userDoc.exists()
+          ? userDoc.data().followers || []
+          : [];
         setFollowing(userFollowing);
+        setFollowers(userFollowers);
 
         // Get all users
         const usersSnap = await getDocs(collection(db, "users"));
@@ -175,35 +180,18 @@ export default function SearchView() {
   const handleUnfollow = async (uid) => {
     if (!auth.currentUser || !uid || uid === auth.currentUser.uid) return;
 
-    // Show confirmation alert
-    Alert.alert(
-      "Unfollow User",
-      "Are you sure you want to unfollow this user?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Unfollow",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await updateDoc(doc(db, "users", auth.currentUser.uid), {
-                following: arrayRemove(uid),
-              });
-              await updateDoc(doc(db, "users", uid), {
-                followers: arrayRemove(auth.currentUser.uid),
-              });
+    try {
+      await updateDoc(doc(db, "users", auth.currentUser.uid), {
+        following: arrayRemove(uid),
+      });
+      await updateDoc(doc(db, "users", uid), {
+        followers: arrayRemove(auth.currentUser.uid),
+      });
 
-              setFollowing((prev) => prev.filter((id) => id !== uid));
-            } catch (e) {
-              Alert.alert("Error", "Failed to unfollow user.");
-            }
-          },
-        },
-      ]
-    );
+      setFollowing((prev) => prev.filter((id) => id !== uid));
+    } catch (e) {
+      Alert.alert("Error", "Failed to unfollow user.");
+    }
   };
 
   // Render user item
@@ -276,20 +264,36 @@ export default function SearchView() {
       {/* Follow/Unfollow Button */}
       <TouchableOpacity
         style={{
-          backgroundColor: following.includes(item.uid)
-            ? themeColors.red
-            : themeColors.purple,
+          backgroundColor: themeColors.purple,
           borderRadius: 6,
           paddingVertical: isGrid ? 6 : 8,
           paddingHorizontal: isGrid ? 12 : 16,
           alignItems: "center",
           width: isGrid ? "100%" : 100,
         }}
-        onPress={() =>
-          following.includes(item.uid)
-            ? handleUnfollow(item.uid)
-            : handleFollow(item.uid)
-        }
+        onPress={() => {
+          const isFollowing = following.includes(item.uid);
+          const isFriend = followers.includes(item.uid);
+
+          if (isFollowing) {
+            // Show confirmation for unfollow
+            const alertTitle = isFriend ? "Unfollow Friend" : "Unfollow User";
+            const alertMessage = isFriend
+              ? "Are you sure you want to unfollow this friend?"
+              : "Are you sure you want to unfollow this user?";
+
+            Alert.alert(alertTitle, alertMessage, [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Unfollow",
+                style: "destructive",
+                onPress: () => handleUnfollow(item.uid),
+              },
+            ]);
+          } else {
+            handleFollow(item.uid);
+          }
+        }}
       >
         <Text
           style={{
@@ -299,7 +303,11 @@ export default function SearchView() {
             fontFamily: FONTS.PRIMARY,
           }}
         >
-          {following.includes(item.uid) ? "Unfollow" : "Follow"}
+          {following.includes(item.uid)
+            ? followers.includes(item.uid)
+              ? "Friends"
+              : "Following"
+            : "Follow"}
         </Text>
       </TouchableOpacity>
     </TouchableOpacity>

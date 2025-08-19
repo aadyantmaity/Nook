@@ -121,7 +121,7 @@ export default function ImagePickerButton({
                   borderTopWidth: 1,
                   borderLeftWidth: 1,
                   borderRightWidth: 1,
-                  borderColor: themeColors.black,
+                  borderColor: themeColors.gray + "70",
                   minHeight: 260,
                   paddingBottom: 20,
                   transform: [{ translateY: sheetTranslateY }],

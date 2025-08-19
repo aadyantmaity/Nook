@@ -84,6 +84,8 @@ export default function OnboardingModal({ visible, onFinish, themeColors }) {
             padding: 24,
             width,
             alignItems: "center",
+            borderWidth: 1,
+            borderColor: themeColors.gray + "70",
             elevation: 10,
             height: 675, // Fixed height for consistent modal size
             justifyContent: "flex-start",

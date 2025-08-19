@@ -140,7 +140,7 @@ export default function Filters({
               borderRadius: 16,
               padding: 24,
               borderWidth: 1,
-              borderColor: themeColors.black,
+              borderColor: themeColors.gray + "70",
               width: "92%",
               maxWidth: 400,
               alignItems: "center",

@@ -45,7 +45,7 @@ export default function FollowersModal({
             width: "85%",
             maxHeight: "70%",
             borderWidth: 1,
-            borderColor: themeColors.black,
+            borderColor: themeColors.gray + "70",
             shadowColor: themeColors.black,
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.25,
@@ -137,6 +137,8 @@ export default function FollowersModal({
                         paddingHorizontal: 14,
                         alignItems: "center",
                         justifyContent: "center",
+                        width: 100,
+                        height: 32,
                       }}
                     >
                       <Text

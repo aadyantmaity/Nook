@@ -168,6 +168,7 @@ export default function LiveUpdateSliders({
               </View>
               <TouchableOpacity
                 onPress={() => setLiveNoise(opt.value)}
+                disabled={!canSubmitLiveUpdate}
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
@@ -180,6 +181,7 @@ export default function LiveUpdateSliders({
                   paddingHorizontal: 14,
                   minWidth: 90,
                   justifyContent: "center",
+                  opacity: canSubmitLiveUpdate ? 1 : 0.5,
                 }}
               >
                 <Text
@@ -233,6 +235,7 @@ export default function LiveUpdateSliders({
               </View>
               <TouchableOpacity
                 onPress={() => setLiveCrowd(opt.value)}
+                disabled={!canSubmitLiveUpdate}
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
@@ -245,6 +248,7 @@ export default function LiveUpdateSliders({
                   paddingHorizontal: 14,
                   minWidth: 90,
                   justifyContent: "center",
+                  opacity: canSubmitLiveUpdate ? 1 : 0.5,
                 }}
               >
                 <Text

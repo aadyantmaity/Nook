@@ -61,6 +61,8 @@ export default function ProfileShareModal({
             padding: 24,
             width: screenWidth * 0.85,
             alignItems: "center",
+            borderWidth: 1,
+            borderColor: themeColors.gray + "70",
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.25,

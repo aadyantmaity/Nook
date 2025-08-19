@@ -5,6 +5,7 @@ import { User } from "phosphor-react-native";
 export default function ProfilePicture({
   profilePic,
   onPick,
+  onPress,
   themeColors,
   size = 125,
   isTouchable = false, // new prop
@@ -26,9 +27,12 @@ export default function ProfilePicture({
       </View>
     );
   }
-  if (isTouchable && onPick) {
+  if (isTouchable && (onPick || onPress)) {
     return (
-      <TouchableOpacity onPress={onPick} style={{ alignItems: "center" }}>
+      <TouchableOpacity
+        onPress={onPress || onPick}
+        style={{ alignItems: "center" }}
+      >
         <View
           style={{
             width: size,

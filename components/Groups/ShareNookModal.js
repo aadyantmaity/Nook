@@ -305,6 +305,8 @@ export default function ShareNookModal({
             maxHeight: "85%",
             alignItems: "center",
             minHeight: 450,
+            borderWidth: 1,
+            borderColor: themeColors.gray + "70",
             shadowColor: themeColors.black,
             shadowOffset: { width: 0, height: 8 },
             shadowOpacity: 0.15,

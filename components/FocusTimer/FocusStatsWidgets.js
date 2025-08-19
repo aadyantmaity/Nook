@@ -695,7 +695,7 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
           justifyContent: "center",
           alignItems: "flex-start",
           paddingVertical: 16,
-          paddingBottom: 100, // Add extra padding to prevent cutoff by bottom nav bar
+          paddingBottom: 95, // Add extra padding to prevent cutoff by bottom nav bar
         }}
       >
         {availableWidgets.map(renderWidget)}

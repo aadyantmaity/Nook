@@ -347,7 +347,7 @@ export default function FocusSessionsModal({ visible, onClose, colors }) {
               width: "90%",
               height: 500,
               borderWidth: 1,
-              borderColor: colors.black,
+              borderColor: colors.gray + "70",
               shadowColor: colors.black,
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.25,
