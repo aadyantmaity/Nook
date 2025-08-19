@@ -14,6 +14,7 @@ import {
 import Filters from "./Filters";
 import HomeLoadingScreen from "./HomeLoadingScreen"; // Import the loading screen
 import useFavoriteStatus from "../../hooks/useFavoriteStatus";
+import useSpotRatings from "../../hooks/useSpotRatings";
 import { FONTS } from "../../constants/fonts";
 import { auth, db } from "../../firebaseConfig"; // Added for favorite functionality
 import { doc, getDoc, deleteDoc, setDoc } from "firebase/firestore"; // Added for favorite functionality
@@ -31,6 +32,7 @@ const StudySpotItem = React.memo(
     hideIfNotFavorite = false, // Add this prop
   }) => {
     const isFavorite = useFavoriteStatus(item.id);
+    const { ratings } = useSpotRatings(item.id, item.privateNook);
 
     // Toggle favorite function
     const toggleFavorite = async (spotId) => {
@@ -459,7 +461,7 @@ const StudySpotItem = React.memo(
                     fontFamily: FONTS.PRIMARY,
                   }}
                 >
-                  {getNoiseLabel(item.ratings?.noise)}
+                  {getNoiseLabel(ratings?.noise)}
                 </Text>
               </View>
               {/* Crowd Level */}
@@ -481,7 +483,7 @@ const StudySpotItem = React.memo(
                     fontFamily: FONTS.PRIMARY,
                   }}
                 >
-                  {getCrowdLabel(item.ratings?.crowd)}
+                  {getCrowdLabel(ratings?.crowd)}
                 </Text>
               </View>
             </View>
@@ -495,8 +497,8 @@ const StudySpotItem = React.memo(
                 fontFamily: FONTS.PRIMARY,
               }}
             >
-              {getLastUpdatedLabel && item.ratings
-                ? getLastUpdatedLabel(item.ratings)
+              {getLastUpdatedLabel && ratings
+                ? getLastUpdatedLabel(ratings)
                 : ""}
             </Text>
           </>
