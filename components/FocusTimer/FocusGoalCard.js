@@ -121,18 +121,14 @@ export function FocusGoalCard({
                 setGoal(updatedGoal);
                 saveGoal(updatedGoal);
 
-                // If marking as complete, show archive alert
+                // If marking as complete, show congrats alert and auto-archive
                 if (!goal.achieved) {
                   Alert.alert(
                     "Goal Completed! 🎉",
-                    "Congratulations on completing your goal! Would you like to archive it?",
+                    "Congratulations on completing your goal!",
                     [
                       {
-                        text: "Cancel",
-                        style: "cancel",
-                      },
-                      {
-                        text: "Archive",
+                        text: "Continue",
                         onPress: () => handleArchiveGoal(),
                       },
                     ]

@@ -1,7 +1,49 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { getWeeklyFocusStats } from "../services/focusSessions";
+import {
+  getWeeklyFocusStats,
+  getFocusSessions,
+} from "../services/focusSessions";
 import { collection, getDocs } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
+
+// Helper to calculate current streak from sessions
+async function getCurrentStreak(uid) {
+  try {
+    const sessions = await getFocusSessions(uid);
+    if (!sessions || !sessions.length) return 0;
+    const workSessions = sessions.filter((s) => s.mode === "work");
+    if (!workSessions.length) return 0;
+    let streak = 0;
+    let today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (let i = 0; i < 365; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const dayStart = new Date(date);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(date);
+      dayEnd.setHours(23, 59, 59, 999);
+      const daySessions = workSessions.filter((s) => {
+        const sessionDate = s.timestamp?.toDate
+          ? s.timestamp.toDate()
+          : new Date(s.createdAt);
+        return sessionDate >= dayStart && sessionDate <= dayEnd;
+      });
+      if (daySessions.length > 0) {
+        streak++;
+      } else {
+        // If today has no sessions, streak is 0 unless yesterday had sessions (streak=0)
+        if (i === 0) {
+          continue;
+        }
+        break;
+      }
+    }
+    return streak;
+  } catch {
+    return 0;
+  }
+}
 
 export default function useGroupLeaderboard(groupId, memberUids = []) {
   const [leaderboard, setLeaderboard] = useState([]);
@@ -37,12 +79,13 @@ export default function useGroupLeaderboard(groupId, memberUids = []) {
         usersData[doc.id] = doc.data();
       });
 
-      // Get weekly focus stats for each member
+      // Get weekly focus stats and streak for each member
       const memberStats = await Promise.all(
         stableMemberUids.map(async (uid) => {
           try {
             const stats = await getWeeklyFocusStats(uid);
             const userData = usersData[uid] || {};
+            const streak = await getCurrentStreak(uid);
 
             return {
               uid,
@@ -51,6 +94,7 @@ export default function useGroupLeaderboard(groupId, memberUids = []) {
               profilePic: userData.profilePic || null,
               weeklyFocusTime: stats.weeklyFocusTime,
               weeklySessions: stats.weeklySessions,
+              streak: streak,
             };
           } catch (err) {
             console.error(`Error fetching stats for user ${uid}:`, err);
@@ -61,6 +105,7 @@ export default function useGroupLeaderboard(groupId, memberUids = []) {
               profilePic: null,
               weeklyFocusTime: 0,
               weeklySessions: 0,
+              streak: 0,
             };
           }
         })

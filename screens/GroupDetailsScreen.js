@@ -34,6 +34,7 @@ import {
   Trophy,
   Clock,
   Medal,
+  Fire, // <-- add this import
 } from "phosphor-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import GroupShareModal from "../components/SpotDetail/GroupShareModal";
@@ -525,6 +526,34 @@ export default function GroupDetailsScreen({ route, navigation }) {
                           {member.weeklySessions} sessions
                         </Text>
                       </View>
+                    </View>
+                    {/* Fire icon and streak */}
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        marginLeft: 10,
+                        minWidth: 38,
+                        justifyContent: "flex-end",
+                      }}
+                    >
+                      <Fire
+                        size={22}
+                        color={themeColors.orange}
+                        weight="fill"
+                        style={{ marginRight: 2 }}
+                      />
+                      <Text
+                        style={{
+                          fontSize: 15,
+                          fontWeight: "bold",
+                          color: themeColors.orange,
+                          fontFamily: FONTS.PRIMARY,
+                          minWidth: 10,
+                        }}
+                      >
+                        {member.streak ?? 0}
+                      </Text>
                     </View>
                   </TouchableOpacity>
                 );

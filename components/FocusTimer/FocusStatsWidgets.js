@@ -6,7 +6,16 @@ import {
   Dimensions,
   ScrollView,
 } from "react-native";
-import { Clock, CheckCircle, Trophy, Calendar } from "phosphor-react-native";
+import {
+  Clock,
+  CheckCircle,
+  Fire,
+  Trophy,
+  Calendar,
+  TrendUp,
+  TrendDown,
+  ListNumbers,
+} from "phosphor-react-native";
 import { getFocusSessions } from "../../services/focusSessions";
 import CircleLoader from "../common/CircleLoader";
 import { FONTS } from "../../constants/fonts";
@@ -16,6 +25,62 @@ const { width: screenWidth } = Dimensions.get("window");
 export default function FocusStatsWidgets({ themeColors, userId = null }) {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Function to log sessions for the last 5 days
+  const logLastFiveDaysSessions = () => {
+    if (!sessions.length) {
+      console.log("No sessions available");
+      return;
+    }
+
+    const workSessions = sessions.filter((s) => s.mode === "work");
+    const today = new Date();
+
+    console.log("=== SESSIONS IN LAST 5 DAYS ===");
+
+    for (let i = 0; i < 5; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const dayStart = new Date(date);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(date);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      const daySessions = workSessions.filter((s) => {
+        const sessionDate = s.timestamp?.toDate
+          ? s.timestamp.toDate()
+          : new Date(s.createdAt);
+        return sessionDate >= dayStart && sessionDate <= dayEnd;
+      });
+
+      const dayName = date.toLocaleDateString("en-US", { weekday: "long" });
+      const dateString = date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
+
+      console.log(`${dayName} (${dateString}): ${daySessions.length} sessions`);
+
+      if (daySessions.length > 0) {
+        daySessions.forEach((session, index) => {
+          const sessionDate = session.timestamp?.toDate
+            ? session.timestamp.toDate()
+            : new Date(session.createdAt);
+          const timeString = sessionDate.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+          const durationMinutes = Math.round(session.duration / 60);
+          console.log(
+            `  ${index + 1}. ${timeString} - ${durationMinutes}m (${
+              session.wasCompleted ? "Completed" : "Skipped"
+            })`
+          );
+        });
+      }
+    }
+    console.log("================================");
+  };
 
   // Fetch focus sessions data
   useEffect(() => {
@@ -88,6 +153,7 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
     let currentStreak = 0;
     let maxStreak = 0;
     let tempStreak = 0;
+    let lastSessionDay = -1; // Track the last day with a session
 
     // Check streak backwards from today
     for (let i = 0; i < 365; i++) {
@@ -108,7 +174,11 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
 
       if (daySessions.length > 0) {
         tempStreak++;
+        if (lastSessionDay === -1) {
+          lastSessionDay = i; // Record the most recent day with a session
+        }
         if (i === 0) {
+          // Today has sessions, this is the current streak
           currentStreak = tempStreak;
         }
       } else {
@@ -117,19 +187,27 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
           maxStreak = tempStreak;
         }
 
-        // If this is today (i=0) and we found no sessions,
-        // check if there was a streak before today
         if (i === 0) {
-          // If there was a streak before today, continue it
-          if (tempStreak > 0) {
-            currentStreak = tempStreak;
+          // Today has no sessions, check if the last session was yesterday
+          if (lastSessionDay === 1) {
+            // Last session was yesterday, so current streak is 1
+            currentStreak = 1;
           } else {
+            // There's a gap, no current streak
             currentStreak = 0;
           }
-          break;
         }
 
         tempStreak = 0;
+      }
+    }
+
+    // If we haven't set currentStreak yet and there are sessions, check if the last session was yesterday
+    if (currentStreak === 0 && lastSessionDay !== -1) {
+      if (lastSessionDay === 1) {
+        currentStreak = 1; // Last session was yesterday
+      } else {
+        currentStreak = 0; // There's a gap
       }
     }
 
@@ -217,12 +295,82 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
       });
     }
 
+    // --- Calculate this week and last week stats for change widgets ---
+    const thisWeekStart = new Date(today);
+    thisWeekStart.setDate(today.getDate() - currentDay);
+    thisWeekStart.setHours(0, 0, 0, 0);
+    const thisWeekEnd = new Date(thisWeekStart);
+    thisWeekEnd.setDate(thisWeekStart.getDate() + 6);
+    thisWeekEnd.setHours(23, 59, 59, 999);
+
+    // Last week (previous Sunday to Saturday)
+    const lastWeekStart = new Date(thisWeekStart);
+    lastWeekStart.setDate(thisWeekStart.getDate() - 7);
+    const lastWeekEnd = new Date(thisWeekEnd);
+    lastWeekEnd.setDate(thisWeekEnd.getDate() - 7);
+
+    const thisWeekSessions = workSessions.filter((s) => {
+      const sessionDate = s.timestamp?.toDate
+        ? s.timestamp.toDate()
+        : new Date(s.createdAt);
+      return sessionDate >= thisWeekStart && sessionDate <= thisWeekEnd;
+    });
+    const lastWeekSessions = workSessions.filter((s) => {
+      const sessionDate = s.timestamp?.toDate
+        ? s.timestamp.toDate()
+        : new Date(s.createdAt);
+      return sessionDate >= lastWeekStart && sessionDate <= lastWeekEnd;
+    });
+
+    const thisWeekFocusTime = thisWeekSessions.reduce(
+      (sum, s) => sum + s.duration,
+      0
+    );
+    const lastWeekFocusTime = lastWeekSessions.reduce(
+      (sum, s) => sum + s.duration,
+      0
+    );
+    const thisWeekSessionCount = thisWeekSessions.length;
+    const lastWeekSessionCount = lastWeekSessions.length;
+
+    // Calculate percentage change for focus time
+    let focusTimeChange = 0;
+    let focusTimeChangeDir = "up";
+    if (lastWeekFocusTime === 0 && thisWeekFocusTime > 0) {
+      focusTimeChange = 100;
+      focusTimeChangeDir = "up";
+    } else if (lastWeekFocusTime === 0 && thisWeekFocusTime === 0) {
+      focusTimeChange = 0;
+      focusTimeChangeDir = "up";
+    } else {
+      focusTimeChange =
+        ((thisWeekFocusTime - lastWeekFocusTime) / lastWeekFocusTime) * 100;
+      focusTimeChangeDir = focusTimeChange >= 0 ? "up" : "down";
+      focusTimeChange = Math.round(focusTimeChange);
+    }
+
+    // Calculate absolute change for session count
+    const sessionCountChange = thisWeekSessionCount - lastWeekSessionCount;
+    const sessionCountChangeDir = sessionCountChange >= 0 ? "up" : "down";
+
     return {
       weekly: weeklyData,
       streak: streakData,
       completion: completionData,
       duration: durationData,
       monthly: monthlyData,
+      focusTimeChange: {
+        value: focusTimeChange,
+        dir: focusTimeChangeDir,
+        thisWeek: thisWeekFocusTime,
+        lastWeek: lastWeekFocusTime,
+      },
+      sessionCountChange: {
+        value: sessionCountChange,
+        dir: sessionCountChangeDir,
+        thisWeek: thisWeekSessionCount,
+        lastWeek: lastWeekSessionCount,
+      },
     };
   }, [sessions, themeColors]);
 
@@ -240,7 +388,7 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
     {
       id: 1,
       title: "Session Streak",
-      icon: Trophy,
+      icon: Fire,
       data: chartData.streak,
       type: "streak",
       color: themeColors.orange,
@@ -256,15 +404,40 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
       width: "half", // Half width (1 column)
     },
     {
-      id: 3,
-      title: "Session Duration Distribution",
-      subtitle: "How long your sessions are",
-      icon: Clock,
-      data: chartData.duration,
-      type: "duration",
-      color: themeColors.blue || "#3B82F6",
-      width: "full", // Full width (2 columns)
+      id: 5,
+      title: "Focus Time",
+      icon: chartData.focusTimeChange?.dir === "down" ? TrendDown : TrendUp,
+      data: chartData.focusTimeChange,
+      type: "focusTimeChange",
+      color:
+        chartData.focusTimeChange?.dir === "down"
+          ? themeColors.red
+          : themeColors.green || "#22C55E",
+      width: "half",
     },
+    {
+      id: 6,
+      title: "Sessions",
+      icon: chartData.sessionCountChange?.dir === "down" ? TrendDown : TrendUp,
+      data: chartData.sessionCountChange,
+      type: "sessionCountChange",
+      color:
+        chartData.sessionCountChange?.dir === "down"
+          ? themeColors.red
+          : themeColors.green || "#22C55E",
+      width: "half",
+    },
+
+    // {
+    //   id: 3,
+    //   title: "Session Duration Distribution",
+    //   subtitle: "How long your sessions are",
+    //   icon: Clock,
+    //   data: chartData.duration,
+    //   type: "duration",
+    //   color: themeColors.blue || "#3B82F6",
+    //   width: "full", // Full width (2 columns)
+    // },
     {
       id: 4,
       title: "Monthly Progress",
@@ -281,7 +454,10 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
   const availableWidgets = widgets.filter(
     (widget) =>
       widget.data &&
-      (widget.type === "streak" || widget.type === "completion"
+      (widget.type === "streak" ||
+      widget.type === "completion" ||
+      widget.type === "focusTimeChange" ||
+      widget.type === "sessionCountChange"
         ? true
         : widget.data.length > 0)
   );
@@ -291,6 +467,8 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
       !widget.data ||
       (widget.type !== "streak" &&
         widget.type !== "completion" &&
+        widget.type !== "focusTimeChange" &&
+        widget.type !== "sessionCountChange" &&
         widget.data.length === 0)
     ) {
       return null;
@@ -375,9 +553,7 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
                   marginBottom: 8,
                 }}
               >
-                {widget.data.current > 0
-                  ? widget.data.current + 1
-                  : widget.data.current}
+                {widget.data.current}
               </Text>
               <Text
                 style={{
@@ -388,11 +564,7 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
                   marginBottom: 4,
                 }}
               >
-                {widget.data.current > 0
-                  ? widget.data.current + 1 === 1
-                    ? "day"
-                    : "days"
-                  : "days"}
+                {widget.data.current === 1 ? "day" : "days"}
               </Text>
             </View>
           );
@@ -542,6 +714,86 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
               </View>
             </View>
           );
+        case "focusTimeChange":
+          return (
+            <View
+              style={{
+                alignItems: "center",
+                justifyContent: "center",
+                height: 80,
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text
+                  style={{
+                    fontSize: 28,
+                    fontWeight: "bold",
+                    color: widget.color,
+                    fontFamily: FONTS.PRIMARY,
+                  }}
+                >
+                  {widget.data.value > 0 ? "+" : ""}
+                  {widget.data.value}%
+                </Text>
+              </View>
+              <Text
+                style={{
+                  fontSize: 13,
+                  color: themeColors.darkGray,
+                  fontFamily: FONTS.PRIMARY,
+                  marginTop: 2,
+                  textAlign: "center",
+                }}
+              >
+                {widget.data.thisWeek === 0 && widget.data.lastWeek === 0
+                  ? "No focus time yet"
+                  : `${widget.data.dir === "up" ? "Up" : "Down"} ${Math.abs(
+                      widget.data.value
+                    )}% since last week`}
+              </Text>
+            </View>
+          );
+        case "sessionCountChange":
+          return (
+            <View
+              style={{
+                alignItems: "center",
+                justifyContent: "center",
+                height: 80,
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text
+                  style={{
+                    fontSize: 28,
+                    fontWeight: "bold",
+                    color: widget.color,
+                    fontFamily: FONTS.PRIMARY,
+                  }}
+                >
+                  {widget.data.value > 0 ? "+" : ""}
+                  {widget.data.value}
+                </Text>
+              </View>
+              <Text
+                style={{
+                  fontSize: 13,
+                  color: themeColors.darkGray,
+                  fontFamily: FONTS.PRIMARY,
+                  marginTop: 2,
+                  textAlign: "center",
+                }}
+              >
+                {widget.data.thisWeek === 0 && widget.data.lastWeek === 0
+                  ? "No sessions yet"
+                  : `${widget.data.dir === "up" ? "Up" : "Down"} ${Math.abs(
+                      widget.data.value
+                    )} session${
+                      Math.abs(widget.data.value) === 1 ? "" : "s"
+                    } since last week`}
+              </Text>
+            </View>
+          );
         default:
           return null;
       }
@@ -556,9 +808,19 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
       }
     };
 
+    const WidgetContainer = widget.id === 0 ? TouchableOpacity : View;
+    const widgetProps =
+      widget.id === 0
+        ? {
+            onPress: logLastFiveDaysSessions,
+            activeOpacity: 0.8,
+          }
+        : {};
+
     return (
-      <View
+      <WidgetContainer
         key={widget.id}
+        {...widgetProps}
         style={{
           backgroundColor: themeColors.white,
           borderRadius: 16,
@@ -608,7 +870,7 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
 
         {/* Widget Chart */}
         {renderChart()}
-      </View>
+      </WidgetContainer>
     );
   };
 

@@ -182,3 +182,5 @@ export default function useSpotRatings(spotId, isPrivateNook = false) {
 
   return { ratings, isLoading };
 }
+
+

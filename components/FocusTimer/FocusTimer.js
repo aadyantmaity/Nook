@@ -212,6 +212,25 @@ function TimerControls({ isPlaying, onToggle, onReset, onSkip, colors, mode }) {
         }}
       >
         <TouchableOpacity
+          onPress={onReset}
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: 32,
+            backgroundColor: colors.red || "#EF4444",
+            alignItems: "center",
+            justifyContent: "center",
+            shadowColor: colors.black,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.15,
+            shadowRadius: 4,
+            elevation: 3,
+          }}
+          accessibilityLabel="Reset timer"
+        >
+          <ArrowCounterClockwise size={28} color={colors.white} weight="bold" />
+        </TouchableOpacity>
+        <TouchableOpacity
           onPress={onToggle}
           style={{
             width: 64,
@@ -235,26 +254,6 @@ function TimerControls({ isPlaying, onToggle, onReset, onSkip, colors, mode }) {
           ) : (
             <Play size={28} color={colors.white} weight="bold" />
           )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={onReset}
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: 32,
-            backgroundColor: colors.red || "#EF4444",
-            alignItems: "center",
-            justifyContent: "center",
-            shadowColor: colors.black,
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.15,
-            shadowRadius: 4,
-            elevation: 3,
-          }}
-          accessibilityLabel="Reset timer"
-        >
-          <ArrowCounterClockwise size={28} color={colors.white} weight="bold" />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -288,7 +287,7 @@ function TimerControls({ isPlaying, onToggle, onReset, onSkip, colors, mode }) {
               textAlign: "center",
             }}
           >
-            {isPlaying ? "Pause" : "Start"}
+            Reset
           </Text>
         </View>
         <View style={{ alignItems: "center", width: 64 }}>
@@ -300,9 +299,10 @@ function TimerControls({ isPlaying, onToggle, onReset, onSkip, colors, mode }) {
               textAlign: "center",
             }}
           >
-            Reset
+            {isPlaying ? "Pause" : "Start"}
           </Text>
         </View>
+
         <View style={{ alignItems: "center", width: 64 }}>
           <Text
             style={{
@@ -490,7 +490,7 @@ export default function FocusTimer({ navigation, route }) {
   };
 
   // Tab state
-  const [activeTab, setActiveTab] = useState("timer"); // 'timer' | 'dashboard'
+  const [activeTab, setActiveTab] = useState("timer"); // always default to 'timer'
   const hasProcessedShowDashboard = useRef(false);
 
   // Focus view persistence
@@ -500,43 +500,9 @@ export default function FocusTimer({ navigation, route }) {
     ? `${FOCUS_VIEW_KEY}_${user.uid}`
     : FOCUS_VIEW_KEY;
 
-  // Load user's preferred focus view on mount
-  useEffect(() => {
-    const fetchUserFocusView = async () => {
-      try {
-        // 1. Try AsyncStorage first
-        const stored = await AsyncStorage.getItem(userSpecificFocusViewKey);
-        if (stored === "dashboard") {
-          setActiveTab("dashboard");
-          return;
-        }
-        if (stored === "timer") {
-          setActiveTab("timer");
-          return;
-        }
-        // 2. Fallback to Firestore
-        if (!user) return;
-        const userRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userRef);
-        if (userDoc.exists()) {
-          const pref = userDoc.data().focusView;
-          if (pref === "dashboard") setActiveTab("dashboard");
-          else setActiveTab("timer");
-        }
-      } catch {}
-    };
-    fetchUserFocusView();
-  }, [userSpecificFocusViewKey, user]);
-
   // Save user's preferred focus view when changed
-  const handleSetActiveTab = async (tab) => {
+  const handleSetActiveTab = (tab) => {
     setActiveTab(tab);
-    try {
-      await AsyncStorage.setItem(userSpecificFocusViewKey, tab);
-      if (!user) return;
-      const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, { focusView: tab });
-    } catch {}
   };
 
   // Handle route params to show dashboard
@@ -544,7 +510,7 @@ export default function FocusTimer({ navigation, route }) {
     if (route?.params?.showDashboard && !hasProcessedShowDashboard.current) {
       console.log("Setting active tab to dashboard");
       hasProcessedShowDashboard.current = true;
-      handleSetActiveTab("dashboard");
+      setActiveTab("dashboard");
       // Clear the param after using it
       if (navigation && navigation.setParams) {
         navigation.setParams({ showDashboard: undefined });
@@ -1088,12 +1054,16 @@ export default function FocusTimer({ navigation, route }) {
               alignItems: "center",
               marginBottom: 16,
               zIndex: 20,
-              justifyContent: "space-between",
+              justifyContent: "flex-start", // left align
             }}
           >
             {/* Left: View Toggles */}
             <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8, // small gap between buttons
+              }}
             >
               <TouchableOpacity
                 onPress={() => handleSetActiveTab("timer")}
@@ -1102,11 +1072,11 @@ export default function FocusTimer({ navigation, route }) {
                     activeTab === "timer" ? colors.purple : colors.white,
                   padding: 10,
                   borderRadius: 8,
-                  marginRight: 8,
-                  minWidth: 48,
                   alignItems: "center",
                   justifyContent: "center",
                   height: 42,
+                  minWidth: 48,
+                  marginRight: 0,
                 }}
               >
                 <Clock
@@ -1115,7 +1085,6 @@ export default function FocusTimer({ navigation, route }) {
                   weight={activeTab === "timer" ? "fill" : "regular"}
                 />
               </TouchableOpacity>
-
               <TouchableOpacity
                 onPress={() => handleSetActiveTab("dashboard")}
                 style={{
@@ -1123,10 +1092,11 @@ export default function FocusTimer({ navigation, route }) {
                     activeTab === "dashboard" ? colors.purple : colors.white,
                   padding: 10,
                   borderRadius: 8,
-                  minWidth: 48,
                   alignItems: "center",
                   justifyContent: "center",
                   height: 42,
+                  minWidth: 48,
+                  marginRight: 0,
                 }}
               >
                 <ChartBar
@@ -1135,6 +1105,26 @@ export default function FocusTimer({ navigation, route }) {
                     activeTab === "dashboard" ? colors.white : colors.purple
                   }
                   weight={activeTab === "dashboard" ? "fill" : "regular"}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleSetActiveTab("archive")}
+                style={{
+                  backgroundColor:
+                    activeTab === "archive" ? colors.purple : colors.white,
+                  padding: 10,
+                  borderRadius: 8,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: 42,
+                  minWidth: 48,
+                  marginRight: 0,
+                }}
+              >
+                <Archive
+                  size={22}
+                  color={activeTab === "archive" ? colors.white : colors.purple}
+                  weight={activeTab === "archive" ? "fill" : "regular"}
                 />
               </TouchableOpacity>
             </View>
@@ -1222,59 +1212,22 @@ export default function FocusTimer({ navigation, route }) {
               />
             </View>
           </>
-        ) : (
-          // Dashboard View
+        ) : activeTab === "dashboard" ? (
           <FocusStatsWidgets
             themeColors={colors}
             userId={auth.currentUser?.uid}
             navigation={navigation}
           />
-        )}
+        ) : activeTab === "archive" ? (
+          // Archive tab: render as full page, not modal
+          <FocusSessionsModal
+            fullPage
+            colors={colors}
+            navigation={navigation}
+          />
+        ) : null}
       </View>
-
-      {/* Archive FAB */}
-      {activeTab === "timer" && (
-        <View
-          style={{
-            position: "absolute",
-            bottom: 100,
-            right: 16,
-            zIndex: 20,
-          }}
-        >
-          <TouchableOpacity
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              backgroundColor: colors.purple,
-              borderRadius: 50,
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.2,
-              shadowRadius: 4,
-              elevation: 3,
-            }}
-            onPress={() => setArchiveVisible(true)}
-            activeOpacity={0.85}
-            accessibilityLabel="View focus sessions archive"
-          >
-            <Archive size={24} color={colors.white} weight="bold" />
-            <Text
-              style={{
-                color: colors.white,
-                fontWeight: "bold",
-                fontSize: 14,
-                marginLeft: 8,
-                fontFamily: FONTS.PRIMARY,
-              }}
-            >
-              Archive
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      {/* Removed Archive FAB; now shown as a tab */}
       <EditTimesModal
         visible={settingsVisible}
         onClose={() => setSettingsVisible(false)}
@@ -1287,11 +1240,7 @@ export default function FocusTimer({ navigation, route }) {
         colors={colors}
         saveUserTimerSettings={saveUserTimerSettings}
       />
-      <FocusSessionsModal
-        visible={archiveVisible}
-        onClose={() => setArchiveVisible(false)}
-        colors={colors}
-      />
+      {/* Removed modal usage since archive is a tab */}
       <FocusGoalModal
         visible={showGoalModal}
         onClose={() => setShowGoalModal(false)}
