@@ -23,7 +23,13 @@ import {
   arrayRemove,
   setDoc,
 } from "firebase/firestore";
-import { MagnifyingGlass, User, ArrowLeft } from "phosphor-react-native";
+import {
+  MagnifyingGlass,
+  User,
+  ArrowLeft,
+  ArrowClockwise,
+  MapPin,
+} from "phosphor-react-native";
 import { FONTS } from "../constants/fonts";
 
 export default function SearchView() {
@@ -31,6 +37,8 @@ export default function SearchView() {
   const themeCtx = useContext(ThemeContext);
   const themeColors = themeCtx?.themeColors ?? colors;
 
+  // --- Split search state ---
+  const [searchType, setSearchType] = useState("people"); // "people" | "nooks"
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [suggestedPeople, setSuggestedPeople] = useState([]);
@@ -38,8 +46,10 @@ export default function SearchView() {
   const [following, setFollowing] = useState([]);
   const [followers, setFollowers] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
+  const [allNooks, setAllNooks] = useState([]);
+  const [suggestedNooks, setSuggestedNooks] = useState([]);
 
-  // Fetch current user's following list and all users
+  // Fetch current user's following list, all users, and all nooks
   useEffect(() => {
     const fetchData = async () => {
       if (!auth.currentUser) return;
@@ -64,9 +74,25 @@ export default function SearchView() {
 
         setAllUsers(users);
 
+        // Get all nooks (study spots)
+        const nooksSnap = await getDocs(collection(db, "studySpots"));
+        const nooks = nooksSnap.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setAllNooks(nooks);
+
         // Generate suggested people
         const suggested = generateSuggestedPeople(users, userFollowing);
         setSuggestedPeople(suggested);
+
+        // Generate suggested nooks (random 6)
+        setSuggestedNooks(
+          nooks
+            .filter((n) => !n.privateNook)
+            .sort(() => Math.random() - 0.5)
+            .slice(0, 6)
+        );
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -75,17 +101,13 @@ export default function SearchView() {
     fetchData();
   }, []);
 
-  // Generate suggested people - randomized list of 6 people
+  // Generate suggested people - randomized list of 8 people
   const generateSuggestedPeople = (users, userFollowing) => {
     const currentUserId = auth.currentUser?.uid;
     if (!currentUserId) return [];
-
-    // Filter out current user and people already being followed
     const availableUsers = users.filter(
       (user) => !userFollowing.includes(user.uid)
     );
-
-    // Shuffle the array and take first 6
     const shuffled = [...availableUsers].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, 8);
   };
@@ -100,20 +122,34 @@ export default function SearchView() {
     setLoading(true);
     const query = searchQuery.toLowerCase();
 
-    const results = allUsers.filter((user) => {
-      const firstName = (user.firstName || "").toLowerCase();
-      const lastName = (user.lastName || "").toLowerCase();
-
-      return (
-        firstName.includes(query) ||
-        lastName.includes(query) ||
-        `${firstName} ${lastName}`.includes(query)
-      );
-    });
-
-    setSearchResults(results.slice(0, 5)); // Limit to 5 results
+    if (searchType === "people") {
+      const results = allUsers.filter((user) => {
+        const firstName = (user.firstName || "").toLowerCase();
+        const lastName = (user.lastName || "").toLowerCase();
+        return (
+          firstName.includes(query) ||
+          lastName.includes(query) ||
+          `${firstName} ${lastName}`.includes(query)
+        );
+      });
+      setSearchResults(results.slice(0, 5));
+    } else {
+      // Nooks search
+      const results = allNooks.filter((nook) => {
+        if (nook.privateNook) return false; // Hide private nooks from global search
+        const name = (nook.buildingName || nook.name || "").toLowerCase();
+        const address = (nook.address || "").toLowerCase();
+        const roomNumber = (nook.roomNumber || "").toLowerCase();
+        return (
+          name.includes(query) ||
+          address.includes(query) ||
+          roomNumber.includes(query)
+        );
+      });
+      setSearchResults(results.slice(0, 8));
+    }
     setLoading(false);
-  }, [searchQuery, allUsers]);
+  }, [searchQuery, allUsers, allNooks, searchType]);
 
   // Follow/unfollow functionality
   const handleFollow = async (uid) => {
@@ -208,10 +244,22 @@ export default function SearchView() {
         paddingHorizontal: isGrid ? 8 : 16,
         backgroundColor: themeColors.white,
         flex: isGrid ? 1 : undefined,
-        margin: isGrid ? 4 : 0,
+        margin: isGrid ? 8 : 0,
         borderRadius: isGrid ? 8 : 0,
         borderWidth: isGrid ? 1 : 0,
         borderColor: isGrid ? themeColors.darkGray + "70" : "transparent",
+        ...(isGrid
+          ? {
+              shadowColor: themeColors.black,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.15,
+              shadowRadius: 3,
+              elevation: 3,
+              position: "relative",
+              borderColor: themeColors.darkGray + "50",
+              borderWidth: 0.5,
+            }
+          : {}),
       }}
       onPress={() => navigation.navigate("Profile", { uid: item.uid })}
     >
@@ -313,20 +361,93 @@ export default function SearchView() {
     </TouchableOpacity>
   );
 
+  // Render nook item
+  const renderNookItem = ({ item }) => (
+    <TouchableOpacity
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        backgroundColor: themeColors.white,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: themeColors.darkGray + "50",
+        marginHorizontal: 8,
+        marginVertical: 6,
+        shadowColor: themeColors.black,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 3,
+        elevation: 2,
+      }}
+      onPress={() => navigation.navigate("SpotDetail", { spotId: item.id })}
+    >
+      <View
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: 8,
+          backgroundColor: themeColors.purple,
+          alignItems: "center",
+          justifyContent: "center",
+          marginRight: 14,
+          overflow: "hidden",
+        }}
+      >
+        {item.photoUrl ? (
+          <Image
+            source={{ uri: item.photoUrl }}
+            style={{ width: 44, height: 44, borderRadius: 8 }}
+            resizeMode="cover"
+          />
+        ) : (
+          <MapPin size={28} color={themeColors.white} />
+        )}
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text
+          style={{
+            color: themeColors.black,
+            fontSize: 16,
+            fontWeight: "bold",
+            fontFamily: FONTS.PRIMARY,
+          }}
+          numberOfLines={1}
+        >
+          {item.buildingName || item.name || "Nook"}
+        </Text>
+        {item.roomNumber && (
+          <Text
+            style={{
+              color: themeColors.purple,
+              fontSize: 13,
+              fontFamily: FONTS.PRIMARY,
+              fontWeight: "600",
+            }}
+          >
+            Floor {item.roomNumber}
+          </Text>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
     <View
       style={{ flex: 1, backgroundColor: themeColors.white, paddingTop: 48 }}
     >
-      {/* Header */}
+      {/* Header with Back Arrow and Switcher as Title */}
       <View
         style={{
           width: "100%",
           flexDirection: "row",
           alignItems: "center",
           paddingHorizontal: 16,
-          marginBottom: 24,
+          marginBottom: 12,
           marginTop: 16,
           position: "relative",
+          justifyContent: "center",
         }}
       >
         <TouchableOpacity
@@ -351,6 +472,63 @@ export default function SearchView() {
         >
           <ArrowLeft size={24} color={themeColors.purple} />
         </TouchableOpacity>
+        {/* Switcher as Title */}
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          <TouchableOpacity
+            onPress={() => setSearchType("people")}
+            style={{
+              backgroundColor:
+                searchType === "people"
+                  ? themeColors.purple
+                  : themeColors.lightGray,
+              borderRadius: 8,
+              paddingVertical: 8,
+              paddingHorizontal: 22,
+              marginRight: 2,
+            }}
+          >
+            <Text
+              style={{
+                color:
+                  searchType === "people"
+                    ? themeColors.white
+                    : themeColors.purple,
+                fontWeight: "bold",
+                fontFamily: FONTS.PRIMARY,
+                fontSize: 15,
+              }}
+            >
+              People
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setSearchType("nooks")}
+            style={{
+              backgroundColor:
+                searchType === "nooks"
+                  ? themeColors.purple
+                  : themeColors.lightGray,
+              borderRadius: 8,
+              paddingVertical: 8,
+              paddingHorizontal: 22,
+              marginLeft: 2,
+            }}
+          >
+            <Text
+              style={{
+                color:
+                  searchType === "nooks"
+                    ? themeColors.white
+                    : themeColors.purple,
+                fontWeight: "bold",
+                fontFamily: FONTS.PRIMARY,
+                fontSize: 15,
+              }}
+            >
+              Nooks
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Search Bar */}
@@ -382,7 +560,9 @@ export default function SearchView() {
             fontFamily: FONTS.PRIMARY,
             paddingVertical: 0,
           }}
-          placeholder="Search people..."
+          placeholder={
+            searchType === "people" ? "Search people..." : "Search nooks..."
+          }
           placeholderTextColor={themeColors.darkGray}
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -391,35 +571,122 @@ export default function SearchView() {
 
       {/* Content */}
       {searchQuery.trim() === "" ? (
-        /* Suggested People */
         <View style={{ flex: 1 }}>
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "bold",
-              color: themeColors.purple,
-              marginHorizontal: 16,
-              marginBottom: 12,
-              fontFamily: FONTS.PRIMARY,
-            }}
-          >
-            Suggested for you
-          </Text>
-          <FlatList
-            key="suggested-grid-2-cols"
-            data={suggestedPeople}
-            keyExtractor={(item) => item.uid}
-            renderItem={({ item }) =>
-              renderUserItem({ item, showMutualCount: true, isGrid: true })
-            }
-            numColumns={2}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 90, paddingHorizontal: 12 }}
-            columnWrapperStyle={{ justifyContent: "space-between" }}
-          />
+          {searchType === "people" ? (
+            <>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginHorizontal: 16,
+                  marginBottom: 6,
+                  gap: 6,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "bold",
+                    color: themeColors.purple,
+                    fontFamily: FONTS.PRIMARY,
+                  }}
+                >
+                  Suggested People
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSuggestedPeople(
+                      generateSuggestedPeople(allUsers, following)
+                    );
+                  }}
+                  style={{
+                    marginLeft: 0,
+                    padding: 4,
+                    borderRadius: 16,
+                    backgroundColor: themeColors.white,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  accessibilityLabel="Refresh suggestions"
+                >
+                  <ArrowClockwise size={20} color={themeColors.purple} />
+                </TouchableOpacity>
+              </View>
+              <FlatList
+                key="suggested-grid-2-cols"
+                data={suggestedPeople}
+                keyExtractor={(item) => item.uid}
+                renderItem={({ item }) =>
+                  renderUserItem({ item, showMutualCount: true, isGrid: true })
+                }
+                numColumns={2}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{
+                  paddingBottom: 90,
+                  paddingHorizontal: 12,
+                }}
+                columnWrapperStyle={{ justifyContent: "space-between" }}
+              />
+            </>
+          ) : (
+            <>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginHorizontal: 16,
+                  marginBottom: 6,
+                  gap: 6,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "bold",
+                    color: themeColors.purple,
+                    fontFamily: FONTS.PRIMARY,
+                  }}
+                >
+                  Suggested Nooks
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSuggestedNooks(
+                      allNooks
+                        .filter((n) => !n.privateNook)
+                        .sort(() => Math.random() - 0.5)
+                        .slice(0, 6)
+                    );
+                  }}
+                  style={{
+                    marginLeft: 0,
+                    padding: 4,
+                    borderRadius: 16,
+                    backgroundColor: themeColors.white,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  accessibilityLabel="Refresh suggestions"
+                >
+                  <ArrowClockwise size={20} color={themeColors.purple} />
+                </TouchableOpacity>
+              </View>
+              <FlatList
+                key="suggested-nooks"
+                data={suggestedNooks}
+                keyExtractor={(item) => item.id}
+                renderItem={renderNookItem}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{
+                  paddingBottom: 90,
+                  paddingHorizontal: 8,
+                }}
+                numColumns={1}
+              />
+            </>
+          )}
         </View>
       ) : (
-        /* Search Results */
         <View style={{ flex: 1 }}>
           {loading ? (
             <View style={{ padding: 20, alignItems: "center" }}>
@@ -427,13 +694,23 @@ export default function SearchView() {
             </View>
           ) : (
             <>
-              <FlatList
-                key="search-list"
-                data={searchResults}
-                keyExtractor={(item) => item.uid}
-                renderItem={({ item }) => renderUserItem({ item })}
-                showsVerticalScrollIndicator={false}
-              />
+              {searchType === "people" ? (
+                <FlatList
+                  key="search-list"
+                  data={searchResults}
+                  keyExtractor={(item) => item.uid}
+                  renderItem={({ item }) => renderUserItem({ item })}
+                  showsVerticalScrollIndicator={false}
+                />
+              ) : (
+                <FlatList
+                  key="search-nooks"
+                  data={searchResults}
+                  keyExtractor={(item) => item.id}
+                  renderItem={renderNookItem}
+                  showsVerticalScrollIndicator={false}
+                />
+              )}
             </>
           )}
         </View>

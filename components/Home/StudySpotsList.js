@@ -162,13 +162,13 @@ const StudySpotItem = React.memo(
           marginBottom: 12,
           backgroundColor: themeColors.white,
           borderRadius: 8,
-          shadowColor: "#000",
+          shadowColor: themeColors.black,
           shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
+          shadowOpacity: 0.15,
           shadowRadius: 4,
           elevation: 3,
           position: "relative",
-          borderColor: themeColors.black,
+          borderColor: themeColors.darkGray + "50",
           borderWidth: 0.5,
         }}
         activeOpacity={0.9}
@@ -234,7 +234,7 @@ const StudySpotItem = React.memo(
             style={{
               width: 330,
               height: 140,
-              backgroundColor: themeColors.darkGray || "#EEE",
+              backgroundColor: themeColors.darkGray + "60",
               borderRadius: 8,
               alignItems: "center",
               justifyContent: "center",
@@ -557,7 +557,8 @@ export default function StudySpotsList({
   sortBy,
   setSortBy,
   userLocation,
-  hasFavoritesFilter = false, // Add this prop
+  hasFavoritesFilter = false,
+  totalCount = null, // <-- add this prop
   ...props
 }) {
   // Filter spots based on favorites if the favorites filter is active
@@ -566,15 +567,45 @@ export default function StudySpotsList({
       return filteredSpots;
     }
 
-    // If favorites filter is active, we need to filter based on individual favorite status
-    // This is a temporary solution - ideally we'd have a more efficient way to do this
-    return filteredSpots.filter((spot) => {
-      // For now, we'll show all spots and let the individual StudySpotItem components
-      // handle the favorite status display. The actual filtering will happen at the UI level
-      // by hiding non-favorite spots
-      return true;
-    });
+    // If favorites filter is active, sort alphabetically by name
+    return [...filteredSpots].sort((a, b) =>
+      (a.buildingName || a.name || "").localeCompare(
+        b.buildingName || b.name || ""
+      )
+    );
   }, [filteredSpots, hasFavoritesFilter]);
+
+  // --- Indicator for filtered count ---
+  const filtersApplied = filters && filters.length > 0 && totalCount != null;
+  const filteredCount = finalFilteredSpots.length;
+
+  const FilterCountIndicator = () =>
+    filtersApplied ? (
+      <View
+        style={{
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: 8,
+          marginTop: 0,
+        }}
+      >
+        <Text
+          style={{
+            color: themeColors.purple,
+            fontWeight: "bold",
+            fontSize: 14,
+            fontFamily: FONTS.PRIMARY,
+            backgroundColor: themeColors.lightGray,
+            paddingHorizontal: 14,
+            paddingBottom: 6,
+            borderRadius: 16,
+            overflow: "hidden",
+          }}
+        >
+          Showing {filteredCount} out of {totalCount} nooks
+        </Text>
+      </View>
+    ) : null;
 
   return (
     <FlatList
@@ -585,7 +616,13 @@ export default function StudySpotsList({
       }}
       data={finalFilteredSpots}
       keyExtractor={(item) => item.id}
-      ListHeaderComponent={ListHeaderComponent}
+      keyboardShouldPersistTaps="handled"
+      ListHeaderComponent={
+        <>
+          {ListHeaderComponent}
+          <FilterCountIndicator />
+        </>
+      }
       renderItem={({ item }) => (
         <StudySpotItem
           item={item}
@@ -598,7 +635,7 @@ export default function StudySpotsList({
             setCurrentAlerts(alerts);
             setShowAlertsModal(true);
           }}
-          hideIfNotFavorite={hasFavoritesFilter} // Pass this to StudySpotItem
+          hideIfNotFavorite={hasFavoritesFilter}
         />
       )}
       onRefresh={onRefresh}

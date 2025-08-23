@@ -94,7 +94,7 @@ export default function GroupInputBar({
           flexDirection: "row",
           alignItems: "center",
           paddingHorizontal: 12,
-          paddingVertical: 12,
+          paddingVertical: 8,
         }}
       >
         <TextInput

@@ -13,7 +13,6 @@ import { FONTS } from "../../constants/fonts";
 
 const TAGS = [
   "All",
-  "Favorites",
   "Quiet",
   "Group Friendly",
   "WiFi",
@@ -26,11 +25,8 @@ const TAGS = [
 ];
 
 const SORT_OPTIONS = [
-  { label: "Default", value: "default", icon: null },
-  { label: "A-Z", value: "name-asc" },
+  { label: "A-Z (default)", value: "name-asc" },
   { label: "Noise (Low-High)", value: "noise-asc" },
-  { label: "Rating (High-Low)", value: "overall-desc" },
-
   { label: "Crowd (Low-High)", value: "crowd-asc" },
   { label: "Distance (Low-High)", value: "distance-asc" },
 ];
@@ -57,7 +53,14 @@ export default function Filters({
   // Local filter state for modal (so parent state doesn't interfere)
   const [localFilters, setLocalFilters] = useState(filters);
   // Local sort state for modal
-  const [localSortBy, setLocalSortBy] = useState(sortBy || "default");
+  const [localSortBy, setLocalSortBy] = useState(sortBy || "name-asc");
+
+  // When modal opens, always default sort to "name-asc" if not set
+  useEffect(() => {
+    if (modalVisible) {
+      setLocalSortBy(sortBy || "name-asc");
+    }
+  }, [modalVisible, sortBy]);
 
   // Keep localFilters in sync with parent filters only when modal is closed
   useEffect(() => {
@@ -67,7 +70,7 @@ export default function Filters({
 
   // Keep localSortBy in sync with parent sortBy only when modal is closed
   useEffect(() => {
-    if (!modalVisible) setLocalSortBy(sortBy || "default");
+    if (!modalVisible) setLocalSortBy(sortBy || "name-asc");
   }, [sortBy, modalVisible]);
 
   const handlePress = (label) => {
@@ -138,7 +141,7 @@ export default function Filters({
             style={{
               backgroundColor: themeColors.white,
               borderRadius: 16,
-              padding: 24,
+              padding: 20,
               borderWidth: 1,
               borderColor: themeColors.gray + "70",
               width: "92%",
@@ -244,16 +247,18 @@ export default function Filters({
                 }}
               >
                 {SORT_OPTIONS.map((opt) => {
-                  // Remove Icon usage
+                  // Highlight A-Z as default if nothing is selected
+                  const isSelected =
+                    localSortBy === opt.value ||
+                    (!localSortBy && opt.value === "name-asc");
                   return (
                     <TouchableOpacity
                       key={opt.value}
                       onPress={() => setLocalSortBy(opt.value)}
                       style={{
-                        backgroundColor:
-                          localSortBy === opt.value
-                            ? themeColors.purple
-                            : themeColors.white,
+                        backgroundColor: isSelected
+                          ? themeColors.purple
+                          : themeColors.white,
                         borderRadius: 18,
                         marginRight: 8,
                         marginBottom: 8,
@@ -269,13 +274,11 @@ export default function Filters({
                         alignItems: "center",
                       }}
                     >
-                      {/* No Icon */}
                       <Text
                         style={{
-                          color:
-                            localSortBy === opt.value
-                              ? themeColors.white
-                              : themeColors.purple,
+                          color: isSelected
+                            ? themeColors.white
+                            : themeColors.purple,
                           fontWeight: "bold",
                           fontSize: 12.5,
                           fontFamily: FONTS.PRIMARY,
@@ -293,7 +296,7 @@ export default function Filters({
             <TouchableOpacity
               onPress={() => {
                 setLocalFilters([]);
-                setLocalSortBy("default");
+                setLocalSortBy("name-asc");
               }}
               style={{
                 width: "100%",
@@ -320,7 +323,7 @@ export default function Filters({
                 onPress={() => {
                   setModalVisible(false);
                   setLocalFilters(filters); // Reset to parent filters
-                  setLocalSortBy(sortBy || "default");
+                  setLocalSortBy(sortBy || "name-asc");
                 }}
                 style={{
                   flex: 1,

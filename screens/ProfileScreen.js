@@ -537,34 +537,6 @@ export default function ProfileScreen({ navigation, route }) {
               </Text>
             </TouchableOpacity>
 
-            {/* Report Option */}
-            <TouchableOpacity
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingVertical: 12,
-                paddingHorizontal: 18,
-              }}
-              onPress={() => {
-                setMenuVisible(false);
-                setShowGeneralReport(true);
-              }}
-            >
-              <Flag
-                size={20}
-                color={themeColors.purple}
-                style={{ marginRight: 10 }}
-              />
-              <Text
-                style={{
-                  color: themeColors.purple,
-                  fontFamily: FONTS.PRIMARY,
-                  fontSize: 16,
-                }}
-              >
-                Report
-              </Text>
-            </TouchableOpacity>
             {/* Dark Mode Toggle */}
             <TouchableOpacity
               style={{
@@ -599,6 +571,35 @@ export default function ProfileScreen({ navigation, route }) {
                 }}
               >
                 {isDarkMode ? "Light Mode" : "Dark Mode"}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Report Option */}
+            <TouchableOpacity
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingVertical: 12,
+                paddingHorizontal: 18,
+              }}
+              onPress={() => {
+                setMenuVisible(false);
+                setShowGeneralReport(true);
+              }}
+            >
+              <Flag
+                size={20}
+                color={themeColors.purple}
+                style={{ marginRight: 10 }}
+              />
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontFamily: FONTS.PRIMARY,
+                  fontSize: 16,
+                }}
+              >
+                Report Issue
               </Text>
             </TouchableOpacity>
 
@@ -716,14 +717,55 @@ export default function ProfileScreen({ navigation, route }) {
         </View>
         {/* Profile Details */}
         <View style={styles.profileContainer}>
-          <Text
-            style={[
-              styles.userName,
-              { color: themeColors.black, fontFamily: FONTS.PRIMARY },
-            ]}
+          <View
+            style={{
+              position: "relative",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 8,
+            }}
           >
-            {firstName} {lastName}
-          </Text>
+            <Text
+              style={[
+                styles.userName,
+                {
+                  color: themeColors.black,
+                  fontFamily: FONTS.PRIMARY,
+                  marginBottom: 0,
+                  paddingTop: 16,
+                },
+              ]}
+            >
+              {firstName} {lastName}
+            </Text>
+            {isOwnProfile && (
+              <TouchableOpacity
+                style={{
+                  position: "absolute",
+                  right: -30,
+                  top: 16,
+                  padding: 4,
+                }}
+                onPress={() => {
+                  setEditedFirstName(
+                    firstName !== "No First Name" ? firstName : ""
+                  );
+                  setEditedLastName(
+                    lastName !== "No Last Name" ? lastName : ""
+                  );
+                  setEditedGradYear(
+                    userGradYear !== "No Grad Year" ? userGradYear : ""
+                  );
+                  setIsModalVisible(true);
+                  setTimeout(() => setEditedProfilePic(null), 0);
+                }}
+                accessibilityLabel="Edit Profile"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <PencilSimple size={20} color={themeColors.purple} />
+              </TouchableOpacity>
+            )}
+          </View>
           <View style={styles.detailRow}>
             <Envelope size={20} color={themeColors.purple} />
             <Text

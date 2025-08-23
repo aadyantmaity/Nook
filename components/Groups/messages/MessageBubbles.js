@@ -1,7 +1,7 @@
 import React, { memo, useState, useRef } from "react";
 import { View, Text, TouchableOpacity, Image } from "react-native";
 import ProfilePicture from "../../Profile/ProfilePicture";
-import { MapPin, Star } from "phosphor-react-native";
+import { MapPin, Star, User } from "phosphor-react-native";
 import { db } from "../../../firebaseConfig";
 import { doc, updateDoc } from "firebase/firestore";
 import { FONTS } from "../../../constants/fonts";
@@ -138,19 +138,38 @@ export const OtherMessageBubble = memo(
         }}
       >
         {showProfilePic ? (
-          <View style={{ marginRight: 10 }}>
-            <ProfilePicture
-              profilePic={getUserProfilePic()}
-              themeColors={themeColors}
-              size={28}
-              isTouchable={!!onProfilePicPress}
-              onPick={
-                onProfilePicPress
-                  ? () => onProfilePicPress(item.uid)
-                  : undefined
-              }
-            />
-          </View>
+          <TouchableOpacity
+            onPress={
+              onProfilePicPress ? () => onProfilePicPress(item.uid) : undefined
+            }
+            style={{ marginRight: 10 }}
+          >
+            <View
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 14,
+                backgroundColor: themeColors.purple,
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+              }}
+            >
+              {getUserProfilePic() ? (
+                <Image
+                  source={{ uri: getUserProfilePic() }}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                  }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <User size={16} color={themeColors.white} />
+              )}
+            </View>
+          </TouchableOpacity>
         ) : (
           <View style={{ width: 28, marginRight: 10 }} />
         )}
@@ -299,7 +318,7 @@ export const NookShareMessage = memo(
     showSenderInfo,
     getUserName,
     addGap = 0,
-    onProfilePicPress, // <-- Add this missing prop
+    onProfilePicPress,
   }) => {
     // Alignment and margin logic (same as MyMessageBubble for isMe)
     const containerStyle = isMe
@@ -322,19 +341,38 @@ export const NookShareMessage = memo(
     return (
       <View style={containerStyle}>
         {isMe ? null : showProfilePic ? (
-          <View style={{ marginRight: 10 }}>
-            <ProfilePicture
-              profilePic={getUserProfilePic()}
-              themeColors={themeColors}
-              size={28}
-              isTouchable={!!onProfilePicPress}
-              onPick={
-                onProfilePicPress
-                  ? () => onProfilePicPress(item.uid)
-                  : undefined
-              }
-            />
-          </View>
+          <TouchableOpacity
+            onPress={
+              onProfilePicPress ? () => onProfilePicPress(item.uid) : undefined
+            }
+            style={{ marginRight: 10 }}
+          >
+            <View
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 14,
+                backgroundColor: themeColors.purple,
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+              }}
+            >
+              {getUserProfilePic() ? (
+                <Image
+                  source={{ uri: getUserProfilePic() }}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                  }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <User size={16} color={themeColors.white} />
+              )}
+            </View>
+          </TouchableOpacity>
         ) : (
           <View style={{ width: 28, marginRight: 10 }} />
         )}
@@ -497,19 +535,40 @@ export const PollMessage = memo(
       <TouchableOpacity activeOpacity={1}>
         <View style={containerStyle}>
           {isMe ? null : showProfilePic ? (
-            <View style={{ marginRight: 10 }}>
-              <ProfilePicture
-                profilePic={getUserProfilePic()}
-                themeColors={themeColors}
-                size={28}
-                isTouchable={!!onProfilePicPress}
-                onPick={
-                  onProfilePicPress
-                    ? () => onProfilePicPress(item.uid)
-                    : undefined
-                }
-              />
-            </View>
+            <TouchableOpacity
+              onPress={
+                onProfilePicPress
+                  ? () => onProfilePicPress(item.uid)
+                  : undefined
+              }
+              style={{ marginRight: 10 }}
+            >
+              <View
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
+                  backgroundColor: themeColors.purple,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                }}
+              >
+                {getUserProfilePic() ? (
+                  <Image
+                    source={{ uri: getUserProfilePic() }}
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 14,
+                    }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <User size={16} color={themeColors.white} />
+                )}
+              </View>
+            </TouchableOpacity>
           ) : (
             <View style={{ width: 28, marginRight: 10 }} />
           )}

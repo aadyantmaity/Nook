@@ -30,6 +30,7 @@ export default function GroupShareModal({
   ownerUid,
   collectionName = "studyGroups",
   fieldName = "memberUids",
+  showCancelButton, // <-- add this prop
 }) {
   const [sharedWith, setSharedWith] = useState([]);
   const [followingList, setFollowingList] = useState([]);
@@ -354,6 +355,31 @@ export default function GroupShareModal({
               Done
             </Text>
           </TouchableOpacity>
+          {showCancelButton && (
+            <TouchableOpacity
+              onPress={onClose}
+              style={{
+                marginTop: 10,
+                backgroundColor: themeColors.white,
+                borderColor: themeColors.purple,
+                borderWidth: 1,
+                borderRadius: 8,
+                alignItems: "center",
+                paddingVertical: 10,
+                paddingHorizontal: 24,
+              }}
+            >
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontWeight: "bold",
+                  fontFamily: FONTS.PRIMARY,
+                }}
+              >
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </TouchableOpacity>
     </Modal>

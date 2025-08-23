@@ -725,7 +725,7 @@ export default function GroupDetailView({
             <KeyboardAvoidingView
               style={{ flex: 1 }}
               behavior={Platform.OS === "ios" ? "padding" : undefined}
-              keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+              keyboardVerticalOffset={Platform.OS === "ios" ? 50 : 0}
             >
               {loading ? (
                 <View

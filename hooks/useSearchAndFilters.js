@@ -45,10 +45,11 @@ export function useFavoriteStatusForFilter() {
 
 export default function useSearchAndFilters(
   studySpots,
-  checkFavoriteStatus = null
+  checkFavoriteStatus = null,
+  favoritesSet = null // <-- add this param
 ) {
   const [filters, setFilters] = useState([]);
-  const [sortBy, setSortBy] = useState("default");
+  const [sortBy, setSortBy] = useState("name-asc"); // Default to A-Z
   // Add user location state:
   const [userLocation, setUserLocation] = useState(null);
 
@@ -81,15 +82,7 @@ export default function useSearchAndFilters(
     if (!filters.length) return true;
 
     for (const f of filters) {
-      if (f === "favorites") {
-        // Use the checkFavoriteStatus function if provided, otherwise return true
-        if (checkFavoriteStatus) {
-          const isFavorite = await checkFavoriteStatus(spot.id);
-          if (!isFavorite) return false;
-        } else {
-          return true;
-        }
-      } else if (f === "no-husky-card") {
+      if (f === "no-husky-card") {
         if (spot.huskyCardNeeded) return false;
       } else if (f === "private") {
         const isPrivate =
@@ -153,7 +146,7 @@ export default function useSearchAndFilters(
           ? a._distance - b._distance
           : b._distance - a._distance
       );
-  } else if (sortBy === "name-asc") {
+  } else if (sortBy === "name-asc" || sortBy === "default") {
     sortedSpots.sort((a, b) =>
       (a.buildingName || a.name || "").localeCompare(
         b.buildingName || b.name || ""
@@ -191,8 +184,8 @@ export default function useSearchAndFilters(
   // else: default order (as fetched)
 
   // For now, filter out favorites filter and apply other filters synchronously
-  const syncFilters = filters.filter((f) => f !== "favorites");
-  const hasFavoritesFilter = filters.includes("favorites");
+  const syncFilters = filters; // .filter((f) => f !== "favorites");
+  // const hasFavoritesFilter = filters.includes("favorites");
 
   const syncFilteredSpots = sortedSpots.filter((spot) => {
     if (!syncFilters.length) return true;
@@ -212,33 +205,28 @@ export default function useSearchAndFilters(
     });
   });
 
-  // If no favorites filter, return sync filtered spots
-  if (!hasFavoritesFilter) {
-    return {
-      filters,
-      setFilters,
-      filteredSpots: syncFilteredSpots,
-      matchFilters,
-      sortBy,
-      setSortBy,
-      userLocation,
-      fetchUserLocation,
-    };
+  // Always return syncFilteredSpots, no favorites filter logic
+  let spots = [...syncFilteredSpots];
+  if (favoritesSet && favoritesSet.size > 0) {
+    spots.sort((a, b) => {
+      const aFav = favoritesSet.has(a.id);
+      const bFav = favoritesSet.has(b.id);
+      if (aFav && !bFav) return -1;
+      if (!aFav && bFav) return 1;
+      // Both in same group, sort alphabetically
+      return (a.buildingName || a.name || "").localeCompare(
+        b.buildingName || b.name || ""
+      );
+    });
   }
-
-  // If favorites filter is active, we need to handle it separately
-  // For now, return all spots and let the UI handle favorites filtering
-  // This is a temporary solution - in a real implementation, you'd want to
-  // use a more sophisticated approach with React Query or similar
   return {
     filters,
     setFilters,
-    filteredSpots: syncFilteredSpots,
+    filteredSpots: spots,
     matchFilters,
     sortBy,
     setSortBy,
     userLocation,
     fetchUserLocation,
-    hasFavoritesFilter,
   };
 }

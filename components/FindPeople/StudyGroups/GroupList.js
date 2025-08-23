@@ -7,6 +7,7 @@ import {
   Alert,
   Image,
   ActivityIndicator,
+  SectionList,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as PhosphorIcons from "phosphor-react-native";
@@ -120,9 +121,126 @@ export default function GroupList({
     );
   }
 
-  if (
-    groupSearch ? groupSearchResults.length === 0 : sortedGroups.length === 0
-  ) {
+  // Separate groups into sections
+  const userGroups = sortedGroups.filter(
+    (group) =>
+      Array.isArray(group.memberUids) &&
+      group.memberUids.includes(user.uid) &&
+      !(
+        Array.isArray(group.blockedUsers) &&
+        group.blockedUsers.includes(user.uid)
+      ) // Fix syntax
+  );
+
+  const publicGroups = sortedGroups.filter(
+    (group) =>
+      !(group.isPrivate ?? false) &&
+      (!Array.isArray(group.memberUids) ||
+        !group.memberUids.includes(user.uid)) &&
+      !(
+        Array.isArray(group.blockedUsers) &&
+        group.blockedUsers.includes(user.uid)
+      ) // Fix syntax
+  );
+
+  // If searching, use flat list with search results
+  if (groupSearch) {
+    if (groupSearchResults.length === 0) {
+      return (
+        <View style={{ flex: 1, alignItems: "center", marginTop: 16 }}>
+          <Text
+            style={{
+              color: themeColors.purple,
+              fontWeight: "bold",
+              fontSize: 16,
+              fontFamily: FONTS.PRIMARY,
+              marginBottom: 4,
+            }}
+          >
+            Groups
+          </Text>
+          <Text
+            style={{
+              color: themeColors.darkGray,
+              fontFamily: FONTS.PRIMARY,
+              textAlign: "center",
+              marginTop: 4,
+            }}
+          >
+            No groups found matching your search.
+          </Text>
+        </View>
+      );
+    }
+
+    // Use FlatList for search results
+    return (
+      <View style={{ flex: 1, position: "relative", width: "100%" }}>
+        {sortedGroups.length > 0 && isScrolled && (
+          <LinearGradient
+            colors={[themeColors.white + "FF", themeColors.white + "00"]}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 24,
+              zIndex: 2,
+              pointerEvents: "none",
+            }}
+            pointerEvents="none"
+          />
+        )}
+        <FlatList
+          data={groupSearchResults}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => renderGroupItem(item)}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 110 }}
+          showsVerticalScrollIndicator={false}
+          onScroll={(e) => {
+            const offsetY = e.nativeEvent.contentOffset.y;
+            setIsScrolled(offsetY > 2);
+          }}
+          scrollEventThrottle={16}
+        />
+        {sortedGroups.length > 0 && (
+          <LinearGradient
+            colors={[themeColors.white + "00", themeColors.white + "FF"]}
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 24,
+              zIndex: 2,
+              pointerEvents: "none",
+            }}
+            pointerEvents="none"
+          />
+        )}
+      </View>
+    );
+  }
+
+  // Create sections data
+  const sections = [];
+
+  if (userGroups.length > 0) {
+    sections.push({
+      title: "Your Groups",
+      data: userGroups,
+    });
+  }
+
+  if (publicGroups.length > 0) {
+    sections.push({
+      title: "Public Groups",
+      data: publicGroups,
+    });
+  }
+
+  if (sections.length === 0) {
     return (
       <View style={{ flex: 1, alignItems: "center", marginTop: 16 }}>
         <Text
@@ -144,13 +262,224 @@ export default function GroupList({
             marginTop: 4,
           }}
         >
-          {groupSearch
-            ? "No groups found matching your search."
-            : "No study groups found."}
+          No study groups found.
         </Text>
       </View>
     );
   }
+
+  // Extract renderGroupItem function for reuse
+  const renderGroupItem = (item) => {
+    const IconComponent =
+      item.icon && PhosphorIcons[item.icon]
+        ? PhosphorIcons[item.icon]
+        : PhosphorIcons.UsersThree;
+    const isMember =
+      Array.isArray(item.memberUids) && item.memberUids.includes(user.uid);
+    const isPublic = !(item.isPrivate ?? false);
+    const handlePress = async () => {
+      if (isPublic && !isMember) {
+        Alert.alert(
+          "Join Group",
+          "You are not a member of this public group. Would you like to join?",
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Join",
+              style: "default",
+              onPress: async () => {
+                try {
+                  const groupRef = doc(db, "studyGroups", item.id);
+                  await getDoc(groupRef).then(async (snap) => {
+                    if (snap.exists()) {
+                      const data = snap.data();
+                      const memberUids = Array.isArray(data.memberUids)
+                        ? data.memberUids
+                        : [];
+                      if (memberUids.length >= 32) {
+                        Alert.alert(
+                          "Group Full",
+                          "This public group already has 32 members and cannot accept more."
+                        );
+                        return;
+                      }
+                      if (!memberUids.includes(user.uid)) {
+                        await updateDoc(groupRef, {
+                          memberUids: [...memberUids, user.uid],
+                        });
+                        // --- Add joined the group system message ---
+                        let userDoc;
+                        try {
+                          userDoc = await getDoc(doc(db, "users", user.uid));
+                        } catch {}
+                        const userName =
+                          userDoc && userDoc.exists()
+                            ? (userDoc.data().firstName || "User") +
+                              (userDoc.data().lastName
+                                ? " " + userDoc.data().lastName.charAt(0)
+                                : "")
+                            : "User";
+                        await addDoc(
+                          collection(db, "studyGroups", item.id, "messages"),
+                          {
+                            type: "system",
+                            text: `${userName} joined the group.`,
+                            uid: user.uid,
+                            createdAt: serverTimestamp(),
+                          }
+                        );
+                      }
+                    }
+                  });
+                  navigation.navigate("GroupChat", {
+                    groupId: item.id,
+                  });
+                } catch (e) {
+                  Alert.alert("Error", "Failed to join group.");
+                }
+              },
+            },
+          ]
+        );
+      } else {
+        navigation.navigate("GroupChat", { groupId: item.id });
+      }
+    };
+    const unreadCount = getUnreadCount(item.id, isMember);
+    // --- Log unread messages for each group only if unread and user is a member ---
+    if (unreadCount > 0 && isMember) {
+      const unreadMsgs = getUnreadMessages(item.id, isMember);
+    }
+    return (
+      <TouchableOpacity
+        onPress={handlePress}
+        style={{
+          backgroundColor: themeColors.white,
+          borderRadius: 8,
+          padding: 16,
+          marginBottom: 12,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 3,
+          borderColor: themeColors.darkGray,
+          borderWidth: 0.5,
+          position: "relative",
+          flexDirection: "row",
+          alignItems: "center",
+        }}
+      >
+        {item.profilePic ? (
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: themeColors.purple + "22",
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: 14,
+              overflow: "hidden",
+            }}
+          >
+            <Image
+              source={{ uri: item.profilePic }}
+              style={{ width: 40, height: 40, borderRadius: 20 }}
+              resizeMode="cover"
+            />
+          </View>
+        ) : (
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: themeColors.purple + "22",
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: 14,
+            }}
+          >
+            <IconComponent size={28} color={themeColors.purple} weight="fill" />
+          </View>
+        )}
+        <View style={{ flex: 1 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 4,
+            }}
+          >
+            <Text
+              style={{
+                color: themeColors.purple,
+                fontWeight: "bold",
+                fontSize: 18,
+                fontFamily: FONTS.PRIMARY,
+              }}
+            >
+              {item.name}
+            </Text>
+            {item.isPrivate && (
+              <LockKey
+                size={18}
+                color={themeColors.purple}
+                weight="fill"
+                style={{
+                  marginLeft: 6,
+                  marginBottom: -2,
+                  alignSelf: "center",
+                }}
+              />
+            )}
+          </View>
+          {item.description !== "" && (
+            <Text
+              style={{
+                color: themeColors.black,
+                fontSize: 15,
+                fontFamily: FONTS.PRIMARY,
+                marginBottom: 4,
+              }}
+            >
+              {item.description}
+            </Text>
+          )}
+          {/* --- Unread badge --- */}
+          {unreadCount > 0 && (
+            <View
+              style={{
+                position: "absolute",
+                top: 0,
+                right: 0,
+                backgroundColor: themeColors.purple,
+                borderRadius: 10,
+                paddingHorizontal: 7,
+                paddingVertical: 2,
+                minWidth: 24,
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 10,
+              }}
+            >
+              <Text
+                style={{
+                  color: themeColors.white,
+                  fontWeight: "bold",
+                  fontSize: 13,
+                  fontFamily: FONTS.PRIMARY,
+                }}
+              >
+                {unreadCount}
+              </Text>
+            </View>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={{ flex: 1, position: "relative", width: "100%" }}>
@@ -169,232 +498,30 @@ export default function GroupList({
           pointerEvents="none"
         />
       )}
-      <FlatList
-        data={sortedGroups}
+      <SectionList
+        sections={sections}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => {
-          const IconComponent =
-            item.icon && PhosphorIcons[item.icon]
-              ? PhosphorIcons[item.icon]
-              : PhosphorIcons.UsersThree;
-          const isMember =
-            Array.isArray(item.memberUids) &&
-            item.memberUids.includes(user.uid);
-          const isPublic = !(item.isPrivate ?? false);
-          const handlePress = async () => {
-            if (isPublic && !isMember) {
-              Alert.alert(
-                "Join Group",
-                "You are not a member of this public group. Would you like to join?",
-                [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                    text: "Join",
-                    style: "default",
-                    onPress: async () => {
-                      try {
-                        const groupRef = doc(db, "studyGroups", item.id);
-                        await getDoc(groupRef).then(async (snap) => {
-                          if (snap.exists()) {
-                            const data = snap.data();
-                            const memberUids = Array.isArray(data.memberUids)
-                              ? data.memberUids
-                              : [];
-                            if (memberUids.length >= 32) {
-                              Alert.alert(
-                                "Group Full",
-                                "This public group already has 32 members and cannot accept more."
-                              );
-                              return;
-                            }
-                            if (!memberUids.includes(user.uid)) {
-                              await updateDoc(groupRef, {
-                                memberUids: [...memberUids, user.uid],
-                              });
-                              // --- Add joined the group system message ---
-                              let userDoc;
-                              try {
-                                userDoc = await getDoc(
-                                  doc(db, "users", user.uid)
-                                );
-                              } catch {}
-                              const userName =
-                                userDoc && userDoc.exists()
-                                  ? (userDoc.data().firstName || "User") +
-                                    (userDoc.data().lastName
-                                      ? " " + userDoc.data().lastName.charAt(0)
-                                      : "")
-                                  : "User";
-                              await addDoc(
-                                collection(
-                                  db,
-                                  "studyGroups",
-                                  item.id,
-                                  "messages"
-                                ),
-                                {
-                                  type: "system",
-                                  text: `${userName} joined the group.`,
-                                  uid: user.uid,
-                                  createdAt: serverTimestamp(),
-                                }
-                              );
-                            }
-                          }
-                        });
-                        navigation.navigate("GroupChat", {
-                          groupId: item.id,
-                        });
-                      } catch (e) {
-                        Alert.alert("Error", "Failed to join group.");
-                      }
-                    },
-                  },
-                ]
-              );
-            } else {
-              navigation.navigate("GroupChat", { groupId: item.id });
-            }
-          };
-          const unreadCount = getUnreadCount(item.id, isMember);
-          // --- Log unread messages for each group only if unread and user is a member ---
-          if (unreadCount > 0 && isMember) {
-            const unreadMsgs = getUnreadMessages(item.id, isMember);
-          }
-          return (
-            <TouchableOpacity
-              onPress={handlePress}
+        renderItem={({ item }) => renderGroupItem(item)}
+        renderSectionHeader={({ section: { title } }) => (
+          <View
+            style={{
+              backgroundColor: themeColors.white,
+              paddingVertical: 8,
+              paddingTop: 16,
+            }}
+          >
+            <Text
               style={{
-                backgroundColor: themeColors.white,
-                borderRadius: 8,
-                padding: 16,
-                marginBottom: 12,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-                elevation: 3,
-                borderColor: themeColors.darkGray,
-                borderWidth: 0.5,
-                position: "relative",
-                flexDirection: "row",
-                alignItems: "center",
+                fontSize: 18,
+                fontWeight: "bold",
+                color: themeColors.purple,
+                fontFamily: FONTS.PRIMARY,
               }}
             >
-              {item.profilePic ? (
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 20,
-                    backgroundColor: themeColors.purple + "22",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginRight: 14,
-                    overflow: "hidden",
-                  }}
-                >
-                  <Image
-                    source={{ uri: item.profilePic }}
-                    style={{ width: 40, height: 40, borderRadius: 20 }}
-                    resizeMode="cover"
-                  />
-                </View>
-              ) : (
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 20,
-                    backgroundColor: themeColors.purple + "22",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginRight: 14,
-                  }}
-                >
-                  <IconComponent
-                    size={28}
-                    color={themeColors.purple}
-                    weight="fill"
-                  />
-                </View>
-              )}
-              <View style={{ flex: 1 }}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginBottom: 4,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: themeColors.purple,
-                      fontWeight: "bold",
-                      fontSize: 18,
-                      fontFamily: FONTS.PRIMARY,
-                    }}
-                  >
-                    {item.name}
-                  </Text>
-                  {item.isPrivate && (
-                    <LockKey
-                      size={18}
-                      color={themeColors.purple}
-                      weight="fill"
-                      style={{
-                        marginLeft: 6,
-                        marginBottom: -2,
-                        alignSelf: "center",
-                      }}
-                    />
-                  )}
-                </View>
-                {item.description !== "" && (
-                  <Text
-                    style={{
-                      color: themeColors.black,
-                      fontSize: 15,
-                      fontFamily: FONTS.PRIMARY,
-                      marginBottom: 4,
-                    }}
-                  >
-                    {item.description}
-                  </Text>
-                )}
-                {/* --- Unread badge --- */}
-                {unreadCount > 0 && (
-                  <View
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      right: 0,
-                      backgroundColor: themeColors.purple,
-                      borderRadius: 10,
-                      paddingHorizontal: 7,
-                      paddingVertical: 2,
-                      minWidth: 24,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      zIndex: 10,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: themeColors.white,
-                        fontWeight: "bold",
-                        fontSize: 13,
-                        fontFamily: FONTS.PRIMARY,
-                      }}
-                    >
-                      {unreadCount}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </TouchableOpacity>
-          );
-        }}
+              {title}
+            </Text>
+          </View>
+        )}
         style={{ flex: 1 }}
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
@@ -403,6 +530,7 @@ export default function GroupList({
           setIsScrolled(offsetY > 2);
         }}
         scrollEventThrottle={16}
+        stickySectionHeadersEnabled={false}
       />
       {sortedGroups.length > 0 && (
         <LinearGradient

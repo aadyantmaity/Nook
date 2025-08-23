@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Modal,
   TouchableOpacity,
@@ -9,6 +9,7 @@ import {
   Image,
 } from "react-native";
 import * as PhosphorIcons from "phosphor-react-native";
+import { Check, PencilSimple } from "phosphor-react-native";
 import IconPickerModal from "./IconPickerModal";
 import * as ImagePicker from "expo-image-picker";
 import { FONTS } from "../../../constants/fonts";
@@ -37,6 +38,8 @@ export default function CreateGroupModal({
   handleCreateGroup,
   themeColors,
 }) {
+  const [showImageOptionModal, setShowImageOptionModal] = useState(false);
+
   // --- Add image picker handler ---
   const onUploadImage = async () => {
     try {
@@ -101,6 +104,7 @@ export default function CreateGroupModal({
           >
             Create Study Group
           </Text>
+
           {/* Group Profile Pic Picker */}
           <View
             style={{
@@ -112,7 +116,8 @@ export default function CreateGroupModal({
           >
             {groupProfilePic ? (
               <View style={{ alignItems: "center" }}>
-                <View
+                <TouchableOpacity
+                  onPress={() => setShowImageOptionModal(true)}
                   style={{
                     width: 128,
                     height: 128,
@@ -121,7 +126,7 @@ export default function CreateGroupModal({
                     backgroundColor: themeColors.purple + "22",
                     alignItems: "center",
                     justifyContent: "center",
-                    marginBottom: 4,
+                    marginBottom: 8,
                   }}
                 >
                   <Image
@@ -129,41 +134,30 @@ export default function CreateGroupModal({
                     style={{ width: 128, height: 128, borderRadius: 32 }}
                     resizeMode="cover"
                   />
-                </View>
-                <TouchableOpacity
-                  onPress={() => setGroupProfilePic(null)}
+                </TouchableOpacity>
+                <Text
                   style={{
-                    marginTop: 4,
-                    backgroundColor: themeColors.purple,
-                    borderRadius: 8,
-                    paddingVertical: 6,
-                    paddingHorizontal: 16,
-                    alignItems: "center",
+                    color: themeColors.darkGray,
+                    fontSize: 12,
+                    fontFamily: FONTS.PRIMARY,
+                    textAlign: "center",
                   }}
                 >
-                  <Text
-                    style={{
-                      color: themeColors.white,
-                      fontWeight: "bold",
-                      fontFamily: FONTS.PRIMARY,
-                      fontSize: 14,
-                    }}
-                  >
-                    Remove Image
-                  </Text>
-                </TouchableOpacity>
+                  Tap to edit
+                </Text>
               </View>
             ) : (
               <View style={{ alignItems: "center" }}>
-                <View
+                <TouchableOpacity
+                  onPress={() => setShowImageOptionModal(true)}
                   style={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: 32,
+                    width: 80,
+                    height: 80,
+                    borderRadius: 40,
                     backgroundColor: themeColors.purple + "22",
                     alignItems: "center",
                     justifyContent: "center",
-                    marginBottom: 4,
+                    marginBottom: 8,
                     borderWidth: 2,
                     borderColor: themeColors.purple,
                   }}
@@ -175,72 +169,164 @@ export default function CreateGroupModal({
                         : PhosphorIcons.UsersThree;
                     return (
                       <IconComponent
-                        size={36}
+                        size={40}
                         color={themeColors.purple}
                         weight="fill"
                       />
                     );
                   })()}
-                </View>
-                <View style={{ flexDirection: "row", marginTop: 8 }}>
-                  <TouchableOpacity
-                    onPress={() => setShowIconModal(true)}
-                    style={{
-                      backgroundColor: themeColors.purple,
-                      borderRadius: 8,
-                      paddingVertical: 8,
-                      paddingHorizontal: 16,
-                      minWidth: 80,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginRight: 8,
-                    }}
-                    accessibilityLabel="Choose Group Icon"
-                    activeOpacity={0.8}
-                  >
-                    <Text
-                      style={{
-                        color: themeColors.white,
-                        fontWeight: "bold",
-                        fontFamily: FONTS.PRIMARY,
-                        fontSize: 14,
-                        textAlign: "center",
-                      }}
-                    >
-                      Icon
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={onUploadImage}
-                    style={{
-                      backgroundColor: themeColors.purple,
-                      borderRadius: 8,
-                      paddingVertical: 8,
-                      paddingHorizontal: 16,
-                      minWidth: 80,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                    disabled={uploadingPic}
-                    accessibilityLabel="Upload Group Image"
-                    activeOpacity={0.8}
-                  >
-                    <Text
-                      style={{
-                        color: themeColors.white,
-                        fontWeight: "bold",
-                        fontFamily: FONTS.PRIMARY,
-                        fontSize: 14,
-                        textAlign: "center",
-                      }}
-                    >
-                      Upload
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                </TouchableOpacity>
+                <Text
+                  style={{
+                    color: themeColors.darkGray,
+                    fontSize: 12,
+                    fontFamily: FONTS.PRIMARY,
+                    textAlign: "center",
+                  }}
+                >
+                  Tap to edit
+                </Text>
               </View>
             )}
           </View>
+
+          {/* Image Option Modal */}
+          <Modal
+            visible={showImageOptionModal}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowImageOptionModal(false)}
+          >
+            <TouchableOpacity
+              style={{
+                flex: 1,
+                backgroundColor: "rgba(0,0,0,0.3)",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+              activeOpacity={1}
+              onPressOut={() => setShowImageOptionModal(false)}
+            >
+              <View
+                style={{
+                  backgroundColor: themeColors.white,
+                  borderRadius: 16,
+                  padding: 24,
+                  width: "80%",
+                  maxWidth: 340,
+                  alignItems: "center",
+                  borderWidth: 1,
+                  borderColor: themeColors.gray + "70",
+                  shadowColor: themeColors.black,
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 4,
+                  elevation: 5,
+                }}
+                onStartShouldSetResponder={() => true}
+              >
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "bold",
+                    color: themeColors.purple,
+                    marginBottom: 20,
+                    textAlign: "center",
+                    fontFamily: FONTS.PRIMARY,
+                  }}
+                >
+                  Choose Group Image
+                </Text>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowImageOptionModal(false);
+                    setTimeout(() => setShowIconModal(true), 100);
+                  }}
+                  style={{
+                    backgroundColor: themeColors.purple,
+                    borderRadius: 8,
+                    paddingVertical: 12,
+                    paddingHorizontal: 24,
+                    marginBottom: 12,
+                    width: "100%",
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: themeColors.white,
+                      fontWeight: "bold",
+                      fontFamily: FONTS.PRIMARY,
+                      fontSize: 16,
+                    }}
+                  >
+                    Choose Icon
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowImageOptionModal(false);
+                    setTimeout(() => onUploadImage(), 100);
+                  }}
+                  style={{
+                    backgroundColor: themeColors.purple,
+                    borderRadius: 8,
+                    paddingVertical: 12,
+                    paddingHorizontal: 24,
+                    marginBottom: 12,
+                    width: "100%",
+                    alignItems: "center",
+                  }}
+                  disabled={uploadingPic}
+                >
+                  <Text
+                    style={{
+                      color: themeColors.white,
+                      fontWeight: "bold",
+                      fontFamily: FONTS.PRIMARY,
+                      fontSize: 16,
+                    }}
+                  >
+                    {uploadingPic ? "Uploading..." : "Upload Image"}
+                  </Text>
+                </TouchableOpacity>
+
+                {(groupProfilePic || selectedIcon) && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setGroupProfilePic(null);
+                      setSelectedIcon(null);
+                      setShowImageOptionModal(false);
+                    }}
+                    style={{
+                      backgroundColor: themeColors.white,
+                      borderColor: themeColors.red,
+                      borderWidth: 1,
+                      borderRadius: 8,
+                      paddingVertical: 12,
+                      paddingHorizontal: 24,
+                      width: "100%",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: themeColors.red,
+                        fontWeight: "bold",
+                        fontFamily: FONTS.PRIMARY,
+                        fontSize: 16,
+                      }}
+                    >
+                      Remove Image
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </TouchableOpacity>
+          </Modal>
+
           {/* --- Icon Picker Modal --- */}
           <IconPickerModal
             visible={showIconModal}
@@ -249,6 +335,7 @@ export default function CreateGroupModal({
             setSelectedIcon={setSelectedIcon}
             themeColors={themeColors}
           />
+
           <TextInput
             placeholder="Group Name"
             value={groupName}
@@ -262,9 +349,9 @@ export default function CreateGroupModal({
               marginBottom: 10,
               color: themeColors.black,
               fontFamily: FONTS.PRIMARY,
-              maxLength: 50,
             }}
             placeholderTextColor={themeColors.darkGray}
+            maxLength={25}
           />
           <TextInput
             placeholder="Description (optional)"
@@ -409,7 +496,7 @@ export default function CreateGroupModal({
                   fontFamily: FONTS.PRIMARY,
                 }}
               >
-                No mutual friends found.
+                No friends found.
               </Text>
             ) : (
               mutualFriends.map((u) => (
@@ -460,14 +547,11 @@ export default function CreateGroupModal({
                     }}
                   >
                     {selectedMembers.includes(u.uid) && (
-                      <Text
-                        style={{
-                          color: themeColors.white,
-                          fontWeight: "bold",
-                        }}
-                      >
-                        ✓
-                      </Text>
+                      <Check
+                        size={14}
+                        color={themeColors.white}
+                        weight="bold"
+                      />
                     )}
                   </View>
                 </TouchableOpacity>

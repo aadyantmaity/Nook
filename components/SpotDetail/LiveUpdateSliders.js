@@ -18,8 +18,8 @@ const NOISE_OPTIONS = [
   { label: "Loud", value: 2, icon: <SpeakerSimpleHigh size={23} /> },
 ];
 const CROWD_OPTIONS = [
-  { label: "Empty", value: 0, icon: <User size={23} /> },
-  { label: "Light", value: 1, icon: <Users size={23} /> },
+  { label: "Light", value: 0, icon: <User size={23} /> },
+  { label: "Moderate", value: 1, icon: <Users size={23} /> },
   { label: "Busy", value: 2, icon: <UsersThree size={23} /> },
 ];
 

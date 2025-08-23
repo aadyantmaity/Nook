@@ -208,7 +208,7 @@ export default function HomeScreen({ navigation, route }) {
     sortBy,
     setSortBy,
     hasFavoritesFilter,
-  } = useSearchAndFilters(studySpots); // <-- get hasFavoritesFilter
+  } = useSearchAndFilters(studySpots, null, favorites); // <-- pass favorites set here
   const {
     friendsCheckIns,
     isLoading: friendsLoading,
@@ -347,8 +347,8 @@ export default function HomeScreen({ navigation, route }) {
     themeColors,
     filters,
     setFilters,
-    sortBy, // <-- add
-    setSortBy, // <-- add
+    sortBy,
+    setSortBy,
   }) {
     const [isFiltersPressed, setIsFiltersPressed] = React.useState(false);
     return (
@@ -360,23 +360,24 @@ export default function HomeScreen({ navigation, route }) {
             marginBottom: 16,
             zIndex: 20,
             justifyContent: "space-between",
+            gap: 10,
           }}
         >
-          {/* Left: View Toggles */}
+          {/* List/Map View Toggle Buttons */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <TouchableOpacity
-              onPress={() => handleSetShowMapView(false)}
+              onPress={() => setShowMapView(false)}
               style={{
                 backgroundColor: !showMapView
                   ? themeColors.purple
                   : themeColors.white,
                 padding: 10,
                 borderRadius: 8,
-                marginRight: 8,
-                minWidth: 48,
                 alignItems: "center",
                 justifyContent: "center",
                 height: 42,
+                minWidth: 48,
+                marginRight: 0,
               }}
             >
               <Rows
@@ -385,18 +386,18 @@ export default function HomeScreen({ navigation, route }) {
               />
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => handleSetShowMapView(true)}
+              onPress={() => setShowMapView(true)}
               style={{
                 backgroundColor: showMapView
                   ? themeColors.purple
                   : themeColors.white,
                 padding: 10,
                 borderRadius: 8,
-                minWidth: 48,
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: 8,
                 height: 42,
+                minWidth: 48,
+                marginRight: 0,
               }}
             >
               <MapTrifold
@@ -405,7 +406,7 @@ export default function HomeScreen({ navigation, route }) {
               />
             </TouchableOpacity>
           </View>
-          {/* Right: Filters Button */}
+          {/* Filters Button */}
           <TouchableOpacity
             activeOpacity={0.7}
             onPressIn={() => setIsFiltersPressed(true)}
@@ -413,30 +414,26 @@ export default function HomeScreen({ navigation, route }) {
             onPress={() => {
               setIsFiltersPressed(false);
               // Open filters modal or whatever Filters does on press
-              // If Filters is a button, you may need to trigger its onPress here
-              // Otherwise, just render Filters as before
             }}
             style={{
               backgroundColor: isFiltersPressed
                 ? themeColors.purple
                 : themeColors.white,
-              // borderRadius: 8,
-              // borderWidth: 1,
-              borderColor: themeColors.purple,
               paddingVertical: 10,
               alignItems: "center",
               justifyContent: "center",
               marginRight: 0,
               height: 42,
               marginBottom: 0,
+              marginLeft: 10,
             }}
           >
             <Filters
               filters={filters}
               setFilters={setFilters}
               themeColors={themeColors}
-              sortBy={sortBy} // <-- pass sortBy
-              setSortBy={setSortBy} // <-- pass setSortBy
+              sortBy={sortBy}
+              setSortBy={setSortBy}
               buttonStyle={{
                 backgroundColor: "transparent",
                 borderRadius: 8,
@@ -454,7 +451,7 @@ export default function HomeScreen({ navigation, route }) {
                 fontWeight: "bold",
                 fontSize: 14,
                 textAlignVertical: "center",
-                fontFamily: "CarosSoft", // <-- Add fontFamily here
+                fontFamily: "CarosSoft",
               }}
             />
           </TouchableOpacity>
@@ -476,246 +473,258 @@ export default function HomeScreen({ navigation, route }) {
   }
 
   // Home tab content
-  const HomeTab = () => (
-    <>
-      {showMapView ? (
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: 120 }} // <-- Increased padding
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Toggle row (List/Map/Filters) */}
-          <View style={{ paddingHorizontal: 16 }}>
-            <StudySpotsHeader
-              showMapView={showMapView}
-              setShowMapView={handleSetShowMapView}
-              showFriendsView={showFriendsView}
-              setShowFriendsView={setShowFriendsView}
-              themeColors={themeColors}
-              filters={filters}
-              setFilters={setFilters}
-              sortBy={sortBy}
-              setSortBy={setSortBy}
-            />
-          </View>
+  const HomeTab = () => {
+    // Compute filtered count and total count for the indicator
+    const filteredCount = filteredSpots.length;
+    const totalCount = studySpots.length;
+    const filtersApplied = filters.length > 0;
 
-          {/* Sliding Toggle - only show when in map view */}
-          {showMapView && (
-            <View
-              style={{
-                alignItems: "center",
-                marginBottom: 16,
-                paddingHorizontal: 16,
-              }}
-            >
+    return (
+      <>
+        {showMapView ? (
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingBottom: 120 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Toggle row (List/Map/Filters) */}
+            <View style={{ paddingHorizontal: 16 }}>
+              <StudySpotsHeader
+                showMapView={showMapView}
+                setShowMapView={handleSetShowMapView}
+                showFriendsView={showFriendsView}
+                setShowFriendsView={setShowFriendsView}
+                themeColors={themeColors}
+                filters={filters}
+                setFilters={setFilters}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+              />
+            </View>
+
+            {/* Sliding Toggle - only show when in map view */}
+            {showMapView && (
               <View
                 style={{
-                  backgroundColor: themeColors.lightGray,
-                  borderRadius: 25,
-                  padding: 4,
-                  flexDirection: "row",
-                  width: 200,
-                  height: 44,
-                  position: "relative",
+                  alignItems: "center",
+                  marginBottom: 16,
+                  paddingHorizontal: 16,
                 }}
               >
-                {/* Sliding Background */}
-                <Animated.View
+                <View
                   style={{
-                    position: "absolute",
-                    top: 4,
-                    left: 4,
-                    right: 4,
-                    bottom: 4,
-                    backgroundColor: themeColors.white,
-                    borderRadius: 21,
-                    width: 96,
-                    transform: [
-                      {
-                        translateX: slideAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [0, 96],
-                        }),
-                      },
-                    ],
-                    shadowColor: themeColors.black,
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 4,
-                    elevation: 3,
-                  }}
-                />
-
-                {/* Nooks Button */}
-                <TouchableOpacity
-                  onPress={() => handleSetShowFriendsView(false)}
-                  style={{
-                    flex: 1,
-                    alignItems: "center",
-                    justifyContent: "center",
+                    backgroundColor: themeColors.lightGray,
+                    borderRadius: 25,
+                    padding: 4,
                     flexDirection: "row",
-                    gap: 6,
-                    zIndex: 2,
+                    width: 200,
+                    height: 44,
+                    position: "relative",
                   }}
                 >
-                  <MapPin
-                    size={18}
-                    color={
-                      !showFriendsView
-                        ? themeColors.purple
-                        : themeColors.darkGray
-                    }
-                  />
-                  <Text
+                  {/* Sliding Background */}
+                  <Animated.View
                     style={{
-                      color: !showFriendsView
-                        ? themeColors.purple
-                        : themeColors.darkGray,
-                      fontSize: 14,
-                      fontWeight: "bold",
-                      fontFamily: "CarosSoft",
+                      position: "absolute",
+                      top: 4,
+                      left: 4,
+                      right: 4,
+                      bottom: 4,
+                      backgroundColor: themeColors.white,
+                      borderRadius: 21,
+                      width: 96,
+                      transform: [
+                        {
+                          translateX: slideAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0, 96],
+                          }),
+                        },
+                      ],
+                      shadowColor: themeColors.black,
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 4,
+                      elevation: 3,
                     }}
-                  >
-                    Nooks
-                  </Text>
-                </TouchableOpacity>
+                  />
 
-                {/* Friends Button */}
-                <TouchableOpacity
-                  onPress={() => handleSetShowFriendsView(true)}
-                  style={{
-                    flex: 1,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexDirection: "row",
-                    gap: 6,
-                    zIndex: 2,
-                  }}
-                >
-                  <UsersThree
-                    size={18}
-                    color={
-                      showFriendsView
-                        ? themeColors.orange
-                        : themeColors.darkGray
-                    }
-                  />
-                  <Text
+                  {/* Nooks Button */}
+                  <TouchableOpacity
+                    onPress={() => handleSetShowFriendsView(false)}
                     style={{
-                      color: showFriendsView
-                        ? themeColors.orange
-                        : themeColors.darkGray,
-                      fontSize: 14,
-                      fontWeight: "bold",
-                      fontFamily: "CarosSoft",
+                      flex: 1,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexDirection: "row",
+                      gap: 6,
+                      zIndex: 2,
                     }}
                   >
-                    Friends
-                  </Text>
-                </TouchableOpacity>
+                    <MapPin
+                      size={18}
+                      color={
+                        !showFriendsView
+                          ? themeColors.purple
+                          : themeColors.darkGray
+                      }
+                    />
+                    <Text
+                      style={{
+                        color: !showFriendsView
+                          ? themeColors.purple
+                          : themeColors.darkGray,
+                        fontSize: 14,
+                        fontWeight: "bold",
+                        fontFamily: "CarosSoft",
+                      }}
+                    >
+                      Nooks
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Friends Button */}
+                  <TouchableOpacity
+                    onPress={() => handleSetShowFriendsView(true)}
+                    style={{
+                      flex: 1,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexDirection: "row",
+                      gap: 6,
+                      zIndex: 2,
+                    }}
+                  >
+                    <UsersThree
+                      size={18}
+                      color={
+                        showFriendsView
+                          ? themeColors.orange
+                          : themeColors.darkGray
+                      }
+                    />
+                    <Text
+                      style={{
+                        color: showFriendsView
+                          ? themeColors.orange
+                          : themeColors.darkGray,
+                        fontSize: 14,
+                        fontWeight: "bold",
+                        fontFamily: "CarosSoft",
+                      }}
+                    >
+                      Friends
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          )}
+            )}
 
-          <StudySpotsMapView
-            spots={filteredSpots}
-            friendsCheckIns={friendsCheckIns}
-            showFriendsView={showFriendsView}
-            navigation={navigation} // <-- pass navigation object, not a function
-            themeColors={themeColors}
-            containerStyle={{ marginTop: 0 }}
-            isLoadingSpots={isLoading}
-            isLoadingFriends={friendsLoading}
-          />
-        </ScrollView>
-      ) : (
-        <StudySpotsList
-          filteredSpots={filteredSpots}
-          navigation={{
-            ...navigation,
-            navigate: (screen, params) => {
-              if (screen === "SpotDetail") {
-                navigation.navigate(screen, {
-                  ...params,
-                  view: showMapView ? "map" : "list",
-                });
-              } else {
-                navigation.navigate(screen, params);
-              }
-            },
-          }}
-          themeColors={themeColors}
-          onRefresh={fetchStudySpots}
-          refreshing={isLoading}
-          filters={filters}
-          setFilters={setFilters}
-          setCurrentAlerts={setCurrentAlerts}
-          setShowAlertsModal={setShowAlertsModal}
-          contentContainerStyle={{ paddingBottom: 140 }}
-          getLastUpdatedLabel={getLastUpdatedLabel}
-          showMapView={showMapView}
-          setShowMapView={handleSetShowMapView}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          hasFavoritesFilter={hasFavoritesFilter}
-          ListHeaderComponent={
-            <StudySpotsHeader
-              showMapView={showMapView}
-              setShowMapView={handleSetShowMapView}
+            <StudySpotsMapView
+              spots={filteredSpots}
+              friendsCheckIns={friendsCheckIns}
               showFriendsView={showFriendsView}
-              setShowFriendsView={setShowFriendsView}
+              navigation={navigation} // <-- pass navigation object, not a function
               themeColors={themeColors}
+              containerStyle={{ marginTop: 0 }}
+              isLoadingSpots={isLoading}
+              isLoadingFriends={friendsLoading}
+            />
+          </ScrollView>
+        ) : (
+          <>
+            <View style={{ paddingHorizontal: 16 }}>
+              <StudySpotsHeader
+                showMapView={showMapView}
+                setShowMapView={handleSetShowMapView}
+                showFriendsView={showFriendsView}
+                setShowFriendsView={setShowFriendsView}
+                themeColors={themeColors}
+                filters={filters}
+                setFilters={setFilters}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+              />
+            </View>
+            <StudySpotsList
+              filteredSpots={filteredSpots} // use filteredSpots directly, not filteredSpotsWithSearch
+              navigation={{
+                ...navigation,
+                navigate: (screen, params) => {
+                  if (screen === "SpotDetail") {
+                    navigation.navigate(screen, {
+                      ...params,
+                      view: showMapView ? "map" : "list",
+                    });
+                  } else {
+                    navigation.navigate(screen, params);
+                  }
+                },
+              }}
+              themeColors={themeColors}
+              onRefresh={fetchStudySpots}
+              refreshing={isLoading}
               filters={filters}
               setFilters={setFilters}
+              setCurrentAlerts={setCurrentAlerts}
+              setShowAlertsModal={setShowAlertsModal}
+              contentContainerStyle={{ paddingBottom: 140 }}
+              getLastUpdatedLabel={getLastUpdatedLabel}
+              showMapView={showMapView}
+              setShowMapView={handleSetShowMapView}
               sortBy={sortBy}
               setSortBy={setSortBy}
+              hasFavoritesFilter={hasFavoritesFilter}
+              ListHeaderComponent={null}
+              totalCount={totalCount} // <-- pass the real total count here
+              keyboardShouldPersistTaps="handled" // <-- add this prop
             />
-          }
-        />
-      )}
-      {/* Add Nook button remains outside the scrollable area */}
-      <View
-        style={{
-          position: "absolute",
-          bottom: 95, // <-- move up to avoid tab bar overlap (was 25)
-          right: 16,
-          zIndex: 20,
-        }}
-      >
-        <TouchableOpacity
+          </>
+        )}
+        {/* Add Nook button remains outside the scrollable area */}
+        <View
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            paddingVertical: 12,
-            paddingHorizontal: 16,
-            backgroundColor: themeColors.purple,
-            borderRadius: 50,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.2,
-            shadowRadius: 4,
-            elevation: 3,
+            position: "absolute",
+            bottom: 95, // <-- move up to avoid tab bar overlap (was 25)
+            right: 16,
+            zIndex: 20,
           }}
-          onPress={() => navigation.navigate("AddSpot")}
-          activeOpacity={0.85}
         >
-          <Plus size={24} color={themeColors.white} />
-          <Text
+          <TouchableOpacity
             style={{
-              color: themeColors.white,
-              fontWeight: "bold",
-              fontSize: 14,
-              marginLeft: 8,
-              fontFamily: "CarosSoft",
+              flexDirection: "row",
+              alignItems: "center",
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              backgroundColor: themeColors.purple,
+              borderRadius: 50,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.2,
+              shadowRadius: 4,
+              elevation: 3,
             }}
+            onPress={() => navigation.navigate("AddSpot")}
+            activeOpacity={0.85}
           >
-            Add Nook
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </>
-  );
+            <Plus size={24} color={themeColors.white} />
+            <Text
+              style={{
+                color: themeColors.white,
+                fontWeight: "bold",
+                fontSize: 14,
+                marginLeft: 8,
+                fontFamily: "CarosSoft",
+              }}
+            >
+              Add Nook
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </>
+    );
+  };
 
   // TabView
   const layout = Dimensions.get("window");
@@ -1011,7 +1020,11 @@ export default function HomeScreen({ navigation, route }) {
               }}
               accessibilityLabel="Search"
             >
-              <MagnifyingGlass size={28} color={themeColors.purple} />
+              <MagnifyingGlass
+                size={28}
+                color={themeColors.purple}
+                weight="light"
+              />
             </TouchableOpacity>
             {/* Profile picture button to open hamburger menu */}
             <TouchableOpacity

@@ -183,15 +183,22 @@ export default function StudyGroupsSection({ navigation }) {
       }));
       setAllUsers(users);
 
-      // Get current user's following list
+      // Get current user's following and followers lists
       const userDoc = await getDoc(doc(db, "users", user.uid));
-      const following = userDoc.exists() ? userDoc.data().following || [] : [];
+      const userData = userDoc.exists() ? userDoc.data() : {};
+      const following = userData.following || [];
+      const followers = userData.followers || [];
 
-      // Filter to only show people the user follows
-      const followingUsers = users.filter(
-        (u) => u.uid !== user.uid && following.includes(u.uid)
+      // Find mutual friends (people who follow you AND you follow them)
+      const mutualFriendsIds = following.filter((uid) =>
+        followers.includes(uid)
       );
-      setMutualFriends(followingUsers);
+
+      // Filter users to only show mutual friends
+      const mutualFriendsUsers = users.filter(
+        (u) => u.uid !== user.uid && mutualFriendsIds.includes(u.uid)
+      );
+      setMutualFriends(mutualFriendsUsers);
     })();
   }, [user]);
 
@@ -403,7 +410,17 @@ export default function StudyGroupsSection({ navigation }) {
   useEffect(() => {
     // Always use allGroups for filtering, since it contains all public groups
     const sourceGroups = allGroups.length > 0 ? allGroups : groups;
-    let filteredGroups = filterGroups(sourceGroups);
+
+    // Filter out groups where current user is blocked
+    const nonBlockedGroups = sourceGroups.filter(
+      (group) =>
+        !(
+          Array.isArray(group.blockedUsers) &&
+          group.blockedUsers.includes(user.uid)
+        )
+    );
+
+    let filteredGroups = filterGroups(nonBlockedGroups);
     if (!groupSearch.trim()) {
       setGroupSearchResults(filteredGroups);
       return;
@@ -416,20 +433,28 @@ export default function StudyGroupsSection({ navigation }) {
           (g.description && g.description.toLowerCase().includes(s))
       )
     );
-  }, [groupSearch, groups, allGroups, selectedFilter, mutualFriends]);
+  }, [groupSearch, groups, allGroups, selectedFilter, mutualFriends, user.uid]);
 
   // --- Sort groups: favorite groups first for current user ---
   const sortedGroups = [
     ...(groupSearch
       ? groupSearchResults
       : filterGroups(allGroups.length > 0 ? allGroups : groups)),
-  ].sort((a, b) => {
-    const aFav = favoriteGroups.includes(a.id) ? 1 : 0;
-    const bFav = favoriteGroups.includes(b.id) ? 1 : 0;
-    if (aFav !== bFav) return bFav - aFav; // favorite first
-    // fallback: alphabetical
-    return (a.name || "").localeCompare(b.name || "");
-  });
+  ]
+    .filter(
+      (group) =>
+        !(
+          Array.isArray(group.blockedUsers) &&
+          group.blockedUsers.includes(user.uid)
+        )
+    ) // Additional filter for blocked users
+    .sort((a, b) => {
+      const aFav = favoriteGroups.includes(a.id) ? 1 : 0;
+      const bFav = favoriteGroups.includes(b.id) ? 1 : 0;
+      if (aFav !== bFav) return bFav - aFav; // favorite first
+      // fallback: alphabetical
+      return (a.name || "").localeCompare(b.name || "");
+    });
 
   const [joiningGroups, setJoiningGroups] = useState({});
 

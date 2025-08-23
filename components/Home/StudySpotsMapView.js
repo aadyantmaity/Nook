@@ -6,23 +6,13 @@ import {
   TouchableOpacity,
   Platform,
   Modal,
-  Pressable,
   ScrollView,
   Linking,
   Image,
 } from "react-native";
-import MapView, { Marker, Callout, PROVIDER_GOOGLE } from "react-native-maps";
-import { auth, db } from "../../firebaseConfig";
-import * as Location from "expo-location";
-import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
-// Remove MaterialCommunityIcons import and use Phosphor instead:
-import {
-  PencilSimple,
-  Info,
-  MapPinLine,
-  User,
-  LockKey,
-} from "phosphor-react-native";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import { auth } from "../../firebaseConfig";
+import { Info, MapPinLine, User, LockKey } from "phosphor-react-native";
 import CircleLoader from "../common/CircleLoader";
 import { FONTS } from "../../constants/fonts";
 
@@ -75,32 +65,9 @@ export default function StudySpotsMapView({
   isLoadingFriends = false,
 }) {
   const mapRef = useRef();
-  const [region, setRegion] = useState(null);
-  const [regionPickerVisible, setRegionPickerVisible] = useState(false);
-  const [userHasPickedRegion, setUserHasPickedRegion] = useState(false);
-  const [gettingLocation, setGettingLocation] = useState(false);
   const [mapType, setMapType] = useState("hybrid");
-  const [mapTypeLoading, setMapTypeLoading] = useState(false);
-  const [mapRegion, setMapRegion] = useState("UW");
-
-  // --- NEW: Track if user has interacted with the map to prevent automatic resets ---
-  const userHasMovedMap = useRef(false);
-  const isInitialLoad = useRef(true);
-  const isProgrammaticChange = useRef(false);
-
-  // --- NEW: Store user's current region in ref to prevent resets ---
-  const currentUserRegion = useRef(null);
-  const hasSetInitialRegion = useRef(false);
-  const staticInitialRegion = useRef(null);
-
-  // --- NEW: Temporary state for modal edits ---
-  const [modalRegion, setModalRegion] = useState(null);
-  const [modalMapType, setModalMapType] = useState(mapType);
-  const [modalMapRegion, setModalMapRegion] = useState("UW");
-
-  // Add this state for the selected spot/building
   const [selectedPin, setSelectedPin] = useState(null);
-  const [selectedFriend, setSelectedFriend] = useState(null); // Add state for selected friend
+  const [selectedFriend, setSelectedFriend] = useState(null);
 
   // Calculate square size (full width minus 32px)
   const screenWidth = Dimensions.get("window").width;
@@ -114,125 +81,6 @@ export default function StudySpotsMapView({
     longitudeDelta: 0.015,
   };
 
-  // --- Load persisted region and mapType from Firestore on mount ---
-  useEffect(() => {
-    let unsub = false;
-    async function loadRegion() {
-      if (!auth.currentUser) return;
-      try {
-        const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
-        const savedMapRegion = userDoc.exists() && userDoc.data().mapRegion;
-        const savedRegion = userDoc.exists() && userDoc.data().mapRegion;
-        const userMapType = userDoc.exists() && userDoc.data().mapType;
-
-        if (savedMapRegion && !unsub) {
-          setMapRegion(savedMapRegion);
-        }
-
-        // Set actual coordinates based on mapRegion - only if user hasn't moved the map
-        let targetRegion = null;
-        if (savedMapRegion === "UW" && !unsub && !userHasMovedMap.current) {
-          targetRegion = UW_REGION;
-        } else if (
-          userDoc.exists() &&
-          userDoc.data().customMapRegion &&
-          !unsub &&
-          !userHasMovedMap.current
-        ) {
-          targetRegion = userDoc.data().customMapRegion;
-        }
-
-        if (targetRegion && !hasSetInitialRegion.current) {
-          currentUserRegion.current = targetRegion;
-          staticInitialRegion.current = targetRegion;
-          // Only update region state on initial load, not after user has moved map
-          if (!userHasMovedMap.current) {
-            setRegion(targetRegion);
-          }
-          hasSetInitialRegion.current = true;
-
-          // Use map ref to set region instead of relying on state
-          setTimeout(() => {
-            if (mapRef.current && !userHasMovedMap.current) {
-              isProgrammaticChange.current = true;
-              mapRef.current.animateToRegion(targetRegion, 100);
-            }
-          }, 100);
-        }
-
-        if (userMapType && !unsub) {
-          setMapType(userMapType);
-        }
-
-        isInitialLoad.current = false;
-      } catch {}
-    }
-    loadRegion();
-    return () => {
-      unsub = true;
-    };
-  }, []);
-
-  // --- Sync modal state with main state when modal opens ---
-  useEffect(() => {
-    if (regionPickerVisible) {
-      setModalRegion(currentUserRegion.current || region || UW_REGION);
-      setModalMapType(mapType);
-      setModalMapRegion(mapRegion);
-    }
-    // eslint-disable-next-line
-  }, [regionPickerVisible, region, mapType, mapRegion]);
-
-  // --- Persist mapType to Firestore whenever it changes ---
-  useEffect(() => {
-    if (!auth.currentUser) return;
-    const saveMapType = async () => {
-      try {
-        const userRef = doc(db, "users", auth.currentUser.uid);
-        await setDoc(userRef, { mapType }, { merge: true });
-      } catch {}
-    };
-    saveMapType();
-  }, [mapType]);
-
-  // --- Save region only when explicitly set through modal ---
-  const saveRegionToFirestore = async (newRegion) => {
-    if (!auth.currentUser || !newRegion) return;
-    try {
-      const userRef = doc(db, "users", auth.currentUser.uid);
-      const updateData = { mapType };
-
-      // Determine if this is UW region or custom
-      const isUWRegion =
-        Math.abs(newRegion.latitude - UW_REGION.latitude) < 0.001 &&
-        Math.abs(newRegion.longitude - UW_REGION.longitude) < 0.001;
-
-      if (isUWRegion) {
-        updateData.mapRegion = "UW";
-      } else {
-        updateData.mapRegion = "Custom";
-        updateData.customMapRegion = newRegion;
-      }
-
-      // Update both state and ref
-      currentUserRegion.current = newRegion;
-      setMapRegion(updateData.mapRegion);
-      await setDoc(userRef, updateData, { merge: true });
-    } catch {}
-  };
-
-  // --- Map type options and preview images ---
-  const MAP_TYPE_OPTIONS = [
-    {
-      key: "standard",
-      label: "Regular",
-    },
-    {
-      key: "hybrid",
-      label: "Satellite",
-    },
-  ];
-
   // Filter spots with coordinates
   const spotsWithCoords = Array.isArray(spots)
     ? spots.filter(
@@ -241,75 +89,6 @@ export default function StudySpotsMapView({
           typeof s.coordinates.latitude === "number" &&
           typeof s.coordinates.longitude === "number"
       )
-    : [];
-
-  // --- Default region logic: only set to UW if not set and not picked ---
-  useEffect(() => {
-    if (
-      !region &&
-      !userHasPickedRegion &&
-      isInitialLoad.current &&
-      !hasSetInitialRegion.current
-    ) {
-      currentUserRegion.current = UW_REGION;
-      staticInitialRegion.current = UW_REGION;
-      // Only update region state on initial load
-      if (!userHasMovedMap.current) {
-        setRegion(UW_REGION);
-      }
-      hasSetInitialRegion.current = true;
-      isInitialLoad.current = false;
-    }
-    // eslint-disable-next-line
-  }, []);
-
-  // --- Preserve user's map position when friendsCheckIns or view mode changes ---
-  useEffect(() => {
-    // Immediately capture current region before any potential map updates
-    if (userHasMovedMap.current && mapRef.current) {
-      mapRef.current
-        .getCamera()
-        .then((camera) => {
-          if (camera && userHasMovedMap.current) {
-            const preservedRegion = {
-              latitude: camera.center.latitude,
-              longitude: camera.center.longitude,
-              latitudeDelta: camera.altitude ? camera.altitude / 111320 : 0.01,
-              longitudeDelta: camera.altitude ? camera.altitude / 111320 : 0.01,
-            };
-            currentUserRegion.current = preservedRegion;
-          }
-        })
-        .catch(() => {
-          // Fallback: if getCamera fails, just use the existing preserved region
-        });
-    }
-
-    // Only preserve position if user has moved the map manually
-    if (
-      userHasMovedMap.current &&
-      currentUserRegion.current &&
-      mapRef.current
-    ) {
-      // Use a longer timeout to ensure the map has finished any automatic updates
-      const timeoutId = setTimeout(() => {
-        if (
-          mapRef.current &&
-          currentUserRegion.current &&
-          userHasMovedMap.current
-        ) {
-          isProgrammaticChange.current = true;
-          mapRef.current.animateToRegion(currentUserRegion.current, 200);
-        }
-      }, 150);
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [friendsCheckIns, showFriendsView]);
-
-  // --- Favorite spot IDs ---
-  const favoriteIds = Array.isArray(spots)
-    ? spots.filter((s) => s.isFavorite).map((s) => s.id)
     : [];
 
   // --- Nook summary stats ---
@@ -324,6 +103,7 @@ export default function StudySpotsMapView({
         spot.sharedWith.includes(auth.currentUser?.uid))
     );
   }).length;
+
   // Count nooks with alerts today
   const today = new Date();
   function isSameDay(dateObj) {
@@ -347,52 +127,6 @@ export default function StudySpotsMapView({
       return createdAt && isSameDay(createdAt);
     });
   }).length;
-
-  // Helper to zoom to cluster
-  const zoomToCluster = (cluster) => {
-    if (!mapRef.current || cluster.length === 0) return;
-    if (cluster.length === 1) return;
-    const lats = cluster.map((s) => s.coordinates.latitude);
-    const lons = cluster.map((s) => s.coordinates.longitude);
-    const minLat = Math.min(...lats);
-    const maxLat = Math.max(...lats);
-    const minLon = Math.min(...lons);
-    const maxLon = Math.max(...lons);
-    mapRef.current.animateToRegion({
-      latitude: (minLat + maxLat) / 2,
-      longitude: (minLon + maxLon) / 2,
-      latitudeDelta: Math.max(0.002, (maxLat - minLat) * 2.5),
-      longitudeDelta: Math.max(0.002, (maxLon - minLon) * 2.5),
-    });
-  };
-
-  // --- Helper to get user's current location and set modalRegion ---
-  const goToUserLocation = async () => {
-    setGettingLocation(true);
-    try {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        setGettingLocation(false);
-        alert("Permission to access location was denied.");
-        return;
-      }
-      let loc = await Location.getCurrentPositionAsync({});
-      const userRegion = {
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      };
-      setModalRegion(userRegion);
-      setModalMapRegion("Custom");
-      setUserHasPickedRegion(true);
-      // Don't animate map here, only after submit
-      setRegionPickerVisible(true); // keep modal open
-    } catch (e) {
-      alert("Could not get your location.");
-    }
-    setGettingLocation(false);
-  };
 
   // --- Group spots by building name ---
   const buildingGroups = {};
@@ -463,241 +197,6 @@ export default function StudySpotsMapView({
 
   return (
     <>
-      {/* Region Picker Modal */}
-      <Modal
-        visible={regionPickerVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setRegionPickerVisible(false)}
-      >
-        <TouchableOpacity
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.25)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-          activeOpacity={1}
-          onPressOut={() => setRegionPickerVisible(false)}
-        >
-          <View
-            style={{
-              backgroundColor: themeColors.white,
-              borderRadius: 16,
-              paddingVertical: 28,
-              paddingHorizontal: 28,
-              width: 340,
-              alignItems: "center",
-              borderWidth: 1,
-              borderColor: themeColors.black,
-              shadowColor: themeColors.black,
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.25,
-              shadowRadius: 4,
-              elevation: 5,
-            }}
-            onStartShouldSetResponder={() => true}
-          >
-            <Text
-              style={{
-                fontWeight: "bold",
-                fontSize: 24,
-                marginBottom: 16,
-                color: themeColors.purple,
-                fontFamily: FONTS.PRIMARY,
-                letterSpacing: 0.2,
-              }}
-            >
-              Edit Map
-            </Text>
-            {/* --- Map Type Picker --- */}
-            <Text
-              style={{
-                color: themeColors.black,
-                fontWeight: "bold",
-                fontSize: 15,
-                marginBottom: 8,
-                fontFamily: FONTS.PRIMARY,
-                alignSelf: "flex-start",
-                marginLeft: 2,
-                marginTop: 12,
-              }}
-            >
-              Map View Style
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                marginBottom: 18,
-                alignSelf: "stretch",
-                justifyContent: "space-between",
-                borderRadius: 8,
-                padding: 6,
-                gap: 8,
-              }}
-            >
-              {MAP_TYPE_OPTIONS.map((opt, idx) => (
-                <View key={opt.key} style={{ flex: 1, marginHorizontal: 2 }}>
-                  <TouchableOpacity
-                    onPress={() => setModalMapType(opt.key)}
-                    style={{
-                      alignItems: "center",
-                      paddingVertical: 10,
-                      backgroundColor:
-                        modalMapType === opt.key
-                          ? themeColors.purple
-                          : themeColors.white,
-                      borderRadius: 6,
-                    }}
-                    accessibilityLabel={`Select ${opt.label} map type`}
-                  >
-                    <Text
-                      style={{
-                        color:
-                          modalMapType === opt.key
-                            ? themeColors.white
-                            : themeColors.purple,
-                        fontWeight: "bold",
-                        fontSize: 13,
-                        fontFamily: FONTS.PRIMARY,
-                        letterSpacing: 0.1,
-                      }}
-                    >
-                      {opt.label}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </View>
-            {/* --- End Map Type Picker --- */}
-            <Text
-              style={{
-                color: themeColors.black,
-                fontWeight: "bold",
-                fontSize: 15,
-                marginBottom: 8,
-                fontFamily: FONTS.PRIMARY,
-                alignSelf: "flex-start",
-                marginLeft: 2,
-                marginTop: 12,
-              }}
-            >
-              Map Region
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                marginBottom: 16,
-                alignSelf: "stretch",
-                justifyContent: "space-between",
-                borderRadius: 8,
-                padding: 6,
-                gap: 8,
-              }}
-            >
-              <View style={{ flex: 1, marginHorizontal: 2 }}>
-                <TouchableOpacity
-                  onPress={() => {
-                    setModalRegion(UW_REGION);
-                    setModalMapRegion("UW");
-                    setUserHasPickedRegion(true);
-                  }}
-                  style={{
-                    alignItems: "center",
-                    paddingVertical: 10,
-                    backgroundColor:
-                      modalMapRegion === "UW"
-                        ? themeColors.purple
-                        : themeColors.white,
-                    borderRadius: 6,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color:
-                        modalMapRegion === "UW"
-                          ? themeColors.white
-                          : themeColors.purple,
-                      fontWeight: "bold",
-                      fontFamily: FONTS.PRIMARY,
-                      fontSize: 13,
-                    }}
-                  >
-                    UW Campus
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <View style={{ flex: 1, marginHorizontal: 2 }}>
-                <TouchableOpacity
-                  onPress={goToUserLocation}
-                  disabled={gettingLocation}
-                  style={{
-                    alignItems: "center",
-                    paddingVertical: 10,
-                    backgroundColor:
-                      modalMapRegion === "Custom"
-                        ? themeColors.purple
-                        : themeColors.white,
-                    borderRadius: 6,
-                    opacity: gettingLocation ? 0.6 : 1,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: gettingLocation
-                        ? themeColors.darkGray
-                        : modalMapRegion === "Custom"
-                        ? themeColors.white
-                        : themeColors.purple,
-                      fontWeight: "bold",
-                      fontFamily: FONTS.PRIMARY,
-                      fontSize: 13,
-                    }}
-                  >
-                    Your Location
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-            {/* --- End Map Region Picker --- */}
-            <TouchableOpacity
-              style={{
-                marginTop: 16,
-                backgroundColor: themeColors.purple,
-                borderRadius: 8,
-                paddingVertical: 10,
-                paddingHorizontal: 24,
-                alignItems: "center",
-                width: "100%",
-              }}
-              activeOpacity={0.8}
-              onPress={() => {
-                // Only commit changes on submit
-                setMapType(modalMapType);
-                setRegionPickerVisible(false);
-                if (mapRef.current && modalRegion) {
-                  isProgrammaticChange.current = true;
-                  mapRef.current.animateToRegion(modalRegion);
-                }
-                // Save region to Firestore only when explicitly set through modal
-                saveRegionToFirestore(modalRegion);
-              }}
-            >
-              <Text
-                style={{
-                  color: themeColors.white,
-                  fontFamily: FONTS.PRIMARY,
-                  fontSize: 16,
-                  fontWeight: "bold",
-                  letterSpacing: 0.1,
-                }}
-              >
-                Submit
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
       <View
         style={[
           {
@@ -712,47 +211,10 @@ export default function StudySpotsMapView({
           containerStyle,
         ]}
       >
-        {/* Map Region Button overlayed in top right */}
-        <View
-          style={{
-            position: "absolute",
-            top: 16,
-            right: 16,
-            zIndex: 10,
-          }}
-        >
-          <TouchableOpacity
-            style={{
-              backgroundColor: themeColors.purple,
-              padding: 8,
-              borderRadius: 8,
-              alignItems: "center",
-              flexDirection: "row",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.12,
-              shadowRadius: 2,
-              elevation: 2,
-            }}
-            onPress={() => setRegionPickerVisible(true)}
-          >
-            <PencilSimple size={18} color={themeColors.white} />
-          </TouchableOpacity>
-        </View>
         <MapView
           ref={mapRef}
           style={{ flex: 1 }}
-          initialRegion={staticInitialRegion.current || UW_REGION}
-          onRegionChangeComplete={(newRegion) => {
-            // Only update if this is a user-initiated change, not a programmatic one
-            if (!isInitialLoad.current && !isProgrammaticChange.current) {
-              userHasMovedMap.current = true;
-              currentUserRegion.current = newRegion;
-              // Don't update region state once user has moved map to prevent resets
-            }
-            // Reset the flag after handling the change
-            isProgrammaticChange.current = false;
-          }}
+          initialRegion={UW_REGION}
           showsUserLocation={true}
           {...(Platform.OS === "android" ? { provider: PROVIDER_GOOGLE } : {})}
           mapType={mapType}
@@ -795,6 +257,7 @@ export default function StudySpotsMapView({
                 />
               ))}
         </MapView>
+
         {showFriendsView
           ? friendsCheckIns.length === 0 &&
             !isLoadingFriends && (
@@ -845,8 +308,8 @@ export default function StudySpotsMapView({
             />
           </View>
         )}
-        {/* Legend removed */}
       </View>
+
       {/* --- Summary panel below the map --- */}
       <View
         style={{
@@ -960,6 +423,7 @@ export default function StudySpotsMapView({
           </>
         )}
       </View>
+
       {/* --- Building Modal: List all floors/spots for selected building --- */}
       <Modal
         visible={buildingModal.visible}

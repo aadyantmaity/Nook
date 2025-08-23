@@ -363,7 +363,6 @@ export default function StudySpotCard({
               </Text>
             </View>
           </View>
-          )}
           {/* Last updated label */}
           <Text
             style={{

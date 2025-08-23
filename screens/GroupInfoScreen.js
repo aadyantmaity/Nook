@@ -9,6 +9,7 @@ import {
   TextInput,
   Modal,
   SafeAreaView,
+  ScrollView,
 } from "react-native";
 import { db, auth } from "../firebaseConfig";
 import {
@@ -20,6 +21,8 @@ import {
   arrayRemove,
   collection,
   getDocs,
+  addDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { ThemeContext } from "../App";
 import { colors } from "../constants/colors";
@@ -34,7 +37,12 @@ import {
   Trophy,
   Clock,
   Medal,
-  Fire, // <-- add this import
+  Fire,
+  UserMinus,
+  MagnifyingGlass,
+  X,
+  DotsThreeVertical,
+  Gear,
 } from "phosphor-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import GroupShareModal from "../components/SpotDetail/GroupShareModal";
@@ -65,6 +73,18 @@ export default function GroupInfoScreen({ route, navigation }) {
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editSaving, setEditSaving] = useState(false);
+
+  // Add blocked users management state
+  const [showBlockUserModal, setShowBlockUserModal] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [blockingUser, setBlockingUser] = useState(null);
+  const [blockedUsers, setBlockedUsers] = useState([]);
+  const [blockedUsersData, setBlockedUsersData] = useState([]); // Add this for user data
+  const [blockPending, setBlockPending] = useState([]); // For block users modal
+
+  const [showManageMenu, setShowManageMenu] = useState(false);
 
   const starredListRef = useRef(null);
 
@@ -196,7 +216,6 @@ export default function GroupInfoScreen({ route, navigation }) {
             uid: auth.currentUser.uid,
             name: meName,
             profilePic: meProfilePic,
-            createdAt: Date.now(),
           }),
         });
       } catch (error) {
@@ -239,6 +258,147 @@ export default function GroupInfoScreen({ route, navigation }) {
     }
   };
 
+  // Fetch blocked users
+  useEffect(() => {
+    if (!group) return;
+    setBlockedUsers(
+      Array.isArray(group.blockedUsers) ? group.blockedUsers : []
+    );
+  }, [group]);
+
+  // Fetch blocked users data when blockedUsers changes
+  useEffect(() => {
+    const fetchBlockedUsersData = async () => {
+      if (!blockedUsers.length) {
+        setBlockedUsersData([]);
+        return;
+      }
+      try {
+        const usersData = [];
+        for (const uid of blockedUsers) {
+          const userDoc = await getDoc(doc(db, "users", uid));
+          if (userDoc.exists()) {
+            usersData.push({ uid, ...userDoc.data() });
+          } else {
+            // Keep the UID even if user doesn't exist
+            usersData.push({ uid, firstName: "Deleted", lastName: "User" });
+          }
+        }
+        setBlockedUsersData(usersData);
+      } catch (error) {
+        console.error("Error fetching blocked users data:", error);
+        setBlockedUsersData([]);
+      }
+    };
+    fetchBlockedUsersData();
+  }, [blockedUsers]);
+
+  // Search for users to block
+  const searchUsers = async (query) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setSearchLoading(true);
+    try {
+      const usersSnap = await getDocs(collection(db, "users"));
+      const users = usersSnap.docs
+        .map((d) => ({ uid: d.id, ...d.data() }))
+        .filter((user) => {
+          const fullName = `${user.firstName || ""} ${
+            user.lastName || ""
+          }`.toLowerCase();
+          const email = (user.email || "").toLowerCase();
+          const searchTerm = query.toLowerCase();
+
+          return (
+            user.uid !== auth.currentUser?.uid && // Exclude current user
+            !blockedUsers.includes(user.uid) && // Exclude already blocked users
+            (fullName.includes(searchTerm) || email.includes(searchTerm))
+          );
+        })
+        .slice(0, 10); // Limit results
+
+      setSearchResults(users);
+    } catch (error) {
+      console.error("Error searching users:", error);
+      setSearchResults([]);
+    }
+    setSearchLoading(false);
+  };
+
+  // Block user with confirmation
+  const handleBlockUser = async (userToBlock) => {
+    Alert.alert(
+      "Block User",
+      `Are you sure you want to block ${userToBlock.firstName} ${
+        userToBlock.lastName
+      }? ${
+        group?.memberUids?.includes(userToBlock.uid)
+          ? "They will be removed from the group and won't be able to see it anymore."
+          : "They won't be able to see or join this group."
+      }`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Block",
+          style: "destructive",
+          onPress: async () => {
+            setBlockingUser(userToBlock.uid);
+            try {
+              const groupRef = doc(db, "studyGroups", groupId);
+              const updates = {
+                blockedUsers: arrayUnion(userToBlock.uid),
+              };
+
+              // If user is a member, remove them
+              if (group?.memberUids?.includes(userToBlock.uid)) {
+                updates.memberUids = arrayRemove(userToBlock.uid);
+
+                // Add system message about removal
+                const userName =
+                  `${userToBlock.firstName || ""} ${
+                    userToBlock.lastName || ""
+                  }`.trim() || "User";
+                await addDoc(
+                  collection(db, "studyGroups", groupId, "messages"),
+                  {
+                    type: "system",
+                    text: `${userName} was removed from the group.`,
+                    uid: userToBlock.uid,
+                    createdAt: serverTimestamp(),
+                  }
+                );
+              }
+
+              await updateDoc(groupRef, updates);
+              setShowBlockUserModal(false);
+              setUserSearchQuery("");
+              setSearchResults([]);
+            } catch (error) {
+              console.error("Error blocking user:", error);
+              Alert.alert("Error", "Failed to block user.");
+            }
+            setBlockingUser(null);
+          },
+        },
+      ]
+    );
+  };
+
+  // Unblock user
+  const handleUnblockUser = async (userUid) => {
+    try {
+      await updateDoc(doc(db, "studyGroups", groupId), {
+        blockedUsers: arrayRemove(userUid),
+      });
+    } catch (error) {
+      console.error("Error unblocking user:", error);
+      Alert.alert("Error", "Failed to unblock user.");
+    }
+  };
+
   if (loading) {
     return (
       <View
@@ -262,36 +422,57 @@ export default function GroupInfoScreen({ route, navigation }) {
     <View style={{ padding: 0, marginBottom: 12 }}>
       {/* Group Name and Description */}
       <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Text
-            style={{
-              fontSize: 22,
-              fontWeight: "bold",
-              color: themeColors.purple,
-              fontFamily: FONTS.PRIMARY,
-              marginBottom: 8,
-              flex: 1,
-            }}
-          >
-            {group?.name}
-          </Text>
-          {/* Show edit button for owner */}
-          {group?.createdBy === auth.currentUser?.uid && (
-            <TouchableOpacity
-              onPress={openEditModal}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 8,
+          }}
+        >
+          {/* Group name and pencil in a row, pencil right after name */}
+          {group?.createdBy === auth.currentUser?.uid ? (
+            <>
+              <Text
+                style={{
+                  fontSize: 22,
+                  fontWeight: "bold",
+                  color: themeColors.purple,
+                  fontFamily: FONTS.PRIMARY,
+                  marginRight: 2,
+                }}
+                numberOfLines={1}
+              >
+                {group?.name}
+              </Text>
+              <TouchableOpacity
+                onPress={openEditModal}
+                style={{
+                  marginLeft: 4,
+                  padding: 4,
+                  borderRadius: 6,
+                  backgroundColor: themeColors.white,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: 28,
+                }}
+                accessibilityLabel="Edit Group"
+              >
+                <PencilSimple size={20} color={themeColors.purple} />
+              </TouchableOpacity>
+              {/* Remove DotsThreeVertical from here */}
+            </>
+          ) : (
+            <Text
               style={{
-                marginLeft: 8,
-                padding: 4,
-                borderRadius: 6,
-                backgroundColor: themeColors.white,
-                alignItems: "center",
-                justifyContent: "center",
-                height: 28,
+                fontSize: 22,
+                fontWeight: "bold",
+                color: themeColors.purple,
+                fontFamily: FONTS.PRIMARY,
               }}
-              accessibilityLabel="Edit Group"
+              numberOfLines={1}
             >
-              <PencilSimple size={20} color={themeColors.purple} />
-            </TouchableOpacity>
+              {group?.name}
+            </Text>
           )}
         </View>
         {group?.description ? (
@@ -568,66 +749,40 @@ export default function GroupInfoScreen({ route, navigation }) {
             style={{
               flexDirection: "row",
               alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: 12,
+              marginBottom: 4,
             }}
           >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Users
-                size={20}
-                color={themeColors.purple}
-                style={{ marginRight: 8 }}
-              />
+            <Text
+              style={{
+                fontWeight: "bold",
+                color: themeColors.purple,
+                fontSize: 17,
+                fontFamily: FONTS.PRIMARY,
+              }}
+            >
+              Members{" "}
               <Text
-                style={{
-                  fontWeight: "bold",
-                  color: themeColors.purple,
-                  fontSize: 17,
-                  fontFamily: FONTS.PRIMARY,
-                }}
+                style={{ color: themeColors.darkGray, fontWeight: "normal" }}
               >
-                Members{" "}
-                <Text
-                  style={{ color: themeColors.darkGray, fontWeight: "normal" }}
-                >
-                  ({group?.memberUids?.length || members.length || 0})
-                </Text>
+                ({group?.memberUids?.length || members.length || 0})
               </Text>
-            </View>
-
+            </Text>
+            {/* Show gear icon right after members count for owner */}
             {group?.createdBy === auth.currentUser?.uid && (
               <TouchableOpacity
-                onPress={() => setShowMembersModal(true)}
+                onPress={() => setShowManageMenu(true)}
                 style={{
-                  flexDirection: "row",
+                  marginLeft: 4,
+                  padding: 4,
+                  borderRadius: 6,
+                  backgroundColor: themeColors.white,
                   alignItems: "center",
-                  backgroundColor: themeColors.purple,
-                  paddingHorizontal: 12,
-                  paddingVertical: 8,
-                  borderRadius: 20,
-                  shadowColor: themeColors.black,
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
-                  elevation: 3,
+                  justifyContent: "center",
+                  height: 28,
                 }}
-                accessibilityLabel="Manage Members"
+                accessibilityLabel="Manage Group"
               >
-                <UserPlus
-                  size={16}
-                  color={themeColors.white}
-                  style={{ marginRight: 6 }}
-                />
-                <Text
-                  style={{
-                    color: themeColors.white,
-                    fontWeight: "bold",
-                    fontSize: 14,
-                    fontFamily: FONTS.PRIMARY,
-                  }}
-                >
-                  Manage
-                </Text>
+                <Gear size={22} color={themeColors.purple} />
               </TouchableOpacity>
             )}
           </View>
@@ -866,6 +1021,135 @@ export default function GroupInfoScreen({ route, navigation }) {
           showMenuButton={false}
         />
 
+        {/* --- Manage Menu Modal (owner only) --- */}
+        {group?.createdBy === auth.currentUser?.uid && (
+          <Modal
+            visible={showManageMenu}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowManageMenu(false)}
+          >
+            <TouchableOpacity
+              style={{
+                flex: 1,
+                backgroundColor: "rgba(0,0,0,0.3)",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+              activeOpacity={1}
+              onPressOut={() => setShowManageMenu(false)}
+            >
+              <View
+                style={{
+                  backgroundColor: themeColors.white,
+                  borderRadius: 16,
+                  padding: 24,
+                  width: 260,
+                  alignItems: "stretch",
+                  borderWidth: 1,
+                  borderColor: themeColors.gray + "70",
+                }}
+                onStartShouldSetResponder={() => true}
+              >
+                <Text
+                  style={{
+                    fontSize: 17,
+                    fontWeight: "bold",
+                    color: themeColors.purple,
+                    marginBottom: 16,
+                    textAlign: "center",
+                    fontFamily: FONTS.PRIMARY,
+                  }}
+                >
+                  Manage Group
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowManageMenu(false);
+                    setShowMembersModal(true);
+                  }}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 12,
+                    borderRadius: 8,
+                    paddingHorizontal: 8,
+                  }}
+                >
+                  <UserPlus
+                    size={20}
+                    color={themeColors.purple}
+                    style={{ marginRight: 10 }}
+                  />
+                  <Text
+                    style={{
+                      color: themeColors.purple,
+                      fontWeight: "bold",
+                      fontFamily: FONTS.PRIMARY,
+                      fontSize: 15,
+                    }}
+                  >
+                    Manage Members
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowManageMenu(false);
+                    setShowBlockUserModal(true);
+                  }}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 12,
+                    borderRadius: 8,
+                    paddingHorizontal: 8,
+                  }}
+                >
+                  <UserMinus
+                    size={20}
+                    color={themeColors.red}
+                    style={{ marginRight: 10 }}
+                  />
+                  <Text
+                    style={{
+                      color: themeColors.red,
+                      fontWeight: "bold",
+                      fontFamily: FONTS.PRIMARY,
+                      fontSize: 15,
+                    }}
+                  >
+                    Block Users
+                  </Text>
+                </TouchableOpacity>
+                {/* Cancel button styled as primary action */}
+                <TouchableOpacity
+                  onPress={() => setShowManageMenu(false)}
+                  style={{
+                    marginTop: 10,
+                    alignItems: "center",
+                    paddingVertical: 10,
+                    borderRadius: 8,
+                    backgroundColor: themeColors.white,
+                    borderWidth: 1,
+                    borderColor: themeColors.purple,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: themeColors.purple,
+                      fontWeight: "bold",
+                      fontFamily: FONTS.PRIMARY,
+                      fontSize: 15,
+                    }}
+                  >
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          </Modal>
+        )}
+
         {/* --- Edit Group Modal (owner only) --- */}
         {group?.createdBy === auth.currentUser?.uid && (
           <Modal
@@ -1010,6 +1294,365 @@ export default function GroupInfoScreen({ route, navigation }) {
             fieldName="memberUids"
           />
         )}
+        {/* Block User Modal */}
+        <Modal
+          visible={showBlockUserModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowBlockUserModal(false)}
+        >
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.3)",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+            activeOpacity={1}
+            onPressOut={() => setShowBlockUserModal(false)}
+          >
+            <View
+              style={{
+                backgroundColor: themeColors.white,
+                borderRadius: 16,
+                padding: 24,
+                width: "85%",
+                maxHeight: "70%",
+                alignItems: "center",
+                borderWidth: 1,
+                borderColor: themeColors.gray + "70",
+              }}
+              onStartShouldSetResponder={() => true}
+            >
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "bold",
+                  color: themeColors.purple,
+                  marginBottom: 16,
+                  textAlign: "center",
+                  fontFamily: FONTS.PRIMARY,
+                }}
+              >
+                Block Users
+              </Text>
+
+              {/* Search Input */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  borderWidth: 1,
+                  borderColor: themeColors.darkGray,
+                  borderRadius: 8,
+                  paddingHorizontal: 12,
+                  marginBottom: 16,
+                  width: "100%",
+                }}
+              >
+                <MagnifyingGlass size={20} color={themeColors.darkGray} />
+                <TextInput
+                  placeholder="Search for user to block..."
+                  value={userSearchQuery}
+                  onChangeText={(text) => {
+                    setUserSearchQuery(text);
+                    searchUsers(text);
+                  }}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 10,
+                    paddingLeft: 8,
+                    fontFamily: FONTS.PRIMARY,
+                    color: themeColors.black,
+                  }}
+                  placeholderTextColor={themeColors.darkGray}
+                />
+              </View>
+
+              {/* Search Results */}
+              <ScrollView style={{ width: "100%", maxHeight: 250 }}>
+                {userSearchQuery.trim() ? (
+                  searchLoading ? (
+                    <Text
+                      style={{
+                        color: themeColors.darkGray,
+                        textAlign: "center",
+                        fontFamily: FONTS.PRIMARY,
+                        marginTop: 20,
+                      }}
+                    >
+                      Searching...
+                    </Text>
+                  ) : searchResults.length === 0 ? (
+                    <Text
+                      style={{
+                        color: themeColors.darkGray,
+                        textAlign: "center",
+                        fontFamily: FONTS.PRIMARY,
+                        marginTop: 20,
+                      }}
+                    >
+                      No users found
+                    </Text>
+                  ) : (
+                    searchResults.map((item) => (
+                      <TouchableOpacity
+                        key={item.uid}
+                        onPress={() => handleBlockUser(item)}
+                        disabled={blockingUser === item.uid}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          paddingVertical: 10,
+                          borderBottomWidth: 1,
+                          borderBottomColor: themeColors.gray,
+                          opacity: blockingUser === item.uid ? 0.6 : 1,
+                        }}
+                      >
+                        {/* Profile Picture */}
+                        <View
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 16,
+                            backgroundColor: themeColors.purple,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginRight: 12,
+                            overflow: "hidden",
+                          }}
+                        >
+                          {item.profilePic ? (
+                            <Image
+                              source={{ uri: item.profilePic }}
+                              style={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: 16,
+                              }}
+                              resizeMode="cover"
+                            />
+                          ) : (
+                            <User size={20} color={themeColors.white} />
+                          )}
+                        </View>
+                        {/* Name and Status */}
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={{
+                              color: themeColors.black,
+                              fontFamily: FONTS.PRIMARY,
+                            }}
+                            numberOfLines={1}
+                          >
+                            {item.firstName
+                              ? (() => {
+                                  const parts = `${item.firstName} ${
+                                    item.lastName || ""
+                                  }`
+                                    .trim()
+                                    .split(" ");
+                                  const first = parts[0] || "";
+                                  const lastInitial =
+                                    parts.length > 1 && parts[1]
+                                      ? parts[1][0] + "."
+                                      : "";
+                                  return `${first} ${lastInitial}`;
+                                })()
+                              : "User"}
+                          </Text>
+                          {group?.memberUids?.includes(item.uid) && (
+                            <Text
+                              style={{
+                                color: themeColors.purple,
+                                fontFamily: FONTS.PRIMARY,
+                                fontSize: 12,
+                              }}
+                            >
+                              Group Member
+                            </Text>
+                          )}
+                        </View>
+                        {/* Block Icon */}
+                        <UserMinus
+                          size={20}
+                          color={themeColors.red}
+                          style={{ marginLeft: 10 }}
+                        />
+                      </TouchableOpacity>
+                    ))
+                  )
+                ) : (
+                  <Text
+                    style={{
+                      color: themeColors.darkGray,
+                      textAlign: "center",
+                      fontFamily: FONTS.PRIMARY,
+                      marginTop: 20,
+                    }}
+                  >
+                    Search for a user to block from this group
+                  </Text>
+                )}
+
+                {/* Show blocked users if any */}
+                {blockedUsers.length > 0 && (
+                  <View
+                    style={{
+                      marginTop: 20,
+                      paddingTop: 16,
+                      borderTopWidth: 1,
+                      borderTopColor: themeColors.gray,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontWeight: "bold",
+                        color: themeColors.purple,
+                        fontFamily: FONTS.PRIMARY,
+                        marginBottom: 12,
+                        textAlign: "center",
+                      }}
+                    >
+                      Blocked Users ({blockedUsers.length})
+                    </Text>
+                    {blockedUsersData.slice(0, 5).map((userData) => (
+                      <View
+                        key={userData.uid}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          paddingVertical: 8,
+                          borderBottomWidth: 1,
+                          borderBottomColor: themeColors.gray,
+                        }}
+                      >
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            flex: 1,
+                          }}
+                        >
+                          {/* Profile Picture */}
+                          <View
+                            style={{
+                              width: 24,
+                              height: 24,
+                              borderRadius: 12,
+                              backgroundColor: themeColors.purple,
+                              alignItems: "center",
+                              justifyContent: "center",
+                              marginRight: 8,
+                              overflow: "hidden",
+                            }}
+                          >
+                            {userData.profilePic ? (
+                              <Image
+                                source={{ uri: userData.profilePic }}
+                                style={{
+                                  width: 24,
+                                  height: 24,
+                                  borderRadius: 12,
+                                }}
+                                resizeMode="cover"
+                              />
+                            ) : (
+                              <User size={14} color={themeColors.white} />
+                            )}
+                          </View>
+                          {/* Name */}
+                          <Text
+                            style={{
+                              color: themeColors.darkGray,
+                              fontFamily: FONTS.PRIMARY,
+                              fontSize: 14,
+                            }}
+                            numberOfLines={1}
+                          >
+                            {userData.firstName
+                              ? (() => {
+                                  const parts = `${userData.firstName} ${
+                                    userData.lastName || ""
+                                  }`
+                                    .trim()
+                                    .split(" ");
+                                  const first = parts[0] || "";
+                                  const lastInitial =
+                                    parts.length > 1 && parts[1]
+                                      ? parts[1][0] + "."
+                                      : "";
+                                  return `${first} ${lastInitial}`;
+                                })()
+                              : "User"}
+                          </Text>
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => handleUnblockUser(userData.uid)}
+                          style={{
+                            backgroundColor: themeColors.purple,
+                            paddingHorizontal: 12,
+                            paddingVertical: 4,
+                            borderRadius: 6,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: themeColors.white,
+                              fontSize: 12,
+                              fontFamily: FONTS.PRIMARY,
+                              fontWeight: "bold",
+                            }}
+                          >
+                            Unblock
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                    {blockedUsers.length > 5 && (
+                      <Text
+                        style={{
+                          color: themeColors.darkGray,
+                          fontSize: 12,
+                          fontFamily: FONTS.PRIMARY,
+                          textAlign: "center",
+                          marginTop: 8,
+                        }}
+                      >
+                        +{blockedUsers.length - 5} more
+                      </Text>
+                    )}
+                  </View>
+                )}
+              </ScrollView>
+
+              {/* Close Button */}
+              <TouchableOpacity
+                onPress={() => setShowBlockUserModal(false)}
+                style={{
+                  marginTop: 16,
+                  backgroundColor: themeColors.purple,
+                  borderRadius: 8,
+                  paddingVertical: 10,
+                  paddingHorizontal: 24,
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    color: themeColors.white,
+                    fontWeight: "bold",
+                    fontFamily: FONTS.PRIMARY,
+                  }}
+                >
+                  Done
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+
         {/* Main FlatList */}
         <FlatList
           style={{ flex: 1, backgroundColor: themeColors.white }}
