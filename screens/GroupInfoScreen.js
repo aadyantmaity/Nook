@@ -38,11 +38,10 @@ import {
   Clock,
   Medal,
   Fire,
-  UserMinus,
   MagnifyingGlass,
   X,
   DotsThreeVertical,
-  Gear,
+  Check, // <-- already imported
 } from "phosphor-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import GroupShareModal from "../components/SpotDetail/GroupShareModal";
@@ -73,16 +72,6 @@ export default function GroupInfoScreen({ route, navigation }) {
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editSaving, setEditSaving] = useState(false);
-
-  // Add blocked users management state
-  const [showBlockUserModal, setShowBlockUserModal] = useState(false);
-  const [userSearchQuery, setUserSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [blockingUser, setBlockingUser] = useState(null);
-  const [blockedUsers, setBlockedUsers] = useState([]);
-  const [blockedUsersData, setBlockedUsersData] = useState([]); // Add this for user data
-  const [blockPending, setBlockPending] = useState([]); // For block users modal
 
   const [showManageMenu, setShowManageMenu] = useState(false);
 
@@ -258,145 +247,166 @@ export default function GroupInfoScreen({ route, navigation }) {
     }
   };
 
-  // Fetch blocked users
-  useEffect(() => {
-    if (!group) return;
-    setBlockedUsers(
-      Array.isArray(group.blockedUsers) ? group.blockedUsers : []
-    );
-  }, [group]);
-
-  // Fetch blocked users data when blockedUsers changes
-  useEffect(() => {
-    const fetchBlockedUsersData = async () => {
-      if (!blockedUsers.length) {
-        setBlockedUsersData([]);
-        return;
-      }
-      try {
-        const usersData = [];
-        for (const uid of blockedUsers) {
-          const userDoc = await getDoc(doc(db, "users", uid));
-          if (userDoc.exists()) {
-            usersData.push({ uid, ...userDoc.data() });
-          } else {
-            // Keep the UID even if user doesn't exist
-            usersData.push({ uid, firstName: "Deleted", lastName: "User" });
-          }
-        }
-        setBlockedUsersData(usersData);
-      } catch (error) {
-        console.error("Error fetching blocked users data:", error);
-        setBlockedUsersData([]);
-      }
-    };
-    fetchBlockedUsersData();
-  }, [blockedUsers]);
-
   // Search for users to block
-  const searchUsers = async (query) => {
+
+  // --- Add state for manage members modal search ---
+  const [memberSearchQuery, setMemberSearchQuery] = useState("");
+  const [memberSearchResults, setMemberSearchResults] = useState([]);
+  const [memberSearchLoading, setMemberSearchLoading] = useState(false);
+  const [addingMemberUid, setAddingMemberUid] = useState(null);
+  const [removingMemberUid, setRemovingMemberUid] = useState(null);
+
+  // --- Only allow searching for friends to add as members ---
+  // Friends = users who are both in following and followers
+  const [mutualFriends, setMutualFriends] = useState([]);
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    // Find mutual friends from following and followers
+    const mutual = (following || []).filter((uid) =>
+      (followers || []).includes(uid)
+    );
+    setMutualFriends(mutual);
+  }, [following, followers]);
+
+  // --- Manage Members Selection State ---
+  const [selectedMemberUids, setSelectedMemberUids] = useState([]);
+  useEffect(() => {
+    // Initialize with current members (excluding owner)
+    setSelectedMemberUids(
+      members.filter((m) => m.uid !== group?.createdBy).map((m) => m.uid)
+    );
+  }, [members, group?.createdBy]);
+
+  // Search for users to add as members (only among mutual friends)
+  const searchMembers = async (query) => {
     if (!query.trim()) {
-      setSearchResults([]);
+      setMemberSearchResults([]);
       return;
     }
-
-    setSearchLoading(true);
+    setMemberSearchLoading(true);
     try {
+      // Only fetch mutual friends
+      if (!mutualFriends.length) {
+        setMemberSearchResults([]);
+        setMemberSearchLoading(false);
+        return;
+      }
       const usersSnap = await getDocs(collection(db, "users"));
       const users = usersSnap.docs
         .map((d) => ({ uid: d.id, ...d.data() }))
         .filter((user) => {
+          // Only mutual friends, not already members, not self
+          if (
+            !mutualFriends.includes(user.uid) ||
+            group?.memberUids?.includes(user.uid) ||
+            user.uid === auth.currentUser?.uid
+          ) {
+            return false;
+          }
           const fullName = `${user.firstName || ""} ${
             user.lastName || ""
           }`.toLowerCase();
           const email = (user.email || "").toLowerCase();
           const searchTerm = query.toLowerCase();
-
-          return (
-            user.uid !== auth.currentUser?.uid && // Exclude current user
-            !blockedUsers.includes(user.uid) && // Exclude already blocked users
-            (fullName.includes(searchTerm) || email.includes(searchTerm))
-          );
+          return fullName.includes(searchTerm) || email.includes(searchTerm);
         })
         .slice(0, 10); // Limit results
-
-      setSearchResults(users);
+      setMemberSearchResults(users);
     } catch (error) {
-      console.error("Error searching users:", error);
-      setSearchResults([]);
+      setMemberSearchResults([]);
     }
-    setSearchLoading(false);
+    setMemberSearchLoading(false);
   };
 
-  // Block user with confirmation
-  const handleBlockUser = async (userToBlock) => {
+  // --- Apply member changes when Done is clicked ---
+  const handleApplyMemberChanges = async () => {
+    // Compute members to add and remove
+    const currentMemberUids = members
+      .filter((m) => m.uid !== group?.createdBy)
+      .map((m) => m.uid);
+    const toAdd = selectedMemberUids.filter(
+      (uid) => !currentMemberUids.includes(uid)
+    );
+    const toRemove = currentMemberUids.filter(
+      (uid) => !selectedMemberUids.includes(uid)
+    );
+    if (toAdd.length === 0 && toRemove.length === 0) {
+      setShowMembersModal(false);
+      resetMembersModal();
+      return;
+    }
     Alert.alert(
-      "Block User",
-      `Are you sure you want to block ${userToBlock.firstName} ${
-        userToBlock.lastName
-      }? ${
-        group?.memberUids?.includes(userToBlock.uid)
-          ? "They will be removed from the group and won't be able to see it anymore."
-          : "They won't be able to see or join this group."
-      }`,
+      "Apply Changes",
+      `Are you sure you want to update group members?\n\nAdd: ${toAdd.length}\nRemove: ${toRemove.length}`,
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Block",
+          text: "Apply",
           style: "destructive",
           onPress: async () => {
-            setBlockingUser(userToBlock.uid);
-            try {
-              const groupRef = doc(db, "studyGroups", groupId);
-              const updates = {
-                blockedUsers: arrayUnion(userToBlock.uid),
-              };
-
-              // If user is a member, remove them
-              if (group?.memberUids?.includes(userToBlock.uid)) {
-                updates.memberUids = arrayRemove(userToBlock.uid);
-
-                // Add system message about removal
-                const userName =
-                  `${userToBlock.firstName || ""} ${
-                    userToBlock.lastName || ""
-                  }`.trim() || "User";
+            // Add new members
+            for (const uid of toAdd) {
+              try {
+                await updateDoc(doc(db, "studyGroups", groupId), {
+                  memberUids: arrayUnion(uid),
+                });
+                // Add system message
+                const userDoc = await getDoc(doc(db, "users", uid));
+                const userName = userDoc.exists()
+                  ? `${userDoc.data().firstName || ""} ${
+                      userDoc.data().lastName || ""
+                    }`.trim()
+                  : "User";
+                await addDoc(
+                  collection(db, "studyGroups", groupId, "messages"),
+                  {
+                    type: "system",
+                    text: `${userName} was added to the group.`,
+                    uid,
+                    createdAt: serverTimestamp(),
+                  }
+                );
+              } catch {}
+            }
+            // Remove members
+            for (const uid of toRemove) {
+              try {
+                await updateDoc(doc(db, "studyGroups", groupId), {
+                  memberUids: arrayRemove(uid),
+                });
+                // Add system message
+                const userDoc = await getDoc(doc(db, "users", uid));
+                const userName = userDoc.exists()
+                  ? `${userDoc.data().firstName || ""} ${
+                      userDoc.data().lastName || ""
+                    }`.trim()
+                  : "User";
                 await addDoc(
                   collection(db, "studyGroups", groupId, "messages"),
                   {
                     type: "system",
                     text: `${userName} was removed from the group.`,
-                    uid: userToBlock.uid,
+                    uid,
                     createdAt: serverTimestamp(),
                   }
                 );
-              }
-
-              await updateDoc(groupRef, updates);
-              setShowBlockUserModal(false);
-              setUserSearchQuery("");
-              setSearchResults([]);
-            } catch (error) {
-              console.error("Error blocking user:", error);
-              Alert.alert("Error", "Failed to block user.");
+              } catch {}
             }
-            setBlockingUser(null);
+            setShowMembersModal(false);
+            resetMembersModal();
           },
         },
       ]
     );
   };
 
-  // Unblock user
-  const handleUnblockUser = async (userUid) => {
-    try {
-      await updateDoc(doc(db, "studyGroups", groupId), {
-        blockedUsers: arrayRemove(userUid),
-      });
-    } catch (error) {
-      console.error("Error unblocking user:", error);
-      Alert.alert("Error", "Failed to unblock user.");
-    }
+  // Reset modal values when modal is closed
+  const resetMembersModal = () => {
+    setMemberSearchQuery("");
+    setMemberSearchResults([]);
+    setSelectedMemberUids(
+      members.filter((m) => m.uid !== group?.createdBy).map((m) => m.uid)
+    );
   };
 
   if (loading) {
@@ -750,13 +760,14 @@ export default function GroupInfoScreen({ route, navigation }) {
               flexDirection: "row",
               alignItems: "center",
               marginBottom: 4,
+              justifyContent: "space-between",
             }}
           >
             <Text
               style={{
                 fontWeight: "bold",
                 color: themeColors.purple,
-                fontSize: 17,
+                fontSize: 19,
                 fontFamily: FONTS.PRIMARY,
               }}
             >
@@ -767,22 +778,23 @@ export default function GroupInfoScreen({ route, navigation }) {
                 ({group?.memberUids?.length || members.length || 0})
               </Text>
             </Text>
-            {/* Show gear icon right after members count for owner */}
             {group?.createdBy === auth.currentUser?.uid && (
               <TouchableOpacity
-                onPress={() => setShowManageMenu(true)}
-                style={{
-                  marginLeft: 4,
-                  padding: 4,
-                  borderRadius: 6,
-                  backgroundColor: themeColors.white,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  height: 28,
-                }}
-                accessibilityLabel="Manage Group"
+                onPress={() =>
+                  navigation.navigate("MembersManage", { groupId })
+                }
+                style={{ paddingVertical: 6, paddingHorizontal: 8 }}
+                accessibilityLabel="Manage Members"
               >
-                <Gear size={22} color={themeColors.purple} />
+                <Text
+                  style={{
+                    color: themeColors.purple,
+                    fontFamily: FONTS.PRIMARY,
+                    fontWeight: "bold",
+                  }}
+                >
+                  Manage Members
+                </Text>
               </TouchableOpacity>
             )}
           </View>
@@ -1016,139 +1028,10 @@ export default function GroupInfoScreen({ route, navigation }) {
         {/* Header */}
         <GroupHeader
           navigation={navigation}
-          groupName={group?.name}
+          groupName={"Group Details"}
           themeColors={themeColors}
           showMenuButton={false}
         />
-
-        {/* --- Manage Menu Modal (owner only) --- */}
-        {group?.createdBy === auth.currentUser?.uid && (
-          <Modal
-            visible={showManageMenu}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setShowManageMenu(false)}
-          >
-            <TouchableOpacity
-              style={{
-                flex: 1,
-                backgroundColor: "rgba(0,0,0,0.3)",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-              activeOpacity={1}
-              onPressOut={() => setShowManageMenu(false)}
-            >
-              <View
-                style={{
-                  backgroundColor: themeColors.white,
-                  borderRadius: 16,
-                  padding: 24,
-                  width: 260,
-                  alignItems: "stretch",
-                  borderWidth: 1,
-                  borderColor: themeColors.gray + "70",
-                }}
-                onStartShouldSetResponder={() => true}
-              >
-                <Text
-                  style={{
-                    fontSize: 17,
-                    fontWeight: "bold",
-                    color: themeColors.purple,
-                    marginBottom: 16,
-                    textAlign: "center",
-                    fontFamily: FONTS.PRIMARY,
-                  }}
-                >
-                  Manage Group
-                </Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    setShowManageMenu(false);
-                    setShowMembersModal(true);
-                  }}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    paddingVertical: 12,
-                    borderRadius: 8,
-                    paddingHorizontal: 8,
-                  }}
-                >
-                  <UserPlus
-                    size={20}
-                    color={themeColors.purple}
-                    style={{ marginRight: 10 }}
-                  />
-                  <Text
-                    style={{
-                      color: themeColors.purple,
-                      fontWeight: "bold",
-                      fontFamily: FONTS.PRIMARY,
-                      fontSize: 15,
-                    }}
-                  >
-                    Manage Members
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => {
-                    setShowManageMenu(false);
-                    setShowBlockUserModal(true);
-                  }}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    paddingVertical: 12,
-                    borderRadius: 8,
-                    paddingHorizontal: 8,
-                  }}
-                >
-                  <UserMinus
-                    size={20}
-                    color={themeColors.red}
-                    style={{ marginRight: 10 }}
-                  />
-                  <Text
-                    style={{
-                      color: themeColors.red,
-                      fontWeight: "bold",
-                      fontFamily: FONTS.PRIMARY,
-                      fontSize: 15,
-                    }}
-                  >
-                    Block Users
-                  </Text>
-                </TouchableOpacity>
-                {/* Cancel button styled as primary action */}
-                <TouchableOpacity
-                  onPress={() => setShowManageMenu(false)}
-                  style={{
-                    marginTop: 10,
-                    alignItems: "center",
-                    paddingVertical: 10,
-                    borderRadius: 8,
-                    backgroundColor: themeColors.white,
-                    borderWidth: 1,
-                    borderColor: themeColors.purple,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: themeColors.purple,
-                      fontWeight: "bold",
-                      fontFamily: FONTS.PRIMARY,
-                      fontSize: 15,
-                    }}
-                  >
-                    Cancel
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          </Modal>
-        )}
 
         {/* --- Edit Group Modal (owner only) --- */}
         {group?.createdBy === auth.currentUser?.uid && (
@@ -1282,376 +1165,6 @@ export default function GroupInfoScreen({ route, navigation }) {
             </TouchableOpacity>
           </Modal>
         )}
-        {/* Manage Members Modal (owner only, uses PrivateNookShareModal in group mode) */}
-        {group?.createdBy === auth.currentUser?.uid && (
-          <GroupShareModal
-            visible={showMembersModal}
-            onClose={() => setShowMembersModal(false)}
-            spotId={groupId}
-            themeColors={themeColors}
-            ownerUid={group?.createdBy}
-            collectionName="studyGroups"
-            fieldName="memberUids"
-          />
-        )}
-        {/* Block User Modal */}
-        <Modal
-          visible={showBlockUserModal}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setShowBlockUserModal(false)}
-        >
-          <TouchableOpacity
-            style={{
-              flex: 1,
-              backgroundColor: "rgba(0,0,0,0.3)",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-            activeOpacity={1}
-            onPressOut={() => setShowBlockUserModal(false)}
-          >
-            <View
-              style={{
-                backgroundColor: themeColors.white,
-                borderRadius: 16,
-                padding: 24,
-                width: "85%",
-                maxHeight: "70%",
-                alignItems: "center",
-                borderWidth: 1,
-                borderColor: themeColors.gray + "70",
-              }}
-              onStartShouldSetResponder={() => true}
-            >
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: "bold",
-                  color: themeColors.purple,
-                  marginBottom: 16,
-                  textAlign: "center",
-                  fontFamily: FONTS.PRIMARY,
-                }}
-              >
-                Block Users
-              </Text>
-
-              {/* Search Input */}
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  borderWidth: 1,
-                  borderColor: themeColors.darkGray,
-                  borderRadius: 8,
-                  paddingHorizontal: 12,
-                  marginBottom: 16,
-                  width: "100%",
-                }}
-              >
-                <MagnifyingGlass size={20} color={themeColors.darkGray} />
-                <TextInput
-                  placeholder="Search for user to block..."
-                  value={userSearchQuery}
-                  onChangeText={(text) => {
-                    setUserSearchQuery(text);
-                    searchUsers(text);
-                  }}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 10,
-                    paddingLeft: 8,
-                    fontFamily: FONTS.PRIMARY,
-                    color: themeColors.black,
-                  }}
-                  placeholderTextColor={themeColors.darkGray}
-                />
-              </View>
-
-              {/* Search Results */}
-              <ScrollView style={{ width: "100%", maxHeight: 250 }}>
-                {userSearchQuery.trim() ? (
-                  searchLoading ? (
-                    <Text
-                      style={{
-                        color: themeColors.darkGray,
-                        textAlign: "center",
-                        fontFamily: FONTS.PRIMARY,
-                        marginTop: 20,
-                      }}
-                    >
-                      Searching...
-                    </Text>
-                  ) : searchResults.length === 0 ? (
-                    <Text
-                      style={{
-                        color: themeColors.darkGray,
-                        textAlign: "center",
-                        fontFamily: FONTS.PRIMARY,
-                        marginTop: 20,
-                      }}
-                    >
-                      No users found
-                    </Text>
-                  ) : (
-                    searchResults.map((item) => (
-                      <TouchableOpacity
-                        key={item.uid}
-                        onPress={() => handleBlockUser(item)}
-                        disabled={blockingUser === item.uid}
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          paddingVertical: 10,
-                          borderBottomWidth: 1,
-                          borderBottomColor: themeColors.gray,
-                          opacity: blockingUser === item.uid ? 0.6 : 1,
-                        }}
-                      >
-                        {/* Profile Picture */}
-                        <View
-                          style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 16,
-                            backgroundColor: themeColors.purple,
-                            alignItems: "center",
-                            justifyContent: "center",
-                            marginRight: 12,
-                            overflow: "hidden",
-                          }}
-                        >
-                          {item.profilePic ? (
-                            <Image
-                              source={{ uri: item.profilePic }}
-                              style={{
-                                width: 32,
-                                height: 32,
-                                borderRadius: 16,
-                              }}
-                              resizeMode="cover"
-                            />
-                          ) : (
-                            <User size={20} color={themeColors.white} />
-                          )}
-                        </View>
-                        {/* Name and Status */}
-                        <View style={{ flex: 1 }}>
-                          <Text
-                            style={{
-                              color: themeColors.black,
-                              fontFamily: FONTS.PRIMARY,
-                            }}
-                            numberOfLines={1}
-                          >
-                            {item.firstName
-                              ? (() => {
-                                  const parts = `${item.firstName} ${
-                                    item.lastName || ""
-                                  }`
-                                    .trim()
-                                    .split(" ");
-                                  const first = parts[0] || "";
-                                  const lastInitial =
-                                    parts.length > 1 && parts[1]
-                                      ? parts[1][0] + "."
-                                      : "";
-                                  return `${first} ${lastInitial}`;
-                                })()
-                              : "User"}
-                          </Text>
-                          {group?.memberUids?.includes(item.uid) && (
-                            <Text
-                              style={{
-                                color: themeColors.purple,
-                                fontFamily: FONTS.PRIMARY,
-                                fontSize: 12,
-                              }}
-                            >
-                              Group Member
-                            </Text>
-                          )}
-                        </View>
-                        {/* Block Icon */}
-                        <UserMinus
-                          size={20}
-                          color={themeColors.red}
-                          style={{ marginLeft: 10 }}
-                        />
-                      </TouchableOpacity>
-                    ))
-                  )
-                ) : (
-                  <Text
-                    style={{
-                      color: themeColors.darkGray,
-                      textAlign: "center",
-                      fontFamily: FONTS.PRIMARY,
-                      marginTop: 20,
-                    }}
-                  >
-                    Search for a user to block from this group
-                  </Text>
-                )}
-
-                {/* Show blocked users if any */}
-                {blockedUsers.length > 0 && (
-                  <View
-                    style={{
-                      marginTop: 20,
-                      paddingTop: 16,
-                      borderTopWidth: 1,
-                      borderTopColor: themeColors.gray,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontWeight: "bold",
-                        color: themeColors.purple,
-                        fontFamily: FONTS.PRIMARY,
-                        marginBottom: 12,
-                        textAlign: "center",
-                      }}
-                    >
-                      Blocked Users ({blockedUsers.length})
-                    </Text>
-                    {blockedUsersData.slice(0, 5).map((userData) => (
-                      <View
-                        key={userData.uid}
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          paddingVertical: 8,
-                          borderBottomWidth: 1,
-                          borderBottomColor: themeColors.gray,
-                        }}
-                      >
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            flex: 1,
-                          }}
-                        >
-                          {/* Profile Picture */}
-                          <View
-                            style={{
-                              width: 24,
-                              height: 24,
-                              borderRadius: 12,
-                              backgroundColor: themeColors.purple,
-                              alignItems: "center",
-                              justifyContent: "center",
-                              marginRight: 8,
-                              overflow: "hidden",
-                            }}
-                          >
-                            {userData.profilePic ? (
-                              <Image
-                                source={{ uri: userData.profilePic }}
-                                style={{
-                                  width: 24,
-                                  height: 24,
-                                  borderRadius: 12,
-                                }}
-                                resizeMode="cover"
-                              />
-                            ) : (
-                              <User size={14} color={themeColors.white} />
-                            )}
-                          </View>
-                          {/* Name */}
-                          <Text
-                            style={{
-                              color: themeColors.darkGray,
-                              fontFamily: FONTS.PRIMARY,
-                              fontSize: 14,
-                            }}
-                            numberOfLines={1}
-                          >
-                            {userData.firstName
-                              ? (() => {
-                                  const parts = `${userData.firstName} ${
-                                    userData.lastName || ""
-                                  }`
-                                    .trim()
-                                    .split(" ");
-                                  const first = parts[0] || "";
-                                  const lastInitial =
-                                    parts.length > 1 && parts[1]
-                                      ? parts[1][0] + "."
-                                      : "";
-                                  return `${first} ${lastInitial}`;
-                                })()
-                              : "User"}
-                          </Text>
-                        </View>
-                        <TouchableOpacity
-                          onPress={() => handleUnblockUser(userData.uid)}
-                          style={{
-                            backgroundColor: themeColors.purple,
-                            paddingHorizontal: 12,
-                            paddingVertical: 4,
-                            borderRadius: 6,
-                          }}
-                        >
-                          <Text
-                            style={{
-                              color: themeColors.white,
-                              fontSize: 12,
-                              fontFamily: FONTS.PRIMARY,
-                              fontWeight: "bold",
-                            }}
-                          >
-                            Unblock
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                    {blockedUsers.length > 5 && (
-                      <Text
-                        style={{
-                          color: themeColors.darkGray,
-                          fontSize: 12,
-                          fontFamily: FONTS.PRIMARY,
-                          textAlign: "center",
-                          marginTop: 8,
-                        }}
-                      >
-                        +{blockedUsers.length - 5} more
-                      </Text>
-                    )}
-                  </View>
-                )}
-              </ScrollView>
-
-              {/* Close Button */}
-              <TouchableOpacity
-                onPress={() => setShowBlockUserModal(false)}
-                style={{
-                  marginTop: 16,
-                  backgroundColor: themeColors.purple,
-                  borderRadius: 8,
-                  paddingVertical: 10,
-                  paddingHorizontal: 24,
-                  alignItems: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    color: themeColors.white,
-                    fontWeight: "bold",
-                    fontFamily: FONTS.PRIMARY,
-                  }}
-                >
-                  Done
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        </Modal>
 
         {/* Main FlatList */}
         <FlatList

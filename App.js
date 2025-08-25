@@ -18,6 +18,7 @@ import * as Font from "expo-font";
 import AppLoading from "expo-app-loading";
 import GroupChatScreen from "./screens/GroupChatScreen";
 import GroupInfoScreen from "./screens/GroupInfoScreen";
+import MembersManageScreen from "./screens/MembersManageScreen";
 
 import { HomeViewProvider } from "./components/Home/HomeViewContext";
 
@@ -109,6 +110,7 @@ export default function App() {
       <Stack.Screen name="EditSpot" component={EditSpotScreen} />
       <Stack.Screen name="GroupChat" component={GroupChatScreen} />
       <Stack.Screen name="GroupInfo" component={GroupInfoScreen} />
+      <Stack.Screen name="MembersManage" component={MembersManageScreen} />
       <Stack.Screen name="Search" component={SearchScreen} />
     </Stack.Navigator>
   );
