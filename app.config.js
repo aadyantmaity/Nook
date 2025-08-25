@@ -4,6 +4,7 @@ export default {
   expo: {
     name: "Nook",
     slug: "nook",
+    owner: "aadyantmaity3",
     version: "1.0.0",
     icon: "./assets/NewNook.png",
     scheme: "nook",
@@ -80,12 +81,8 @@ export default {
       ],
     ],
     extra: {
-      eas: {
-        projectId: "4fa00c32-f3ed-4ef5-ad72-b04ec4e10589",
-      },
+      eas: {},
       locationiqApiKey: process.env.LOCATIONIQ_API_KEY,
     },
   },
 };
-
-

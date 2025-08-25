@@ -113,8 +113,6 @@ export default function SpotDetailScreen({ route, navigation }) {
       ? 0
       : Number(spot?.ratings?.crowd) || -2
   );
-  // Table availability state for Odegaard
-  const [tableAvailability, setTableAvailability] = useState(null);
 
   // --- Private Nook Notes State ---
   const [showAddNoteModal, setShowAddNoteModal] = useState(false);
@@ -184,8 +182,8 @@ export default function SpotDetailScreen({ route, navigation }) {
     // Disable if no options selected
     if (
       liveNoise === -2 ||
-      liveCrowd === -2 ||
-      (isOdegaard && tableAvailability === null)
+      liveCrowd === -2
+      // (isOdegaard && tableAvailability === null) // REMOVE
     ) {
       Alert.alert(
         "Select an option",
@@ -201,9 +199,7 @@ export default function SpotDetailScreen({ route, navigation }) {
         crowd: liveCrowd,
         timestamp: serverTimestamp(),
       };
-      if (isOdegaard && tableAvailability !== null) {
-        ratingData.tableAvailability = tableAvailability;
-      }
+      // if (isOdegaard && tableAvailability !== null) {…} // REMOVE
       await addDoc(collection(db, "ratings"), ratingData);
       // Set cooldown in user doc
       const userRef = doc(db, "users", user.uid);
@@ -333,11 +329,6 @@ export default function SpotDetailScreen({ route, navigation }) {
 
   const tags = Array.isArray(spot.tags) ? spot.tags : [];
   const isPrivateNook = !!spot.privateNook;
-
-  // Detect if this is Odegaard Library
-  const isOdegaard = (spot?.buildingName || spot?.name || "")
-    .toLowerCase()
-    .includes("odegaard");
 
   return (
     <View
@@ -836,9 +827,9 @@ export default function SpotDetailScreen({ route, navigation }) {
                   isSubmittingLive={isSubmittingLive}
                   onSubmit={handleLiveUpdate}
                   themeColors={themeColors}
-                  showTableAvailability={isOdegaard}
-                  tableAvailability={tableAvailability}
-                  setTableAvailability={setTableAvailability}
+                  // showTableAvailability={isOdegaard}
+                  // tableAvailability={tableAvailability}
+                  // setTableAvailability={setTableAvailability}
                   spot={spot}
                   canSubmitLiveUpdate={canSubmitLiveUpdate()}
                   lastLiveUpdate={lastLiveUpdate}
@@ -1285,9 +1276,9 @@ export default function SpotDetailScreen({ route, navigation }) {
                   isSubmittingLive={isSubmittingLive}
                   onSubmit={handleLiveUpdate}
                   themeColors={themeColors}
-                  showTableAvailability={isOdegaard}
-                  tableAvailability={tableAvailability}
-                  setTableAvailability={setTableAvailability}
+                  // showTableAvailability={isOdegaard}
+                  // tableAvailability={tableAvailability}
+                  // setTableAvailability={setTableAvailability}
                   spot={spot}
                   canSubmitLiveUpdate={canSubmitLiveUpdate()}
                   lastLiveUpdate={lastLiveUpdate}
