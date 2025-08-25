@@ -76,8 +76,13 @@ export default function MembersManageScreen() {
       setGroup(groupData);
       // Fetch member info
       const memberUids = groupData.memberUids || [];
+      const blocked = Array.isArray(groupData.blockedUsers)
+        ? groupData.blockedUsers
+        : [];
       const users = [];
       for (const uid of memberUids) {
+        // Exclude blocked users from members
+        if (blocked.includes(uid)) continue;
         const userDoc = await getDoc(doc(db, "users", uid));
         if (userDoc.exists()) {
           users.push({ uid, ...userDoc.data() });
@@ -91,9 +96,7 @@ export default function MembersManageScreen() {
       ];
       setMembers(sortedUsers);
       // Initialize blocked users from group
-      setBlockedUsers(
-        Array.isArray(groupData.blockedUsers) ? groupData.blockedUsers : []
-      );
+      setBlockedUsers(blocked);
       setLoading(false);
     });
     return () => unsub();
@@ -129,14 +132,18 @@ export default function MembersManageScreen() {
     setMemberSearchLoading(true);
     try {
       const usersSnap = await getDocs(collection(db, "users"));
+      const blocked = Array.isArray(group?.blockedUsers)
+        ? group.blockedUsers
+        : [];
       const users = usersSnap.docs
         .map((d) => ({ uid: d.id, ...d.data() }))
         .filter((user) => {
-          // Only mutual friends, not already members, not self
+          // Only mutual friends, not already members, not self, not blocked
           if (
             !mutualFriends.includes(user.uid) ||
             group?.memberUids?.includes(user.uid) ||
-            user.uid === auth.currentUser?.uid
+            user.uid === auth.currentUser?.uid ||
+            blocked.includes(user.uid)
           ) {
             return false;
           }
@@ -207,25 +214,54 @@ export default function MembersManageScreen() {
   };
 
   const handleApplyMemberChanges = async () => {
+    const blocked = Array.isArray(group?.blockedUsers)
+      ? group.blockedUsers
+      : [];
     const currentMemberUids = members
       .filter((m) => m.uid !== group?.createdBy)
       .map((m) => m.uid);
-    // Add from pending list
+    // Add from pending list, but filter out blocked users
     const toAdd = pendingAddUids.filter(
-      (uid) => !currentMemberUids.includes(uid)
+      (uid) => !currentMemberUids.includes(uid) && !blocked.includes(uid)
     );
     const toRemove = currentMemberUids.filter(
-      (uid) => !selectedMemberUids.includes(uid)
+      (uid) => !selectedMemberUids.includes(uid) || blocked.includes(uid)
     );
 
-    if (toAdd.length === 0 && toRemove.length === 0) {
+    // Remove blocked users from group if present
+    for (const uid of blocked) {
+      if (currentMemberUids.includes(uid)) {
+        try {
+          await updateDoc(doc(db, "studyGroups", groupId), {
+            memberUids: arrayRemove(uid),
+          });
+          const userDoc = await getDoc(doc(db, "users", uid));
+          const userName = userDoc.exists()
+            ? `${userDoc.data().firstName || ""} ${
+                userDoc.data().lastName || ""
+              }`.trim()
+            : "User";
+          await addDoc(collection(db, "studyGroups", groupId, "messages"), {
+            type: "system",
+            text: `${userName} was removed from the group.`,
+            uid,
+            createdAt: serverTimestamp(),
+          });
+        } catch {}
+      }
+    }
+
+    if (
+      toAdd.length === 0 &&
+      toRemove.length === 0 &&
+      pendingBlockUids.length === 0 &&
+      blocked.filter((uid) => !selectedBlockedUids.includes(uid)).length === 0
+    ) {
       navigation.goBack();
       return;
     }
 
-    // Apply without extra confirmation since this screen is dedicated to managing
-    // members and mirrors the modal behavior
-    // Add new members
+    // Add new members (skip blocked users)
     for (const uid of toAdd) {
       try {
         await updateDoc(doc(db, "studyGroups", groupId), {
@@ -291,7 +327,7 @@ export default function MembersManageScreen() {
         }
       } catch {}
     }
-    const toUnblock = blockedUsers.filter(
+    const toUnblock = blocked.filter(
       (uid) => !selectedBlockedUids.includes(uid)
     );
     for (const uid of toUnblock) {

@@ -252,7 +252,17 @@ export default function SuggestedPeopleAndGroups({
                     item.memberUids.includes(user.uid);
                   const isPublic = !(item.isPrivate ?? false);
                   const joining = joiningGroups?.[item.id] ?? false;
+                  const isBlocked =
+                    Array.isArray(item.blockedUsers) &&
+                    item.blockedUsers.includes(user.uid);
                   const handleJoin = async () => {
+                    if (isBlocked) {
+                      Alert.alert(
+                        "Cannot Join",
+                        "You are blocked from this group and cannot join."
+                      );
+                      return;
+                    }
                     // --- Confirmation alert before joining ---
                     Alert.alert(
                       "Join Group",
@@ -285,6 +295,20 @@ export default function SuggestedPeopleAndGroups({
                                     Alert.alert(
                                       "Group Full",
                                       "This public group already has 32 members and cannot accept more."
+                                    );
+                                    setJoiningGroups((prev) => ({
+                                      ...prev,
+                                      [item.id]: false,
+                                    }));
+                                    return;
+                                  }
+                                  if (
+                                    Array.isArray(data.blockedUsers) &&
+                                    data.blockedUsers.includes(user.uid)
+                                  ) {
+                                    Alert.alert(
+                                      "Cannot Join",
+                                      "You are blocked from this group and cannot join."
                                     );
                                     setJoiningGroups((prev) => ({
                                       ...prev,
@@ -350,6 +374,13 @@ export default function SuggestedPeopleAndGroups({
                     );
                   };
                   const handlePress = async () => {
+                    if (isBlocked) {
+                      Alert.alert(
+                        "Cannot View",
+                        "You are blocked from this group."
+                      );
+                      return;
+                    }
                     if (isPublic && !isMember) {
                       // Do nothing, user should use Join button
                     } else {
@@ -433,7 +464,7 @@ export default function SuggestedPeopleAndGroups({
                             ? `${item.memberUids.length} members`
                             : ""}
                         </Text>
-                        {isPublic && !isMember && (
+                        {isPublic && !isMember && !isBlocked && (
                           <TouchableOpacity
                             style={{
                               marginTop: 8,

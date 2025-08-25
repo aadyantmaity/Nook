@@ -124,8 +124,13 @@ export default function GroupInfoScreen({ route, navigation }) {
       );
       // Fetch member info
       const memberUids = groupData.memberUids || [];
+      const blocked = Array.isArray(groupData.blockedUsers)
+        ? groupData.blockedUsers
+        : [];
       const users = [];
       for (const uid of memberUids) {
+        // Exclude blocked users from members
+        if (blocked.includes(uid)) continue;
         const userDoc = await getDoc(doc(db, "users", uid));
         if (userDoc.exists()) {
           users.push({ uid, ...userDoc.data() });
