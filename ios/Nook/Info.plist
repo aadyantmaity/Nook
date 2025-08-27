@@ -80,6 +80,6 @@
 	<key>NSCameraUsageDescription</key>
 	<string>This app uses the camera so you can take a photo of a study spot.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app needs your location to let you center the map on your current position.</string>
+	<string>Nook uses your location to: show nearby study spots, verify you're at a location when checking in or submitting live updates, calculate distances for sorting, and display your position on the map. Location access ensures authentic check-ins and helps you find the closest study spots.</string>
   </dict>
 </plist>

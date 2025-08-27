@@ -34,6 +34,7 @@ import {
   Trophy,
   ChartBar,
   Gear,
+  Trash,
 } from "phosphor-react-native";
 import { ThemeContext } from "../App";
 import * as ImagePicker from "expo-image-picker";
@@ -52,6 +53,7 @@ import useFocusStats from "../hooks/useFocusStats";
 import ProfilePicture from "../components/Profile/ProfilePicture";
 import FavoriteSpotCard from "../components/Profile/FavoriteSpotCard";
 import LogoutModal from "../components/Profile/LogoutModal";
+import DeleteAccountModal from "../components/Profile/DeleteAccountModal";
 import EditProfileModal from "../components/Profile/EditProfileModal";
 import FollowersModal from "../components/Profile/FollowersModal";
 import FollowingModal from "../components/Profile/FollowingModal";
@@ -119,6 +121,11 @@ export default function ProfileScreen({ navigation, route }) {
   const [editedProfilePic, setEditedProfilePic] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const [needReauth, setNeedReauth] = useState(false);
+  const [reauthPassword, setReauthPassword] = useState("");
   const [favoritesExpanded, setFavoritesExpanded] = useState(false);
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
@@ -152,6 +159,113 @@ export default function ProfileScreen({ navigation, route }) {
     // Clear all user-specific AsyncStorage data
     clearUserData();
     auth.signOut();
+  };
+
+  // Delete account
+  const handleDeleteAccount = () => {
+    setDeleteError("");
+    setNeedReauth(false);
+    setReauthPassword("");
+    setDeleteModalVisible(true);
+  };
+
+  const confirmDeleteAccount = async () => {
+    try {
+      setDeleteLoading(true);
+      setDeleteError("");
+      const { db, auth } = await import("../firebaseConfig");
+      const { collection, getDocs, query, where, doc, deleteDoc } =
+        await import("firebase/firestore");
+      const { deleteUser, reauthenticateWithCredential, EmailAuthProvider } =
+        await import("firebase/auth");
+      const user = auth.currentUser;
+      if (!user) {
+        setDeleteModalVisible(false);
+        setDeleteLoading(false);
+        return;
+      }
+
+      // 1) Delete spots created by the user
+      try {
+        const spotsQ = query(
+          collection(db, "studySpots"),
+          where("addedBy", "==", user.uid)
+        );
+        const spotsSnap = await getDocs(spotsQ);
+        for (const spotDoc of spotsSnap.docs) {
+          // Delete subcollections like favoritedBy if exist
+          try {
+            const favSnap = await getDocs(
+              collection(db, "studySpots", spotDoc.id, "favoritedBy")
+            );
+            for (const fav of favSnap.docs) {
+              await deleteDoc(
+                doc(db, "studySpots", spotDoc.id, "favoritedBy", fav.id)
+              );
+            }
+          } catch (subErr) {
+            console.warn(
+              "Failed deleting spot subcollection favoritedBy:",
+              subErr
+            );
+          }
+          await deleteDoc(doc(db, "studySpots", spotDoc.id));
+        }
+      } catch (spotsErr) {
+        console.warn("Failed deleting user-created studySpots:", spotsErr);
+      }
+
+      // 2) Delete user Firestore document (and known subcollections if any in future)
+      try {
+        await deleteDoc(doc(db, "users", user.uid));
+      } catch (userDocErr) {
+        console.error("Failed to delete user Firestore document:", userDocErr);
+        setDeleteError("Couldn't remove your profile data. Please try again.");
+        setDeleteLoading(false);
+        return;
+      }
+
+      // 3) Clear AsyncStorage user-specific keys
+      await clearUserData();
+
+      // 4) Delete from Firebase Auth
+      try {
+        await deleteUser(user);
+      } catch (e) {
+        if (e?.code === "auth/requires-recent-login") {
+          setNeedReauth(true);
+          if (reauthPassword) {
+            try {
+              const credential = EmailAuthProvider.credential(
+                user.email || "",
+                reauthPassword
+              );
+              await reauthenticateWithCredential(user, credential);
+              await deleteUser(user);
+              setNeedReauth(false);
+            } catch (reauthErr) {
+              setDeleteError("Incorrect password. Please try again.");
+              setDeleteLoading(false);
+              return;
+            }
+          } else {
+            setDeleteError("Please enter your password to continue.");
+            setDeleteLoading(false);
+            return;
+          }
+        } else {
+          setDeleteError("Failed to delete account. Please try again.");
+          setDeleteLoading(false);
+          return;
+        }
+      }
+
+      setDeleteModalVisible(false);
+      setDeleteLoading(false);
+    } catch (e) {
+      setDeleteError("Something went wrong. Please try again.");
+      setDeleteLoading(false);
+    }
   };
 
   // Clear user-specific data on logout
@@ -665,6 +779,37 @@ export default function ProfileScreen({ navigation, route }) {
                 </Text>
               </TouchableOpacity>
             )}
+
+            {/* Delete Account */}
+            {isOwnProfile && (
+              <TouchableOpacity
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 12,
+                  paddingHorizontal: 18,
+                }}
+                onPress={() => {
+                  setMenuVisible(false);
+                  handleDeleteAccount();
+                }}
+              >
+                <Trash
+                  size={20}
+                  color={themeColors.red}
+                  style={{ marginRight: 10 }}
+                />
+                <Text
+                  style={{
+                    color: themeColors.red,
+                    fontFamily: FONTS.PRIMARY,
+                    fontSize: 16,
+                  }}
+                >
+                  Delete Account
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </TouchableOpacity>
       )}
@@ -674,6 +819,19 @@ export default function ProfileScreen({ navigation, route }) {
         onCancel={() => setLogoutModalVisible(false)}
         onConfirm={confirmLogout}
         themeColors={themeColors}
+      />
+      <DeleteAccountModal
+        visible={deleteModalVisible}
+        onCancel={() => {
+          if (!deleteLoading) setDeleteModalVisible(false);
+        }}
+        onConfirm={confirmDeleteAccount}
+        themeColors={themeColors}
+        loading={deleteLoading}
+        errorMessage={deleteError}
+        needReauth={needReauth}
+        password={reauthPassword}
+        onChangePassword={setReauthPassword}
       />
       {/* Show info message for reset password */}
       {resetPasswordInfo ? (
