@@ -168,63 +168,47 @@ export default function LoginScreen({ navigation }) {
             {resetInfo}
           </Text>
         ) : null}
-        {/* Buttons side by side */}
-        <View
-          style={{
-            flexDirection: "row",
-            gap: 12,
-            marginTop: 8,
-            justifyContent: "center",
-          }}
+        {/* Primary Action Button - Full Width */}
+        <TouchableOpacity
+          style={[
+            styles.primaryButton,
+            {
+              backgroundColor: themeColors.purple,
+              marginTop: 24,
+            },
+          ]}
+          onPress={handleLogin}
         >
-          <TouchableOpacity
+          <Text
             style={[
-              styles.button,
+              styles.primaryButtonText,
               {
-                backgroundColor: themeColors.purple,
-                flex: 0.375,
-                marginVertical: 0,
-                marginTop: 0,
-                justifyContent: "center",
-                alignItems: "center",
+                color: themeColors.white,
               },
             ]}
-            onPress={handleLogin}
           >
-            <Text
-              style={[
-                styles.buttonText,
-                {
-                  color: themeColors.white,
-                  textAlign: "center",
-                  textAlignVertical: "center",
-                },
-              ]}
-            >
-              Login
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+            Sign In
+          </Text>
+        </TouchableOpacity>
+
+        {/* Secondary Action - Centered */}
+        <View style={styles.secondaryActionContainer}>
+          <Text
             style={[
-              styles.button,
+              styles.secondaryActionText,
               {
-                backgroundColor: themeColors.white,
-                flex: 0.375,
-                marginVertical: 0,
-                marginTop: 0,
-                justifyContent: "center",
-                alignItems: "center",
+                color: themeColors.darkGray,
               },
             ]}
-            onPress={handleSignUp}
           >
+            Don't have an account?{" "}
+          </Text>
+          <TouchableOpacity onPress={handleSignUp}>
             <Text
               style={[
-                styles.buttonText,
+                styles.secondaryActionLink,
                 {
                   color: themeColors.purple,
-                  textAlign: "center",
-                  textAlignVertical: "center",
                 },
               ]}
             >
@@ -251,7 +235,7 @@ const styles = StyleSheet.create({
   formContainer: {
     width: "100%",
     paddingHorizontal: 24, // Add padding around the form elements
-    paddingTop: 120,
+    paddingTop: 90,
   },
   input: {
     width: "100%",
@@ -261,25 +245,40 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     fontFamily: FONTS.PRIMARY,
   },
-  button: {
+  primaryButton: {
     width: "100%",
-    padding: 12,
-    borderRadius: 8,
+    padding: 16,
+    borderRadius: 12,
     alignItems: "center",
-    marginVertical: 8,
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  buttonText: {
+  primaryButtonText: {
     fontWeight: "bold",
+    fontSize: 18,
+    fontFamily: FONTS.PRIMARY,
+  },
+  secondaryActionContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 24,
+  },
+  secondaryActionText: {
     fontSize: 16,
     fontFamily: FONTS.PRIMARY,
   },
-  secondaryButton: {
-    marginTop: 16,
-    alignItems: "center",
-  },
-  secondaryButtonText: {
-    fontWeight: "bold",
+  secondaryActionLink: {
     fontSize: 16,
+    fontWeight: "bold",
     fontFamily: FONTS.PRIMARY,
+    textDecorationLine: "underline",
   },
 });

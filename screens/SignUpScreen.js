@@ -202,70 +202,56 @@ export default function SignUpScreen({ navigation }) {
           placeholderTextColor={themeColors.darkGray}
           value={gradYear}
           onChangeText={setGradYear}
-          keyboardType="numeric" // Ensure numeric input
+          keyboardType="numeric"
+          onSubmitEditing={handleSignUp}
+          blurOnSubmit={true}
         />
 
-        {/* Buttons side by side */}
-        <View
-          style={{
-            flexDirection: "row",
-            gap: 12,
-            marginTop: 8,
-            justifyContent: "center",
-          }}
+        {/* Primary Action Button - Full Width */}
+        <TouchableOpacity
+          style={[
+            styles.primaryButton,
+            {
+              backgroundColor: themeColors.purple,
+              marginTop: 12,
+            },
+          ]}
+          onPress={handleSignUp}
         >
-          <TouchableOpacity
+          <Text
             style={[
-              styles.button,
+              styles.primaryButtonText,
               {
-                backgroundColor: themeColors.purple,
-                flex: 0.375,
-                marginVertical: 0,
-                marginTop: 0,
-                justifyContent: "center",
-                alignItems: "center",
+                color: themeColors.white,
               },
             ]}
-            onPress={handleSignUp}
           >
-            <Text
-              style={[
-                styles.buttonText,
-                {
-                  color: themeColors.white,
-                  textAlign: "center",
-                  textAlignVertical: "center",
-                },
-              ]}
-            >
-              Sign Up
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+            Create Account
+          </Text>
+        </TouchableOpacity>
+
+        {/* Secondary Action - Centered */}
+        <View style={styles.secondaryActionContainer}>
+          <Text
             style={[
-              styles.button,
+              styles.secondaryActionText,
               {
-                backgroundColor: themeColors.white,
-                flex: 0.375,
-                marginVertical: 0,
-                marginTop: 0,
-                justifyContent: "center",
-                alignItems: "center",
+                color: themeColors.darkGray,
               },
             ]}
-            onPress={() => navigation.navigate("Login")}
           >
+            Already have an account?{" "}
+          </Text>
+          <TouchableOpacity onPress={() => navigation.navigate("Login")}>
             <Text
               style={[
-                styles.buttonText,
+                styles.secondaryActionLink,
                 {
                   color: themeColors.purple,
-                  textAlign: "center",
-                  textAlignVertical: "center",
                 },
               ]}
             >
-              Login
+              Sign In
             </Text>
           </TouchableOpacity>
         </View>
@@ -288,7 +274,7 @@ const styles = StyleSheet.create({
   formContainer: {
     width: "100%",
     paddingHorizontal: 24,
-    paddingTop: 120,
+    paddingTop: 90,
   },
   input: {
     width: "100%",
@@ -298,23 +284,40 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontFamily: FONTS.PRIMARY,
   },
-  button: {
+  primaryButton: {
     width: "100%",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    padding: 16,
+    borderRadius: 12,
     alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  buttonText: {
+  primaryButtonText: {
+    fontWeight: "bold",
+    fontSize: 18,
     fontFamily: FONTS.PRIMARY,
-    fontSize: 16,
   },
-  secondaryButton: {
-    marginTop: 16,
+  secondaryActionContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
     alignItems: "center",
+    marginTop: 24,
   },
-  secondaryButtonText: {
-    fontFamily: FONTS.PRIMARY,
+  secondaryActionText: {
     fontSize: 16,
+    fontFamily: FONTS.PRIMARY,
+  },
+  secondaryActionLink: {
+    fontSize: 16,
+    fontWeight: "bold",
+    fontFamily: FONTS.PRIMARY,
+    textDecorationLine: "underline",
   },
 });
