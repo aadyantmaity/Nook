@@ -1011,7 +1011,7 @@ export default function HomeScreen({ navigation, route }) {
           >
             Nook
           </Text>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
             <TouchableOpacity
               onPress={() => navigation.navigate("Search")} // <-- Change this to navigate to SearchScreen
               style={{
@@ -1052,7 +1052,6 @@ export default function HomeScreen({ navigation, route }) {
                 alignItems: "center",
                 justifyContent: "center",
                 elevation: 2,
-                marginLeft: 4,
                 width: 40,
                 height: 40,
                 overflow: "hidden",
