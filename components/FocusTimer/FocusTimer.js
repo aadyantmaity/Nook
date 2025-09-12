@@ -484,9 +484,9 @@ export default function FocusTimer({ navigation, route }) {
     black: "#111827",
     lightGray: "#E5E7EB",
     gray: "#E5E7EB",
-    green: "#22C55E",
+    green: "#99CD9E",
     red: "#EF4444",
-    blue: "#3B82F6",
+    blue: "#3B88FF",
   };
 
   // Tab state

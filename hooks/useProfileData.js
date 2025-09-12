@@ -10,6 +10,7 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
+import { addFollowActivity } from "../utils/followActivity";
 
 export function useProfileData(targetUid = null) {
   const [firstName, setFirstName] = useState("");
@@ -22,7 +23,6 @@ export function useProfileData(targetUid = null) {
   const [following, setFollowing] = useState([]);
   const [isFollowing, setIsFollowing] = useState(false);
 
-  const [recentActivity, setRecentActivity] = useState([]); // add
   const [mapType, setMapType] = useState("hybrid");
   const [mapRegion, setMapRegion] = useState("UW");
   const [reflectionsEnabled, setReflectionsEnabled] = useState(true); // add
@@ -44,7 +44,6 @@ export function useProfileData(targetUid = null) {
         setFollowers(data.followers || []);
         setFollowing(data.following || []);
 
-        setRecentActivity(data.recentActivity || []);
         setMapType(data.mapType || "hybrid");
         setMapRegion(data.mapRegion || "UW");
         setReflectionsEnabled(data.reflectionsEnabled !== false);
@@ -147,51 +146,10 @@ export function useProfileData(targetUid = null) {
       await updateDoc(doc(db, "users", targetUid), {
         followers: arrayUnion(user.uid),
       });
-      // --- Add recentActivity for followed user ---
-      let meDoc;
-      try {
-        meDoc = await getDoc(doc(db, "users", user.uid));
-      } catch {}
-      const meName = meDoc?.exists()
-        ? `${meDoc.data().firstName || ""} ${
-            meDoc.data().lastName || ""
-          }`.trim()
-        : "User";
-      const meProfilePic = meDoc?.exists()
-        ? meDoc.data().profilePic || null
-        : null;
-      try {
-        await updateDoc(doc(db, "users", targetUid), {
-          recentActivity: arrayUnion({
-            type: "followed_by",
-            uid: user.uid,
-            name: meName,
-            profilePic: meProfilePic,
-            createdAt: Date.now(),
-          }),
-        });
-      } catch (error) {
-        if (
-          error.code === "not-found" ||
-          error.message.includes("No document to update")
-        ) {
-          await setDoc(
-            doc(db, "users", targetUid),
-            {
-              recentActivity: [
-                {
-                  type: "followed_by",
-                  uid: user.uid,
-                  name: meName,
-                  profilePic: meProfilePic,
-                  createdAt: Date.now(),
-                },
-              ],
-            },
-            { merge: true }
-          );
-        }
-      }
+      
+      // Add follow activity to the followed user's recentActivity
+      const followerDisplayName = `${firstName} ${lastName}`.trim();
+      await addFollowActivity(targetUid, user.uid, followerDisplayName);
     } catch {}
   };
 
@@ -250,8 +208,6 @@ export function useProfileData(targetUid = null) {
     followUser,
     unfollowUser,
 
-    recentActivity,
-    setRecentActivity,
     mapType,
     setMapType: setMapTypeFirestore,
     mapRegion,

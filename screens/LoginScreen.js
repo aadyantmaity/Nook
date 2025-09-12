@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   StyleSheet,
 } from "react-native";
+import { Eye, EyeSlash } from "phosphor-react-native";
 import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
@@ -20,6 +21,7 @@ export default function LoginScreen({ navigation }) {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [resetInfo, setResetInfo] = useState(""); // Info message for reset
   const [resetLoading, setResetLoading] = useState(false);
   const [error, setError] = useState(""); // Add error state
@@ -123,21 +125,33 @@ export default function LoginScreen({ navigation }) {
           value={email}
           onChangeText={setEmail}
         />
-        <TextInput
-          style={[
-            styles.input,
-            {
-              borderColor: themeColors.darkGray,
-              backgroundColor: themeColors.white,
-              color: themeColors.black,
-            },
-          ]}
-          placeholder="Password"
-          placeholderTextColor={themeColors.darkGray}
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={[
+              styles.passwordInput,
+              {
+                borderColor: themeColors.darkGray,
+                backgroundColor: themeColors.white,
+                color: themeColors.black,
+              },
+            ]}
+            placeholder="Password"
+            placeholderTextColor={themeColors.darkGray}
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
+          />
+          <TouchableOpacity
+            style={styles.eyeButton}
+            onPress={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? (
+              <Eye size={20} color={themeColors.darkGray} />
+            ) : (
+              <EyeSlash size={20} color={themeColors.darkGray} />
+            )}
+          </TouchableOpacity>
+        </View>
         {/* Forgot Password link */}
         <TouchableOpacity
           style={{ alignSelf: "flex-end", marginBottom: 8 }}
@@ -244,6 +258,25 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
     fontFamily: FONTS.PRIMARY,
+  },
+  passwordContainer: {
+    position: "relative",
+    marginBottom: 16,
+  },
+  passwordInput: {
+    width: "100%",
+    borderWidth: 0.5,
+    borderRadius: 8,
+    padding: 12,
+    paddingRight: 50, // Make room for the eye button
+    fontFamily: FONTS.PRIMARY,
+  },
+  eyeButton: {
+    position: "absolute",
+    right: 12,
+    top: "50%",
+    marginTop: -14, // Half of icon size (20) + padding (4) = 14
+    padding: 4,
   },
   primaryButton: {
     width: "100%",

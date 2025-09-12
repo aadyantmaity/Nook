@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TextInput,
   Alert,
   Linking,
+  AppState,
 } from "react-native";
 import {
   Check,
@@ -34,6 +35,130 @@ export default function EmailVerificationModal({
 
   // --- Privacy Policy checkbox state ---
   const [privacyChecked, setPrivacyChecked] = useState(false);
+
+  // --- State to track if verification has been attempted and failed ---
+  const [hasAttemptedVerification, setHasAttemptedVerification] = useState(false);
+
+  // --- State for resend email cooldown ---
+  const [isResendCooldown, setIsResendCooldown] = useState(false);
+  const [cooldownTimeLeft, setCooldownTimeLeft] = useState(0);
+  const [cooldownEndTime, setCooldownEndTime] = useState(null);
+  const [resendError, setResendError] = useState("");
+
+  // --- Custom handler for verification check ---
+  const handleVerificationCheck = async () => {
+    try {
+      await onCheckVerification();
+      // If no error is thrown, verification was successful
+      setHasAttemptedVerification(false);
+    } catch (error) {
+      // If there's an error, mark that verification was attempted
+      setHasAttemptedVerification(true);
+    }
+  };
+
+  // --- Custom handler for resend email with cooldown ---
+  const handleResendEmail = async () => {
+    if (isResendCooldown) return;
+    
+    setResendError(""); // Clear any previous errors
+    
+    try {
+      await onResendEmail();
+      // Start cooldown after successful send
+      const endTime = Date.now() + 30000; // 30 seconds from now
+      setCooldownEndTime(endTime);
+      setIsResendCooldown(true);
+      setResendError(""); // Clear any errors on success
+    } catch (error) {
+      // Handle Firebase cooldown error
+      if (error.code === 'auth/too-many-requests') {
+        setResendError("Please wait a moment before requesting another email.");
+        // Start a shorter cooldown for UI feedback
+        const endTime = Date.now() + 30000; // 30 seconds from now
+        setCooldownEndTime(endTime);
+        setIsResendCooldown(true);
+      } else {
+        setResendError("Failed to send email. Please try again.");
+      }
+    }
+  };
+
+  // --- Effect to track error messages (indicating failed verification attempts) ---
+  useEffect(() => {
+    if (errorMessage) {
+      setHasAttemptedVerification(true);
+    }
+  }, [errorMessage]);
+
+  // --- Reset state when modal becomes visible ---
+  useEffect(() => {
+    if (isVisible) {
+      setHasAttemptedVerification(false);
+      setIsResendCooldown(false);
+      setCooldownTimeLeft(0);
+      setCooldownEndTime(null);
+      setResendError("");
+    }
+  }, [isVisible]);
+
+  // --- Function to calculate remaining cooldown time ---
+  const calculateRemainingTime = () => {
+    if (!cooldownEndTime) return 0;
+    const remaining = Math.max(0, Math.ceil((cooldownEndTime - Date.now()) / 1000));
+    return remaining;
+  };
+
+  // --- Cooldown timer effect with background support ---
+  useEffect(() => {
+    let interval;
+    
+    const updateTimer = () => {
+      if (isResendCooldown && cooldownEndTime) {
+        const remaining = calculateRemainingTime();
+        setCooldownTimeLeft(remaining);
+        
+        if (remaining <= 0) {
+          setIsResendCooldown(false);
+          setCooldownEndTime(null);
+        }
+      }
+    };
+
+    if (isResendCooldown && cooldownEndTime) {
+      // Update immediately
+      updateTimer();
+      
+      // Then update every second
+      interval = setInterval(updateTimer, 1000);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isResendCooldown, cooldownEndTime]);
+
+  // --- App state change handler for background/foreground ---
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState) => {
+      if (nextAppState === 'active' && isResendCooldown && cooldownEndTime) {
+        // App came to foreground, recalculate remaining time
+        const remaining = calculateRemainingTime();
+        setCooldownTimeLeft(remaining);
+        
+        if (remaining <= 0) {
+          setIsResendCooldown(false);
+          setCooldownEndTime(null);
+        }
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    return () => {
+      subscription?.remove();
+    };
+  }, [isResendCooldown, cooldownEndTime]);
 
   // --- Handler for submitting report ---
   const handleSubmitReport = async () => {
@@ -114,16 +239,18 @@ export default function EmailVerificationModal({
               }}
             >
               <TouchableOpacity
-                onPress={onResendEmail}
+                onPress={handleResendEmail}
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
                   padding: 6,
                   borderRadius: 16,
+                  opacity: isResendCooldown ? 0.5 : 1,
                 }}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                activeOpacity={0.7}
-                accessibilityLabel="Resend Email"
+                activeOpacity={isResendCooldown ? 1 : 0.7}
+                disabled={isResendCooldown}
+                accessibilityLabel={isResendCooldown ? `Resend Email (${cooldownTimeLeft}s)` : "Resend Email"}
               >
                 <ArrowCounterClockwise size={22} color={colors.purple} />
                 <Text
@@ -135,7 +262,7 @@ export default function EmailVerificationModal({
                     fontWeight: "bold",
                   }}
                 >
-                  Resend Email
+                  {isResendCooldown ? `Resend (${cooldownTimeLeft}s)` : "Resend Email"}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -170,7 +297,7 @@ export default function EmailVerificationModal({
                     textAlign: "center",
                   }}
                 >
-                  Secure your account
+                  Almost there!
                 </Text>
                 <Text
                   style={{
@@ -184,19 +311,34 @@ export default function EmailVerificationModal({
                 >
                   Please verify your email address to continue.
                 </Text>
-                {/* Add spam folder reminder */}
-                <Text
+                {/* Add spam folder reminder with more emphasis */}
+                <View
                   style={{
-                    fontSize: 13,
-                    fontFamily: FONTS.PRIMARY,
-                    textAlign: "center",
-                    color: colors.darkGray,
-                    marginTop: 4,
-                    marginBottom: 2,
+                    backgroundColor: colors.red + "15", // Light red background
+                    borderRadius: 8,
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                    marginTop: 8,
+                    marginBottom: 4,
+                    borderLeftWidth: 3,
+                    borderLeftColor: colors.red,
+                    borderRightWidth: 3,
+                    borderRightColor: colors.red,
                   }}
                 >
-                  Make sure to check your spam/junk folder.
-                </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontFamily: FONTS.PRIMARY,
+                      textAlign: "center",
+                      color: colors.red,
+                      fontWeight: "600",
+                      lineHeight: 18,
+                    }}
+                  >
+                    ⚠️ Check your spam/junk folder!
+                  </Text>
+                </View>
               </View>
               {/* --- Privacy Policy Checkbox --- */}
               <View
@@ -280,6 +422,20 @@ export default function EmailVerificationModal({
                     {errorMessage}
                   </Text>
                 )}
+                {resendError && (
+                  <Text
+                    style={{
+                      color: colors.red,
+                      marginBottom: 2,
+                      textAlign: "center",
+                      fontFamily: FONTS.PRIMARY,
+                      fontWeight: "600",
+                      fontSize: 13,
+                    }}
+                  >
+                    {resendError}
+                  </Text>
+                )}
               </View>
               <View
                 style={{
@@ -311,7 +467,7 @@ export default function EmailVerificationModal({
                       flex: 1,
                       opacity: privacyChecked ? 1 : 0.5,
                     }}
-                    onPress={onCheckVerification}
+                    onPress={handleVerificationCheck}
                     activeOpacity={privacyChecked ? 0.85 : 1}
                     disabled={!privacyChecked}
                   >

@@ -8,12 +8,13 @@ import {
   StyleSheet,
   Image,
 } from "react-native";
+import { Eye, EyeSlash } from "phosphor-react-native";
 import {
   createUserWithEmailAndPassword,
   sendEmailVerification,
 } from "firebase/auth";
 import { db } from "../firebaseConfig"; // Import Firestore
-import { doc, setDoc } from "firebase/firestore"; // Import Firestore functions
+import { doc, setDoc, collection, addDoc, deleteDoc } from "firebase/firestore"; // Import Firestore functions
 import { colors } from "../constants/colors";
 import { FONTS } from "../constants/fonts";
 import { auth } from "../firebaseConfig"; // Import the initialized auth
@@ -26,6 +27,8 @@ export default function SignUpScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [gradYear, setGradYear] = useState("");
   const [error, setError] = useState(""); // Add error state
   const [info, setInfo] = useState(""); // Info message (for verification)
@@ -76,6 +79,17 @@ export default function SignUpScreen({ navigation }) {
         workDuration: 25 * 60, // Add default work duration (25 minutes = 1500 seconds)
         breakDuration: 5 * 60, // Add default break duration (5 minutes = 300 seconds)
       });
+
+      // Create recentActivity subcollection for the new user
+      // We'll add a placeholder document and then delete it to ensure the subcollection exists
+      const recentActivityRef = collection(db, "users", user.uid, "recentActivity");
+      const placeholderDoc = await addDoc(recentActivityRef, {
+        _created: new Date(),
+        _placeholder: true
+      });
+      
+      // Delete the placeholder document to keep the subcollection empty
+      await deleteDoc(doc(db, "users", user.uid, "recentActivity", placeholderDoc.id));
 
       // Send email verification
       await sendEmailVerification(user);
@@ -174,21 +188,33 @@ export default function SignUpScreen({ navigation }) {
           onChangeText={setEmail}
         />
 
-        <TextInput
-          style={[
-            styles.input,
-            {
-              borderColor: themeColors.darkGray,
-              backgroundColor: themeColors.white,
-              color: themeColors.black,
-            },
-          ]}
-          placeholder="Password"
-          placeholderTextColor={themeColors.darkGray}
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={[
+              styles.passwordInput,
+              {
+                borderColor: themeColors.darkGray,
+                backgroundColor: themeColors.white,
+                color: themeColors.black,
+              },
+            ]}
+            placeholder="Password"
+            placeholderTextColor={themeColors.darkGray}
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
+          />
+          <TouchableOpacity
+            style={styles.eyeButton}
+            onPress={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? (
+              <Eye size={20} color={themeColors.darkGray} />
+            ) : (
+              <EyeSlash size={20} color={themeColors.darkGray} />
+            )}
+          </TouchableOpacity>
+        </View>
         <TextInput
           style={[
             styles.input,
@@ -283,6 +309,25 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 12,
     fontFamily: FONTS.PRIMARY,
+  },
+  passwordContainer: {
+    position: "relative",
+    marginBottom: 12,
+  },
+  passwordInput: {
+    width: "100%",
+    borderWidth: 0.5,
+    borderRadius: 8,
+    padding: 12,
+    paddingRight: 50, // Make room for the eye button
+    fontFamily: FONTS.PRIMARY,
+  },
+  eyeButton: {
+    position: "absolute",
+    right: 12,
+    top: "50%",
+    marginTop: -14, // Half of icon size (20) + padding (4) = 14
+    padding: 4,
   },
   primaryButton: {
     width: "100%",

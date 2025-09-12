@@ -44,6 +44,7 @@ import {
   MapTrifold,
   MapPin,
   UsersThree,
+  Bell,
 } from "phosphor-react-native"; // Add Heart icon
 import { colors } from "../constants/colors";
 import { FONTS } from "../constants/fonts"; // Import colors
@@ -1021,6 +1022,22 @@ export default function HomeScreen({ navigation, route }) {
               accessibilityLabel="Search"
             >
               <MagnifyingGlass
+                size={28}
+                color={themeColors.purple}
+                weight="light"
+              />
+            </TouchableOpacity>
+            {/* Bell icon for recent activity */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate("RecentActivity")}
+              style={{
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: themeColors.white,
+              }}
+              accessibilityLabel="Recent Activity"
+            >
+              <Bell
                 size={28}
                 color={themeColors.purple}
                 weight="light"

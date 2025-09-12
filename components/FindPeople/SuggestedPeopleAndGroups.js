@@ -25,6 +25,7 @@ import {
   arrayUnion,
 } from "firebase/firestore";
 import { db, auth } from "../../firebaseConfig";
+import { addFollowActivity } from "../../utils/followActivity";
 import { FONTS } from "../../constants/fonts";
 
 export default function SuggestedPeopleAndGroups({
@@ -80,6 +81,16 @@ export default function SuggestedPeopleAndGroups({
       await updateDoc(doc(db, "users", targetUid), {
         followers: arrayUnion(user.uid),
       });
+      
+      // Add follow activity to the followed user's recentActivity
+      try {
+        const followerDisplayName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+        await addFollowActivity(targetUid, user.uid, followerDisplayName);
+      } catch (activityError) {
+        console.error("Error adding follow activity:", activityError);
+        // Don't show error to user, just log it
+      }
+      
       // UI will update via onSnapshot
     } catch {}
     setLocalFollowLoading((prev) => ({ ...prev, [targetUid]: false }));

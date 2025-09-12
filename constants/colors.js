@@ -9,9 +9,10 @@ export const colors = {
   darkCard: "#1E1E1E", // Dark mode card background
   lightText: "#b7a57a", // Light text for dark mode
   subtleText: "#CCCCCC", // Subtle text for dark mode
-  red: "#dd7973", // Darker red for error or important actions
-  green: "#99C49E", // Green for success messages
+  red: "#E26358", // Brighter red for error or important actions
+  green: "#99CD9E", // Green for success messages
   orange: "#FFA500", // Orange for warnings or highlights
+  blue: "#3498db", // Blue for timer controls and interactive elements
 };
 
 export const dark = {
@@ -25,9 +26,10 @@ export const dark = {
   darkCard: "#1E1E1E", // Dark mode card background
   lightText: "#b7a57a", // Light text for dark mode
   subtleText: "#888888", // Medium subtle text for dark mode
-  red: "#dd7973", // Brighter red for errors or important actions in dark mode
-  green: "#99C49E", // Green for success messages
+  red: "#E26358", // Brighter red for errors or important actions in dark mode
+  green: "#99CD9E", // Green for success messages
   orange: "#FFA500", // Orange for warnings or highlights
+  blue: "#5dade2", // Lighter blue for timer controls in dark mode
 };
 
 export function getThemeColors(isDark) {

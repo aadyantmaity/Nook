@@ -19,6 +19,7 @@ import * as SplashScreen from "expo-splash-screen";
 import GroupChatScreen from "./screens/GroupChatScreen";
 import GroupInfoScreen from "./screens/GroupInfoScreen";
 import MembersManageScreen from "./screens/MembersManageScreen";
+import RecentActivityScreen from "./screens/RecentActivityScreen";
 
 import { HomeViewProvider } from "./components/Home/HomeViewContext";
 
@@ -135,6 +136,7 @@ export default function App() {
       <Stack.Screen name="GroupInfo" component={GroupInfoScreen} />
       <Stack.Screen name="MembersManage" component={MembersManageScreen} />
       <Stack.Screen name="Search" component={SearchScreen} />
+      <Stack.Screen name="RecentActivity" component={RecentActivityScreen} />
     </Stack.Navigator>
   );
 

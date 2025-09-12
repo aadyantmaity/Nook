@@ -37,7 +37,7 @@ const slides = [
     description:
       "Stay productive with our built-in focus timer. Set work sessions and track your study time.",
     image:
-      "https://res.cloudinary.com/dxnd4aryf/image/upload/w_900,h_1200,c_fit,f_auto/v1755328319/jtdi9qnsr5burmqlcgte.png",
+      "https://res.cloudinary.com/dxnd4aryf/image/upload/w_900,h_1200,c_fit,f_auto/v1757653438/n2ln7nqgzvgsrqkn2coe.png",
   },
   {
     title: "Community",
@@ -85,7 +85,7 @@ export default function OnboardingModal({ visible, onFinish, themeColors }) {
             width,
             alignItems: "center",
             borderWidth: 1,
-            borderColor: themeColors.gray + "70",
+            borderColor: themeColors.gray,
             elevation: 10,
             height: 675, // Fixed height for consistent modal size
             justifyContent: "flex-start",
@@ -122,7 +122,6 @@ export default function OnboardingModal({ visible, onFinish, themeColors }) {
               width: width * 0.8,
               height: width * 1.2,
               marginBottom: 12,
-              backgroundColor: themeColors.gray + "22",
               justifyContent: "center",
               alignItems: "center",
               // Shadow for iOS

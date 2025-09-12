@@ -51,14 +51,6 @@ async function addRecentActivitySubcollection() {
               _placeholder: true
             });
           
-          // Delete the placeholder document to keep the subcollection truly empty
-          await db
-            .collection('users')
-            .doc(userId)
-            .collection('recentActivity')
-            .doc('_placeholder')
-            .delete();
-          
           addedCount++;
           console.log(`✅ Added recentActivity subcollection to user ${userId}`);
         } else {

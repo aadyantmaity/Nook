@@ -9,9 +9,10 @@ import {
 import { MapPin } from "phosphor-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { auth } from "../../firebaseConfig";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, getDoc } from "firebase/firestore";
 import * as Location from "expo-location";
 import { FONTS } from "../../constants/fonts";
+import { addCheckinActivity } from "../../utils/checkinActivity";
 
 export default function CheckInButton({ spot, spotId, themeColors }) {
   const user = auth.currentUser;
@@ -112,6 +113,30 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
       try {
         await AsyncStorage.setItem(key, Date.now().toString());
       } catch {}
+
+      // Add check-in activity to the nook owner's recentActivity
+      try {
+        if (spot && spot.addedBy) {
+          const spotName = spot.buildingName || spot.name || "Nook";
+          
+          // Get the current user's display name from Firestore
+          let checkedInByName = null;
+          try {
+            const currentUserDoc = await getDoc(doc(db, "users", user.uid));
+            if (currentUserDoc.exists()) {
+              const userData = currentUserDoc.data();
+              checkedInByName = `${userData.firstName || ""} ${userData.lastName || ""}`.trim();
+            }
+          } catch (nameError) {
+            console.error("Error fetching user name:", nameError);
+          }
+          
+          await addCheckinActivity(spotId, spotName, user.uid, checkedInByName, spot.addedBy);
+        }
+      } catch (activityError) {
+        console.error("Error adding check-in activity:", activityError);
+        // Don't show error to user, just log it
+      }
 
       Alert.alert("Checked In!", "You have successfully checked in.");
     } catch (e) {
