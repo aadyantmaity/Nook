@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import HomeScreen from "./screens/HomeScreen";
@@ -15,7 +15,7 @@ import * as Notifications from "expo-notifications";
 import { colors, getThemeColors } from "./constants/colors";
 import * as Linking from "expo-linking";
 import * as Font from "expo-font";
-import AppLoading from "expo-app-loading";
+import * as SplashScreen from "expo-splash-screen";
 import GroupChatScreen from "./screens/GroupChatScreen";
 import GroupInfoScreen from "./screens/GroupInfoScreen";
 import MembersManageScreen from "./screens/MembersManageScreen";
@@ -61,24 +61,35 @@ const linking = {
   },
 };
 
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
+
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(
     Appearance.getColorScheme() === "dark"
   );
-  const [fontsLoaded, setFontsLoaded] = useState(false);
+  const [appIsReady, setAppIsReady] = useState(false);
 
   const themeColors = getThemeColors(isDarkMode);
 
   useEffect(() => {
-    const loadFonts = async () => {
-      await Font.loadAsync({
-        CarosSoft: require("./assets/fonts/CarosSoftBold.otf"),
-        "SF-Pro-Display-Regular": require("./assets/fonts/SF-Pro-Display-Regular.otf"),
-      });
-      setFontsLoaded(true);
-    };
-    loadFonts();
+    async function prepare() {
+      try {
+        // Load fonts
+        await Font.loadAsync({
+          CarosSoft: require("./assets/fonts/CarosSoftBold.otf"),
+          "SF-Pro-Display-Regular": require("./assets/fonts/SF-Pro-Display-Regular.otf"),
+        });
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        // Tell the application to render
+        setAppIsReady(true);
+      }
+    }
+
+    prepare();
   }, []);
 
   useEffect(() => {
@@ -87,8 +98,20 @@ export default function App() {
     });
     return unsubscribe;
   }, []);
-  if (!fontsLoaded || isAuthenticated === null) {
-    return <AppLoading />;
+
+  const onLayoutRootView = useCallback(async () => {
+    if (appIsReady) {
+      // This tells the splash screen to hide immediately! If we call this after
+      // `setAppIsReady`, then we may see a blank screen while the app is
+      // loading its initial state and rendering its first pixels. So instead,
+      // we hide the splash screen once we know the root view has already
+      // performed layout.
+      await SplashScreen.hideAsync();
+    }
+  }, [appIsReady]);
+
+  if (!appIsReady || isAuthenticated === null) {
+    return null;
   }
 
   const AuthStack = () => (
@@ -118,7 +141,7 @@ export default function App() {
   return (
     <HomeViewProvider>
       <ThemeContext.Provider value={{ isDarkMode, setIsDarkMode, themeColors }}>
-        <NavigationContainer ref={navigationRef} linking={linking}>
+        <NavigationContainer ref={navigationRef} linking={linking} onReady={onLayoutRootView}>
           {isAuthenticated ? <MainStack /> : <AuthStack />}
         </NavigationContainer>
       </ThemeContext.Provider>

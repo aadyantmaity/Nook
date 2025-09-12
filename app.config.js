@@ -78,6 +78,7 @@ export default {
           color: "#ffffff",
         },
       ],
+      "expo-web-browser",
     ],
     extra: {
       eas: {
