@@ -4,7 +4,10 @@ export default {
   expo: {
     name: "Nook",
     slug: "nook",
-    version: "1.0.0",
+    version: "1.0.1",
+    ios: {
+      buildNumber: "100",
+    },
     icon: "./assets/NewNook.png",
     scheme: "nook",
     userInterfaceStyle: "automatic",

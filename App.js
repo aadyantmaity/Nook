@@ -9,8 +9,9 @@ import SignUpScreen from "./screens/SignUpScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import EditSpotScreen from "./screens/EditSpotScreen";
 import SearchScreen from "./screens/SearchScreen";
-import { auth } from "./firebaseConfig";
+import { auth, db } from "./firebaseConfig";
 import { Appearance, Platform } from "react-native";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import * as Notifications from "expo-notifications";
 import { colors, getThemeColors } from "./constants/colors";
 import * as Linking from "expo-linking";
@@ -67,9 +68,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
-  const [isDarkMode, setIsDarkMode] = useState(
-    Appearance.getColorScheme() === "dark"
-  );
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [appIsReady, setAppIsReady] = useState(false);
 
   const themeColors = getThemeColors(isDarkMode);
@@ -94,10 +93,36 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+    let unsubscribeUserDoc = null;
+    const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
       setIsAuthenticated(!!user);
+      if (unsubscribeUserDoc) {
+        unsubscribeUserDoc();
+        unsubscribeUserDoc = null;
+      }
+      if (user) {
+        const userRef = doc(db, 'users', user.uid);
+        // Subscribe to user doc so theme updates live
+        unsubscribeUserDoc = onSnapshot(userRef, (snap) => {
+          const data = snap.data() || {};
+          // lightMode: true => light, false => dark
+          const lightMode = data.lightMode;
+          if (typeof lightMode === 'boolean') {
+            setIsDarkMode(!lightMode);
+          } else {
+            // default to light if field missing
+            setIsDarkMode(false);
+          }
+        });
+      } else {
+        // if logged out, fall back to light
+        setIsDarkMode(false);
+      }
     });
-    return unsubscribe;
+    return () => {
+      if (unsubscribeUserDoc) unsubscribeUserDoc();
+      unsubscribeAuth();
+    };
   }, []);
 
   const onLayoutRootView = useCallback(async () => {

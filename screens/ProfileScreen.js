@@ -268,6 +268,25 @@ export default function ProfileScreen({ navigation, route }) {
     }
   };
 
+  // Toggle theme and persist to Firestore (users/{uid}.lightMode)
+  const handleToggleTheme = async () => {
+    try {
+      const nextIsDarkMode = !isDarkMode;
+      // Optimistically update UI
+      setIsDarkMode && setIsDarkMode(nextIsDarkMode);
+
+      const user = auth.currentUser;
+      if (!user) return;
+      const { db } = await import("../firebaseConfig");
+      const { updateDoc, doc } = await import("firebase/firestore");
+      // lightMode: true => light, false => dark
+      await updateDoc(doc(db, "users", user.uid), { lightMode: !nextIsDarkMode });
+    } catch (e) {
+      // If write fails, revert local state
+      setIsDarkMode && setIsDarkMode(isDarkMode);
+    }
+  };
+
   // Clear user-specific data on logout
   const clearUserData = async () => {
     try {
@@ -659,9 +678,9 @@ export default function ProfileScreen({ navigation, route }) {
                 paddingVertical: 12,
                 paddingHorizontal: 18,
               }}
-              onPress={() => {
+              onPress={async () => {
                 setMenuVisible(false);
-                setIsDarkMode && setIsDarkMode(!isDarkMode);
+                await handleToggleTheme();
               }}
             >
               {isDarkMode ? (
