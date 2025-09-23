@@ -76,7 +76,7 @@ export default function MapLocationPicker({
     }
   }, [search]);
 
-  const LOCATIONIQ_API_KEY = Constants.expoConfig?.extra?.locationiqApiKey;
+  const LOCATIONIQ_API_KEY = "pk.f73f676cc77d848a6d4d0c0003335e59";
 
   const fetchSuggestions = async (text) => {
     const trimmedText = text.trim();

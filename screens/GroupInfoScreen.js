@@ -28,7 +28,6 @@ import { addFollowActivity } from "../utils/followActivity";
 import { ThemeContext } from "../App";
 import { colors } from "../constants/colors";
 import {
-  Star,
   MapPin,
   UserPlus,
   User,
@@ -59,15 +58,9 @@ export default function GroupInfoScreen({ route, navigation }) {
   const [group, setGroup] = useState(null);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [starredNooks, setStarredNooks] = useState([]);
-  const [starredNooksData, setStarredNooksData] = useState([]);
   const [following, setFollowing] = useState([]);
   const [followers, setFollowers] = useState([]);
   const [followingLoading, setFollowingLoading] = useState(false);
-  const [showLeftGradient, setShowLeftGradient] = useState(false);
-  const [showRightGradient, setShowRightGradient] = useState(false);
-  const [starredListWidth, setStarredListWidth] = useState(0);
-  const [starredContentWidth, setStarredContentWidth] = useState(0);
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editName, setEditName] = useState("");
@@ -76,7 +69,6 @@ export default function GroupInfoScreen({ route, navigation }) {
 
   const [showManageMenu, setShowManageMenu] = useState(false);
 
-  const starredListRef = useRef(null);
 
   // Weekly leaderboard
   const {
@@ -120,9 +112,6 @@ export default function GroupInfoScreen({ route, navigation }) {
       }
       const groupData = { id: snap.id, ...snap.data() };
       setGroup(groupData);
-      setStarredNooks(
-        Array.isArray(groupData.starredNooks) ? groupData.starredNooks : []
-      );
       // Fetch member info
       const memberUids = groupData.memberUids || [];
       const blocked = Array.isArray(groupData.blockedUsers)
@@ -161,25 +150,6 @@ export default function GroupInfoScreen({ route, navigation }) {
     return () => unsub();
   }, []);
 
-  // Fetch starred nooks data
-  useEffect(() => {
-    const fetchStarredNooksData = async () => {
-      if (!starredNooks.length) {
-        setStarredNooksData([]);
-        return;
-      }
-      const uniqueIds = Array.from(new Set(starredNooks.filter(Boolean)));
-      const nooks = [];
-      for (const id of uniqueIds) {
-        const nookDoc = await getDoc(doc(db, "studySpots", id));
-        if (nookDoc.exists()) {
-          nooks.push({ id, ...nookDoc.data() });
-        }
-      }
-      setStarredNooksData(nooks);
-    };
-    fetchStarredNooksData();
-  }, [starredNooks]);
 
   // Follow/unfollow member
   const handleFollow = async (uid) => {
@@ -569,25 +539,8 @@ export default function GroupInfoScreen({ route, navigation }) {
                       alignItems: "center",
                       paddingVertical: 8,
                       paddingHorizontal: 12,
-                      backgroundColor:
-                        rank === 1
-                          ? themeColors.orange + "10"
-                          : rank === 2
-                          ? themeColors.purple + "10"
-                          : isCurrentUser
-                          ? themeColors.blue + "10"
-                          : themeColors.gray + "50",
                       borderRadius: 12,
                       marginBottom: 8,
-                      borderWidth: rank <= 2 || isCurrentUser ? 1 : 0,
-                      borderColor:
-                        rank === 1
-                          ? themeColors.orange + "30"
-                          : rank === 2
-                          ? themeColors.purple + "30"
-                          : isCurrentUser
-                          ? themeColors.blue + "30"
-                          : "transparent",
                     }}
                   >
                     {/* Rank */}
@@ -607,13 +560,13 @@ export default function GroupInfoScreen({ route, navigation }) {
                       ) : rank === 2 ? (
                         <Medal
                           size={24}
-                          color={themeColors.purple}
+                          color={themeColors.silver}
                           weight="fill"
                         />
                       ) : rank === 3 ? (
                         <Medal
                           size={24}
-                          color={themeColors.darkGray}
+                          color={themeColors.bronze}
                           weight="fill"
                         />
                       ) : (
@@ -805,198 +758,13 @@ export default function GroupInfoScreen({ route, navigation }) {
     </View>
   );
 
-  // Add this function to handle starring/un-starring nooks
-  const toggleStarNook = async (spotId) => {
-    if (!groupId || !spotId) return;
-    const groupRef = doc(db, "studyGroups", groupId);
-    try {
-      if (starredNooks.includes(spotId)) {
-        await updateDoc(groupRef, {
-          starredNooks: starredNooks.filter((id) => id !== spotId),
-        });
-      } else {
-        await updateDoc(groupRef, {
-          starredNooks: [...starredNooks, spotId],
-        });
-      }
-    } catch (e) {
-      Alert.alert("Error", "Failed to update starred nooks.");
-    }
-  };
 
-  // --- Compose starred nooks section for FlatList footer ---
+  // --- Simple footer for bottom padding ---
   const listFooter = (
-    <View style={{ paddingHorizontal: 24 }}>
-      {/* Starred Nooks */}
-      <Text
-        style={{
-          fontWeight: "bold",
-          color: themeColors.purple,
-          fontSize: 17,
-          fontFamily: FONTS.PRIMARY,
-          marginTop: 24,
-          marginBottom: 6,
-        }}
-      >
-        Starred Nooks
-      </Text>
-      {starredNooksData.length === 0 ? (
-        <Text
-          style={{
-            color: themeColors.darkGray,
-            fontFamily: FONTS.PRIMARY,
-            marginBottom: 90,
-          }}
-        >
-          No starred nooks yet.
-        </Text>
-      ) : (
-        <View
-          style={{
-            width: "100%",
-            position: "relative",
-            minHeight: 80,
-            marginBottom: 90,
-          }}
-        >
-          {showLeftGradient && (
-            <LinearGradient
-              colors={[themeColors.white, themeColors.white + "00"]}
-              style={{
-                position: "absolute",
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: 10,
-                zIndex: 2,
-              }}
-              pointerEvents="none"
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-            />
-          )}
-          {showRightGradient && (
-            <LinearGradient
-              colors={[themeColors.white + "00", themeColors.white]}
-              style={{
-                position: "absolute",
-                right: 0,
-                top: 0,
-                bottom: 0,
-                width: 28,
-                zIndex: 2,
-              }}
-              pointerEvents="none"
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-            />
-          )}
-          <FlatList
-            ref={starredListRef}
-            data={starredNooksData}
-            keyExtractor={(item) => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            onLayout={(e) => {
-              setStarredListWidth(e.nativeEvent.layout.width);
-            }}
-            onContentSizeChange={(w, h) => {
-              setStarredContentWidth(w);
-              setShowRightGradient(w > starredListWidth + 2);
-              setShowLeftGradient(false);
-            }}
-            onScroll={(e) => {
-              const x = e.nativeEvent.contentOffset.x;
-              const maxX = starredContentWidth - starredListWidth;
-              setShowLeftGradient(x > 2);
-              setShowRightGradient(maxX - x > 2);
-            }}
-            scrollEventThrottle={16}
-            contentContainerStyle={{
-              paddingVertical: 8,
-              paddingHorizontal: 0,
-            }}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() =>
-                  navigation.navigate("SpotDetail", { spotId: item.id })
-                }
-                style={{
-                  backgroundColor: themeColors.lightGray,
-                  borderRadius: 14,
-                  padding: 12,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginRight: 14,
-                  marginBottom: 8,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
-                  elevation: 3,
-                  borderColor: themeColors.black,
-                  borderWidth: 0.5,
-                  minWidth: 180,
-                }}
-              >
-                {item.photoUrl ? (
-                  <Image
-                    source={{ uri: item.photoUrl }}
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 8,
-                      marginRight: 12,
-                    }}
-                  />
-                ) : (
-                  <View
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 8,
-                      backgroundColor: themeColors.purple,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginRight: 12,
-                    }}
-                  >
-                    <MapPin size={32} color={themeColors.white} />
-                  </View>
-                )}
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      color: themeColors.purple,
-                      fontWeight: "bold",
-                      fontSize: 16,
-                      fontFamily: FONTS.PRIMARY,
-                      flexShrink: 1,
-                    }}
-                    numberOfLines={2}
-                  >
-                    {item.buildingName || item.name || "Nook"}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => toggleStarNook(item.id)}
-                  style={{ padding: 4, marginLeft: 8 }}
-                >
-                  <Star
-                    size={22}
-                    color={themeColors.purple}
-                    weight={starredNooks.includes(item.id) ? "fill" : "regular"}
-                  />
-                </TouchableOpacity>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-      )}
-    </View>
+    <View style={{ paddingHorizontal: 24, marginBottom: 90 }} />
   );
 
-  // --- Main FlatList for members, with header/footer for group info and starred nooks ---
+  // --- Main FlatList for members, with header/footer for group info ---
   return (
     <>
       <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.white }}>

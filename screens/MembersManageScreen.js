@@ -7,6 +7,7 @@ import {
   TextInput,
   Image,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -26,7 +27,7 @@ import {
   serverTimestamp,
   getDocs,
 } from "firebase/firestore";
-import { MagnifyingGlass, User, Check, X } from "phosphor-react-native";
+import { MagnifyingGlass, User, Check, X, Trash } from "phosphor-react-native";
 import GroupHeader from "../components/common/GroupHeader";
 
 export default function MembersManageScreen() {
@@ -49,7 +50,6 @@ export default function MembersManageScreen() {
   const [memberSearchResults, setMemberSearchResults] = useState([]);
   const [memberSearchLoading, setMemberSearchLoading] = useState(false);
 
-  const [selectedMemberUids, setSelectedMemberUids] = useState([]);
   const [pendingAddUids, setPendingAddUids] = useState([]);
   const [pendingAddUsers, setPendingAddUsers] = useState([]);
   const [activeTab, setActiveTab] = useState("members"); // 'members' | 'block'
@@ -117,12 +117,43 @@ export default function MembersManageScreen() {
     return (following || []).filter((uid) => (followers || []).includes(uid));
   }, [following, followers]);
 
-  useEffect(() => {
-    // Initialize with current members (excluding owner)
-    setSelectedMemberUids(
-      members.filter((m) => m.uid !== group?.createdBy).map((m) => m.uid)
+
+  const handleRemoveMember = (userToRemove) => {
+    const userName = userToRemove.firstName
+      ? `${userToRemove.firstName} ${userToRemove.lastName || ""}`.trim()
+      : "User";
+    
+    Alert.alert(
+      "Remove Member",
+      `Are you sure you want to remove ${userName} from the group?`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await updateDoc(doc(db, "studyGroups", groupId), {
+                memberUids: arrayRemove(userToRemove.uid),
+              });
+              
+              await addDoc(collection(db, "studyGroups", groupId, "messages"), {
+                type: "system",
+                text: `${userName} was removed from the group.`,
+                uid: userToRemove.uid,
+                createdAt: serverTimestamp(),
+              });
+            } catch (error) {
+              console.error("Error removing member:", error);
+            }
+          },
+        },
+      ]
     );
-  }, [members, group?.createdBy]);
+  };
 
   const searchMembers = async (query) => {
     if (!query.trim()) {
@@ -224,9 +255,6 @@ export default function MembersManageScreen() {
     const toAdd = pendingAddUids.filter(
       (uid) => !currentMemberUids.includes(uid) && !blocked.includes(uid)
     );
-    const toRemove = currentMemberUids.filter(
-      (uid) => !selectedMemberUids.includes(uid) || blocked.includes(uid)
-    );
 
     // Remove blocked users from group if present
     for (const uid of blocked) {
@@ -253,7 +281,6 @@ export default function MembersManageScreen() {
 
     if (
       toAdd.length === 0 &&
-      toRemove.length === 0 &&
       pendingBlockUids.length === 0 &&
       blocked.filter((uid) => !selectedBlockedUids.includes(uid)).length === 0
     ) {
@@ -276,26 +303,6 @@ export default function MembersManageScreen() {
         await addDoc(collection(db, "studyGroups", groupId, "messages"), {
           type: "system",
           text: `${userName} was added to the group.`,
-          uid,
-          createdAt: serverTimestamp(),
-        });
-      } catch {}
-    }
-    // Remove members
-    for (const uid of toRemove) {
-      try {
-        await updateDoc(doc(db, "studyGroups", groupId), {
-          memberUids: arrayRemove(uid),
-        });
-        const userDoc = await getDoc(doc(db, "users", uid));
-        const userName = userDoc.exists()
-          ? `${userDoc.data().firstName || ""} ${
-              userDoc.data().lastName || ""
-            }`.trim()
-          : "User";
-        await addDoc(collection(db, "studyGroups", groupId, "messages"), {
-          type: "system",
-          text: `${userName} was removed from the group.`,
           uid,
           createdAt: serverTimestamp(),
         });
@@ -338,6 +345,16 @@ export default function MembersManageScreen() {
       } catch {}
     }
     navigation.goBack();
+
+    // Clear all pending lists after applying changes
+    setPendingAddUids([]);
+    setPendingAddUsers([]);
+    setPendingBlockUids([]);
+    setPendingBlockUsers([]);
+    setMemberSearchQuery("");
+    setBlockSearchQuery("");
+    setMemberSearchResults([]);
+    setBlockSearchResults([]);
   };
 
   if (loading) {
@@ -380,13 +397,21 @@ export default function MembersManageScreen() {
               backgroundColor:
                 activeTab === "members" ? themeColors.white : "transparent",
               alignItems: "center",
+              borderWidth: activeTab === "members" ? 1 : 0,
+              borderColor: activeTab === "members" ? themeColors.purple : "transparent",
+              shadowColor: activeTab === "members" ? themeColors.purple : "transparent",
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.1,
+              shadowRadius: 2,
+              elevation: activeTab === "members" ? 2 : 0,
+              backgroundColor: activeTab === "members" ? themeColors.purple : "transparent",
             }}
           >
             <Text
               style={{
                 color:
                   activeTab === "members"
-                    ? themeColors.purple
+                    ? themeColors.white
                     : themeColors.black,
                 fontFamily: FONTS.PRIMARY,
                 fontWeight: "bold",
@@ -404,13 +429,21 @@ export default function MembersManageScreen() {
               backgroundColor:
                 activeTab === "block" ? themeColors.white : "transparent",
               alignItems: "center",
+              borderWidth: activeTab === "block" ? 1 : 0,
+              borderColor: activeTab === "block" ? themeColors.purple : "transparent",
+              shadowColor: activeTab === "block" ? themeColors.purple : "transparent",
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.1,
+              shadowRadius: 2,
+              elevation: activeTab === "block" ? 2 : 0,
+              backgroundColor: activeTab === "block" ? themeColors.purple : "transparent",
             }}
           >
             <Text
               style={{
                 color:
                   activeTab === "block"
-                    ? themeColors.purple
+                    ? themeColors.white
                     : themeColors.black,
                 fontFamily: FONTS.PRIMARY,
                 fontWeight: "bold",
@@ -713,19 +746,9 @@ export default function MembersManageScreen() {
             <ScrollView style={{ maxHeight: 560 }}>
               {members.map((userData) => {
                 const isMe = userData.uid === auth.currentUser?.uid;
-                const checked = selectedMemberUids.includes(userData.uid);
                 return (
-                  <TouchableOpacity
+                  <View
                     key={userData.uid}
-                    activeOpacity={0.7}
-                    onPress={() => {
-                      if (isMe) return;
-                      setSelectedMemberUids((prev) =>
-                        checked
-                          ? prev.filter((uid) => uid !== userData.uid)
-                          : [...prev, userData.uid]
-                      );
-                    }}
                     style={{
                       flexDirection: "row",
                       alignItems: "center",
@@ -789,33 +812,35 @@ export default function MembersManageScreen() {
                           : "User"}
                       </Text>
                     </View>
-                    {/* Check Circle (hide for me) */}
+                    {/* Remove Button (hide for me) */}
                     {!isMe && (
-                      <View
+                      <TouchableOpacity
+                        onPress={() => handleRemoveMember(userData)}
                         style={{
-                          width: 22,
-                          height: 22,
-                          borderRadius: 11,
-                          borderWidth: 1,
-                          borderColor: themeColors.purple,
-                          backgroundColor: checked
-                            ? themeColors.purple
-                            : themeColors.white,
+                          backgroundColor: themeColors.red || "#FF4444",
+                          borderRadius: 6,
+                          paddingVertical: 6,
+                          paddingHorizontal: 12,
                           marginLeft: 10,
+                          flexDirection: "row",
                           alignItems: "center",
-                          justifyContent: "center",
                         }}
                       >
-                        {checked && (
-                          <Check
-                            size={14}
-                            color={themeColors.white}
-                            weight="bold"
-                          />
-                        )}
-                      </View>
+                        <Trash size={14} color={themeColors.white} weight="bold" />
+                        <Text
+                          style={{
+                            color: themeColors.white,
+                            fontFamily: FONTS.PRIMARY,
+                            fontSize: 12,
+                            fontWeight: "bold",
+                            marginLeft: 4,
+                          }}
+                        >
+                          Remove
+                        </Text>
+                      </TouchableOpacity>
                     )}
-                  </TouchableOpacity>
+                  </View>
                 );
               })}
               {members.length === 0 && (
@@ -1262,6 +1287,7 @@ export default function MembersManageScreen() {
           </Text>
         </TouchableOpacity>
       </View>
+
     </SafeAreaView>
   );
 }

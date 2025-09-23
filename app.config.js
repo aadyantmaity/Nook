@@ -5,9 +5,6 @@ export default {
     name: "Nook",
     slug: "nook",
     version: "1.0.1",
-    ios: {
-      buildNumber: "100",
-    },
     icon: "./assets/NewNook.png",
     scheme: "nook",
     userInterfaceStyle: "automatic",
@@ -19,7 +16,7 @@ export default {
     ios: {
       bundleIdentifier: "com.aadyant.nook",
       usesNotifications: true,
-      buildNumber: "1.0.8",
+      buildNumber: "1.0.65",
       supportsTablet: true,
       associatedDomains: ["applinks:nook-web.netlify.app"],
       infoPlist: {
@@ -87,7 +84,7 @@ export default {
       eas: {
         projectId: "4fa00c32-f3ed-4ef5-ad72-b04ec4e10589",
       },
-      locationiqApiKey: process.env.LOCATIONIQ_API_KEY,
+      locationiqApiKey: "pk.f73f676cc77d848a6d4d0c0003335e59",
     },
   },
 };

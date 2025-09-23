@@ -415,13 +415,13 @@ export default function GroupDetailsScreen({ route, navigation }) {
                       ) : rank === 2 ? (
                         <Medal
                           size={24}
-                          color={themeColors.purple}
+                          color={themeColors.silver}
                           weight="fill"
                         />
                       ) : rank === 3 ? (
                         <Medal
                           size={24}
-                          color={themeColors.darkGray}
+                          color={themeColors.bronze}
                           weight="fill"
                         />
                       ) : (

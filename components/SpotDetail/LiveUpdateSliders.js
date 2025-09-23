@@ -11,6 +11,7 @@ import {
 } from "phosphor-react-native";
 import * as Location from "expo-location";
 import { FONTS } from "../../constants/fonts";
+import useLocationDistance from "../../hooks/useLocationDistance";
 
 const NOISE_OPTIONS = [
   { label: "Silent", value: 0, icon: <SpeakerSimpleNone size={23} /> },
@@ -35,64 +36,21 @@ export default function LiveUpdateSliders({
   canSubmitLiveUpdate = true,
   lastLiveUpdate = 0,
 }) {
-  // Helper: Haversine distance in meters
-  function getDistanceMeters(lat1, lon1, lat2, lon2) {
-    const toRad = (v) => (v * Math.PI) / 180;
-    const R = 6371000;
-    const dLat = toRad(lat2 - lat1);
-    const dLon = toRad(lon2 - lon1);
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  }
-
-  // Handler with geofence logic
-  const handleGeofencedSubmit = async () => {
-    // If spot has coordinates, require user to be within 100 meters
-    if (
-      spot &&
-      spot.coordinates &&
-      typeof spot.coordinates.latitude === "number" &&
-      typeof spot.coordinates.longitude === "number"
-    ) {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Location Required",
-          "You must allow location access to submit a live update for this Nook."
-        );
-        return;
-      }
-      let loc;
-      try {
-        loc = await Location.getCurrentPositionAsync({});
-      } catch (e) {
-        Alert.alert("Location Error", "Could not get your current location.");
-        return;
-      }
-      const userLat = loc.coords.latitude;
-      const userLon = loc.coords.longitude;
-      const spotLat = spot.coordinates.latitude;
-      const spotLon = spot.coordinates.longitude;
-      const distance = getDistanceMeters(userLat, userLon, spotLat, spotLon);
-      if (distance > 100) {
-        Alert.alert(
-          "Too Far",
-          "You must be within 100 meters of this Nook to submit a live update."
-        );
-        return;
-      }
-    }
-    // Call original submit handler
+  // Use location distance hook
+  const { isWithinDistance, isLoading: isLocationLoading, error: locationError } = useLocationDistance(spot, 100);
+  // Handler for live update submission
+  const handleSubmit = () => {
+    // Location distance is now handled in the disabled state
     onSubmit && onSubmit();
     // Reset choices after submit
     setLiveNoise(-2);
     setLiveCrowd(-2);
   };
 
-  // Disable submit unless all options selected
+  // Disable submit unless all options selected and within distance
   const noOptionsSelected = liveNoise === -2 || liveCrowd === -2;
+  const isLocationDisabled = !isWithinDistance || isLocationLoading;
+  const isDisabled = !canSubmitLiveUpdate || isLocationDisabled;
 
   // Helper: format cooldown time left
   function getCooldownLabel() {
@@ -168,7 +126,7 @@ export default function LiveUpdateSliders({
               </View>
               <TouchableOpacity
                 onPress={() => setLiveNoise(opt.value)}
-                disabled={!canSubmitLiveUpdate}
+                disabled={isDisabled}
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
@@ -181,7 +139,7 @@ export default function LiveUpdateSliders({
                   paddingHorizontal: 14,
                   minWidth: 90,
                   justifyContent: "center",
-                  opacity: canSubmitLiveUpdate ? 1 : 0.5,
+                  opacity: isDisabled ? 0.5 : 1,
                 }}
               >
                 <Text
@@ -235,7 +193,7 @@ export default function LiveUpdateSliders({
               </View>
               <TouchableOpacity
                 onPress={() => setLiveCrowd(opt.value)}
-                disabled={!canSubmitLiveUpdate}
+                disabled={isDisabled}
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
@@ -248,7 +206,7 @@ export default function LiveUpdateSliders({
                   paddingHorizontal: 14,
                   minWidth: 90,
                   justifyContent: "center",
-                  opacity: canSubmitLiveUpdate ? 1 : 0.5,
+                  opacity: isDisabled ? 0.5 : 1,
                 }}
               >
                 <Text
@@ -280,10 +238,10 @@ export default function LiveUpdateSliders({
         }}
       >
         <TouchableOpacity
-          onPress={handleGeofencedSubmit}
+          onPress={handleSubmit}
           style={{
             backgroundColor:
-              canSubmitLiveUpdate && !noOptionsSelected
+              !isDisabled && !noOptionsSelected
                 ? themeColors.purple
                 : themeColors.gray,
             borderRadius: 8,
@@ -295,13 +253,13 @@ export default function LiveUpdateSliders({
             opacity: isSubmittingLive ? 0.7 : 1,
           }}
           disabled={
-            isSubmittingLive || !canSubmitLiveUpdate || noOptionsSelected
+            isSubmittingLive || isDisabled || noOptionsSelected
           }
         >
           <Check
             size={16}
             color={
-              !canSubmitLiveUpdate || noOptionsSelected
+              isDisabled || noOptionsSelected
                 ? themeColors.darkGray
                 : themeColors.white
             }
@@ -310,7 +268,7 @@ export default function LiveUpdateSliders({
           <Text
             style={{
               color:
-                !canSubmitLiveUpdate || noOptionsSelected
+                isDisabled || noOptionsSelected
                   ? themeColors.darkGray
                   : themeColors.white,
               fontWeight: "bold",
@@ -336,8 +294,22 @@ export default function LiveUpdateSliders({
           {getCooldownLabel()}
         </Text>
       )}
+      {/* Show location distance message if too far */}
+      {isLocationDisabled && canSubmitLiveUpdate && (
+        <Text
+          style={{
+            color: themeColors.red,
+            fontSize: 13,
+            marginTop: 6,
+            textAlign: "center",
+            fontFamily: FONTS.PRIMARY,
+          }}
+        >
+          {locationError || "You must be within 100 meters to submit live updates."}
+        </Text>
+      )}
       {/* Show message if no options selected */}
-      {noOptionsSelected && canSubmitLiveUpdate && !isSubmittingLive && (
+      {noOptionsSelected && !isDisabled && !isSubmittingLive && (
         <Text
           style={{
             color: themeColors.darkGray,

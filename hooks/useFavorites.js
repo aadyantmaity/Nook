@@ -16,6 +16,7 @@ import {
 export default function useFavorites() {
   const [favorites, setFavorites] = useState(new Set());
   const [favoriteGroups, setFavoriteGroups] = useState([]);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Listen to user's favorites from favoritedBy subcollections
   useEffect(() => {
@@ -73,7 +74,7 @@ export default function useFavorites() {
     fetchFavoriteGroups();
 
     return () => unsubscribe();
-  }, []);
+  }, [refreshTrigger]);
 
   const toggleFavorite = async (spotId) => {
     const user = auth.currentUser;
@@ -136,5 +137,9 @@ export default function useFavorites() {
     }
   };
 
-  return { favorites, toggleFavorite, favoriteGroups, toggleFavoriteGroup };
+  const refetchFavorites = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  return { favorites, toggleFavorite, favoriteGroups, toggleFavoriteGroup, refetchFavorites };
 }

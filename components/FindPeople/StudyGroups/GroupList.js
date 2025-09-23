@@ -35,6 +35,9 @@ export default function GroupList({
   themeColors,
 }) {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [previewGroup, setPreviewGroup] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const GroupPreviewModal = require("../../Groups/GroupPreviewModal").default;
 
   // --- Track user's last read per group (live) ---
   const [groupLastRead, setGroupLastRead] = useState({});
@@ -279,68 +282,8 @@ export default function GroupList({
     const isPublic = !(item.isPrivate ?? false);
     const handlePress = async () => {
       if (isPublic && !isMember) {
-        Alert.alert(
-          "Join Group",
-          "You are not a member of this public group. Would you like to join?",
-          [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Join",
-              style: "default",
-              onPress: async () => {
-                try {
-                  const groupRef = doc(db, "studyGroups", item.id);
-                  await getDoc(groupRef).then(async (snap) => {
-                    if (snap.exists()) {
-                      const data = snap.data();
-                      const memberUids = Array.isArray(data.memberUids)
-                        ? data.memberUids
-                        : [];
-                      if (memberUids.length >= 32) {
-                        Alert.alert(
-                          "Group Full",
-                          "This public group already has 32 members and cannot accept more."
-                        );
-                        return;
-                      }
-                      if (!memberUids.includes(user.uid)) {
-                        await updateDoc(groupRef, {
-                          memberUids: [...memberUids, user.uid],
-                        });
-                        // --- Add joined the group system message ---
-                        let userDoc;
-                        try {
-                          userDoc = await getDoc(doc(db, "users", user.uid));
-                        } catch {}
-                        const userName =
-                          userDoc && userDoc.exists()
-                            ? (userDoc.data().firstName || "User") +
-                              (userDoc.data().lastName
-                                ? " " + userDoc.data().lastName.charAt(0)
-                                : "")
-                            : "User";
-                        await addDoc(
-                          collection(db, "studyGroups", item.id, "messages"),
-                          {
-                            type: "system",
-                            text: `${userName} joined the group.`,
-                            uid: user.uid,
-                            createdAt: serverTimestamp(),
-                          }
-                        );
-                      }
-                    }
-                  });
-                  navigation.navigate("GroupChat", {
-                    groupId: item.id,
-                  });
-                } catch (e) {
-                  Alert.alert("Error", "Failed to join group.");
-                }
-              },
-            },
-          ]
-        );
+        setPreviewGroup(item);
+        setShowPreview(true);
       } else {
         navigation.navigate("GroupChat", { groupId: item.id });
       }
@@ -532,6 +475,17 @@ export default function GroupList({
         scrollEventThrottle={16}
         stickySectionHeadersEnabled={false}
       />
+      {showPreview && previewGroup && (
+        <GroupPreviewModal
+          visible={showPreview}
+          onClose={() => setShowPreview(false)}
+          group={previewGroup}
+          user={user}
+          themeColors={themeColors}
+          navigation={navigation}
+          followingIds={allUsers?.[user.uid]?.following}
+        />
+      )}
       {sortedGroups.length > 0 && (
         <LinearGradient
           colors={[themeColors.white + "00", themeColors.white + "FF"]}

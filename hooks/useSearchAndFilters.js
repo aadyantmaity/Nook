@@ -154,10 +154,8 @@ export default function useSearchAndFilters(
     );
   } else if (sortBy === "noise-asc") {
     sortedSpots.sort((a, b) => {
-      const aNoise =
-        typeof a.ratings?.noise === "number" ? a.ratings.noise : 999;
-      const bNoise =
-        typeof b.ratings?.noise === "number" ? b.ratings.noise : 999;
+      const aNoise = typeof a.ratings?.noise === "number" ? a.ratings.noise : 999;
+      const bNoise = typeof b.ratings?.noise === "number" ? b.ratings.noise : 999;
       return aNoise - bNoise;
     });
   } else if (sortBy === "overall-desc") {
@@ -174,10 +172,8 @@ export default function useSearchAndFilters(
     });
   } else if (sortBy === "crowd-asc") {
     sortedSpots.sort((a, b) => {
-      const aCrowd =
-        typeof a.ratings?.crowd === "number" ? a.ratings.crowd : 999;
-      const bCrowd =
-        typeof b.ratings?.crowd === "number" ? b.ratings.crowd : 999;
+      const aCrowd = typeof a.ratings?.crowd === "number" ? a.ratings.crowd : 999;
+      const bCrowd = typeof b.ratings?.crowd === "number" ? b.ratings.crowd : 999;
       return aCrowd - bCrowd;
     });
   }
@@ -207,7 +203,8 @@ export default function useSearchAndFilters(
 
   // Always return syncFilteredSpots, no favorites filter logic
   let spots = [...syncFilteredSpots];
-  if (favoritesSet && favoritesSet.size > 0) {
+  // Only apply favorites sorting for default/alphabetical sort
+  if (favoritesSet && favoritesSet.size > 0 && (sortBy === "name-asc" || sortBy === "default")) {
     spots.sort((a, b) => {
       const aFav = favoritesSet.has(a.id);
       const bFav = favoritesSet.has(b.id);

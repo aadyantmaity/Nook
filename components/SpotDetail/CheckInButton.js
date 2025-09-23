@@ -13,6 +13,7 @@ import { doc, updateDoc, getDoc } from "firebase/firestore";
 import * as Location from "expo-location";
 import { FONTS } from "../../constants/fonts";
 import { addCheckinActivity } from "../../utils/checkinActivity";
+import useLocationDistance from "../../hooks/useLocationDistance";
 
 export default function CheckInButton({ spot, spotId, themeColors }) {
   const user = auth.currentUser;
@@ -22,17 +23,27 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
   const [loadingCheckedIn, setLoadingCheckedIn] = useState(true);
   const [timeRemaining, setTimeRemaining] = useState(null); // Add countdown state
 
+  // Use location distance hook
+  const { isWithinDistance, isLoading: isLocationLoading, error: locationError, distance } = useLocationDistance(spot, 100);
+
   // --- Determine if check-in is allowed ---
   let canCheckIn = false;
   let canCheckOut = false;
   let checkInDisabledReason = "";
 
-  if (loadingCheckedIn) {
+  if (loadingCheckedIn || isLocationLoading) {
     canCheckIn = false;
     canCheckOut = false;
   } else if (!checkedIn || !checkedIn.spotId) {
-    canCheckIn = true;
-    canCheckOut = false;
+    // Check if user is within distance for check-in
+    if (!isWithinDistance) {
+      canCheckIn = false;
+      canCheckOut = false;
+      checkInDisabledReason = locationError || "You must be within 100 meters to check in.";
+    } else {
+      canCheckIn = true;
+      canCheckOut = false;
+    }
   } else if (checkedIn.spotId === spotId) {
     canCheckIn = false;
     canCheckOut = true;
@@ -42,58 +53,13 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
     checkInDisabledReason = "You are already checked in at another Nook.";
   }
 
-  // --- New: handle check-in with geofence ---
+  // --- Handle check-in ---
   const handleCheckIn = async () => {
     if (!user || !spotId || !spot) return;
-    // --- Geofence logic ---
-    if (
-      spot.coordinates &&
-      typeof spot.coordinates.latitude === "number" &&
-      typeof spot.coordinates.longitude === "number"
-    ) {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Location Required",
-          "You must allow location access to check in at this Nook."
-        );
-        return;
-      }
-      let loc;
-      try {
-        loc = await Location.getCurrentPositionAsync({});
-      } catch (e) {
-        Alert.alert("Location Error", "Could not get your current location.");
-        return;
-      }
-      const userLat = loc.coords.latitude;
-      const userLon = loc.coords.longitude;
-      const spotLat = spot.coordinates.latitude;
-      const spotLon = spot.coordinates.longitude;
-      const distance = getDistanceMeters(userLat, userLon, spotLat, spotLon);
-      if (distance > 100) {
-        Alert.alert(
-          "Too Far",
-          "You must be within 100 meters of this Nook to check in."
-        );
-        return;
-      }
-    }
-    // Direct check-in without tagging
+    // Location distance is now handled in the disabled state
     await confirmCheckIn();
   };
 
-  // Helper: Haversine distance in meters
-  function getDistanceMeters(lat1, lon1, lat2, lon2) {
-    const toRad = (v) => (v * Math.PI) / 180;
-    const R = 6371000;
-    const dLat = toRad(lat2 - lat1);
-    const dLon = toRad(lon2 - lon1);
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  }
 
   // --- New: confirm check-in after selecting tags ---
   const confirmCheckIn = async () => {
@@ -341,13 +307,13 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
           accessibilityLabel="Check-in"
         >
           {isCheckingIn ? (
-            <ActivityIndicator color={themeColors.white} />
+            <ActivityIndicator color={canCheckIn ? themeColors.white : themeColors.darkGray} />
           ) : (
             <>
-              <MapPin size={20} color={themeColors.white} />
+              <MapPin size={20} color={canCheckIn ? themeColors.white : themeColors.darkGray} />
               <Text
                 style={{
-                  color: themeColors.white,
+                  color: canCheckIn ? themeColors.white : themeColors.darkGray,
                   fontWeight: "bold",
                   fontSize: 15,
                   marginLeft: 8,
@@ -368,7 +334,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
       {!canCheckIn && checkInDisabledReason && (
         <Text
           style={{
-            color: themeColors.darkGray,
+            color: themeColors.red,
             fontSize: 12,
             marginTop: 4,
             fontFamily: FONTS.PRIMARY,

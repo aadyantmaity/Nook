@@ -122,8 +122,8 @@ export default function useGroupLeaderboard(groupId, memberUids = []) {
       // Get current user ID
       const currentUserUid = auth.currentUser?.uid;
 
-      // Get top 5 members
-      const top5 = allMembers.slice(0, 5);
+      // Get top 3 members (always show these even if they have 0)
+      const top3 = allMembers.slice(0, 3);
 
       // Find current user in the full list
       const currentUserIndex = allMembers.findIndex(
@@ -132,25 +132,25 @@ export default function useGroupLeaderboard(groupId, memberUids = []) {
       const currentUser =
         currentUserIndex !== -1 ? allMembers[currentUserIndex] : null;
 
-      // Create final leaderboard: top 5 + current user (if not in top 5)
-      let finalLeaderboard = [...top5];
+      // Create final leaderboard: top 3 + current user (if not in top 3)
+      let finalLeaderboard = [...top3];
 
-      if (currentUser && currentUserIndex >= 5) {
-        // Add separator object to indicate gap
-        if (currentUserIndex > 5) {
-          finalLeaderboard.push({
-            uid: "separator",
-            isSeparator: true,
-            rank: "...",
-          });
-        }
+      if (currentUser && currentUserIndex >= 3) {
+        // Add separator object to indicate gap (even if user is 4th)
+        finalLeaderboard.push({
+          uid: "separator",
+          isSeparator: true,
+          rank: "...",
+        });
         finalLeaderboard.push(currentUser);
       }
 
-      // Only show members with focus time (except current user who can have 0)
+      // Always keep top 3; for others, only show members with focus time > 0, except current user who can have 0
+      const top3Uids = new Set(top3.map((m) => m.uid));
       const filteredLeaderboard = finalLeaderboard.filter(
         (member) =>
           member.isSeparator ||
+          top3Uids.has(member.uid) ||
           member.weeklyFocusTime > 0 ||
           member.uid === currentUserUid
       );

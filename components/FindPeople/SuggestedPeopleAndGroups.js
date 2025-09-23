@@ -254,6 +254,8 @@ export default function SuggestedPeopleAndGroups({
                     </View>
                   );
                 } else if (item._type === "group") {
+                  const GroupPreviewModal = require("../Groups/GroupPreviewModal").default;
+                  const [showPreview, setShowPreview] = React.useState(false);
                   const IconComponent =
                     item.icon && require("phosphor-react-native")[item.icon]
                       ? require("phosphor-react-native")[item.icon]
@@ -274,115 +276,7 @@ export default function SuggestedPeopleAndGroups({
                       );
                       return;
                     }
-                    // --- Confirmation alert before joining ---
-                    Alert.alert(
-                      "Join Group",
-                      "You are not a member of this public group. Would you like to join?",
-                      [
-                        { text: "Cancel", style: "cancel" },
-                        {
-                          text: "Join",
-                          style: "default",
-                          onPress: async () => {
-                            setJoiningGroups((prev) => ({
-                              ...prev,
-                              [item.id]: true,
-                            }));
-                            try {
-                              const groupRef = doc(
-                                require("../../firebaseConfig").db,
-                                "studyGroups",
-                                item.id
-                              );
-                              await getDoc(groupRef).then(async (snap) => {
-                                if (snap.exists()) {
-                                  const data = snap.data();
-                                  const memberUids = Array.isArray(
-                                    data.memberUids
-                                  )
-                                    ? data.memberUids
-                                    : [];
-                                  if (memberUids.length >= 32) {
-                                    Alert.alert(
-                                      "Group Full",
-                                      "This public group already has 32 members and cannot accept more."
-                                    );
-                                    setJoiningGroups((prev) => ({
-                                      ...prev,
-                                      [item.id]: false,
-                                    }));
-                                    return;
-                                  }
-                                  if (
-                                    Array.isArray(data.blockedUsers) &&
-                                    data.blockedUsers.includes(user.uid)
-                                  ) {
-                                    Alert.alert(
-                                      "Cannot Join",
-                                      "You are blocked from this group and cannot join."
-                                    );
-                                    setJoiningGroups((prev) => ({
-                                      ...prev,
-                                      [item.id]: false,
-                                    }));
-                                    return;
-                                  }
-                                  if (!memberUids.includes(user.uid)) {
-                                    await updateDoc(groupRef, {
-                                      memberUids: [...memberUids, user.uid],
-                                    });
-                                    // --- Add joined the group system message ---
-                                    let userDoc;
-                                    try {
-                                      userDoc = await getDoc(
-                                        doc(
-                                          require("../../firebaseConfig").db,
-                                          "users",
-                                          user.uid
-                                        )
-                                      );
-                                    } catch (e) {}
-                                    const userName =
-                                      userDoc && userDoc.exists()
-                                        ? (userDoc.data().firstName || "User") +
-                                          (userDoc.data().lastName
-                                            ? " " +
-                                              userDoc.data().lastName.charAt(0)
-                                            : "")
-                                        : "User";
-                                    await addDoc(
-                                      collection(
-                                        require("../../firebaseConfig").db,
-                                        "studyGroups",
-                                        item.id,
-                                        "messages"
-                                      ),
-                                      {
-                                        type: "system",
-                                        text: `${userName} joined the group.`,
-                                        uid: user.uid,
-                                        createdAt:
-                                          require("firebase/firestore").serverTimestamp(),
-                                      }
-                                    );
-                                  }
-                                }
-                              });
-                              navigation.navigate("GroupChat", {
-                                groupId: item.id,
-                              });
-                            } catch (e) {
-                              console.log(e);
-                              Alert.alert("Error", "Failed to join group.");
-                            }
-                            setJoiningGroups((prev) => ({
-                              ...prev,
-                              [item.id]: false,
-                            }));
-                          },
-                        },
-                      ]
-                    );
+                    setShowPreview(true);
                   };
                   const handlePress = async () => {
                     if (isBlocked) {
@@ -409,6 +303,17 @@ export default function SuggestedPeopleAndGroups({
                         maxWidth: 180,
                       }}
                     >
+                      {showPreview && (
+                        <GroupPreviewModal
+                          visible={showPreview}
+                          onClose={() => setShowPreview(false)}
+                          group={item}
+                          user={user}
+                          themeColors={themeColors}
+                          navigation={navigation}
+                          followingIds={followingIds}
+                        />
+                      )}
                       <TouchableOpacity
                         onPress={handlePress}
                         style={{

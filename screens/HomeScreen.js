@@ -199,9 +199,33 @@ export default function HomeScreen({ navigation, route }) {
   };
 
   // Hooks
-  const { favorites, toggleFavorite, favoriteGroups, toggleFavoriteGroup } =
+  const { favorites, toggleFavorite, favoriteGroups, toggleFavoriteGroup, refetchFavorites } =
     useFavorites(); // <-- destructure favorites
   const { studySpots, isLoading, fetchStudySpots } = useStudySpots();
+
+  // Track refresh state separately from initial loading
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
+
+  // Combined refresh function for both study spots and favorites
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        fetchStudySpots(),
+        refetchFavorites()
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Track when initial loading is complete
+  useEffect(() => {
+    if (!isLoading && !hasInitiallyLoaded) {
+      setHasInitiallyLoaded(true);
+    }
+  }, [isLoading, hasInitiallyLoaded]);
   const {
     filters,
     setFilters,
@@ -297,7 +321,7 @@ export default function HomeScreen({ navigation, route }) {
   // --- Refresh data when initially loading map view ---
   useEffect(() => {
     if (showMapView) {
-      fetchStudySpots();
+      handleRefresh();
       refetchFriendsCheckIns();
     }
   }, [showMapView]); // Only run when showMapView becomes true
@@ -308,7 +332,7 @@ export default function HomeScreen({ navigation, route }) {
 
     // Refresh data when switching to map view
     if (val) {
-      fetchStudySpots(); // Refresh study spots
+      handleRefresh(); // Refresh study spots and favorites
       refetchFriendsCheckIns(); // Refresh friends check-ins
     }
 
@@ -332,8 +356,8 @@ export default function HomeScreen({ navigation, route }) {
           // Switching to friends view - refresh friends data
           refetchFriendsCheckIns();
         } else {
-          // Switching to nooks view - refresh study spots
-          fetchStudySpots();
+          // Switching to nooks view - refresh study spots and favorites
+          handleRefresh();
         }
       }
     }, 350); // Slightly longer than animation duration
@@ -664,8 +688,8 @@ export default function HomeScreen({ navigation, route }) {
                 },
               }}
               themeColors={themeColors}
-              onRefresh={fetchStudySpots}
-              refreshing={isLoading}
+              onRefresh={handleRefresh}
+              refreshing={isRefreshing}
               filters={filters}
               setFilters={setFilters}
               setCurrentAlerts={setCurrentAlerts}
@@ -772,7 +796,7 @@ export default function HomeScreen({ navigation, route }) {
           creating: undefined,
         });
       }
-      fetchStudySpots();
+      handleRefresh();
     }
   }, [route?.params?.refresh]);
 
@@ -971,6 +995,10 @@ export default function HomeScreen({ navigation, route }) {
   const shouldShowLoadingScreen = () => {
     // Don't show loading screen when in map view - let the map handle its own loading
     if (showMapView) return false;
+    // Don't show loading screen when refreshing - let the pull-to-refresh handle it
+    if (isRefreshing) return false;
+    // Only show loading screen on initial load, not on subsequent refreshes
+    if (hasInitiallyLoaded) return false;
     return initialMount.current || isLoading || !minLoadingElapsed;
   };
 

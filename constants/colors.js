@@ -1,6 +1,8 @@
 export const colors = {
   purple: "#32006e", // University of Washington purple
   gold: "#B7A57A", // University of Washington gold
+  silver: "#C0C0C0", // Silver for 2nd place
+  bronze: "#CD7F32", // Bronze for 3rd place
   white: "#fffaf4", // Fix: set white to actual white FFFaf4
   black: "#000000", // Use for high-contrast text/icons
   gray: "#F0F0F0",
@@ -18,6 +20,8 @@ export const colors = {
 export const dark = {
   purple: "#BCADE0", // Lighter purple for dark mode
   gold: "#B7A57A", // University of Washington gold
+  silver: "#C0C0C0", // Silver for 2nd place
+  bronze: "#CD7F32", // Bronze for 3rd place
   white: "#121212", // Dark background for dark mode
   black: "#Ffffff", // White text for dark mode
   gray: "#232323", // Darker gray for dark mode
