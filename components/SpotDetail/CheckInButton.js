@@ -331,7 +331,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
         </TouchableOpacity>
       )}
       {/* Show cooldown message if tagged */}
-      {!canCheckIn && checkInDisabledReason && (
+      {!canCheckIn && checkInDisabledReason && !checkInDisabledReason.includes("100 meters") && (
         <Text
           style={{
             color: themeColors.red,

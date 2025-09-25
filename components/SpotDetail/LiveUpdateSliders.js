@@ -294,20 +294,6 @@ export default function LiveUpdateSliders({
           {getCooldownLabel()}
         </Text>
       )}
-      {/* Show location distance message if too far */}
-      {isLocationDisabled && canSubmitLiveUpdate && (
-        <Text
-          style={{
-            color: themeColors.red,
-            fontSize: 13,
-            marginTop: 6,
-            textAlign: "center",
-            fontFamily: FONTS.PRIMARY,
-          }}
-        >
-          {locationError || "You must be within 100 meters to submit live updates."}
-        </Text>
-      )}
       {/* Show message if no options selected */}
       {noOptionsSelected && !isDisabled && !isSubmittingLive && (
         <Text

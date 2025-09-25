@@ -68,9 +68,35 @@ import * as Clipboard from "expo-clipboard";
 
 // Hooks
 import useSpotDetails from "../hooks/useSpotDetails";
+import useLocationDistance from "../hooks/useLocationDistance";
 
 import QRCode from "react-native-qrcode-svg";
 import { FONTS } from "../constants/fonts";
+
+// Distance restriction message component
+function DistanceRestrictionMessage({ spot, themeColors }) {
+  const { isWithinDistance, isLoading: isLocationLoading } = useLocationDistance(spot, 100);
+  
+  if (isLocationLoading) return null;
+  
+  if (!isWithinDistance) {
+    return (
+      <Text
+        style={{
+          color: themeColors.red,
+          fontSize: 13,
+          marginTop: 8,
+          textAlign: "center",
+          fontFamily: FONTS.PRIMARY,
+        }}
+      >
+        You must be within 100 meters to interact
+      </Text>
+    );
+  }
+  
+  return null;
+}
 
 export default function SpotDetailScreen({ route, navigation }) {
   const themeCtx = useContext(ThemeContext);
@@ -813,6 +839,8 @@ export default function SpotDetailScreen({ route, navigation }) {
                     {getLastUpdatedLabel(spot.ratings)}
                   </Text>
                 </View>
+                {/* Distance restriction message */}
+                <DistanceRestrictionMessage spot={spot} themeColors={themeColors} />
               </View>
             )}
 
@@ -1262,6 +1290,8 @@ export default function SpotDetailScreen({ route, navigation }) {
                     {getLastUpdatedLabel(spot.ratings)}
                   </Text>
                 </View>
+                {/* Distance restriction message */}
+                <DistanceRestrictionMessage spot={spot} themeColors={themeColors} />
               </View>
             )}
 
