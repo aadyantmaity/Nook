@@ -542,7 +542,7 @@ const GroupMessagesList = memo(
                 padding: 24,
                 minWidth: 220,
                 alignItems: "center",
-                shadowColor: "#000",
+                shadowColor: themeColors.black,
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.15,
                 shadowRadius: 8,

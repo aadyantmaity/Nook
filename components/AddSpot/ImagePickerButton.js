@@ -62,7 +62,7 @@ export default function ImagePickerButton({
           paddingHorizontal: 16,
           alignItems: "center",
           minWidth: 160,
-          shadowColor: "#000",
+          shadowColor: themeColors.black,
 
           shadowOffset: {
             width: 0,
@@ -172,7 +172,7 @@ export default function ImagePickerButton({
                       paddingHorizontal: 10,
                       borderRadius: 12,
                       marginTop: 6,
-                      shadowColor: "#000",
+                      shadowColor: themeColors.black,
 
                       shadowOffset: {
                         width: 0,
@@ -232,7 +232,7 @@ export default function ImagePickerButton({
                     paddingHorizontal: 10,
                     borderRadius: 12,
                     marginTop: 8,
-                    shadowColor: "#000",
+                    shadowColor: themeColors.black,
 
                     shadowOffset: {
                       width: 0,
@@ -291,7 +291,7 @@ export default function ImagePickerButton({
                     paddingVertical: 14,
                     alignItems: "center",
                     borderRadius: 10,
-                    shadowColor: "#000",
+                    shadowColor: themeColors.black,
 
                     shadowOffset: {
                       width: 0,

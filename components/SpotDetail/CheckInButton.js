@@ -242,7 +242,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
               paddingVertical: 10,
               paddingHorizontal: 24,
               opacity: isCheckingOut ? 0.7 : 1,
-              shadowColor: "#000",
+              shadowColor: themeColors.black,
 
               shadowOffset: {
                 width: 0,
@@ -301,7 +301,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
             paddingVertical: 10,
             paddingHorizontal: 24,
             opacity: isCheckingIn || !canCheckIn ? 0.7 : 1,
-            shadowColor: "#000",
+            shadowColor: themeColors.black,
 
             shadowOffset: {
               width: 0,

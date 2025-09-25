@@ -302,7 +302,7 @@ export default function GroupList({
           padding: 16,
           marginBottom: 12,
           marginHorizontal: 2,
-          shadowColor: "#000",
+          shadowColor: themeColors.black,
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.15,
           shadowRadius: 4,

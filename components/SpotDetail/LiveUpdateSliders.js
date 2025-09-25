@@ -163,7 +163,7 @@ export default function LiveUpdateSliders({
         borderRadius: 12,
         borderWidth: 1,
         borderColor: themeColors.gray,
-        shadowColor: "#000",
+        shadowColor: themeColors.black,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.06,
         shadowRadius: 2,
@@ -219,7 +219,7 @@ export default function LiveUpdateSliders({
               paddingHorizontal: 12,
               paddingVertical: 6,
               borderRadius: 6,
-              shadowColor: "#000",
+              shadowColor: themeColors.black,
 
               shadowOffset: {
                 width: 0,
@@ -310,7 +310,7 @@ export default function LiveUpdateSliders({
                   minWidth: 90,
                   justifyContent: "center",
                   opacity: (isDisabled || !isWithinGeofence) ? 0.5 : 1,
-                  shadowColor: "#000",
+                  shadowColor: themeColors.black,
 
                   shadowOffset: {
                     width: 0,
@@ -389,7 +389,7 @@ export default function LiveUpdateSliders({
                   minWidth: 90,
                   justifyContent: "center",
                   opacity: (isDisabled || !isWithinGeofence) ? 0.5 : 1,
-                  shadowColor: "#000",
+                  shadowColor: themeColors.black,
 
                   shadowOffset: {
                     width: 0,
@@ -440,7 +440,7 @@ export default function LiveUpdateSliders({
             flexDirection: "row",
             justifyContent: "center",
             opacity: buttonState.disabled ? 0.7 : 1,
-            shadowColor: "#000",
+            shadowColor: themeColors.black,
 
             shadowOffset: {
               width: 0,

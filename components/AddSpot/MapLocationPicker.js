@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { FONTS } from "../../constants/fonts";
+import { colors } from "../../constants/colors";
 import Constants from "expo-constants";
 
 // Utility to safely parse latitude/longitude
@@ -137,7 +138,7 @@ export default function MapLocationPicker({
           backgroundColor: "rgba(0,0,0,0.3)",
           justifyContent: "center",
           alignItems: "center",
-          shadowColor: "#000",
+          shadowColor: themeColors.black,
 
           shadowOffset: {
             width: 0,
@@ -346,7 +347,7 @@ export default function MapLocationPicker({
                     ? themeColors.purple
                     : "#ccc",
 
-                  shadowColor: "#000",
+                  shadowColor: themeColors.black,
 
                   shadowOffset: {
                     width: 0,
@@ -417,7 +418,7 @@ const styles = StyleSheet.create({
     height: 200, // Fixed height to prevent resizing
     borderWidth: 1,
     borderColor: "#ccc",
-    shadowColor: "#000",
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
@@ -434,7 +435,7 @@ const styles = StyleSheet.create({
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
-    shadowColor: "#000",
+    shadowColor: colors.black,
 
     shadowOffset: {
       width: 0,
@@ -462,7 +463,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     marginHorizontal: 6,
-    shadowColor: "#000",
+    shadowColor: colors.black,
 
     shadowOffset: {
       width: 0,

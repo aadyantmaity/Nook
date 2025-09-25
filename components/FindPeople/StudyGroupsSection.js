@@ -587,7 +587,7 @@ export default function StudyGroupsSection({ navigation }) {
             paddingHorizontal: 16,
             backgroundColor: themeColors.purple,
             borderRadius: 50,
-            shadowColor: "#000",
+            shadowColor: themeColors.black,
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.2,
             shadowRadius: 4,

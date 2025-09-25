@@ -63,7 +63,7 @@ export default function QRShareModal({
             padding: 24,
             width: screenWidth * 0.85,
             alignItems: "center",
-            shadowColor: "#000",
+            shadowColor: themeColors.black,
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.25,
             shadowRadius: 8,

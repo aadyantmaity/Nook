@@ -33,7 +33,7 @@ export default function ShareWithModal({
           backgroundColor: "rgba(0,0,0,0.3)",
           justifyContent: "center",
           alignItems: "center",
-          shadowColor: "#000",
+          shadowColor: themeColors.black,
 
           shadowOffset: {
             width: 0,
@@ -106,7 +106,7 @@ export default function ShareWithModal({
                     paddingVertical: 10,
                     borderBottomWidth: 1,
                     borderBottomColor: themeColors.gray,
-                    shadowColor: "#000",
+                    shadowColor: themeColors.black,
 
                     shadowOffset: {
                       width: 0,
@@ -169,7 +169,7 @@ export default function ShareWithModal({
               paddingVertical: 10,
               paddingHorizontal: 24,
               alignItems: "center",
-              shadowColor: "#000",
+              shadowColor: themeColors.black,
 
               shadowOffset: {
                 width: 0,

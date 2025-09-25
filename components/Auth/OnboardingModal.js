@@ -125,7 +125,7 @@ export default function OnboardingModal({ visible, onFinish, themeColors }) {
               justifyContent: "center",
               alignItems: "center",
               // Shadow for iOS
-              shadowColor: "#000",
+              shadowColor: themeColors.black,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.18,
               shadowRadius: 8,

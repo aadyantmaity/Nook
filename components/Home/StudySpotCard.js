@@ -20,7 +20,7 @@ export default function StudySpotCard({
         marginBottom: 12,
         backgroundColor: themeColors.white,
         borderRadius: 8,
-        shadowColor: "#000",
+        shadowColor: themeColors.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,

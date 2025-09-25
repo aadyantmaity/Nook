@@ -216,7 +216,7 @@ export default function EmailVerificationModal({
               paddingHorizontal: 0,
               paddingBottom: 18,
               alignItems: "center",
-              shadowColor: "#000",
+              shadowColor: themeColors.black,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.18,
               shadowRadius: 12,
@@ -246,7 +246,7 @@ export default function EmailVerificationModal({
                   padding: 6,
                   borderRadius: 16,
                   opacity: isResendCooldown ? 0.5 : 1,
-                  shadowColor: "#000",
+                  shadowColor: themeColors.black,
 
                   shadowOffset: {
                     width: 0,
@@ -280,7 +280,7 @@ export default function EmailVerificationModal({
                 style={{
                   padding: 6,
                   borderRadius: 16,
-                  shadowColor: "#000",
+                  shadowColor: themeColors.black,
 
                   shadowOffset: {
                     width: 0,
@@ -392,7 +392,7 @@ export default function EmailVerificationModal({
                         ? colors.purple
                         : colors.white,
 
-                      shadowColor: "#000",
+                      shadowColor: themeColors.black,
 
                       shadowOffset: {
                         width: 0,
@@ -660,7 +660,7 @@ export default function EmailVerificationModal({
                     alignItems: "center",
                     flex: 1,
                     marginRight: 8,
-                    shadowColor: "#000",
+                    shadowColor: themeColors.black,
 
                     shadowOffset: {
                       width: 0,
@@ -694,7 +694,7 @@ export default function EmailVerificationModal({
                     flex: 1,
                     marginLeft: 8,
                     opacity: submitting ? 0.7 : 1,
-                    shadowColor: "#000",
+                    shadowColor: themeColors.black,
 
                     shadowOffset: {
                       width: 0,

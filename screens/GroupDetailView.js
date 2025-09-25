@@ -792,7 +792,7 @@ export default function GroupDetailView({
                       zIndex: 1000,
                       maxHeight: 220,
                       borderRadius: 14,
-                      shadowColor: "#000",
+                      shadowColor: themeColors.black,
                       shadowOffset: { width: 0, height: 2 },
                       shadowOpacity: 0.15,
                       shadowRadius: 8,

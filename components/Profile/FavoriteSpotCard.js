@@ -20,7 +20,7 @@ export default function FavoriteSpotCard({
           paddingVertical: 8,
           flexDirection: "row",
           alignItems: "center",
-          shadowColor: "#000",
+          shadowColor: themeColors.black,
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.12,
           shadowRadius: 4,

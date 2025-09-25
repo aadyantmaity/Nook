@@ -221,7 +221,7 @@ export default function GroupPreviewModal({
                 <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
                   <Text
                     style={{
-                      color: themeColors?.black || "#000",
+                      color: themeColors?.black || themeColors.black,
                       fontSize: 13,
                       fontFamily: FONTS.PRIMARY,
                     }}
@@ -247,7 +247,7 @@ export default function GroupPreviewModal({
             {group?.description ? (
               <Text
                 style={{
-                  color: themeColors?.black || "#000",
+                  color: themeColors?.black || themeColors.black,
                   fontSize: 15,
                   fontFamily: FONTS.PRIMARY,
                   marginTop: 14,

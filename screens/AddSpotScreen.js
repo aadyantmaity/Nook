@@ -408,7 +408,7 @@ export default function AddSpotScreen({ navigation, route }) {
                 flexDirection: "row",
                 alignItems: "center",
                 padding: 10,
-                shadowColor: "#000",
+                shadowColor: themeColors.black,
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.2,
                 shadowRadius: 4,
@@ -556,7 +556,7 @@ export default function AddSpotScreen({ navigation, route }) {
                     alignItems: "center",
                     justifyContent: "center",
                     flexDirection: "row",
-                    shadowColor: "#000",
+                    shadowColor: themeColors.black,
 
                     shadowOffset: {
                       width: 0,
@@ -890,7 +890,7 @@ export default function AddSpotScreen({ navigation, route }) {
                 alignItems: "center",
                 justifyContent: "center",
                 marginLeft: 8,
-                shadowColor: "#000",
+                shadowColor: themeColors.black,
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.08,
                 shadowRadius: 4,
