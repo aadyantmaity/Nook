@@ -156,10 +156,12 @@ export default function GroupPreviewModal({
             maxWidth: 520,
             backgroundColor: themeColors?.white || "#fff",
             borderRadius: 12,
-            borderWidth: 1,
-            borderColor: themeColors?.gray + "70",
             overflow: "hidden",
             position: "relative",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+            elevation: 4,
           }}
         >
           {/* Close button */}
@@ -265,6 +267,10 @@ export default function GroupPreviewModal({
                   paddingVertical: 12,
                   alignItems: "center",
                   justifyContent: "center",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 4,
                 }}
                 onPress={handleJoin}
                 disabled={joining}

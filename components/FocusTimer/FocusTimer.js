@@ -368,13 +368,11 @@ function EditTimesModal({
             left: "7.5%",
             right: "7.5%",
             bottom: "45%",
-            borderWidth: 1,
-            borderColor: colors.black,
             shadowColor: colors.black,
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
+            shadowOpacity: 0.3,
             shadowRadius: 4,
-            elevation: 5,
+            elevation: 4,
           }}
           onStartShouldSetResponder={() => true}
         >
@@ -414,8 +412,11 @@ function EditTimesModal({
                 alignItems: "center",
                 flex: 1,
                 marginRight: 8,
-                borderWidth: 1,
-                borderColor: colors.purple,
+                shadowColor: colors.black,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 4,
               }}
             >
               <Text
@@ -456,6 +457,11 @@ function EditTimesModal({
                 flex: 1,
                 marginLeft: 8,
                 opacity: isSaving ? 0.7 : 1,
+                shadowColor: colors.black,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 4,
               }}
             >
               <Text

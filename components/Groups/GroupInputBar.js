@@ -116,9 +116,12 @@ export default function GroupInputBar({
             color: themeColors.black,
             fontFamily: FONTS.PRIMARY,
             marginRight: 8,
-            backgroundColor: themeColors.lightGray,
-            borderWidth: 1,
-            borderColor: themeColors.darkGray + "40",
+            backgroundColor: themeColors.white,
+            shadowColor: themeColors.black,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+            elevation: 4,
           }}
           editable={!sending}
           returnKeyType="send"

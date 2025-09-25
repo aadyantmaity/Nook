@@ -455,14 +455,12 @@ export default function SpotDetailScreen({ route, navigation }) {
                         right: 0,
                         backgroundColor: themeColors.white,
                         borderRadius: 10,
-                        borderWidth: 1,
-                        borderColor: themeColors.gray,
                         minWidth: 180,
                         shadowColor: "#000",
-                        shadowOffset: { width: 0, height: 4 },
-                        shadowOpacity: 0.18,
-                        shadowRadius: 8,
-                        elevation: 10,
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 4,
+                        elevation: 4,
                         zIndex: 100,
                       }}
                     >
@@ -1466,13 +1464,17 @@ export default function SpotDetailScreen({ route, navigation }) {
               elevation: 3,
             }}
           >
-            <TouchableOpacity
+                  <TouchableOpacity
               onPress={() => setShowAddAlertModal(true)}
               accessibilityLabel="Add Alert"
               activeOpacity={0.85}
               style={{
                 flexDirection: "row",
                 alignItems: "center",
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 4,
+                      elevation: 4,
               }}
             >
               <Warning size={19} color={themeColors.white} weight="fill" />

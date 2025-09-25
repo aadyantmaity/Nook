@@ -30,13 +30,11 @@ export default function LogoutModal({
             padding: 24,
             alignItems: "center",
             minWidth: 240,
-            borderWidth: 1,
-            borderColor: themeColors.gray + "70",
             shadowColor: themeColors.black,
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
+            shadowOpacity: 0.3,
             shadowRadius: 4,
-            elevation: 5,
+            elevation: 4,
           }}
         >
           <Text
@@ -75,6 +73,10 @@ export default function LogoutModal({
                 padding: 12,
                 alignItems: "center",
                 marginRight: 8,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 4,
               }}
               onPress={onConfirm}
             >
@@ -95,6 +97,10 @@ export default function LogoutModal({
                 borderRadius: 8,
                 padding: 12,
                 alignItems: "center",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 4,
               }}
               onPress={onCancel}
             >

@@ -34,13 +34,15 @@ export default function EditProfileModal({
       transparent={true}
       onRequestClose={onClose}
     >
-      <View
+      <TouchableOpacity
         style={{
           flex: 1,
           backgroundColor: "rgba(0,0,0,0.3)",
           justifyContent: "center",
           alignItems: "center",
         }}
+        activeOpacity={1}
+        onPressOut={onClose}
       >
         <View
           style={{
@@ -49,28 +51,14 @@ export default function EditProfileModal({
             borderRadius: 8,
             padding: 16,
             alignItems: "center",
-            borderWidth: 1,
-            borderColor: themeColors.gray + "70",
             shadowColor: themeColors.black,
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
+            shadowOpacity: 0.3,
             shadowRadius: 4,
-            elevation: 5,
+            elevation: 4,
           }}
         >
-          <TouchableOpacity
-            style={{
-              position: "absolute",
-              top: 10,
-              right: 10,
-              zIndex: 10,
-              padding: 6,
-            }}
-            onPress={onClose}
-            hitSlop={10}
-          >
-            <X size={22} color={themeColors.purple} />
-          </TouchableOpacity>
+          
           <Text
             style={{
               fontSize: 20,
@@ -176,6 +164,11 @@ export default function EditProfileModal({
                 alignItems: "center",
                 justifyContent: "center",
                 marginTop: 18,
+                shadowColor: themeColors.black,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 4,
               }}
               onPress={handlePickProfilePic}
             >
@@ -194,14 +187,17 @@ export default function EditProfileModal({
           <TextInput
             style={{
               width: "100%",
-              borderWidth: 0.5,
-              borderColor: themeColors.purple,
               borderRadius: 8,
               padding: 12,
               marginBottom: 16,
               color: themeColors.black,
               backgroundColor: themeColors.white,
               fontFamily: FONTS.PRIMARY,
+              shadowColor: themeColors.black,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+              elevation: 4,
             }}
             placeholder="First Name"
             value={editedFirstName}
@@ -211,14 +207,17 @@ export default function EditProfileModal({
           <TextInput
             style={{
               width: "100%",
-              borderWidth: 0.5,
-              borderColor: themeColors.purple,
               borderRadius: 8,
               padding: 12,
               marginBottom: 16,
               color: themeColors.black,
               backgroundColor: themeColors.white,
               fontFamily: FONTS.PRIMARY,
+              shadowColor: themeColors.black,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+              elevation: 4,
             }}
             placeholder="Last Name"
             value={editedLastName}
@@ -228,14 +227,17 @@ export default function EditProfileModal({
           <TextInput
             style={{
               width: "100%",
-              borderWidth: 0.5,
-              borderColor: themeColors.purple,
               borderRadius: 8,
               padding: 12,
               marginBottom: 16,
               color: themeColors.black,
               backgroundColor: themeColors.white,
               fontFamily: FONTS.PRIMARY,
+              shadowColor: themeColors.black,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+              elevation: 4,
             }}
             placeholder="Graduation Year"
             value={editedGradYear}
@@ -254,12 +256,15 @@ export default function EditProfileModal({
               style={{
                 flex: 1,
                 backgroundColor: themeColors.white,
-                borderColor: themeColors.black,
-                borderWidth: 0.5,
                 borderRadius: 8,
                 alignItems: "center",
                 padding: 12,
                 marginRight: 8,
+                shadowColor: themeColors.black,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 4,
               }}
               onPress={onClose}
             >
@@ -281,6 +286,11 @@ export default function EditProfileModal({
                 alignItems: "center",
                 padding: 12,
                 marginLeft: 8,
+                shadowColor: themeColors.black,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 4,
               }}
               onPress={onSave}
             >
@@ -296,7 +306,7 @@ export default function EditProfileModal({
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     </Modal>
   );
 }

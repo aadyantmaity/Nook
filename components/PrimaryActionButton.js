@@ -24,6 +24,10 @@ export default function PrimaryActionButton({
           alignItems: "center",
           flex: 1,
           opacity: disabled || loading ? 0.7 : 1,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+          elevation: 4,
         },
         style,
       ]}

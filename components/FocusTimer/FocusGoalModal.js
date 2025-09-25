@@ -90,8 +90,6 @@ export function FocusGoalModal({
           activeOpacity={1}
           style={{
             backgroundColor: themeColors.white,
-            borderWidth: 1,
-            borderColor: themeColors.gray + "70",
             borderRadius: 16,
             width: "100%",
             maxWidth: 400,
@@ -99,10 +97,10 @@ export function FocusGoalModal({
             paddingHorizontal: 20,
             paddingBottom: 20,
             shadowColor: themeColors.black,
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.25,
-            shadowRadius: 8,
-            elevation: 8,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+            elevation: 4,
           }}
           onPress={() => {}} // Prevent tap-through
         >
@@ -183,8 +181,11 @@ export function FocusGoalModal({
                   paddingVertical: 10,
                   paddingHorizontal: 18,
                   alignItems: "center",
-                  borderWidth: 1,
-                  borderColor: themeColors.purple,
+                  shadowColor: themeColors.black,
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 4,
                 }}
               >
                 <Text
@@ -208,6 +209,11 @@ export function FocusGoalModal({
                   paddingVertical: 10,
                   paddingHorizontal: 18,
                   alignItems: "center",
+                  shadowColor: themeColors.black,
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 4,
                 }}
               >
                 <Text

@@ -189,13 +189,11 @@ export default function ShareNookModal({
           marginVertical: 4,
           backgroundColor: themeColors.white,
           borderRadius: 12,
-          borderWidth: 1,
-          borderColor: themeColors.darkGray,
           shadowColor: themeColors.black,
           shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.05,
+          shadowOpacity: 0.3,
           shadowRadius: 4,
-          elevation: 2,
+          elevation: 4,
           opacity: sending ? 0.6 : 1,
         }}
       >
@@ -289,13 +287,15 @@ export default function ShareNookModal({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View
+      <TouchableOpacity
         style={{
           flex: 1,
           backgroundColor: "rgba(0,0,0,0.3)",
           justifyContent: "center",
           alignItems: "center",
         }}
+        activeOpacity={1}
+        onPressOut={onClose}
       >
         <View
           style={{
@@ -305,14 +305,13 @@ export default function ShareNookModal({
             maxHeight: "85%",
             alignItems: "center",
             minHeight: 450,
-            borderWidth: 1,
-            borderColor: themeColors.gray + "70",
             shadowColor: themeColors.black,
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.15,
-            shadowRadius: 16,
-            elevation: 10,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+            elevation: 4,
           }}
+          onStartShouldSetResponder={() => true}
         >
           {/* Header */}
           <View
@@ -349,7 +348,7 @@ export default function ShareNookModal({
               }}
               accessibilityLabel="Close share nook modal"
             >
-              <X size={20} color={themeColors.purple} />
+              <X size={20} color={themeColors.red} />
             </TouchableOpacity>
           </View>
 
@@ -358,7 +357,7 @@ export default function ShareNookModal({
             style={{
               flexDirection: "row",
               alignItems: "center",
-              backgroundColor: themeColors.lightGray,
+              backgroundColor: themeColors.white,
               borderRadius: 16,
               marginHorizontal: 24,
               marginTop: 20,
@@ -366,15 +365,18 @@ export default function ShareNookModal({
               paddingHorizontal: 16,
               paddingVertical: 4,
               width: "90%",
-              borderWidth: 1,
-              borderColor: themeColors.darkGray,
+              shadowColor: themeColors.black,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+              elevation: 4,
             }}
           >
             <MagnifyingGlass size={20} color={themeColors.darkGray} />
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder=""
+              placeholder="Search by name, address or floor..."
               placeholderTextColor={themeColors.darkGray}
               style={{
                 flex: 1,
@@ -498,7 +500,7 @@ export default function ShareNookModal({
             )}
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     </Modal>
   );
 }

@@ -8,12 +8,12 @@ import {
   Alert,
   ScrollView,
 } from "react-native";
-import { X, Plus } from "phosphor-react-native";
+import { X, Trash } from "phosphor-react-native";
 import { FONTS } from "../../constants/fonts";
 
 export default function PollModal({ visible, onClose, onSubmit, themeColors }) {
   const [question, setQuestion] = useState("");
-  const [options, setOptions] = useState(["", ""]);
+  const [options, setOptions] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [pendingPoll, setPendingPoll] = useState(null); // store poll to send after close
 
@@ -28,35 +28,56 @@ export default function PollModal({ visible, onClose, onSubmit, themeColors }) {
     }
   }, [visible, pendingPoll, onSubmit]);
 
-  const handleOptionChange = (idx, val) => {
+  const questionInputStyle = {
+    borderRadius: 10,
+    padding: 12,
+    width: "100%",
+    marginBottom: 18,
+    color: themeColors.black,
+    fontFamily: FONTS.PRIMARY,
+    fontSize: 16,
+    backgroundColor: themeColors.white,
+    shadowColor: themeColors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  };
+
+  const MAX_OPTIONS = 4;
+
+  const handleAddOption = () => {
     setOptions((prev) => {
-      const arr = [...prev];
-      arr[idx] = val;
-      return arr;
+      if (prev.length >= MAX_OPTIONS) return prev;
+      return [...prev, ""];
     });
   };
 
-  const addOption = () => {
-    if (options.length < 6) setOptions((prev) => [...prev, ""]);
+  const handleChangeOption = (text, index) => {
+    setOptions((prev) => prev.map((opt, i) => (i === index ? text : opt)));
   };
 
-  const removeOption = (idx) => {
-    if (options.length > 2)
-      setOptions((prev) => prev.filter((_, i) => i !== idx));
+  const handleRemoveOption = (index) => {
+    setOptions((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async () => {
-    if (!question.trim() || options.filter((o) => o.trim()).length < 2) {
-      Alert.alert("Please enter a question and at least 2 options.");
+    if (!question.trim()) {
+      Alert.alert("Please enter a question.");
+      return;
+    }
+    const cleanedOptions = options.map((o) => o.trim()).filter((o) => o.length > 0);
+    if (cleanedOptions.length < 2) {
+      Alert.alert("Please add at least two options.");
       return;
     }
     setSubmitting(true);
     setPendingPoll({
       question: question.trim(),
-      options: options.map((o) => o.trim()).filter(Boolean),
+      options: cleanedOptions,
     });
     setQuestion("");
-    setOptions(["", ""]);
+    setOptions([]);
     setSubmitting(false);
     onClose();
   };
@@ -86,19 +107,12 @@ export default function PollModal({ visible, onClose, onSubmit, themeColors }) {
             width: "92%",
             maxWidth: 420,
             alignItems: "center",
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.18,
-            shadowRadius: 12,
-            elevation: 8,
             marginBottom: 250, // <-- move modal up by 60px
-            borderWidth: 1,
-            borderColor: themeColors.gray + "70",
             shadowColor: themeColors.black,
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
+            shadowOpacity: 0.3,
             shadowRadius: 4,
-            elevation: 5,
+            elevation: 4,
           }}
           onStartShouldSetResponder={() => true}
         >
@@ -113,7 +127,7 @@ export default function PollModal({ visible, onClose, onSubmit, themeColors }) {
               borderRadius: 20,
             }}
           >
-            <X size={24} color={themeColors.purple} />
+            <X size={24} color={themeColors.red} />
           </TouchableOpacity>
           <Text
             style={{
@@ -131,91 +145,56 @@ export default function PollModal({ visible, onClose, onSubmit, themeColors }) {
             placeholder="Poll question"
             value={question}
             onChangeText={setQuestion}
-            style={{
-              borderWidth: 1.5,
-              borderColor: themeColors.purple,
-              borderRadius: 10,
-              padding: 12,
-              width: "100%",
-              marginBottom: 18,
-              color: themeColors.black,
-              fontFamily: FONTS.PRIMARY,
-              fontSize: 16,
-            }}
+            style={questionInputStyle}
             placeholderTextColor={themeColors.darkGray}
             maxLength={100}
-            selectionColor={themeColors.purple}
           />
-          <View
-            style={{
-              width: "100%",
-              height: 1,
-              backgroundColor: themeColors.purple + "22",
-              marginBottom: 14,
-            }}
-          />
-          <ScrollView style={{ width: "100%", maxHeight: 180 }}>
-            {options.map((opt, idx) => (
+          <View style={{ width: "100%", marginBottom: 8 }}>
+            {options.map((opt, index) => (
               <View
-                key={idx}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: 10,
-                }}
+                key={index}
+                style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}
               >
                 <TextInput
-                  placeholder={`Option ${idx + 1}`}
+                  placeholder={`Option ${index + 1}`}
                   value={opt}
-                  onChangeText={(v) => handleOptionChange(idx, v)}
-                  style={{
-                    flex: 1,
-                    borderWidth: 1.2,
-                    borderColor: themeColors.purple,
-                    borderRadius: 8,
-                    padding: 10,
-                    color: themeColors.black,
-                    fontFamily: FONTS.PRIMARY,
-                    fontSize: 15,
-                  }}
+                  onChangeText={(text) => handleChangeOption(text, index)}
+                  style={[questionInputStyle, { flex: 1, marginBottom: 0 }]}
                   placeholderTextColor={themeColors.darkGray}
-                  maxLength={50}
-                  selectionColor={themeColors.purple}
+                  maxLength={80}
                 />
-                {options.length > 2 && (
-                  <TouchableOpacity
-                    onPress={() => removeOption(idx)}
-                    style={{
-                      marginLeft: 8,
-                      backgroundColor: themeColors.red + "11",
-                      borderRadius: 16,
-                      padding: 4,
-                    }}
-                  >
-                    <X size={18} color={themeColors.red} />
-                  </TouchableOpacity>
-                )}
+                <TouchableOpacity
+                  onPress={() => handleRemoveOption(index)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={{ marginLeft: 8, padding: 6 }}
+                >
+                  <Trash size={20} color={themeColors.red || "#FF3B30"} />
+                </TouchableOpacity>
               </View>
             ))}
-          </ScrollView>
-          <TouchableOpacity
-            onPress={addOption}
-            disabled={options.length >= 6}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 18,
-              paddingVertical: 8,
-              alignSelf: "flex-start",
-            }}
-          >
-            <Plus
-              size={20}
-              color={
-                options.length >= 6 ? themeColors.darkGray : themeColors.purple
-              }
-            />
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleAddOption}
+              disabled={options.length >= MAX_OPTIONS}
+              style={{
+                alignSelf: "flex-start",
+                paddingVertical: 8,
+                paddingHorizontal: 6,
+                marginTop: 4,
+                opacity: options.length >= MAX_OPTIONS ? 0.5 : 1,
+              }}
+            >
+              <Text
+                style={{
+                  color: themeColors.purple,
+                  fontFamily: FONTS.PRIMARY,
+                  fontSize: 16,
+                  fontWeight: "600",
+                }}
+              >
+                + Add option
+              </Text>
+            </TouchableOpacity>
+          </View>
           <TouchableOpacity
             onPress={handleSubmit}
             disabled={submitting}

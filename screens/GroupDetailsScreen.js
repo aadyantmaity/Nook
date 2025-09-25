@@ -818,6 +818,11 @@ export default function GroupDetailsScreen({ route, navigation }) {
                   width: "85%",
                   maxWidth: 400,
                   alignItems: "center",
+                  shadowColor: themeColors.black,
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 4,
                 }}
                 onStartShouldSetResponder={() => true}
               >
@@ -838,8 +843,6 @@ export default function GroupDetailsScreen({ route, navigation }) {
                   onChangeText={setEditName}
                   placeholder="Group Name"
                   style={{
-                    borderWidth: 1,
-                    borderColor: themeColors.darkGray,
                     borderRadius: 8,
                     padding: 10,
                     width: "100%",
@@ -847,6 +850,12 @@ export default function GroupDetailsScreen({ route, navigation }) {
                     color: themeColors.black,
                     fontFamily: FONTS.PRIMARY,
                     fontSize: 16,
+                    backgroundColor: themeColors.white,
+                    shadowColor: themeColors.black,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: 4,
                   }}
                   placeholderTextColor={themeColors.darkGray}
                   maxLength={50}
@@ -856,8 +865,6 @@ export default function GroupDetailsScreen({ route, navigation }) {
                   onChangeText={setEditDesc}
                   placeholder="Description (optional)"
                   style={{
-                    borderWidth: 1,
-                    borderColor: themeColors.darkGray,
                     borderRadius: 8,
                     padding: 10,
                     width: "100%",
@@ -865,6 +872,12 @@ export default function GroupDetailsScreen({ route, navigation }) {
                     color: themeColors.black,
                     fontFamily: FONTS.PRIMARY,
                     fontSize: 15,
+                    backgroundColor: themeColors.white,
+                    shadowColor: themeColors.black,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: 4,
                   }}
                   placeholderTextColor={themeColors.darkGray}
                   maxLength={50}
@@ -877,12 +890,15 @@ export default function GroupDetailsScreen({ route, navigation }) {
                     style={{
                       flex: 1,
                       backgroundColor: themeColors.white,
-                      borderColor: themeColors.purple,
-                      borderWidth: 1,
                       borderRadius: 8,
                       alignItems: "center",
                       paddingVertical: 10,
                       marginRight: 8,
+                      shadowColor: themeColors.black,
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 4,
+                      elevation: 4,
                     }}
                     disabled={editSaving}
                   >
@@ -907,6 +923,11 @@ export default function GroupDetailsScreen({ route, navigation }) {
                       alignItems: "center",
                       marginLeft: 8,
                       opacity: editSaving ? 0.7 : 1,
+                      shadowColor: themeColors.black,
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 4,
+                      elevation: 4,
                     }}
                   >
                     <Text

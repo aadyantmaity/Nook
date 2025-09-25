@@ -408,7 +408,7 @@ export default function SearchView() {
     <View
       style={{ flex: 1, backgroundColor: themeColors.white, paddingTop: 48 }}
     >
-      {/* Header with Back Arrow and Switcher as Title */}
+      {/* Header with Back Arrow */}
       <View
         style={{
           width: "100%",
@@ -416,7 +416,7 @@ export default function SearchView() {
           alignItems: "center",
           paddingHorizontal: 16,
           marginBottom: 12,
-          marginTop: 16,
+          marginTop: 20,
           position: "relative",
           justifyContent: "center",
         }}
@@ -443,63 +443,76 @@ export default function SearchView() {
         >
           <ArrowLeft size={24} color={themeColors.purple} />
         </TouchableOpacity>
-        {/* Switcher as Title */}
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          <TouchableOpacity
-            onPress={() => setSearchType("people")}
+      </View>
+
+      {/* People / Nooks Switcher below header */}
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: 10,
+          paddingHorizontal: 16,
+          marginTop: 16,
+          marginBottom: 16,
+        }}
+      >
+        <TouchableOpacity
+          onPress={() => setSearchType("people")}
+          style={{
+            backgroundColor:
+              searchType === "people" ? themeColors.purple : themeColors.white,
+            borderRadius: 8,
+            alignItems: "center",
+            paddingVertical: 12,
+            paddingHorizontal: 28,
+            marginRight: 2,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+            elevation: 4,
+          }}
+        >
+          <Text
             style={{
-              backgroundColor:
-                searchType === "people"
-                  ? themeColors.purple
-                  : themeColors.lightGray,
-              borderRadius: 8,
-              paddingVertical: 8,
-              paddingHorizontal: 22,
-              marginRight: 2,
+              color:
+                searchType === "people" ? themeColors.white : themeColors.purple,
+              fontWeight: "bold",
+              fontFamily: FONTS.PRIMARY,
+              fontSize: 15,
             }}
           >
-            <Text
-              style={{
-                color:
-                  searchType === "people"
-                    ? themeColors.white
-                    : themeColors.purple,
-                fontWeight: "bold",
-                fontFamily: FONTS.PRIMARY,
-                fontSize: 15,
-              }}
-            >
-              People
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setSearchType("nooks")}
+            People
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setSearchType("nooks")}
+          style={{
+            backgroundColor:
+              searchType === "nooks" ? themeColors.purple : themeColors.white,
+            borderRadius: 8,
+            alignItems: "center",
+            paddingVertical: 12,
+            paddingHorizontal: 28,
+            marginLeft: 2,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+            elevation: 4,
+          }}
+        >
+          <Text
             style={{
-              backgroundColor:
-                searchType === "nooks"
-                  ? themeColors.purple
-                  : themeColors.lightGray,
-              borderRadius: 8,
-              paddingVertical: 8,
-              paddingHorizontal: 22,
-              marginLeft: 2,
+              color:
+                searchType === "nooks" ? themeColors.white : themeColors.purple,
+              fontWeight: "bold",
+              fontFamily: FONTS.PRIMARY,
+              fontSize: 15,
             }}
           >
-            <Text
-              style={{
-                color:
-                  searchType === "nooks"
-                    ? themeColors.white
-                    : themeColors.purple,
-                fontWeight: "bold",
-                fontFamily: FONTS.PRIMARY,
-                fontSize: 15,
-              }}
-            >
-              Nooks
-            </Text>
-          </TouchableOpacity>
-        </View>
+            Nooks
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Search Bar */}
@@ -512,9 +525,12 @@ export default function SearchView() {
           margin: 16,
           marginTop: 8,
           paddingHorizontal: 12,
-          borderWidth: 1,
-          borderColor: themeColors.darkGray,
           height: 44,
+          shadowColor: themeColors.black,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.12,
+          shadowRadius: 6,
+          elevation: 4,
         }}
       >
         <MagnifyingGlass

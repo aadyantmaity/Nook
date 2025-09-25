@@ -489,8 +489,6 @@ export default function StudyGroupsSection({ navigation }) {
             value={groupSearch}
             onChangeText={setGroupSearch}
             style={{
-              borderWidth: 1,
-              borderColor: themeColors.darkGray,
               borderRadius: 12,
               paddingHorizontal: 14,
               paddingVertical: 10,
@@ -500,6 +498,11 @@ export default function StudyGroupsSection({ navigation }) {
               height: 44,
               fontFamily: FONTS.PRIMARY,
               backgroundColor: themeColors.white,
+              shadowColor: themeColors.black,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+              elevation: 4,
             }}
             placeholderTextColor={themeColors.darkGray}
           />

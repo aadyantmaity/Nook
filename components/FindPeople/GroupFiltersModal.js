@@ -80,16 +80,14 @@ export default function GroupFiltersModal({
             backgroundColor: themeColors.white,
             borderRadius: 16,
             padding: 24,
-            borderWidth: 1,
-            borderColor: themeColors.gray + "70",
             width: "88%",
             maxWidth: 400,
             alignItems: "center",
             shadowColor: themeColors.black,
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
+            shadowOpacity: 0.3,
             shadowRadius: 4,
-            elevation: 5,
+            elevation: 4,
           }}
           onStartShouldSetResponder={() => true}
         >
@@ -128,12 +126,11 @@ export default function GroupFiltersModal({
                   borderRadius: 25,
                   alignItems: "center",
                   alignSelf: "flex-start",
-                  shadowColor: themeColors.purple,
+                  shadowColor: themeColors.black,
                   shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
+                  shadowOpacity: 0.3,
                   shadowRadius: 4,
-                  borderWidth: 1,
-                  borderColor: themeColors.purple,
+                  elevation: 4,
                   minWidth: 0,
                   maxWidth: "48%",
                 }}
@@ -190,12 +187,15 @@ export default function GroupFiltersModal({
               style={{
                 flex: 1,
                 backgroundColor: themeColors.white,
-                borderColor: themeColors.purple,
-                borderWidth: 1,
                 borderRadius: 8,
                 alignItems: "center",
                 padding: 12,
                 marginRight: 8,
+                shadowColor: themeColors.black,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 4,
               }}
             >
               <Text
@@ -226,6 +226,11 @@ export default function GroupFiltersModal({
                 alignItems: "center",
                 padding: 12,
                 marginLeft: 8,
+                shadowColor: themeColors.black,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 4,
               }}
             >
               <Text
@@ -235,7 +240,7 @@ export default function GroupFiltersModal({
                   fontFamily: FONTS.PRIMARY,
                 }}
               >
-                Done
+                Submit
               </Text>
             </TouchableOpacity>
           </View>

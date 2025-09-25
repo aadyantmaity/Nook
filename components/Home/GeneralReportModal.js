@@ -76,13 +76,11 @@ export default function GeneralReportModal({
             right: "7.5%",
             bottom: "45%",
             alignItems: "center",
-            borderWidth: 1,
-            borderColor: themeColors.gray + "70",
             shadowColor: themeColors.black,
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
+            shadowOpacity: 0.3,
             shadowRadius: 4,
-            elevation: 5,
+            elevation: 4,
           }}
           onStartShouldSetResponder={() => true}
         >
@@ -136,8 +134,11 @@ export default function GeneralReportModal({
                 alignItems: "center",
                 flex: 1,
                 marginRight: 8,
-                borderWidth: 1,
-                borderColor: themeColors.purple,
+                shadowColor: themeColors.black,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 4,
               }}
             >
               <Text
@@ -156,7 +157,14 @@ export default function GeneralReportModal({
               disabled={submitting}
               loading={submitting}
               themeColors={themeColors}
-              style={{ marginLeft: 8 }}
+              style={{
+                marginLeft: 8,
+                shadowColor: themeColors.black,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 4,
+              }}
             />
           </View>
         </View>

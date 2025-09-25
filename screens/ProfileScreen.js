@@ -856,7 +856,11 @@ export default function ProfileScreen({ navigation, route }) {
       {resetPasswordInfo ? (
         <View style={{ alignItems: "center", marginTop: 8 }}>
           <Text
-            style={{ color: themeColors.purple, fontFamily: FONTS.PRIMARY }}
+            style={{
+              color: themeColors.purple,
+              fontFamily: FONTS.PRIMARY,
+              textAlign: "center",
+            }}
           >
             {resetPasswordInfo}
           </Text>

@@ -116,13 +116,11 @@ export default function GroupTaskModal({
             width: "85%",
             maxWidth: 400,
             alignItems: "center",
-            borderWidth: 1,
-            borderColor: themeColors.gray + "70",
             shadowColor: themeColors.black,
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
+            shadowOpacity: 0.3,
             shadowRadius: 4,
-            elevation: 5,
+            elevation: 4,
             marginTop: -50, // Move modal 50px up
           }}
           onStartShouldSetResponder={() => true}
@@ -163,12 +161,15 @@ export default function GroupTaskModal({
               style={{
                 flex: 1,
                 backgroundColor: themeColors.white,
-                borderColor: themeColors.purple,
-                borderWidth: 1,
                 borderRadius: 8,
                 alignItems: "center",
                 paddingVertical: 10,
                 marginRight: 8,
+                shadowColor: themeColors.black,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 4,
               }}
               disabled={submitting}
             >
@@ -193,6 +194,11 @@ export default function GroupTaskModal({
                 alignItems: "center",
                 marginLeft: 8,
                 opacity: submitting ? 0.7 : 1,
+                shadowColor: themeColors.black,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 4,
               }}
             >
               <Text

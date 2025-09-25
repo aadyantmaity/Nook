@@ -114,6 +114,10 @@ export default function Filters({
           alignItems: "center",
           alignSelf: "flex-start",
           flexDirection: "row",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+          elevation: 4,
         },
         buttonStyle,
       ]}
@@ -142,11 +146,13 @@ export default function Filters({
               backgroundColor: themeColors.white,
               borderRadius: 16,
               padding: 20,
-              borderWidth: 1,
-              borderColor: themeColors.gray + "70",
               width: "92%",
               maxWidth: 400,
               alignItems: "center",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+              elevation: 4,
             }}
             onStartShouldSetResponder={() => true}
           >
@@ -188,20 +194,11 @@ export default function Filters({
                       borderRadius: 25,
                       alignItems: "center",
                       alignSelf: "flex-start",
-                      shadowColor: themeColors.purple,
+                      shadowColor: themeColors.black,
                       shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.1,
+                      shadowOpacity: 0.3,
                       shadowRadius: 4,
-                      borderWidth:
-                        themeColors.white !== "#fff" &&
-                        themeColors.white !== "#ffffff"
-                          ? 1
-                          : 0,
-                      borderColor:
-                        themeColors.white !== "#fff" &&
-                        themeColors.white !== "#ffffff"
-                          ? themeColors.purple
-                          : "transparent",
+                      elevation: 4,
                       minWidth: 0,
                       maxWidth: "48%",
                     }}
@@ -264,12 +261,11 @@ export default function Filters({
                         marginBottom: 8,
                         paddingVertical: 10,
                         paddingHorizontal: 14,
-                        borderWidth: 1,
-                        shadowColor: themeColors.purple,
+                        shadowColor: themeColors.black,
                         shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.1,
+                        shadowOpacity: 0.3,
                         shadowRadius: 4,
-                        borderColor: themeColors.purple,
+                        elevation: 4,
                         flexDirection: "row",
                         alignItems: "center",
                       }}
@@ -328,12 +324,14 @@ export default function Filters({
                 style={{
                   flex: 1,
                   backgroundColor: themeColors.white,
-                  borderColor: themeColors.purple,
-                  borderWidth: 1,
                   borderRadius: 8,
                   alignItems: "center",
                   padding: 12,
                   marginRight: 8,
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 4,
                 }}
               >
                 <Text
@@ -359,6 +357,10 @@ export default function Filters({
                   alignItems: "center",
                   padding: 12,
                   marginLeft: 8,
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 4,
                 }}
               >
                 <Text
