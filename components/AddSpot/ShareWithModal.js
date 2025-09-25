@@ -8,6 +8,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from "react-native";
+import { Check } from "phosphor-react-native";
 
 export default function ShareWithModal({
   visible,
@@ -32,6 +33,16 @@ export default function ShareWithModal({
           backgroundColor: "rgba(0,0,0,0.3)",
           justifyContent: "center",
           alignItems: "center",
+          shadowColor: "#000",
+
+          shadowOffset: {
+            width: 0,
+            height: 2
+          },
+
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+          elevation: 4
         }}
         activeOpacity={1}
         onPressOut={onClose}
@@ -95,6 +106,16 @@ export default function ShareWithModal({
                     paddingVertical: 10,
                     borderBottomWidth: 1,
                     borderBottomColor: themeColors.gray,
+                    shadowColor: "#000",
+
+                    shadowOffset: {
+                      width: 0,
+                      height: 2
+                    },
+
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: 4
                   }}
                 >
                   <View
@@ -113,14 +134,7 @@ export default function ShareWithModal({
                     }}
                   >
                     {sharedWith.includes(user.uid) && (
-                      <Text
-                        style={{
-                          color: themeColors.white,
-                          fontWeight: "bold",
-                        }}
-                      >
-                        ✓
-                      </Text>
+                      <Check size={14} color={themeColors.white} weight="bold" />
                     )}
                   </View>
                   <Text
@@ -155,6 +169,16 @@ export default function ShareWithModal({
               paddingVertical: 10,
               paddingHorizontal: 24,
               alignItems: "center",
+              shadowColor: "#000",
+
+              shadowOffset: {
+                width: 0,
+                height: 2
+              },
+
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+              elevation: 4
             }}
             disabled={false} // If you want to add a disabled prop, update color below
           >

@@ -8,10 +8,14 @@ import {
   User,
   UsersThree,
   Check,
+  MapPin,
 } from "phosphor-react-native";
-import * as Location from "expo-location";
 import { FONTS } from "../../constants/fonts";
-import useLocationDistance from "../../hooks/useLocationDistance";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { auth } from "../../firebaseConfig";
+import { doc, updateDoc, getDoc } from "firebase/firestore";
+import { addCheckinActivity } from "../../utils/checkinActivity";
+import useGeofencing from "../../hooks/useGeofencing";
 
 const NOISE_OPTIONS = [
   { label: "Silent", value: 0, icon: <SpeakerSimpleNone size={23} /> },
@@ -35,22 +39,109 @@ export default function LiveUpdateSliders({
   spot,
   canSubmitLiveUpdate = true,
   lastLiveUpdate = 0,
+  spotId,
 }) {
-  // Use location distance hook
-  const { isWithinDistance, isLoading: isLocationLoading, error: locationError } = useLocationDistance(spot, 100);
+  const user = auth.currentUser;
+  
+  // Geofencing hook
+  const {
+    isWithinGeofence,
+    locationPermission,
+    isLoading: isLocationLoading,
+    error: locationError,
+    requestLocationPermission,
+    checkGeofence,
+  } = useGeofencing(spot?.coordinates, 100); // 100 meters radius
+  
+  // Silent check-in handler (no UI feedback)
+  const handleSilentCheckIn = async () => {
+    if (!user || !spotId || !spot) return;
+    try {
+      const { db } = await import("../../firebaseConfig");
+      await updateDoc(doc(db, "users", user.uid), {
+        checkedIn: {
+          spotId,
+          checkedInAt: Date.now(),
+          taggedSpotId: null,
+          taggedAt: null,
+        },
+      });
+      const key = `nook_checkin_${spotId}_${user.uid}`;
+      try {
+        await AsyncStorage.setItem(key, Date.now().toString());
+      } catch {}
+
+      // Add check-in activity
+      try {
+        if (spot && spot.addedBy) {
+          const spotName = spot.buildingName || spot.name || "Nook";
+          
+          let checkedInByName = null;
+          try {
+            const currentUserDoc = await getDoc(doc(db, "users", user.uid));
+            if (currentUserDoc.exists()) {
+              const userData = currentUserDoc.data();
+              checkedInByName = `${userData.firstName || ""} ${userData.lastName || ""}`.trim();
+            }
+          } catch (nameError) {
+            console.error("Error fetching user name:", nameError);
+          }
+          
+          await addCheckinActivity(spotId, spotName, user.uid, checkedInByName, spot.addedBy);
+        }
+      } catch (activityError) {
+        console.error("Error adding check-in activity:", activityError);
+      }
+    } catch (e) {
+      console.error("Check-in error:", e);
+    }
+  };
+
   // Handler for live update submission
   const handleSubmit = () => {
-    // Location distance is now handled in the disabled state
     onSubmit && onSubmit();
     // Reset choices after submit
     setLiveNoise(-2);
     setLiveCrowd(-2);
   };
 
-  // Disable submit unless all options selected and within distance
+  // Disable submit unless all options selected
   const noOptionsSelected = liveNoise === -2 || liveCrowd === -2;
-  const isLocationDisabled = !isWithinDistance || isLocationLoading;
-  const isDisabled = !canSubmitLiveUpdate || isLocationDisabled;
+  const isDisabled = !canSubmitLiveUpdate;
+  
+  // Combined submit handler that does both live update and silent check-in
+  const handleCombinedSubmit = async () => {
+    // Check geofencing for live updates
+    if (!noOptionsSelected) {
+      if (!isWithinGeofence) {
+        Alert.alert(
+          "Location Required",
+          "You must be within 100 meters of to submit live updates.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { 
+              text: "Check Location", 
+              onPress: () => checkGeofence() 
+            }
+          ]
+        );
+        return;
+      }
+      handleSubmit();
+    }
+    
+    // Always do silent check-in in background
+    await handleSilentCheckIn();
+  };
+  
+  // Simple button state - always "Submit"
+  const buttonState = {
+    text: isSubmittingLive ? "Submitting..." : "Submit",
+    backgroundColor: !isDisabled && !noOptionsSelected && isWithinGeofence ? themeColors.purple : themeColors.gray,
+    icon: <Check size={16} color={!isDisabled && !noOptionsSelected && isWithinGeofence ? themeColors.white : themeColors.darkGray} />,
+    disabled: isSubmittingLive || isDisabled || noOptionsSelected || !isWithinGeofence,
+    showActivity: isSubmittingLive,
+  };
 
   // Helper: format cooldown time left
   function getCooldownLabel() {
@@ -79,18 +170,95 @@ export default function LiveUpdateSliders({
         elevation: 1,
       }}
     >
-      <Text
-        style={{
-          fontSize: 17,
-          fontWeight: "bold",
-          color: themeColors.black,
-          marginBottom: 11,
-          textAlign: "center",
-          fontFamily: FONTS.PRIMARY,
-        }}
-      >
-        Live Update
-      </Text>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", marginBottom: 11 }}>
+        <Text
+          style={{
+            fontSize: 17,
+            fontWeight: "bold",
+            color: themeColors.black,
+            fontFamily: FONTS.PRIMARY,
+            marginRight: 8,
+          }}
+        >
+          Live Update
+        </Text>
+      </View>
+      {/* Show location status message */}
+      {!isWithinGeofence && locationPermission === 'granted' && (
+        <Text
+          style={{
+            color: themeColors.red,
+            fontSize: 13,
+            marginTop: -6,
+            marginBottom: 11,
+            textAlign: "center",
+            fontFamily: FONTS.PRIMARY,
+          }}
+        >
+          You must be within 100 meters to submit live updates.
+        </Text>
+      )}
+      {/* Show permission request message */}
+      {locationPermission !== 'granted' && (
+        <View style={{ alignItems: "center", marginTop: -6, marginBottom: 11 }}>
+          <Text
+            style={{
+              color: themeColors.orange,
+              fontSize: 13,
+              textAlign: "center",
+              fontFamily: FONTS.PRIMARY,
+              marginBottom: 8,
+            }}
+          >
+            Location permission required for live updates
+          </Text>
+          <TouchableOpacity
+            onPress={requestLocationPermission}
+            style={{
+              backgroundColor: themeColors.orange,
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              borderRadius: 6,
+              shadowColor: "#000",
+
+              shadowOffset: {
+                width: 0,
+                height: 2
+              },
+
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+              elevation: 4
+            }}
+          >
+            <Text
+              style={{
+                color: themeColors.white,
+                fontSize: 12,
+                fontFamily: FONTS.PRIMARY,
+                fontWeight: "bold",
+              }}
+            >
+              Enable Location
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      {/* Show cooldown message if needed */}
+      {!canSubmitLiveUpdate && (
+        <Text
+          style={{
+            color: themeColors.red,
+            fontSize: 13,
+            marginTop: -6,
+            marginBottom: 11,
+            textAlign: "center",
+            fontFamily: FONTS.PRIMARY,
+          }}
+        >
+          {getCooldownLabel()}
+        </Text>
+      )}
       <View style={{ flexDirection: "row", gap: 18 }}>
         {/* Noise */}
         <View style={{ flex: 1, alignItems: "center" }}>
@@ -126,20 +294,32 @@ export default function LiveUpdateSliders({
               </View>
               <TouchableOpacity
                 onPress={() => setLiveNoise(opt.value)}
-                disabled={isDisabled}
+                disabled={isDisabled || !isWithinGeofence}
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
+
                   backgroundColor:
                     liveNoise === opt.value
                       ? themeColors.purple
                       : themeColors.gray,
+
                   borderRadius: 8,
                   paddingVertical: 8,
                   paddingHorizontal: 14,
                   minWidth: 90,
                   justifyContent: "center",
-                  opacity: isDisabled ? 0.5 : 1,
+                  opacity: (isDisabled || !isWithinGeofence) ? 0.5 : 1,
+                  shadowColor: "#000",
+
+                  shadowOffset: {
+                    width: 0,
+                    height: 2
+                  },
+
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 4
                 }}
               >
                 <Text
@@ -193,20 +373,32 @@ export default function LiveUpdateSliders({
               </View>
               <TouchableOpacity
                 onPress={() => setLiveCrowd(opt.value)}
-                disabled={isDisabled}
+                disabled={isDisabled || !isWithinGeofence}
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
+
                   backgroundColor:
                     liveCrowd === opt.value
                       ? themeColors.purple
                       : themeColors.gray,
+
                   borderRadius: 8,
                   paddingVertical: 8,
                   paddingHorizontal: 14,
                   minWidth: 90,
                   justifyContent: "center",
-                  opacity: isDisabled ? 0.5 : 1,
+                  opacity: (isDisabled || !isWithinGeofence) ? 0.5 : 1,
+                  shadowColor: "#000",
+
+                  shadowOffset: {
+                    width: 0,
+                    height: 2
+                  },
+
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 4
                 }}
               >
                 <Text
@@ -238,64 +430,50 @@ export default function LiveUpdateSliders({
         }}
       >
         <TouchableOpacity
-          onPress={handleSubmit}
+          onPress={handleCombinedSubmit}
           style={{
-            backgroundColor:
-              !isDisabled && !noOptionsSelected
-                ? themeColors.purple
-                : themeColors.gray,
+            backgroundColor: buttonState.backgroundColor,
             borderRadius: 8,
             paddingVertical: 8,
             paddingHorizontal: 18,
             alignItems: "center",
             flexDirection: "row",
             justifyContent: "center",
-            opacity: isSubmittingLive ? 0.7 : 1,
+            opacity: buttonState.disabled ? 0.7 : 1,
+            shadowColor: "#000",
+
+            shadowOffset: {
+              width: 0,
+              height: 2
+            },
+
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+            elevation: 4
           }}
-          disabled={
-            isSubmittingLive || isDisabled || noOptionsSelected
-          }
+          disabled={buttonState.disabled}
         >
-          <Check
-            size={16}
-            color={
-              isDisabled || noOptionsSelected
-                ? themeColors.darkGray
-                : themeColors.white
-            }
-            style={{ marginRight: 6 }}
-          />
+          {buttonState.icon && (
+            <View style={{ marginRight: 6 }}>
+              {buttonState.icon}
+            </View>
+          )}
           <Text
             style={{
-              color:
-                isDisabled || noOptionsSelected
-                  ? themeColors.darkGray
-                  : themeColors.white,
+              color: buttonState.backgroundColor === themeColors.gray
+                ? themeColors.darkGray
+                : themeColors.white,
               fontWeight: "bold",
               fontSize: 13,
               fontFamily: FONTS.PRIMARY,
             }}
           >
-            {isSubmittingLive ? "Submitting..." : "Submit"}
+            {buttonState.text}
           </Text>
         </TouchableOpacity>
       </View>
-      {/* Show cooldown message if needed */}
-      {!canSubmitLiveUpdate && (
-        <Text
-          style={{
-            color: themeColors.red,
-            fontSize: 13,
-            marginTop: 6,
-            textAlign: "center",
-            fontFamily: FONTS.PRIMARY,
-          }}
-        >
-          {getCooldownLabel()}
-        </Text>
-      )}
       {/* Show message if no options selected */}
-      {noOptionsSelected && !isDisabled && !isSubmittingLive && (
+      {noOptionsSelected && !isDisabled && !isSubmittingLive && isWithinGeofence && (
         <Text
           style={{
             color: themeColors.darkGray,

@@ -137,6 +137,16 @@ export default function MapLocationPicker({
           backgroundColor: "rgba(0,0,0,0.3)",
           justifyContent: "center",
           alignItems: "center",
+          shadowColor: "#000",
+
+          shadowOffset: {
+            width: 0,
+            height: 2
+          },
+
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+          elevation: 4
         }}
         activeOpacity={1}
         onPressOut={onClose}
@@ -242,7 +252,7 @@ export default function MapLocationPicker({
                 />
               ) : (
                 // Only show "No results found" if no location is selected
-                <View style={styles.suggestionsLoadingBox}>
+                (<View style={styles.suggestionsLoadingBox}>
                   <Text
                     style={{
                       color: "#888",
@@ -253,7 +263,7 @@ export default function MapLocationPicker({
                   >
                     No results found
                   </Text>
-                </View>
+                </View>)
               )}
             </View>
           )}
@@ -307,8 +317,11 @@ export default function MapLocationPicker({
                 styles.button,
                 {
                   backgroundColor: themeColors.white,
-                  borderColor: themeColors.purple,
-                  borderWidth: 1,
+                  shadowColor: themeColors.black,
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 4,
                 },
               ]}
             >
@@ -332,6 +345,17 @@ export default function MapLocationPicker({
                   backgroundColor: selectedLocation
                     ? themeColors.purple
                     : "#ccc",
+
+                  shadowColor: "#000",
+
+                  shadowOffset: {
+                    width: 0,
+                    height: 2
+                  },
+
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 4
                 },
               ]}
               disabled={!selectedLocation}
@@ -410,6 +434,16 @@ const styles = StyleSheet.create({
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
+    shadowColor: "#000",
+
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4
   },
   suggestionText: {
     fontSize: 14,
@@ -428,6 +462,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     marginHorizontal: 6,
+    shadowColor: "#000",
+
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4
   },
   mapPreviewContainer: {
     width: "100%",

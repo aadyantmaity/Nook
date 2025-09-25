@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   Image,
   Modal,
+  Switch,
 } from "react-native";
 import { ArrowLeft, Check, MapPin } from "phosphor-react-native";
 import { ThemeContext } from "../App";
@@ -411,6 +412,7 @@ export default function AddSpotScreen({ navigation, route }) {
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.2,
                 shadowRadius: 4,
+                elevation: 4
               }}
             >
               <ArrowLeft size={24} color={themeColors.purple} />
@@ -436,8 +438,11 @@ export default function AddSpotScreen({ navigation, route }) {
                   ? themeColors.purple
                   : themeColors.white,
                 borderRadius: 8,
-                borderColor: themeColors.black,
-                borderWidth: 0.5,
+                shadowColor: themeColors.black,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 4,
               }}
             >
               <Text
@@ -461,8 +466,11 @@ export default function AddSpotScreen({ navigation, route }) {
                   ? themeColors.purple
                   : themeColors.white,
                 borderRadius: 8,
-                borderColor: themeColors.black,
-                borderWidth: 0.5,
+                shadowColor: themeColors.black,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 4,
               }}
             >
               <Text
@@ -505,8 +513,6 @@ export default function AddSpotScreen({ navigation, route }) {
             <>
               <View
                 style={{
-                  flexDirection: "row",
-                  alignItems: "center",
                   marginBottom: 8,
                 }}
               >
@@ -516,17 +522,30 @@ export default function AddSpotScreen({ navigation, route }) {
                   value={customBuilding}
                   onChangeText={setCustomBuilding}
                   style={{
-                    flex: 1,
-                    borderWidth: 0.5,
-                    borderColor: themeColors.black,
+                    shadowColor: themeColors.black,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: 4,
                     borderRadius: 8,
                     padding: 12,
-                    marginRight: 8,
+                    marginBottom: 8,
                     backgroundColor: themeColors.white,
                     color: themeColors.purple,
                     fontFamily: FONTS.PRIMARY,
                   }}
                 />
+                <Text
+                  style={{
+                    textAlign: "center",
+                    color: themeColors.darkGray,
+                    fontSize: 14,
+                    fontFamily: FONTS.PRIMARY,
+                    marginBottom: 8,
+                  }}
+                >
+                  or
+                </Text>
                 <TouchableOpacity
                   onPress={() => setShowMapPicker(true)}
                   style={{
@@ -536,9 +555,17 @@ export default function AddSpotScreen({ navigation, route }) {
                     paddingHorizontal: 12,
                     alignItems: "center",
                     justifyContent: "center",
-                    minWidth: 44,
-                    minHeight: 44,
                     flexDirection: "row",
+                    shadowColor: "#000",
+
+                    shadowOffset: {
+                      width: 0,
+                      height: 2
+                    },
+
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: 4
                   }}
                   accessibilityLabel={
                     customCoords
@@ -567,14 +594,17 @@ export default function AddSpotScreen({ navigation, route }) {
                 value={roomNumber}
                 onChangeText={setRoomNumber}
                 style={{
-                  // Make width match the name input above
-                  borderWidth: 0.5,
-                  borderColor: themeColors.black,
                   borderRadius: 8,
                   padding: 12,
+                  marginTop: 12,
                   marginBottom: 8,
                   backgroundColor: themeColors.white,
                   color: themeColors.purple,
+                  shadowColor: themeColors.black,
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 4,
                   // Match width to name input
                   width: "100%",
                   fontFamily: FONTS.PRIMARY,
@@ -584,12 +614,14 @@ export default function AddSpotScreen({ navigation, route }) {
           )}
 
           {/* Image Picker */}
-          <ImagePickerButton
-            onPickImage={handlePickCustomImage}
-            onTakePhoto={handleTakePhoto}
-            customImage={customImage}
-            themeColors={themeColors}
-          />
+          <View style={{ marginTop: 12 }}>
+            <ImagePickerButton
+              onPickImage={handlePickCustomImage}
+              onTakePhoto={handleTakePhoto}
+              customImage={customImage}
+              themeColors={themeColors}
+            />
+          </View>
 
           {/* Map Picker Modal */}
           <MapLocationPicker
@@ -641,8 +673,11 @@ export default function AddSpotScreen({ navigation, route }) {
                       ? themeColors.purple
                       : themeColors.white,
                     borderRadius: 8,
-                    borderColor: themeColors.black,
-                    borderWidth: 0.5,
+                    shadowColor: !huskyCardNeeded ? themeColors.purple : themeColors.black,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: 4,
                   }}
                 >
                   <Text
@@ -669,8 +704,11 @@ export default function AddSpotScreen({ navigation, route }) {
                       ? themeColors.purple
                       : themeColors.white,
                     borderRadius: 8,
-                    borderColor: themeColors.black,
-                    borderWidth: 0.5,
+                    shadowColor: huskyCardNeeded ? themeColors.purple : themeColors.black,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: 4,
                   }}
                 >
                   <Text
@@ -695,8 +733,11 @@ export default function AddSpotScreen({ navigation, route }) {
               value={department}
               onChangeText={setDepartment}
               style={{
-                borderWidth: 0.5,
-                borderColor: themeColors.black,
+                shadowColor: themeColors.black,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 4,
                 borderRadius: 8,
                 padding: 12,
                 marginBottom: 16,
@@ -725,56 +766,59 @@ export default function AddSpotScreen({ navigation, route }) {
             themeColors={themeColors}
           />
 
+          {!isUWBuilding && (
+          <Text
+            style={{
+              fontSize: 20,
+              color: themeColors.black,
+              fontFamily: FONTS.PRIMARY,
+            }}
+          >
+            Privacy:
+          </Text>
+          )}
           {/* Only show private toggle for custom locations */}
           {!isUWBuilding && (
             <View
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 36,
-                marginTop: 20,
+                width: "100%",
+                backgroundColor: themeColors.white,
+                borderRadius: 10,
+                paddingTop: 4,
+                paddingBottom: 12,
+                marginBottom: 16,
               }}
             >
-              <TouchableOpacity
-                onPress={() => setPrivateNook((v) => !v)}
+              <View
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
-                  padding: 10,
-                  backgroundColor: privateNook
-                    ? themeColors.purple
-                    : themeColors.white,
-                  borderRadius: 8,
-                  borderWidth: 0.5,
-                  borderColor: themeColors.black,
-                  marginRight: 8,
+                  justifyContent: "space-between",
+                  width: "100%",
                 }}
-                accessibilityLabel="Toggle Private Nook"
-                accessible={true}
               >
-                <Text
-                  style={{
-                    color: privateNook ? themeColors.white : themeColors.purple,
-                    fontWeight: "bold",
-                    marginRight: 6,
-                    fontFamily: FONTS.PRIMARY,
-                  }}
-                >
-                  Private Nook
-                </Text>
-                <View
-                  style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: 9,
-                    backgroundColor: privateNook
-                      ? themeColors.green
-                      : themeColors.gray,
-                    borderWidth: 1,
-                    borderColor: themeColors.black,
-                  }}
+                <View style={{ flexDirection: "column" }}>
+                  
+                  <Text
+                    style={{
+                      color: themeColors.darkGray,
+                      fontSize: 14,
+                      marginTop: 4,
+                      fontFamily: FONTS.PRIMARY,
+                    }}
+                  >
+                    Only you and invited users can see this nook
+                  </Text>
+                </View>
+                <Switch
+                  value={privateNook}
+                  onValueChange={setPrivateNook}
+                  trackColor={{ false: themeColors.gray, true: themeColors.purple }}
+                  thumbColor={themeColors.white}
+                  ios_backgroundColor={themeColors.gray}
+                  accessibilityLabel="Toggle Private Nook"
                 />
-              </TouchableOpacity>
+              </View>
             </View>
           )}
 
@@ -806,19 +850,17 @@ export default function AddSpotScreen({ navigation, route }) {
               style={{
                 flex: 0.25,
                 backgroundColor: themeColors.white,
-                borderColor: themeColors.purple,
-                borderWidth: 1,
+                shadowColor: themeColors.black,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 4,
                 borderRadius: 8,
                 paddingVertical: 10,
                 paddingHorizontal: 24,
                 alignItems: "center",
                 justifyContent: "center",
                 marginRight: 8,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.08,
-                shadowRadius: 4,
-                elevation: 2,
                 minWidth: 90,
               }}
               accessibilityLabel="Reset Form"

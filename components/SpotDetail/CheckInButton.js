@@ -10,10 +10,8 @@ import { MapPin } from "phosphor-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { auth } from "../../firebaseConfig";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
-import * as Location from "expo-location";
 import { FONTS } from "../../constants/fonts";
 import { addCheckinActivity } from "../../utils/checkinActivity";
-import useLocationDistance from "../../hooks/useLocationDistance";
 
 export default function CheckInButton({ spot, spotId, themeColors }) {
   const user = auth.currentUser;
@@ -23,27 +21,18 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
   const [loadingCheckedIn, setLoadingCheckedIn] = useState(true);
   const [timeRemaining, setTimeRemaining] = useState(null); // Add countdown state
 
-  // Use location distance hook
-  const { isWithinDistance, isLoading: isLocationLoading, error: locationError, distance } = useLocationDistance(spot, 100);
 
   // --- Determine if check-in is allowed ---
   let canCheckIn = false;
   let canCheckOut = false;
   let checkInDisabledReason = "";
 
-  if (loadingCheckedIn || isLocationLoading) {
+  if (loadingCheckedIn) {
     canCheckIn = false;
     canCheckOut = false;
   } else if (!checkedIn || !checkedIn.spotId) {
-    // Check if user is within distance for check-in
-    if (!isWithinDistance) {
-      canCheckIn = false;
-      canCheckOut = false;
-      checkInDisabledReason = locationError || "You must be within 100 meters to check in.";
-    } else {
-      canCheckIn = true;
-      canCheckOut = false;
-    }
+    canCheckIn = true;
+    canCheckOut = false;
   } else if (checkedIn.spotId === spotId) {
     canCheckIn = false;
     canCheckOut = true;
@@ -56,7 +45,6 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
   // --- Handle check-in ---
   const handleCheckIn = async () => {
     if (!user || !spotId || !spot) return;
-    // Location distance is now handled in the disabled state
     await confirmCheckIn();
   };
 
@@ -254,6 +242,16 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
               paddingVertical: 10,
               paddingHorizontal: 24,
               opacity: isCheckingOut ? 0.7 : 1,
+              shadowColor: "#000",
+
+              shadowOffset: {
+                width: 0,
+                height: 2
+              },
+
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+              elevation: 4
             }}
             accessibilityLabel="Check Out"
           >
@@ -303,6 +301,16 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
             paddingVertical: 10,
             paddingHorizontal: 24,
             opacity: isCheckingIn || !canCheckIn ? 0.7 : 1,
+            shadowColor: "#000",
+
+            shadowOffset: {
+              width: 0,
+              height: 2
+            },
+
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+            elevation: 4
           }}
           accessibilityLabel="Check-in"
         >
@@ -331,7 +339,7 @@ export default function CheckInButton({ spot, spotId, themeColors }) {
         </TouchableOpacity>
       )}
       {/* Show cooldown message if tagged */}
-      {!canCheckIn && checkInDisabledReason && !checkInDisabledReason.includes("100 meters") && (
+      {!canCheckIn && checkInDisabledReason && (
         <Text
           style={{
             color: themeColors.red,

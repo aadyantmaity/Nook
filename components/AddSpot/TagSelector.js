@@ -29,13 +29,11 @@ export default function TagSelector({
               ? themeColors.purple
               : themeColors.white,
             borderRadius: 25,
-            shadowColor: "#000",
+            shadowColor: selectedTags.includes(tag) ? themeColors.purple : "#000",
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-            elevation: 2,
-            borderWidth: 1,
-            borderColor: themeColors.black,
+            shadowOpacity: selectedTags.includes(tag) ? 0.4 : 0.3,
+            shadowRadius: selectedTags.includes(tag) ? 6 : 4,
+            elevation: selectedTags.includes(tag) ? 4 : 2,
           }}
         >
           <Text

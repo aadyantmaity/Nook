@@ -1,5 +1,5 @@
 import React from "react";
-import { View, FlatList, Text, TouchableOpacity, Image } from "react-native";
+import { View, FlatList, Text, TouchableOpacity, Image, Animated } from "react-native";
 import {
   Heart,
   Star,
@@ -10,6 +10,10 @@ import {
   MapTrifold,
   List,
   LockKey, // <-- add this import
+  SpeakerHigh,
+  SpeakerSlash,
+  Users,
+  UserMinus,
 } from "phosphor-react-native";
 import Filters from "./Filters";
 import HomeLoadingScreen from "./HomeLoadingScreen"; // Import the loading screen
@@ -33,6 +37,7 @@ const StudySpotItem = React.memo(
   }) => {
     const isFavorite = useFavoriteStatus(item.id);
     const { ratings } = useSpotRatings(item.id, item.privateNook);
+    
 
     // Toggle favorite function
     const toggleFavorite = async (spotId) => {
@@ -82,6 +87,24 @@ const StudySpotItem = React.memo(
       if (avg < 0.5) return "Empty";
       if (avg < 1.5) return "Light";
       return "Busy";
+    }
+
+    function getNoiseIcon(avg) {
+      if (avg === "N/A" || avg === "No rating yet" || avg == null) return SpeakerSlash;
+      if (typeof avg === "string") avg = parseFloat(avg);
+      if (isNaN(avg)) return SpeakerSlash;
+      if (avg < 0.5) return SpeakerSlash;
+      if (avg < 1.5) return SpeakerHigh;
+      return SpeakerHigh;
+    }
+
+    function getCrowdIcon(avg) {
+      if (avg === "N/A" || avg === "No rating yet" || avg == null) return UserMinus;
+      if (typeof avg === "string") avg = parseFloat(avg);
+      if (isNaN(avg)) return UserMinus;
+      if (avg < 0.5) return UserMinus;
+      if (avg < 1.5) return Users;
+      return Users;
     }
 
     function getDistance(lat1, lon1, lat2, lon2) {
@@ -167,9 +190,7 @@ const StudySpotItem = React.memo(
           shadowOpacity: 0.15,
           shadowRadius: 4,
           elevation: 3,
-          position: "relative",
-          borderColor: themeColors.darkGray + "50",
-          borderWidth: 0.5,
+          position: "relative"
         }}
         activeOpacity={0.9}
       >
@@ -184,8 +205,6 @@ const StudySpotItem = React.memo(
               backgroundColor: themeColors.white,
               borderRadius: 20,
               padding: 4,
-              borderWidth: 0.5,
-              borderColor: themeColors.red,
               shadowColor: themeColors.red,
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.18,
@@ -227,7 +246,6 @@ const StudySpotItem = React.memo(
             </View>
           </TouchableOpacity>
         )}
-
         {/* Image */}
         <View style={{ alignItems: "center", width: "100%" }}>
           <View
@@ -268,7 +286,6 @@ const StudySpotItem = React.memo(
             )}
           </View>
         </View>
-
         {/* Heart icon for favorite */}
         <TouchableOpacity
           onPress={() => toggleFavorite(item.id)}
@@ -280,8 +297,11 @@ const StudySpotItem = React.memo(
             backgroundColor: themeColors.white,
             borderRadius: 20,
             padding: 4,
-            borderWidth: 0.5,
-            borderColor: themeColors.black,
+            shadowColor: themeColors.black,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+            elevation: 4,
           }}
           onPressOut={(e) => e.stopPropagation && e.stopPropagation()}
         >
@@ -291,11 +311,10 @@ const StudySpotItem = React.memo(
             weight={isFavorite ? "fill" : "regular"}
           />
         </TouchableOpacity>
-
         {/* Spot name and room */}
         <Text
           style={{
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: "bold",
             color: themeColors.black,
             marginBottom: 6,
@@ -308,7 +327,7 @@ const StudySpotItem = React.memo(
           {item.roomNumber && (
             <Text
               style={{
-                fontSize: 18,
+                fontSize: 20,
                 color: themeColors.black,
                 fontWeight: "bold",
                 fontFamily: FONTS.PRIMARY,
@@ -339,18 +358,15 @@ const StudySpotItem = React.memo(
             </View>
           )}
         </Text>
-
         {/* Husky Card/Department info */}
         {!item.privateNook && (item.huskyCardNeeded || item.department) && (
           <Text
             style={{
               fontSize: 13,
-              color: item.huskyCardNeeded
-                ? themeColors.red
-                : themeColors.darkGray,
+              color: themeColors.red,
               marginBottom: 8,
               marginTop: 2,
-              fontWeight: item.huskyCardNeeded ? "bold" : "normal",
+              fontWeight: "bold",
               fontFamily: FONTS.PRIMARY,
             }}
           >
@@ -359,7 +375,7 @@ const StudySpotItem = React.memo(
               <Text
                 style={{
                   color: themeColors.darkGray,
-                  fontWeight: "normal",
+                  fontWeight: "bold",
                   fontFamily: FONTS.PRIMARY,
                 }}
               >
@@ -370,66 +386,16 @@ const StudySpotItem = React.memo(
             {item.department && (
               <Text
                 style={{
-                  color: themeColors.darkGray,
-                  fontWeight: "normal",
+                  color: themeColors.red,
+                  fontWeight: "bold",
                   fontFamily: FONTS.PRIMARY,
                 }}
               >
-                Department: {item.department}
+                {item.department}
               </Text>
             )}
           </Text>
         )}
-
-        {/* Tags */}
-        <View
-          style={{
-            flexDirection: "row",
-            flexWrap: "wrap",
-            marginBottom: 8,
-            gap: 6,
-          }}
-        >
-          {item.tags && item.tags.length > 0 ? (
-            [...item.tags]
-              .sort((a, b) => String(a).localeCompare(String(b)))
-              .map((tag, idx) => (
-                <View
-                  key={idx}
-                  style={{
-                    backgroundColor: themeColors.purple,
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 16,
-                    marginRight: 0,
-                    marginBottom: 3,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: themeColors.white || "#fff",
-                      fontSize: 12,
-                      fontWeight: "bold",
-                      fontFamily: FONTS.PRIMARY,
-                    }}
-                  >
-                    {tag}
-                  </Text>
-                </View>
-              ))
-          ) : (
-            <Text
-              style={{
-                color: themeColors.darkGray || "#AAA",
-                fontSize: 12,
-                fontFamily: FONTS.PRIMARY,
-              }}
-            >
-              No tags
-            </Text>
-          )}
-        </View>
-
         {/* Ratings */}
         {!item.privateNook && (
           <>
@@ -438,24 +404,21 @@ const StudySpotItem = React.memo(
               style={{
                 flexDirection: "row",
                 justifyContent: "space-between",
-                marginBottom: 2,
-                marginTop: 2,
+                marginBottom: 6,
+                marginTop: 6,
               }}
             >
               {/* Noise Level */}
-              <View style={{ flex: 1, alignItems: "center" }}>
+              <View style={{ flex: 1, alignItems: "center", flexDirection: "row", justifyContent: "center" }}>
+                {React.createElement(getNoiseIcon(ratings?.noise), {
+                  size: 26,
+                  color: themeColors.purple,
+                  weight: "regular",
+                  style: { marginRight: 8 }
+                })}
                 <Text
                   style={{
-                    fontSize: 15,
-                    color: themeColors.darkGray,
-                    fontFamily: FONTS.PRIMARY,
-                  }}
-                >
-                  Noise Level
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 16,
+                    fontSize: 19,
                     fontWeight: "bold",
                     color: themeColors.purple,
                     fontFamily: FONTS.PRIMARY,
@@ -465,19 +428,16 @@ const StudySpotItem = React.memo(
                 </Text>
               </View>
               {/* Crowd Level */}
-              <View style={{ flex: 1, alignItems: "center" }}>
+              <View style={{ flex: 1, alignItems: "center", flexDirection: "row", justifyContent: "center" }}>
+                {React.createElement(getCrowdIcon(ratings?.crowd), {
+                  size: 26,
+                  color: themeColors.purple,
+                  weight: "regular",
+                  style: { marginRight: 8 }
+                })}
                 <Text
                   style={{
-                    fontSize: 15,
-                    color: themeColors.darkGray,
-                    fontFamily: FONTS.PRIMARY,
-                  }}
-                >
-                  Crowd Level
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 16,
+                    fontSize: 19,
                     fontWeight: "bold",
                     color: themeColors.purple,
                     fontFamily: FONTS.PRIMARY,
@@ -488,11 +448,12 @@ const StudySpotItem = React.memo(
               </View>
             </View>
             {/* Last updated label */}
-            <Text
+            {/* <Text
               style={{
-                fontSize: 12,
+                fontSize: 14,
                 color: themeColors.darkGray,
                 marginTop: 6,
+                marginBottom: 2,
                 textAlign: "right",
                 fontFamily: FONTS.PRIMARY,
               }}
@@ -500,7 +461,7 @@ const StudySpotItem = React.memo(
               {getLastUpdatedLabel && ratings
                 ? getLastUpdatedLabel(ratings)
                 : ""}
-            </Text>
+            </Text> */}
           </>
         )}
         {/* Show distance if sorting by distance */}
@@ -517,19 +478,18 @@ const StudySpotItem = React.memo(
             Distance: {distanceLabel}
           </Text>
         )}
-
         {/* Last updated */}
-        {getLastUpdatedLabel && (
+        {/* {getLastUpdatedLabel && (
           <Text
             style={{
-              fontSize: 11,
+              fontSize: 13,
               color: themeColors.darkGray,
               fontFamily: FONTS.PRIMARY,
             }}
           >
             {getLastUpdatedLabel(item)}
           </Text>
-        )}
+        )} */}
       </TouchableOpacity>
     );
   }

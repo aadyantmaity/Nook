@@ -56,13 +56,22 @@ export default function ImagePickerButton({
           backgroundColor: customImage?.uri
             ? themeColors.white
             : themeColors.purple,
+
           borderRadius: 10,
           paddingVertical: 10,
           paddingHorizontal: 16,
           alignItems: "center",
-          borderWidth: 1,
-          borderColor: themeColors.purple,
           minWidth: 160,
+          shadowColor: "#000",
+
+          shadowOffset: {
+            width: 0,
+            height: 2
+          },
+
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+          elevation: 4
         }}
         accessibilityLabel={
           customImage?.uri ? "Change or replace photo" : "Add a photo"
@@ -79,7 +88,6 @@ export default function ImagePickerButton({
           {customImage?.uri ? "Change Photo" : "Add Photo"}
         </Text>
       </TouchableOpacity>
-
       {/* Preview */}
       {customImage && customImage.uri && (
         <View
@@ -100,7 +108,6 @@ export default function ImagePickerButton({
           />
         </View>
       )}
-
       {/* Bottom sheet options */}
       <Modal visible={showOptions} transparent animationType="none">
         <TouchableWithoutFeedback onPress={() => closeOptions()}>
@@ -165,6 +172,16 @@ export default function ImagePickerButton({
                       paddingHorizontal: 10,
                       borderRadius: 12,
                       marginTop: 6,
+                      shadowColor: "#000",
+
+                      shadowOffset: {
+                        width: 0,
+                        height: 2
+                      },
+
+                      shadowOpacity: 0.3,
+                      shadowRadius: 4,
+                      elevation: 4
                     }}
                     accessibilityLabel="Take a photo"
                     accessible={true}
@@ -215,6 +232,16 @@ export default function ImagePickerButton({
                     paddingHorizontal: 10,
                     borderRadius: 12,
                     marginTop: 8,
+                    shadowColor: "#000",
+
+                    shadowOffset: {
+                      width: 0,
+                      height: 2
+                    },
+
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: 4
                   }}
                   accessibilityLabel="Choose from library"
                   accessible={true}
@@ -264,6 +291,16 @@ export default function ImagePickerButton({
                     paddingVertical: 14,
                     alignItems: "center",
                     borderRadius: 10,
+                    shadowColor: "#000",
+
+                    shadowOffset: {
+                      width: 0,
+                      height: 2
+                    },
+
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: 4
                   }}
                   accessibilityLabel="Cancel"
                   accessible={true}

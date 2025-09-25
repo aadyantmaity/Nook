@@ -25,9 +25,7 @@ export default function StudySpotCard({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
-        position: "relative",
-        borderColor: themeColors.black,
-        borderWidth: 0.5,
+        position: "relative"
       }}
       activeOpacity={0.9}
     >
@@ -71,8 +69,6 @@ export default function StudySpotCard({
               backgroundColor: themeColors.white,
               borderRadius: 20,
               padding: 4,
-              borderWidth: 0.5,
-              borderColor: themeColors.red,
               shadowColor: themeColors.red,
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.18,
@@ -119,7 +115,6 @@ export default function StudySpotCard({
           </TouchableOpacity>
         );
       })()}
-
       {/* Image */}
       <View
         style={{
@@ -151,7 +146,6 @@ export default function StudySpotCard({
           </Text>
         )}
       </View>
-
       {/* Heart icon for favorite */}
       <TouchableOpacity
         onPress={onToggleFavorite}
@@ -163,8 +157,11 @@ export default function StudySpotCard({
           backgroundColor: themeColors.white,
           borderRadius: 20,
           padding: 4,
-          borderWidth: 0.5,
-          borderColor: themeColors.black,
+          shadowColor: themeColors.black,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+          elevation: 4,
         }}
         onPressOut={(e) => e.stopPropagation && e.stopPropagation()}
       >
@@ -174,7 +171,6 @@ export default function StudySpotCard({
           weight={isFavorite ? "fill" : "regular"}
         />
       </TouchableOpacity>
-
       {/* Spot name and room */}
       <Text
         style={{
@@ -215,7 +211,6 @@ export default function StudySpotCard({
           </Text>
         )}
       </Text>
-
       {/* Husky Card/Department info */}
       {!spot.privateNook && (spot.huskyCardNeeded || spot.department) && (
         <Text
@@ -256,56 +251,6 @@ export default function StudySpotCard({
           )}
         </Text>
       )}
-
-      {/* Tags */}
-      <View
-        style={{
-          flexDirection: "row",
-          flexWrap: "wrap",
-          marginBottom: 8,
-          gap: 6,
-        }}
-      >
-        {spot.tags && spot.tags.length > 0 ? (
-          [...spot.tags]
-            .sort((a, b) => String(a).localeCompare(String(b)))
-            .map((tag, idx) => (
-              <View
-                key={idx}
-                style={{
-                  backgroundColor: themeColors.purple,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 16,
-                  marginRight: 0,
-                  marginBottom: 3,
-                }}
-              >
-                <Text
-                  style={{
-                    color: themeColors.white || "#fff",
-                    fontSize: 12,
-                    fontWeight: "bold",
-                    fontFamily: FONTS.PRIMARY,
-                  }}
-                >
-                  {tag}
-                </Text>
-              </View>
-            ))
-        ) : (
-          <Text
-            style={{
-              color: themeColors.darkGray || "#AAA",
-              fontSize: 12,
-              fontFamily: FONTS.PRIMARY,
-            }}
-          >
-            No tags
-          </Text>
-        )}
-      </View>
-
       {/* Ratings */}
       {!spot.privateNook && (
         <>

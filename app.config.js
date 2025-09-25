@@ -23,6 +23,10 @@ export default {
         ITSAppUsesNonExemptEncryption: false,
         NSPhotoLibraryUsageDescription:
           "This app needs access to your photo library so you can upload images of study spots.",
+        NSLocationWhenInUseUsageDescription:
+          "This app needs access to your location to enable live updates when you're near study spots.",
+        NSLocationAlwaysAndWhenInUseUsageDescription:
+          "This app needs access to your location to enable live updates when you're near study spots.",
         CFBundleURLTypes: [
           {
             CFBundleURLName: "nook-deep-link",
@@ -37,6 +41,10 @@ export default {
         backgroundColor: "#ffffff",
       },
       package: "com.aadyant.nook",
+      permissions: [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+      ],
       intentFilters: [
         {
           action: "VIEW",

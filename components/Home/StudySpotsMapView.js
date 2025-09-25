@@ -309,7 +309,6 @@ export default function StudySpotsMapView({
           </View>
         )}
       </View>
-
       {/* --- Summary panel below the map --- */}
       <View
         style={{
@@ -331,7 +330,7 @@ export default function StudySpotsMapView({
       >
         {showFriendsView ? (
           // Friends view summary
-          <>
+          (<>
             <View style={{ alignItems: "center", flex: 1 }}>
               <Text
                 style={{
@@ -374,10 +373,10 @@ export default function StudySpotsMapView({
                 Nooks
               </Text>
             </View>
-          </>
+          </>)
         ) : (
           // Nooks view summary
-          <>
+          (<>
             <View style={{ alignItems: "center", flex: 1 }}>
               <Text
                 style={{
@@ -420,10 +419,9 @@ export default function StudySpotsMapView({
                 Alerts Today
               </Text>
             </View>
-          </>
+          </>)
         )}
       </View>
-
       {/* --- Building Modal: List all floors/spots for selected building --- */}
       <Modal
         visible={buildingModal.visible}
@@ -439,6 +437,16 @@ export default function StudySpotsMapView({
             backgroundColor: "rgba(0,0,0,0.3)",
             justifyContent: "center",
             alignItems: "center",
+            shadowColor: "#000",
+
+            shadowOffset: {
+              width: 0,
+              height: 2
+            },
+
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+            elevation: 4
           }}
           activeOpacity={1}
           onPressOut={() =>
@@ -538,6 +546,16 @@ export default function StudySpotsMapView({
                             padding: 10,
                             alignItems: "center",
                             justifyContent: "center",
+                            shadowColor: "#000",
+
+                            shadowOffset: {
+                              width: 0,
+                              height: 2
+                            },
+
+                            shadowOpacity: 0.3,
+                            shadowRadius: 4,
+                            elevation: 4
                           }}
                           onPress={() => {
                             setBuildingModal((prev) => ({
@@ -572,6 +590,16 @@ export default function StudySpotsMapView({
                             padding: 10,
                             alignItems: "center",
                             justifyContent: "center",
+                            shadowColor: "#000",
+
+                            shadowOffset: {
+                              width: 0,
+                              height: 2
+                            },
+
+                            shadowOpacity: 0.3,
+                            shadowRadius: 4,
+                            elevation: 4
                           }}
                           onPress={() => {
                             setBuildingModal((prev) => ({
@@ -615,6 +643,16 @@ export default function StudySpotsMapView({
                 paddingVertical: 10,
                 paddingHorizontal: 24,
                 alignItems: "center",
+                shadowColor: "#000",
+
+                shadowOffset: {
+                  width: 0,
+                  height: 2
+                },
+
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 4
               }}
             >
               <Text
@@ -644,6 +682,16 @@ export default function StudySpotsMapView({
             backgroundColor: "rgba(0,0,0,0.3)",
             justifyContent: "center",
             alignItems: "center",
+            shadowColor: "#000",
+
+            shadowOffset: {
+              width: 0,
+              height: 2
+            },
+
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+            elevation: 4
           }}
           activeOpacity={1}
           onPressOut={() => setSelectedPin(null)}
@@ -701,6 +749,16 @@ export default function StudySpotsMapView({
                     padding: 14,
                     alignItems: "center",
                     justifyContent: "center",
+                    shadowColor: "#000",
+
+                    shadowOffset: {
+                      width: 0,
+                      height: 2
+                    },
+
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: 4
                   }}
                   onPress={() => {
                     setSelectedPin(null);
@@ -735,6 +793,16 @@ export default function StudySpotsMapView({
                     padding: 14,
                     alignItems: "center",
                     justifyContent: "center",
+                    shadowColor: "#000",
+
+                    shadowOffset: {
+                      width: 0,
+                      height: 2
+                    },
+
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: 4
                   }}
                   onPress={() => {
                     setSelectedPin(null);
@@ -773,6 +841,16 @@ export default function StudySpotsMapView({
                 paddingVertical: 10,
                 paddingHorizontal: 24,
                 alignItems: "center",
+                shadowColor: "#000",
+
+                shadowOffset: {
+                  width: 0,
+                  height: 2
+                },
+
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 4
               }}
             >
               <Text
@@ -789,7 +867,6 @@ export default function StudySpotsMapView({
           </View>
         </TouchableOpacity>
       </Modal>
-
       {/* --- Friend Modal: Show friend info and options --- */}
       <Modal
         visible={!!selectedFriend}
@@ -803,6 +880,16 @@ export default function StudySpotsMapView({
             backgroundColor: "rgba(0,0,0,0.3)",
             justifyContent: "center",
             alignItems: "center",
+            shadowColor: "#000",
+
+            shadowOffset: {
+              width: 0,
+              height: 2
+            },
+
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+            elevation: 4
           }}
           activeOpacity={1}
           onPressOut={() => setSelectedFriend(null)}
@@ -857,6 +944,16 @@ export default function StudySpotsMapView({
                     borderRadius: 18,
                     alignItems: "center",
                     justifyContent: "center",
+                    shadowColor: "#000",
+
+                    shadowOffset: {
+                      width: 0,
+                      height: 2
+                    },
+
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: 4
                   }}
                   onPress={() => {
                     setSelectedFriend(null);
@@ -888,6 +985,16 @@ export default function StudySpotsMapView({
                       backgroundColor: themeColors.lightGray,
                       borderRadius: 12,
                       padding: 10,
+                      shadowColor: "#000",
+
+                      shadowOffset: {
+                        width: 0,
+                        height: 2
+                      },
+
+                      shadowOpacity: 0.3,
+                      shadowRadius: 4,
+                      elevation: 4
                     }}
                     onPress={() => {
                       setSelectedFriend(null);
@@ -970,6 +1077,16 @@ export default function StudySpotsMapView({
                       backgroundColor: themeColors.lightGray,
                       borderRadius: 12,
                       padding: 10,
+                      shadowColor: "#000",
+
+                      shadowOffset: {
+                        width: 0,
+                        height: 2
+                      },
+
+                      shadowOpacity: 0.3,
+                      shadowRadius: 4,
+                      elevation: 4
                     }}
                     onPress={() => {
                       setSelectedFriend(null);
@@ -1049,6 +1166,16 @@ export default function StudySpotsMapView({
                 paddingVertical: 10,
                 paddingHorizontal: 24,
                 alignItems: "center",
+                shadowColor: "#000",
+
+                shadowOffset: {
+                  width: 0,
+                  height: 2
+                },
+
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 4
               }}
             >
               <Text

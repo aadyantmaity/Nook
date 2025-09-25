@@ -148,13 +148,11 @@ export default function LocationPickerModal({
             width: "100%",
             maxWidth: 400,
             maxHeight: "70%",
-            borderWidth: 1,
-            borderColor: colors.black,
             shadowColor: colors.black,
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.25,
             shadowRadius: 8,
-            elevation: 8,
+            elevation: 8
           }}
           onPress={() => {}} // Prevent tap-through
         >
@@ -213,13 +211,11 @@ export default function LocationPickerModal({
                     backgroundColor: colors.white,
                     borderRadius: 12,
                     marginBottom: 12,
-                    borderWidth: 1,
-                    borderColor: colors.gray || "#E5E7EB",
                     shadowColor: colors.black,
                     shadowOffset: { width: 0, height: 1 },
                     shadowOpacity: 0.05,
                     shadowRadius: 2,
-                    elevation: 1,
+                    elevation: 1
                   }}
                   activeOpacity={0.7}
                 >

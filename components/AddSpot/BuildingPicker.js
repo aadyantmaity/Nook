@@ -56,8 +56,11 @@ export default function BuildingPicker({
           color: themeColors.purple,
           fontSize: 18,
           backgroundColor: themeColors.white,
-          borderColor: themeColors.black,
-          borderWidth: 0.5,
+          shadowColor: themeColors.black,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+          elevation: 4,
           borderRadius: 8,
           fontFamily: FONTS.PRIMARY,
         }}
@@ -101,8 +104,11 @@ export default function BuildingPicker({
         }}
         keyboardType="numeric"
         style={{
-          borderWidth: 0.5,
-          borderColor: themeColors.black,
+          shadowColor: themeColors.black,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+          elevation: 4,
           borderRadius: 8,
           padding: 12,
           marginTop: 16,

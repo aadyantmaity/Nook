@@ -246,6 +246,16 @@ export default function EmailVerificationModal({
                   padding: 6,
                   borderRadius: 16,
                   opacity: isResendCooldown ? 0.5 : 1,
+                  shadowColor: "#000",
+
+                  shadowOffset: {
+                    width: 0,
+                    height: 2
+                  },
+
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 4
                 }}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 activeOpacity={isResendCooldown ? 1 : 0.7}
@@ -270,6 +280,16 @@ export default function EmailVerificationModal({
                 style={{
                   padding: 6,
                   borderRadius: 16,
+                  shadowColor: "#000",
+
+                  shadowOffset: {
+                    width: 0,
+                    height: 2
+                  },
+
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 4
                 }}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 activeOpacity={0.7}
@@ -364,14 +384,24 @@ export default function EmailVerificationModal({
                       width: 22,
                       height: 22,
                       borderRadius: 5,
-                      borderWidth: 1.5,
-                      borderColor: colors.purple,
                       alignItems: "center",
                       justifyContent: "center",
                       marginRight: 8,
+
                       backgroundColor: privacyChecked
                         ? colors.purple
                         : colors.white,
+
+                      shadowColor: "#000",
+
+                      shadowOffset: {
+                        width: 0,
+                        height: 2
+                      },
+
+                      shadowOpacity: 0.3,
+                      shadowRadius: 4,
+                      elevation: 4
                     }}
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked: privacyChecked }}
@@ -466,6 +496,11 @@ export default function EmailVerificationModal({
                       marginBottom: 0,
                       flex: 1,
                       opacity: privacyChecked ? 1 : 0.5,
+                      shadowColor: colors.black,
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 4,
+                      elevation: 4,
                     }}
                     onPress={handleVerificationCheck}
                     activeOpacity={privacyChecked ? 0.85 : 1}
@@ -505,6 +540,11 @@ export default function EmailVerificationModal({
                       alignSelf: "center",
                       marginBottom: 0,
                       flex: 1,
+                      shadowColor: colors.black,
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 4,
+                      elevation: 4,
                     }}
                     activeOpacity={0.85}
                   >
@@ -620,8 +660,16 @@ export default function EmailVerificationModal({
                     alignItems: "center",
                     flex: 1,
                     marginRight: 8,
-                    borderWidth: 1,
-                    borderColor: colors.purple,
+                    shadowColor: "#000",
+
+                    shadowOffset: {
+                      width: 0,
+                      height: 2
+                    },
+
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: 4
                   }}
                 >
                   <Text
@@ -646,6 +694,16 @@ export default function EmailVerificationModal({
                     flex: 1,
                     marginLeft: 8,
                     opacity: submitting ? 0.7 : 1,
+                    shadowColor: "#000",
+
+                    shadowOffset: {
+                      width: 0,
+                      height: 2
+                    },
+
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: 4
                   }}
                   activeOpacity={0.85}
                 >

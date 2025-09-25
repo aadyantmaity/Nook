@@ -65,8 +65,12 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
+    "@babel/traverse": "^7.28.4",
+    "@babel/types": "^7.28.4",
     "@expo/metro-config": "^54.0.2",
-    "babel-preset-expo": "^54.0.0"
+    "babel-preset-expo": "^54.0.0",
+    "react-refresh": "^0.17.0",
+    "recast": "^0.23.11"
   },
   "private": true
 }

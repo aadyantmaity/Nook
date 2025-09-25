@@ -57,7 +57,6 @@ import ReportModal from "../components/SpotDetail/ReportModal";
 import LiveUpdateSliders from "../components/SpotDetail/LiveUpdateSliders";
 import SpotFeedback from "../components/SpotDetail/SpotFeedback";
 import SpotGallery from "../components/SpotDetail/SpotGallery";
-import CheckInButton from "../components/SpotDetail/CheckInButton";
 import HomeLoadingScreen from "../components/Home/HomeLoadingScreen"; // Add this import
 import PrivateNookShareModal from "../components/SpotDetail/PrivateNookShareModal";
 
@@ -68,35 +67,10 @@ import * as Clipboard from "expo-clipboard";
 
 // Hooks
 import useSpotDetails from "../hooks/useSpotDetails";
-import useLocationDistance from "../hooks/useLocationDistance";
 
 import QRCode from "react-native-qrcode-svg";
 import { FONTS } from "../constants/fonts";
 
-// Distance restriction message component
-function DistanceRestrictionMessage({ spot, themeColors }) {
-  const { isWithinDistance, isLoading: isLocationLoading } = useLocationDistance(spot, 100);
-  
-  if (isLocationLoading) return null;
-  
-  if (!isWithinDistance) {
-    return (
-      <Text
-        style={{
-          color: themeColors.red,
-          fontSize: 13,
-          marginTop: 8,
-          textAlign: "center",
-          fontFamily: FONTS.PRIMARY,
-        }}
-      >
-        You must be within 100 meters to interact
-      </Text>
-    );
-  }
-  
-  return null;
-}
 
 export default function SpotDetailScreen({ route, navigation }) {
   const themeCtx = useContext(ThemeContext);
@@ -449,6 +423,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                     alignItems: "center",
                     justifyContent: "center",
                     marginRight: -16,
+                    
                   }}
                 >
                   <DotsThreeVertical size={27} color={themeColors.purple} />
@@ -468,6 +443,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                         width: 3000,
                         height: 3000,
                         zIndex: 99,
+                      
                       }}
                       activeOpacity={1}
                       onPress={() => setShowMenu(false)}
@@ -703,6 +679,7 @@ export default function SpotDetailScreen({ route, navigation }) {
                           style={{
                             // backgroundColor: themeColors.red, // REMOVE red background
                             flexDirection: "row",
+
                             alignItems: "center",
                             paddingVertical: 14,
                             paddingHorizontal: 18,
@@ -839,8 +816,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                     {getLastUpdatedLabel(spot.ratings)}
                   </Text>
                 </View>
-                {/* Distance restriction message */}
-                <DistanceRestrictionMessage spot={spot} themeColors={themeColors} />
               </View>
             )}
 
@@ -861,19 +836,11 @@ export default function SpotDetailScreen({ route, navigation }) {
                   spot={spot}
                   canSubmitLiveUpdate={canSubmitLiveUpdate()}
                   lastLiveUpdate={lastLiveUpdate}
+                  spotId={spotId}
                 />
               </View>
             )}
 
-            {/* --- Check In Button --- */}
-            {!isPrivateNook && (
-              <CheckInButton
-                spot={spot}
-                spotId={spotId}
-                themeColors={themeColors}
-              />
-            )}
-            {/* --- End Check In Button --- */}
 
             {/* Modals */}
             {!isPrivateNook && (
@@ -896,7 +863,7 @@ export default function SpotDetailScreen({ route, navigation }) {
           </ScrollView>
         ) : (
           // Wrap private nook details in ScrollView instead of View
-          <ScrollView
+          (<ScrollView
             contentContainerStyle={{
               flexGrow: 1,
               padding: 16,
@@ -1183,7 +1150,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                 )}
               </View>
             </View>
-
             {/* Spot Gallery (replaces SpotImage, matches image size) */}
             <SpotGallery
               spotId={spotId}
@@ -1198,7 +1164,6 @@ export default function SpotDetailScreen({ route, navigation }) {
               // No extra margin for private nook
               style={undefined}
             />
-
             {/* Spot Name and Floor */}
             <Text
               style={{
@@ -1267,10 +1232,8 @@ export default function SpotDetailScreen({ route, navigation }) {
                 )}
               </Text>
             )}
-
             {/* Tags */}
             <TagList tags={tags} themeColors={themeColors} />
-
             {/* Ratings */}
             {!isPrivateNook && (
               <View style={{ marginTop: 16 }}>
@@ -1290,11 +1253,8 @@ export default function SpotDetailScreen({ route, navigation }) {
                     {getLastUpdatedLabel(spot.ratings)}
                   </Text>
                 </View>
-                {/* Distance restriction message */}
-                <DistanceRestrictionMessage spot={spot} themeColors={themeColors} />
               </View>
             )}
-
             {/* Live Update Sliders (compact, extracted component) */}
             {!isPrivateNook && (
               <View style={{ marginTop: 14 }}>
@@ -1312,20 +1272,10 @@ export default function SpotDetailScreen({ route, navigation }) {
                   spot={spot}
                   canSubmitLiveUpdate={canSubmitLiveUpdate()}
                   lastLiveUpdate={lastLiveUpdate}
+                  spotId={spotId}
                 />
               </View>
             )}
-
-            {/* --- Check In Button --- */}
-            {!isPrivateNook && (
-              <CheckInButton
-                spot={spot}
-                spotId={spotId}
-                themeColors={themeColors}
-              />
-            )}
-            {/* --- End Check In Button --- */}
-
             {/* Modals */}
             {!isPrivateNook && (
               <>
@@ -1488,10 +1438,9 @@ export default function SpotDetailScreen({ route, navigation }) {
                 </View>
               </>
             )}
-          </ScrollView>
+          </ScrollView>)
         )}
       </View>
-
       {/* Floating Action Button for Add Alert */}
       {!isPrivateNook && (
         <View
@@ -1542,7 +1491,6 @@ export default function SpotDetailScreen({ route, navigation }) {
           </View>
         </View>
       )}
-
       {/* --- SHARE NOOK TO GROUP MODAL --- */}
       <ShareNookToGroupModal
         visible={showShareNookToGroupModal}
