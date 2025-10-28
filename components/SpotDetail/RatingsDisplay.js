@@ -23,14 +23,14 @@ function getCrowdLabel(avg) {
   if (avg === "N/A" || avg === "No rating yet" || avg == null) return "N/A";
   if (typeof avg === "string") {
     const normalized = avg.trim().toLowerCase();
-    if (["empty", "light", "busy"].includes(normalized)) {
+    if (["light", "moderate", "busy"].includes(normalized)) {
       return avg.charAt(0).toUpperCase() + avg.slice(1).toLowerCase();
     }
     avg = parseFloat(avg);
   }
   if (isNaN(avg)) return "N/A";
-  if (avg < 0.5) return "Empty";
-  if (avg < 1.5) return "Light";
+  if (avg < 0.5) return "Light";
+  if (avg < 1.5) return "Moderate";
   return "Busy";
 }
 

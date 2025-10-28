@@ -101,12 +101,14 @@ export function FocusGoalModal({
             shadowOpacity: 0.3,
             shadowRadius: 4,
             elevation: 4,
+            overflow: 'visible',
           }}
           onPress={() => {}} // Prevent tap-through
         >
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 20 }}
+            style={{ overflow: 'visible' }}
           >
             {/* Goal Title */}
             <Text
@@ -171,7 +173,7 @@ export function FocusGoalModal({
             />
 
             {/* Action Buttons */}
-            <View style={{ flexDirection: "row", gap: 12, marginBottom: 8 }}>
+            <View style={{ flexDirection: "row", gap: 12, marginBottom: 8, paddingHorizontal: 4 }}>
               <TouchableOpacity
                 onPress={onClose}
                 style={{
@@ -179,7 +181,7 @@ export function FocusGoalModal({
                   backgroundColor: themeColors.white,
                   borderRadius: 8,
                   paddingVertical: 10,
-                  paddingHorizontal: 18,
+                  paddingHorizontal: 20,
                   alignItems: "center",
                   shadowColor: themeColors.black,
                   shadowOffset: { width: 0, height: 2 },

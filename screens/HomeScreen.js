@@ -45,6 +45,7 @@ import {
   MapPin,
   UsersThree,
   Bell,
+  Gear,
 } from "phosphor-react-native"; // Add Heart icon
 import { colors } from "../constants/colors";
 import { FONTS } from "../constants/fonts"; // Import colors
@@ -76,6 +77,7 @@ import OnboardingModal from "../components/Auth/OnboardingModal"; // <-- Add thi
 
 import { useProfileData } from "../hooks/useProfileData"; // add
 import { useHomeView } from "../components/Home/HomeViewContext"; // <-- Import HomeViewContext
+import ProfileSettingsMenu from "../components/Profile/ProfileSettingsMenu";
 
 //hook imports
 import useStudySpots from "../hooks/useStudySpots";
@@ -756,18 +758,33 @@ export default function HomeScreen({ navigation, route }) {
   const [routes] = useState([
     { key: "focus", title: "Focus" },
     { key: "home", title: "Home" },
-    { key: "social", title: "Community" },
+    { key: "profile", title: "Profile" },
   ]);
 
-  // Tab scene
-  const renderScene = SceneMap({
-    focus: () => {
-      const Focus = require("./FocusTimerScreen").default;
-      return <Focus navigation={navigation} route={route} />;
-    },
-    home: HomeTab,
-    social: SocialTab,
-  });
+  // Trigger to open profile settings modal from header
+  const [profileSettingsTrigger, setProfileSettingsTrigger] = useState(0);
+  const [showHeaderSettingsMenu, setShowHeaderSettingsMenu] = useState(false);
+
+  // Tab scenes (memoize profile renderer to avoid remounting on unrelated state changes)
+  const focusScene = React.useCallback(() => {
+    const Focus = require("./FocusTimerScreen").default;
+    return <Focus navigation={navigation} route={route} />;
+  }, [navigation, route]);
+
+  const profileScene = React.useCallback(() => {
+    const Profile = require("./ProfileScreen").default;
+    return <Profile navigation={navigation} route={route} />;
+  }, [navigation, route]);
+
+  const renderScene = React.useMemo(
+    () =>
+      SceneMap({
+        focus: focusScene,
+        home: HomeTab,
+        profile: profileScene,
+      }),
+    [focusScene, HomeTab, profileScene]
+  );
 
   // --- Track if this is the initial mount (not after navigation) ---
   const initialMount = useRef(true);
@@ -1055,46 +1072,27 @@ export default function HomeScreen({ navigation, route }) {
                 weight="light"
               />
             </TouchableOpacity>
-            {/* Bell icon for recent activity */}
+            {/* Right header action: bell or gear on Profile tab */}
             <TouchableOpacity
-              onPress={() => navigation.navigate("RecentActivity")}
+              onPress={() => {
+                if (routes[tabIndex]?.key === "profile") {
+                  setShowHeaderSettingsMenu((v) => !v);
+                } else {
+                  navigation.navigate("RecentActivity");
+                }
+              }}
               style={{
                 alignItems: "center",
                 justifyContent: "center",
                 backgroundColor: themeColors.white,
               }}
-              accessibilityLabel="Recent Activity"
+              accessibilityLabel={routes[tabIndex]?.key === "profile" ? "Settings" : "Recent Activity"}
             >
-              <Bell
-                size={28}
-                color={themeColors.purple}
-                weight="light"
-              />
-            </TouchableOpacity>
-            {/* Profile picture button to open hamburger menu */}
-            <TouchableOpacity
-              onPress={() => navigation.navigate("Profile")}
-              style={{
-                borderRadius: 20,
-                backgroundColor: themeColors.white,
-                alignItems: "center",
-                justifyContent: "center",
-                elevation: 2,
-                width: 40,
-                height: 40,
-                overflow: "hidden",
-                borderWidth: 1,
-                borderColor: themeColors.purple,
-              }}
-              accessibilityLabel="Go to Profile"
-            >
-              <ProfilePicture
-                profilePic={profilePic}
-                themeColors={themeColors}
-                size={40}
-                isTouchable={false}
-                isLoading={isProfilePicLoading}
-              />
+              {routes[tabIndex]?.key === "profile" ? (
+                <Gear size={28} color={themeColors.purple} weight="light" />
+              ) : (
+                <Bell size={28} color={themeColors.purple} weight="light" />
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -1134,11 +1132,33 @@ export default function HomeScreen({ navigation, route }) {
               themeColors={themeColors}
               currentIndex={tabIndex}
               labelStyle={{ fontFamily: FONTS.PRIMARY }}
+              profilePic={profilePic}
+              isProfilePicLoading={isProfilePicLoading}
             />
           </View>
         </View>
 
         {/* Modals */}
+        <ProfileSettingsMenu
+          visible={showHeaderSettingsMenu && routes[tabIndex]?.key === "profile"}
+          onClose={() => setShowHeaderSettingsMenu(false)}
+          themeColors={themeColors}
+          isDarkMode={isDarkMode}
+          onToggleTheme={async () => {
+            setShowHeaderSettingsMenu(false);
+            if (setIsDarkMode) setIsDarkMode(!isDarkMode);
+          }}
+          onReportIssue={() => {
+            setShowHeaderSettingsMenu(false);
+            setShowGeneralReport(true);
+          }}
+          // Only actions available from Home header
+          showEditProfile={true}
+          showShareProfile={true}
+          showResetPassword={true}
+          showLogout={true}
+          showDeleteAccount={true}
+        />
         <GeneralReportModal
           visible={showGeneralReport}
           onClose={() => setShowGeneralReport(false)}

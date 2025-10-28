@@ -38,7 +38,7 @@ export default {
     android: {
       adaptiveIcon: {
         foregroundImage: "./assets/NewNook.png",
-        backgroundColor: "#ffffff",
+        backgroundColor: "#fffaf4",
       },
       package: "com.aadyant.nook",
       permissions: [

@@ -1,18 +1,20 @@
 import React from "react";
-import { View, TouchableOpacity, Text, Dimensions } from "react-native";
-import { House, Chats, Rows, Timer as TimerIcon } from "phosphor-react-native";
+import { View, TouchableOpacity, Text, Dimensions, Image } from "react-native";
+import { House, Chats, Rows, Timer as TimerIcon, User as UserIcon } from "phosphor-react-native";
 import { FONTS } from "../../constants/fonts";
 
 const TAB_ICONS = {
   focus: TimerIcon,
   home: House,
   social: Chats,
+  profile: UserIcon,
 };
 
 const TAB_LABELS = {
   focus: "Focus",
   home: "Home",
   social: "Groups",
+  profile: "Profile",
 };
 
 export default function TabBar({
@@ -20,6 +22,8 @@ export default function TabBar({
   jumpTo,
   themeColors,
   currentIndex,
+  profilePic,
+  isProfilePicLoading,
 }) {
   // Calculate 90% of screen width for centering
   const tabBarWidth = Math.round(Dimensions.get("window").width * 0.9);
@@ -66,13 +70,37 @@ export default function TabBar({
               accessibilityLabel={TAB_LABELS[route.key]}
               accessible={true}
             >
-              <Icon
-                size={24}
-                color={
-                  currentIndex === i ? themeColors.purple : themeColors.darkGray
-                }
-                weight={currentIndex === i ? "fill" : "regular"}
-              />
+              {route.key === "profile" ? (
+                profilePic ? (
+                  <Image
+                    source={{ uri: profilePic }}
+                    style={{
+                      width: 25,
+                      height: 25,
+                      borderRadius: 12.5,
+                      borderWidth: currentIndex === i ? 2 : 1,
+                      borderColor:
+                        currentIndex === i ? themeColors.purple : themeColors.darkGray,
+                    }}
+                  />
+                ) : (
+                  <Icon
+                    size={24}
+                    color={
+                      currentIndex === i ? themeColors.purple : themeColors.darkGray
+                    }
+                    weight={currentIndex === i ? "fill" : "regular"}
+                  />
+                )
+              ) : (
+                <Icon
+                  size={24}
+                  color={
+                    currentIndex === i ? themeColors.purple : themeColors.darkGray
+                  }
+                  weight={currentIndex === i ? "fill" : "regular"}
+                />
+              )}
               <Text
                 style={{
                   color:

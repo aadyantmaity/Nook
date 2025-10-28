@@ -23,7 +23,7 @@ export const dark = {
   silver: "#C0C0C0", // Silver for 2nd place
   bronze: "#CD7F32", // Bronze for 3rd place
   white: "#121212", // Dark background for dark mode
-  black: "#Ffffff", // White text for dark mode
+  black: "#fffaf4", // White text for dark mode
   gray: "#232323", // Darker gray for dark mode
   darkGray: "#888888", // Medium gray for dark mode
   darkBackground: "#121212", // Dark mode background

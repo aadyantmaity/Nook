@@ -41,6 +41,7 @@
     "firebase-admin": "^13.4.0",
     "phosphor": "^0.7.1",
     "phosphor-react-native": "^2.3.1",
+    "posthog-react-native": "^4.7.0",
     "react": "19.1.0",
     "react-native": "0.81.4",
     "react-native-collapsible-tab-view": "^8.0.1",

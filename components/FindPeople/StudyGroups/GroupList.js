@@ -118,159 +118,6 @@ export default function GroupList({
     return msgs.slice(lastReadIdx + 1);
   };
 
-  if (loadingGroups) {
-    return (
-      <ActivityIndicator color={themeColors.purple} style={{ marginTop: 8 }} />
-    );
-  }
-
-  // Separate groups into sections
-  const userGroups = sortedGroups.filter(
-    (group) =>
-      Array.isArray(group.memberUids) &&
-      group.memberUids.includes(user.uid) &&
-      !(
-        Array.isArray(group.blockedUsers) &&
-        group.blockedUsers.includes(user.uid)
-      ) // Fix syntax
-  );
-
-  const publicGroups = sortedGroups.filter(
-    (group) =>
-      !(group.isPrivate ?? false) &&
-      (!Array.isArray(group.memberUids) ||
-        !group.memberUids.includes(user.uid)) &&
-      !(
-        Array.isArray(group.blockedUsers) &&
-        group.blockedUsers.includes(user.uid)
-      ) // Fix syntax
-  );
-
-  // If searching, use flat list with search results
-  if (groupSearch) {
-    if (groupSearchResults.length === 0) {
-      return (
-        <View style={{ flex: 1, alignItems: "center", marginTop: 16 }}>
-          <Text
-            style={{
-              color: themeColors.purple,
-              fontWeight: "bold",
-              fontSize: 16,
-              fontFamily: FONTS.PRIMARY,
-              marginBottom: 4,
-            }}
-          >
-            Groups
-          </Text>
-          <Text
-            style={{
-              color: themeColors.darkGray,
-              fontFamily: FONTS.PRIMARY,
-              textAlign: "center",
-              marginTop: 4,
-            }}
-          >
-            No groups found matching your search.
-          </Text>
-        </View>
-      );
-    }
-
-    // Use FlatList for search results
-    return (
-      <View style={{ flex: 1, position: "relative", width: "100%" }}>
-        {sortedGroups.length > 0 && isScrolled && (
-          <LinearGradient
-            colors={[themeColors.white + "FF", themeColors.white + "00"]}
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: 24,
-              zIndex: 2,
-              pointerEvents: "none",
-            }}
-            pointerEvents="none"
-          />
-        )}
-        <FlatList
-          data={groupSearchResults}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => renderGroupItem(item)}
-          style={{ flex: 1 }}
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: 110 }}
-          showsVerticalScrollIndicator={false}
-          onScroll={(e) => {
-            const offsetY = e.nativeEvent.contentOffset.y;
-            setIsScrolled(offsetY > 2);
-          }}
-          scrollEventThrottle={16}
-        />
-        {sortedGroups.length > 0 && (
-          <LinearGradient
-            colors={[themeColors.white + "00", themeColors.white + "FF"]}
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 24,
-              zIndex: 2,
-              pointerEvents: "none",
-            }}
-            pointerEvents="none"
-          />
-        )}
-      </View>
-    );
-  }
-
-  // Create sections data
-  const sections = [];
-
-  if (userGroups.length > 0) {
-    sections.push({
-      title: "Your Groups",
-      data: userGroups,
-    });
-  }
-
-  if (publicGroups.length > 0) {
-    sections.push({
-      title: "Public Groups",
-      data: publicGroups,
-    });
-  }
-
-  if (sections.length === 0) {
-    return (
-      <View style={{ flex: 1, alignItems: "center", marginTop: 16 }}>
-        <Text
-          style={{
-            color: themeColors.purple,
-            fontWeight: "bold",
-            fontSize: 16,
-            fontFamily: FONTS.PRIMARY,
-            marginBottom: 4,
-          }}
-        >
-          Groups
-        </Text>
-        <Text
-          style={{
-            color: themeColors.darkGray,
-            fontFamily: FONTS.PRIMARY,
-            textAlign: "center",
-            marginTop: 4,
-          }}
-        >
-          No study groups found.
-        </Text>
-      </View>
-    );
-  }
-
   // Extract renderGroupItem function for reuse
   const renderGroupItem = (item) => {
     const IconComponent =
@@ -422,6 +269,149 @@ export default function GroupList({
       </TouchableOpacity>
     );
   };
+
+  if (loadingGroups) {
+    return (
+      <ActivityIndicator color={themeColors.purple} style={{ marginTop: 8 }} />
+    );
+  }
+
+  // Separate groups into sections
+  const userGroups = sortedGroups.filter(
+    (group) =>
+      Array.isArray(group.memberUids) &&
+      group.memberUids.includes(user.uid) &&
+      !(
+        Array.isArray(group.blockedUsers) &&
+        group.blockedUsers.includes(user.uid)
+      ) // Fix syntax
+  );
+
+  const publicGroups = sortedGroups.filter(
+    (group) =>
+      !(group.isPrivate ?? false) &&
+      (!Array.isArray(group.memberUids) ||
+        !group.memberUids.includes(user.uid)) &&
+      !(
+        Array.isArray(group.blockedUsers) &&
+        group.blockedUsers.includes(user.uid)
+      ) // Fix syntax
+  );
+
+  // If searching, use flat list with search results
+  if (groupSearch) {
+    if (groupSearchResults.length === 0) {
+      return (
+        <View style={{ flex: 1, alignItems: "center", marginTop: 16 }}>
+        
+          <Text
+            style={{
+              color: themeColors.darkGray,
+              fontFamily: FONTS.PRIMARY,
+              textAlign: "center",
+              marginTop: 4,
+            }}
+          >
+            No groups found matching your search.
+          </Text>
+        </View>
+      );
+    }
+
+    // Use FlatList for search results
+    return (
+      <View style={{ flex: 1, position: "relative", width: "100%" }}>
+        {sortedGroups.length > 0 && isScrolled && (
+          <LinearGradient
+            colors={[themeColors.white + "FF", themeColors.white + "00"]}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 24,
+              zIndex: 2,
+              pointerEvents: "none",
+            }}
+            pointerEvents="none"
+          />
+        )}
+        <FlatList
+          data={groupSearchResults}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => renderGroupItem(item)}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 110 }}
+          showsVerticalScrollIndicator={false}
+          onScroll={(e) => {
+            const offsetY = e.nativeEvent.contentOffset.y;
+            setIsScrolled(offsetY > 2);
+          }}
+          scrollEventThrottle={16}
+        />
+        {sortedGroups.length > 0 && (
+          <LinearGradient
+            colors={[themeColors.white + "00", themeColors.white + "FF"]}
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 24,
+              zIndex: 2,
+              pointerEvents: "none",
+            }}
+            pointerEvents="none"
+          />
+        )}
+      </View>
+    );
+  }
+
+  // Create sections data
+  const sections = [];
+
+  if (userGroups.length > 0) {
+    sections.push({
+      title: "Your Groups",
+      data: userGroups,
+    });
+  }
+
+  if (publicGroups.length > 0) {
+    sections.push({
+      title: "Public Groups",
+      data: publicGroups,
+    });
+  }
+
+  if (sections.length === 0) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", marginTop: 16 }}>
+        <Text
+          style={{
+            color: themeColors.purple,
+            fontWeight: "bold",
+            fontSize: 16,
+            fontFamily: FONTS.PRIMARY,
+            marginBottom: 4,
+          }}
+        >
+          Groups
+        </Text>
+        <Text
+          style={{
+            color: themeColors.darkGray,
+            fontFamily: FONTS.PRIMARY,
+            textAlign: "center",
+            marginTop: 4,
+          }}
+        >
+          No study groups found.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1, position: "relative", width: "100%" }}>

@@ -500,7 +500,7 @@ export default function StudyGroupsSection({ navigation }) {
               backgroundColor: themeColors.white,
               shadowColor: themeColors.black,
               shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.3,
+              shadowOpacity: 0.2,
               shadowRadius: 4,
               elevation: 4,
             }}

@@ -84,8 +84,8 @@ const StudySpotItem = React.memo(
       if (avg === "N/A" || avg === "No rating yet" || avg == null) return "N/A";
       if (typeof avg === "string") avg = parseFloat(avg);
       if (isNaN(avg)) return "N/A";
-      if (avg < 0.5) return "Empty";
-      if (avg < 1.5) return "Light";
+      if (avg < 0.5) return "Light";
+      if (avg < 1.5) return "Moderate";
       return "Busy";
     }
 

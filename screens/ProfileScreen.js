@@ -33,7 +33,6 @@ import {
   CheckCircle,
   Trophy,
   ChartBar,
-  Gear,
   Trash,
 } from "phosphor-react-native";
 import { ThemeContext } from "../App";
@@ -58,11 +57,12 @@ import EditProfileModal from "../components/Profile/EditProfileModal";
 import FollowersModal from "../components/Profile/FollowersModal";
 import FollowingModal from "../components/Profile/FollowingModal";
 import UnfollowConfirmModal from "../components/Profile/UnfollowConfirmModal";
+import ProfileSettingsMenu from "../components/Profile/ProfileSettingsMenu";
 import { FlatList } from "react-native-gesture-handler";
 import GeneralReportModal from "../components/Home/GeneralReportModal";
 import ProfileShareModal from "../components/Profile/ProfileShareModal";
 
-export default function ProfileScreen({ navigation, route }) {
+export default function ProfileScreen({ navigation, route, settingsTrigger }) {
   const themeCtx = useContext(ThemeContext);
   const themeColors = themeCtx?.themeColors ?? colors;
   const isDarkMode = themeCtx?.isDarkMode ?? false;
@@ -126,7 +126,6 @@ export default function ProfileScreen({ navigation, route }) {
   const [deleteError, setDeleteError] = useState("");
   const [needReauth, setNeedReauth] = useState(false);
   const [reauthPassword, setReauthPassword] = useState("");
-  const [favoritesExpanded, setFavoritesExpanded] = useState(false);
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
   const [userList, setUserList] = useState([]);
@@ -445,6 +444,13 @@ export default function ProfileScreen({ navigation, route }) {
     }
   }, [targetUid, isOwnProfile]);
 
+  // Toggle profile settings menu when triggered from Home header
+  React.useEffect(() => {
+    if (isOwnProfile && settingsTrigger) {
+      setMenuVisible((visible) => !visible);
+    }
+  }, [settingsTrigger, isOwnProfile]);
+
   // Unfollow handler for modal
   const handleUnfollowFromModal = async (uid) => {
     setUnfollowingUid(uid);
@@ -533,305 +539,76 @@ export default function ProfileScreen({ navigation, route }) {
 
   return (
     <View
-      style={{ flex: 1, backgroundColor: themeColors.white, paddingTop: 48 }}
+      style={{ flex: 1, backgroundColor: themeColors.white, paddingTop: 0 }}
     >
-      {/* --- Header Row: Back Arrow and Profile Menu --- */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingHorizontal: 8,
-          marginBottom: 8,
-        }}
-      >
-        <TouchableOpacity
-          style={[
-            styles.backButton,
-            { position: "relative", top: 0, left: 0, padding: 8 },
-          ]}
-          onPress={() => navigation.goBack()}
-        >
-          <ArrowLeft size={24} color={themeColors.purple} />
-        </TouchableOpacity>
-        {/* Only show Gear/settings icon if own profile */}
-        {isOwnProfile && (
-          <TouchableOpacity
-            style={{
-              padding: 8,
-              borderRadius: 16,
-            }}
-            onPress={() => setMenuVisible(true)}
-            accessibilityLabel="Profile Menu"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Gear size={26} color={themeColors.purple} />
-          </TouchableOpacity>
-        )}
-      </View>
-      {/* Only show Profile Menu Modal if own profile */}
-      {isOwnProfile && menuVisible && (
-        <TouchableOpacity
+      {/* --- Header Row: Back Arrow (only for other profiles) --- */}
+      {!isOwnProfile && (
+        <View
           style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.18)",
-            zIndex: 100,
-            justifyContent: "flex-start",
-            alignItems: "flex-end",
+            flexDirection: "row",
+            alignItems: "center",
+            paddingHorizontal: 8,
+            marginBottom: 8,
           }}
-          activeOpacity={1}
-          onPressOut={() => setMenuVisible(false)}
         >
-          <View
-            style={{
-              marginTop: 54 + 36,
-              marginRight: 18,
-              backgroundColor: themeColors.white,
-              borderRadius: 12,
-              minWidth: 180,
-              elevation: 8,
-              borderWidth: 1,
-              borderColor: themeColors.gray,
-              shadowColor: themeColors.black,
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.18,
-              shadowRadius: 8,
-              paddingVertical: 4,
-            }}
-            onStartShouldSetResponder={() => true}
+          <TouchableOpacity
+            style={[
+              styles.backButton,
+              { position: "relative", top: 0, left: 0, padding: 8 },
+            ]}
+            onPress={() => navigation.goBack()}
           >
-            {/* Edit Profile Option */}
-            <TouchableOpacity
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingVertical: 12,
-                paddingHorizontal: 18,
-              }}
-              onPress={() => {
-                setMenuVisible(false);
-                setEditedFirstName(
-                  firstName !== "No First Name" ? firstName : ""
-                );
-                setEditedLastName(lastName !== "No Last Name" ? lastName : "");
-                setEditedGradYear(
-                  userGradYear !== "No Grad Year" ? userGradYear : ""
-                );
-                setIsModalVisible(true);
-                setTimeout(() => setEditedProfilePic(null), 0);
-              }}
-            >
-              <PencilSimple
-                size={20}
-                color={themeColors.purple}
-                style={{ marginRight: 10 }}
-              />
-              <Text
-                style={{
-                  color: themeColors.purple,
-                  fontFamily: FONTS.PRIMARY,
-                  fontSize: 16,
-                }}
-              >
-                Edit Profile
-              </Text>
-            </TouchableOpacity>
-
-            {/* Share Profile Option */}
-            <TouchableOpacity
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingVertical: 12,
-                paddingHorizontal: 18,
-              }}
-              onPress={() => {
-                setMenuVisible(false);
-                setShowProfileShare(true);
-              }}
-            >
-              <ShareNetwork
-                size={20}
-                color={themeColors.purple}
-                style={{ marginRight: 10 }}
-              />
-              <Text
-                style={{
-                  color: themeColors.purple,
-                  fontFamily: FONTS.PRIMARY,
-                  fontSize: 16,
-                }}
-              >
-                Share Profile
-              </Text>
-            </TouchableOpacity>
-
-            {/* Dark Mode Toggle */}
-            <TouchableOpacity
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingVertical: 12,
-                paddingHorizontal: 18,
-              }}
-              onPress={async () => {
-                setMenuVisible(false);
-                await handleToggleTheme();
-              }}
-            >
-              {isDarkMode ? (
-                <Sun
-                  size={20}
-                  color={themeColors.purple}
-                  style={{ marginRight: 10 }}
-                />
-              ) : (
-                <Moon
-                  size={20}
-                  color={themeColors.purple}
-                  style={{ marginRight: 10 }}
-                />
-              )}
-              <Text
-                style={{
-                  color: themeColors.purple,
-                  fontFamily: FONTS.PRIMARY,
-                  fontSize: 16,
-                }}
-              >
-                {isDarkMode ? "Light Mode" : "Dark Mode"}
-              </Text>
-            </TouchableOpacity>
-
-            {/* Report Option */}
-            <TouchableOpacity
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingVertical: 12,
-                paddingHorizontal: 18,
-              }}
-              onPress={() => {
-                setMenuVisible(false);
-                setShowGeneralReport(true);
-              }}
-            >
-              <Flag
-                size={20}
-                color={themeColors.purple}
-                style={{ marginRight: 10 }}
-              />
-              <Text
-                style={{
-                  color: themeColors.purple,
-                  fontFamily: FONTS.PRIMARY,
-                  fontSize: 16,
-                }}
-              >
-                Report Issue
-              </Text>
-            </TouchableOpacity>
-
-            {/* Reset Password */}
-            {isOwnProfile && (
-              <TouchableOpacity
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingVertical: 12,
-                  paddingHorizontal: 18,
-                }}
-                onPress={async () => {
-                  setMenuVisible(false);
-                  await handleResetPassword();
-                }}
-                disabled={resetPasswordLoading}
-              >
-                <User
-                  size={20}
-                  color={themeColors.purple}
-                  style={{ marginRight: 10 }}
-                />
-                <Text
-                  style={{
-                    color: themeColors.purple,
-                    fontFamily: FONTS.PRIMARY,
-                    fontSize: 16,
-                  }}
-                >
-                  {"Reset Password"}
-                </Text>
-              </TouchableOpacity>
-            )}
-
-            {/* Log Out */}
-            {isOwnProfile && (
-              <TouchableOpacity
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingVertical: 12,
-                  paddingHorizontal: 18,
-                }}
-                onPress={() => {
-                  setMenuVisible(false);
-                  handleLogout();
-                }}
-              >
-                <SignOut
-                  size={20}
-                  color={themeColors.red}
-                  style={{ marginRight: 10 }}
-                />
-                <Text
-                  style={{
-                    color: themeColors.red,
-                    fontFamily: FONTS.PRIMARY,
-                    fontSize: 16,
-                  }}
-                >
-                  Log Out
-                </Text>
-              </TouchableOpacity>
-            )}
-
-            {/* Delete Account */}
-            {isOwnProfile && (
-              <TouchableOpacity
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingVertical: 12,
-                  paddingHorizontal: 18,
-                }}
-                onPress={() => {
-                  setMenuVisible(false);
-                  handleDeleteAccount();
-                }}
-              >
-                <Trash
-                  size={20}
-                  color={themeColors.red}
-                  style={{ marginRight: 10 }}
-                />
-                <Text
-                  style={{
-                    color: themeColors.red,
-                    fontFamily: FONTS.PRIMARY,
-                    fontSize: 16,
-                  }}
-                >
-                  Delete Account
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </TouchableOpacity>
+            <ArrowLeft size={24} color={themeColors.purple} />
+          </TouchableOpacity>
+        </View>
       )}
+      <ProfileSettingsMenu
+        visible={!!(isOwnProfile && menuVisible)}
+        onClose={() => setMenuVisible(false)}
+        themeColors={themeColors}
+        isDarkMode={isDarkMode}
+        onEditProfile={() => {
+          setMenuVisible(false);
+          setEditedFirstName(firstName !== "No First Name" ? firstName : "");
+          setEditedLastName(lastName !== "No Last Name" ? lastName : "");
+          setEditedGradYear(
+            userGradYear !== "No Grad Year" ? userGradYear : ""
+          );
+          setIsModalVisible(true);
+          setTimeout(() => setEditedProfilePic(null), 0);
+        }}
+        onShareProfile={() => {
+          setMenuVisible(false);
+          setShowProfileShare(true);
+        }}
+        onToggleTheme={async () => {
+          setMenuVisible(false);
+          await handleToggleTheme();
+        }}
+        onReportIssue={() => {
+          setMenuVisible(false);
+          setShowGeneralReport(true);
+        }}
+        onResetPassword={async () => {
+          setMenuVisible(false);
+          await handleResetPassword();
+        }}
+        onLogout={() => {
+          setMenuVisible(false);
+          handleLogout();
+        }}
+        onDeleteAccount={() => {
+          setMenuVisible(false);
+          setDeleteModalVisible(true);
+        }}
+        showEditProfile={isOwnProfile}
+        showShareProfile={true}
+        showThemeToggle={true}
+        showReportIssue={true}
+        showResetPassword={isOwnProfile}
+        showLogout={isOwnProfile}
+        showDeleteAccount={isOwnProfile}
+      />
       {/* Logout Modal */}
       <LogoutModal
         visible={logoutModalVisible}
@@ -874,147 +651,86 @@ export default function ProfileScreen({ navigation, route }) {
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Profile Picture */}
-        <View style={[styles.profilePictureContainer]}>
-          <ProfilePicture
-            profilePic={profilePic}
-            onPick={handlePickProfilePic}
-            onPress={() => {
-              if (isOwnProfile) {
-                setEditedFirstName(
-                  firstName !== "No First Name" ? firstName : ""
-                );
-                setEditedLastName(lastName !== "No Last Name" ? lastName : "");
-                setEditedGradYear(
-                  userGradYear !== "No Grad Year" ? userGradYear : ""
-                );
-                setIsModalVisible(true);
-                setTimeout(() => setEditedProfilePic(null), 0);
-              }
-            }}
-            themeColors={themeColors}
-            isTouchable={isOwnProfile}
-          />
-        </View>
-        {/* Profile Details */}
-        <View style={styles.profileContainer}>
-          <View
-            style={{
-              position: "relative",
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: 8,
-            }}
-          >
-            <Text
-              style={[
-                styles.userName,
-                {
-                  color: themeColors.black,
-                  fontFamily: FONTS.PRIMARY,
-                  marginBottom: 0,
-                  paddingTop: 16,
-                },
-              ]}
+        {/* Instagram-style header: avatar + name/grad above counts; gear on avatar */}
+        <View style={{ paddingHorizontal: 16, marginTop: 24 }}>
+          <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+            {/* Avatar with attached settings button */}
+            <View
+              style={{
+                width: 96,
+                height: 96,
+                borderRadius: 48,
+                marginRight: 16,
+                position: "relative",
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+              }}
             >
-              {firstName} {lastName}
-            </Text>
-            {isOwnProfile && (
-              <TouchableOpacity
-                style={{
-                  position: "absolute",
-                  right: -30,
-                  top: 16,
-                  padding: 4,
-                }}
+              <ProfilePicture
+                profilePic={profilePic}
+                onPick={handlePickProfilePic}
                 onPress={() => {
-                  setEditedFirstName(
-                    firstName !== "No First Name" ? firstName : ""
-                  );
-                  setEditedLastName(
-                    lastName !== "No Last Name" ? lastName : ""
-                  );
-                  setEditedGradYear(
-                    userGradYear !== "No Grad Year" ? userGradYear : ""
-                  );
-                  setIsModalVisible(true);
-                  setTimeout(() => setEditedProfilePic(null), 0);
+                  if (isOwnProfile) {
+                    setEditedFirstName(
+                      firstName !== "No First Name" ? firstName : ""
+                    );
+                    setEditedLastName(
+                      lastName !== "No Last Name" ? lastName : ""
+                    );
+                    setEditedGradYear(
+                      userGradYear !== "No Grad Year" ? userGradYear : ""
+                    );
+                    setIsModalVisible(true);
+                    setTimeout(() => setEditedProfilePic(null), 0);
+                  }
                 }}
-                accessibilityLabel="Edit Profile"
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <PencilSimple size={20} color={themeColors.purple} />
-              </TouchableOpacity>
-            )}
-          </View>
-          <View style={styles.detailRow}>
-            <Envelope size={20} color={themeColors.purple} />
-            <Text
-              style={[
-                styles.userEmail,
-                { color: themeColors.black, fontFamily: FONTS.PRIMARY },
-              ]}
-            >
-              {userEmail}
-            </Text>
-          </View>
-          <View style={styles.detailRow}>
-            <GraduationCap size={20} color={themeColors.purple} />
-            <Text
-              style={[
-                styles.userGradYear,
-                { color: themeColors.black, fontFamily: FONTS.PRIMARY },
-              ]}
-            >
-              {userGradYear}
-            </Text>
-          </View>
-          {/* Followers/Following Row */}
-          <View style={styles.followRow}>
-            <TouchableOpacity
-              style={styles.followColumn}
-              onPress={openFollowers}
-            >
-              <Text
-                style={[
-                  styles.followLabel,
-                  { color: themeColors.darkGray, fontFamily: FONTS.PRIMARY },
-                ]}
-              >
-                Followers
-              </Text>
-              <Text
-                style={[
-                  styles.followCount,
-                  { color: themeColors.black, fontFamily: FONTS.PRIMARY },
-                ]}
-              >
-                {followers.length}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.followColumn}
-              onPress={openFollowing}
-            >
-              <Text
-                style={[
-                  styles.followLabel,
-                  { color: themeColors.darkGray, fontFamily: FONTS.PRIMARY },
-                ]}
-              >
-                Following
-              </Text>
-              <Text
-                style={[
-                  styles.followCount,
-                  { color: themeColors.black, fontFamily: FONTS.PRIMARY },
-                ]}
-              >
-                {following.length}
-              </Text>
-            </TouchableOpacity>
-          </View>
+                themeColors={themeColors}
+                isTouchable={isOwnProfile}
+                size={96}
+              />
+            </View>
 
+            {/* Right side: name + grad year, then counts */}
+            <View style={{ flex: 1, marginTop: 8 }}>
+              <View style={{ flexDirection: "row", alignItems: "baseline", flexWrap: "wrap" }}>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "bold",
+                    color: themeColors.black,
+                    fontFamily: FONTS.PRIMARY,
+                  }}
+                  numberOfLines={1}
+                >
+                  {firstName} {lastName}
+                </Text>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
+                <View style={{ alignItems: "flex-start", marginRight: 30 }}>
+                  <Text style={{ fontSize: 18, fontWeight: "bold", color: themeColors.black, fontFamily: FONTS.PRIMARY }}>
+                    {favoriteSpotsLoading ? "..." : favoriteSpots.length}
+                  </Text>
+                  <Text style={{ fontSize: 14, color: themeColors.darkGray, fontFamily: FONTS.PRIMARY }}>Favorites</Text>
+                </View>
+                <TouchableOpacity onPress={openFollowers} style={{ alignItems: "flex-start", marginRight: 30 }}>
+                  <Text style={{ fontSize: 18, fontWeight: "bold", color: themeColors.black, fontFamily: FONTS.PRIMARY }}>
+                    {followers.length}
+                  </Text>
+                  <Text style={{ fontSize: 14, color: themeColors.darkGray, fontFamily: FONTS.PRIMARY }}>Followers</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={openFollowing} style={{ alignItems: "flex-start" }}>
+                  <Text style={{ fontSize: 18, fontWeight: "bold", color: themeColors.black, fontFamily: FONTS.PRIMARY }}>
+                    {following.length}
+                  </Text>
+                  <Text style={{ fontSize: 14, color: themeColors.darkGray, fontFamily: FONTS.PRIMARY }}>Following</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.profileContainer}>
           <View
             style={[styles.divider, { backgroundColor: themeColors.gray }]}
           />
@@ -1098,7 +814,7 @@ export default function ProfileScreen({ navigation, route }) {
           <View
             style={[styles.divider, { backgroundColor: themeColors.gray }]}
           />
-          {/* Favorites Section as Dropdown */}
+          {/* Favorites Section - always expanded */}
           <View
             style={{
               flexDirection: "row",
@@ -1108,44 +824,24 @@ export default function ProfileScreen({ navigation, route }) {
               marginTop: 12,
             }}
           >
-            <TouchableOpacity
-              onPress={() => setFavoritesExpanded((v) => !v)}
-              style={{
-                padding: 0,
-                borderRadius: 20,
-                backgroundColor: "transparent",
-                alignItems: "center",
-                justifyContent: "center",
-                paddingHorizontal: 8,
-              }}
-              accessibilityLabel={
-                favoritesExpanded ? "Collapse favorites" : "Expand favorites"
-              }
-            >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Heart size={20} color={themeColors.purple} weight="fill" />
-                <Text
-                  style={[
-                    styles.favoritesTitle,
-                    {
-                      marginLeft: 8,
-                      marginRight: 8,
-                      color: themeColors.black,
-                      fontFamily: FONTS.PRIMARY,
-                    },
-                  ]}
-                >
-                  Favorites
-                </Text>
-                {favoritesExpanded ? (
-                  <CaretDown size={22} color={themeColors.purple} />
-                ) : (
-                  <CaretRight size={22} color={themeColors.purple} />
-                )}
-              </View>
-            </TouchableOpacity>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Heart size={20} color={themeColors.purple} weight="fill" />
+              <Text
+                style={[
+                  styles.favoritesTitle,
+                  {
+                    marginLeft: 8,
+                    marginRight: 8,
+                    color: themeColors.black,
+                    fontFamily: FONTS.PRIMARY,
+                  },
+                ]}
+              >
+                Favorites
+              </Text>
+            </View>
           </View>
-          {favoritesExpanded && (
+          {
             <View
               style={{
                 width: "100%",
@@ -1157,60 +853,65 @@ export default function ProfileScreen({ navigation, route }) {
             >
               {favoriteSpotsLoading ? (
                 <View style={{ width: "100%", marginBottom: 12 }}>
-                  {[1, 2, 3].map((i) => (
-                    <View
-                      key={i}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        backgroundColor: themeColors.gray,
-                        borderRadius: 12,
-                        padding: 14,
-                        marginBottom: 10,
-                        opacity: 0.5,
-                        width: 200,
-                        marginRight: 12,
-                      }}
-                    >
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingHorizontal: 8 }}
+                  >
+                    {[1, 2, 3].map((i) => (
                       <View
+                        key={i}
                         style={{
-                          width: 75,
-                          height: 75,
-                          borderRadius: 8,
-                          backgroundColor: themeColors.lightGray || "#EEE",
-                          marginRight: 14,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          backgroundColor: themeColors.gray,
+                          borderRadius: 12,
+                          padding: 14,
+                          opacity: 0.5,
+                          width: 280,
+                          marginRight: 12,
                         }}
-                      />
-                      <View style={{ flex: 1 }}>
+                      >
                         <View
                           style={{
-                            height: 18,
+                            width: 75,
+                            height: 75,
+                            borderRadius: 8,
                             backgroundColor: themeColors.lightGray || "#EEE",
-                            borderRadius: 4,
-                            marginBottom: 8,
-                            width: "60%",
+                            marginRight: 14,
                           }}
                         />
-                        <View
-                          style={{
-                            height: 12,
-                            backgroundColor: themeColors.lightGray || "#EEE",
-                            borderRadius: 4,
-                            marginBottom: 6,
-                            width: "40%",
-                          }}
-                        />
-                        <View
-                          style={{
-                            height: 12,
-                            backgroundColor: themeColors.lightGray || "#EEE",
-                            borderRadius: 4,
-                            width: "30%",
-                          }}
-                        />
+                        <View style={{ flex: 1 }}>
+                          <View
+                            style={{
+                              height: 18,
+                              backgroundColor: themeColors.lightGray || "#EEE",
+                              borderRadius: 4,
+                              marginBottom: 8,
+                              width: "60%",
+                            }}
+                          />
+                          <View
+                            style={{
+                              height: 12,
+                              backgroundColor: themeColors.lightGray || "#EEE",
+                              borderRadius: 4,
+                              marginBottom: 6,
+                              width: "40%",
+                            }}
+                          />
+                          <View
+                            style={{
+                              height: 12,
+                              backgroundColor: themeColors.lightGray || "#EEE",
+                              borderRadius: 4,
+                              width: "30%",
+                            }}
+                          />
+                        </View>
                       </View>
-                    </View>
-                  ))}
+                    ))}
+                  </ScrollView>
                 </View>
               ) : favoriteSpots.length === 0 ? (
                 <Text
@@ -1260,7 +961,7 @@ export default function ProfileScreen({ navigation, route }) {
                 />
               )}
             </View>
-          )}
+          }
         </View>
 
         {/* Show follow/unfollow button for other users' profiles */}

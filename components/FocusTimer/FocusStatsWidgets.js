@@ -947,7 +947,7 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ padding: 0 }}
+      contentContainerStyle={{ paddingTop: 2 }}
       showsVerticalScrollIndicator={false}
     >
       <View
@@ -956,7 +956,7 @@ export default function FocusStatsWidgets({ themeColors, userId = null }) {
           flexWrap: "wrap",
           justifyContent: "center",
           alignItems: "flex-start",
-          paddingVertical: 16,
+          paddingVertical: 0,
           paddingBottom: 95, // Add extra padding to prevent cutoff by bottom nav bar
         }}
       >
