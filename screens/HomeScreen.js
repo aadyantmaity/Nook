@@ -46,6 +46,7 @@ import {
   UsersThree,
   Bell,
   Gear,
+  FadersHorizontal,
 } from "phosphor-react-native"; // Add Heart icon
 import { colors } from "../constants/colors";
 import { FONTS } from "../constants/fonts"; // Import colors
@@ -365,127 +366,6 @@ export default function HomeScreen({ navigation, route }) {
     }, 350); // Slightly longer than animation duration
   };
 
-  // --- Reusable Header (toggle only, no filters) ---
-  function StudySpotsHeader({
-    showMapView,
-    setShowMapView,
-    showFriendsView,
-    setShowFriendsView,
-    themeColors,
-    filters,
-    setFilters,
-    sortBy,
-    setSortBy,
-  }) {
-    const [isFiltersPressed, setIsFiltersPressed] = React.useState(false);
-    return (
-      <View style={{ paddingTop: 16 }}>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginBottom: 16,
-            zIndex: 20,
-            justifyContent: "space-between",
-            gap: 10,
-          }}
-        >
-          {/* List/Map View Toggle Buttons */}
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <TouchableOpacity
-              onPress={() => setShowMapView(false)}
-              style={{
-                backgroundColor: !showMapView
-                  ? themeColors.purple
-                  : themeColors.white,
-                padding: 10,
-                borderRadius: 8,
-                alignItems: "center",
-                justifyContent: "center",
-                height: 42,
-                minWidth: 48,
-                marginRight: 0,
-              }}
-            >
-              <Rows
-                size={22}
-                color={!showMapView ? themeColors.white : themeColors.purple}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setShowMapView(true)}
-              style={{
-                backgroundColor: showMapView
-                  ? themeColors.purple
-                  : themeColors.white,
-                padding: 10,
-                borderRadius: 8,
-                alignItems: "center",
-                justifyContent: "center",
-                height: 42,
-                minWidth: 48,
-                marginRight: 0,
-              }}
-            >
-              <MapTrifold
-                size={22}
-                color={showMapView ? themeColors.white : themeColors.purple}
-              />
-            </TouchableOpacity>
-          </View>
-          {/* Filters Button */}
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPressIn={() => setIsFiltersPressed(true)}
-            onPressOut={() => setIsFiltersPressed(false)}
-            onPress={() => {
-              setIsFiltersPressed(false);
-              // Open filters modal or whatever Filters does on press
-            }}
-            style={{
-              backgroundColor: isFiltersPressed
-                ? themeColors.purple
-                : themeColors.white,
-              paddingVertical: 10,
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: 0,
-              height: 42,
-              marginBottom: 0,
-              marginLeft: 10,
-            }}
-          >
-            <Filters
-              filters={filters}
-              setFilters={setFilters}
-              themeColors={themeColors}
-              sortBy={sortBy}
-              setSortBy={setSortBy}
-              buttonStyle={{
-                backgroundColor: "transparent",
-                borderRadius: 8,
-                borderWidth: 0,
-                paddingVertical: 0,
-                alignItems: "center",
-                justifyContent: "center",
-                minWidth: 0,
-                marginRight: 0,
-                height: 22,
-                marginBottom: 0,
-              }}
-              textStyle={{
-                color: isFiltersPressed ? themeColors.white : themeColors.black,
-                fontWeight: "bold",
-                fontSize: 14,
-                textAlignVertical: "center",
-                fontFamily: "CarosSoft",
-              }}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
 
   // --- Add SocialTab ---
   function SocialTab() {
@@ -511,24 +391,10 @@ export default function HomeScreen({ navigation, route }) {
         {showMapView ? (
           <ScrollView
             style={{ flex: 1 }}
-            contentContainerStyle={{ paddingBottom: 120 }}
+            contentContainerStyle={{ paddingBottom: 120, paddingTop: 24 }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            {/* Toggle row (List/Map/Filters) */}
-            <View style={{ paddingHorizontal: 16 }}>
-              <StudySpotsHeader
-                showMapView={showMapView}
-                setShowMapView={handleSetShowMapView}
-                showFriendsView={showFriendsView}
-                setShowFriendsView={setShowFriendsView}
-                themeColors={themeColors}
-                filters={filters}
-                setFilters={setFilters}
-                sortBy={sortBy}
-                setSortBy={setSortBy}
-              />
-            </View>
 
             {/* Sliding Toggle - only show when in map view */}
             {showMapView && (
@@ -661,19 +527,6 @@ export default function HomeScreen({ navigation, route }) {
           </ScrollView>
         ) : (
           <>
-            <View style={{ paddingHorizontal: 16 }}>
-              <StudySpotsHeader
-                showMapView={showMapView}
-                setShowMapView={handleSetShowMapView}
-                showFriendsView={showFriendsView}
-                setShowFriendsView={setShowFriendsView}
-                themeColors={themeColors}
-                filters={filters}
-                setFilters={setFilters}
-                sortBy={sortBy}
-                setSortBy={setSortBy}
-              />
-            </View>
             <StudySpotsList
               filteredSpots={filteredSpots} // use filteredSpots directly, not filteredSpotsWithSearch
               navigation={{
@@ -696,7 +549,7 @@ export default function HomeScreen({ navigation, route }) {
               setFilters={setFilters}
               setCurrentAlerts={setCurrentAlerts}
               setShowAlertsModal={setShowAlertsModal}
-              contentContainerStyle={{ paddingBottom: 140 }}
+              contentContainerStyle={{ paddingBottom: 140, paddingTop: 20 }}
               getLastUpdatedLabel={getLastUpdatedLabel}
               showMapView={showMapView}
               setShowMapView={handleSetShowMapView}
@@ -723,7 +576,7 @@ export default function HomeScreen({ navigation, route }) {
               flexDirection: "row",
               alignItems: "center",
               paddingVertical: 12,
-              paddingHorizontal: 16,
+              paddingHorizontal: 12,
               backgroundColor: themeColors.purple,
               borderRadius: 50,
               shadowColor: themeColors.black,
@@ -735,18 +588,7 @@ export default function HomeScreen({ navigation, route }) {
             onPress={() => navigation.navigate("AddSpot")}
             activeOpacity={0.85}
           >
-            <Plus size={24} color={themeColors.white} />
-            <Text
-              style={{
-                color: themeColors.white,
-                fontWeight: "bold",
-                fontSize: 14,
-                marginLeft: 8,
-                fontFamily: "CarosSoft",
-              }}
-            >
-              Add Nook
-            </Text>
+            <Plus size={25} color={themeColors.white} />
           </TouchableOpacity>
         </View>
       </>
@@ -764,6 +606,7 @@ export default function HomeScreen({ navigation, route }) {
   // Trigger to open profile settings modal from header
   const [profileSettingsTrigger, setProfileSettingsTrigger] = useState(0);
   const [showHeaderSettingsMenu, setShowHeaderSettingsMenu] = useState(false);
+  const [showFiltersModal, setShowFiltersModal] = useState(false);
 
   // Tab scenes (memoize profile renderer to avoid remounting on unrelated state changes)
   const focusScene = React.useCallback(() => {
@@ -1072,28 +915,65 @@ export default function HomeScreen({ navigation, route }) {
                 weight="light"
               />
             </TouchableOpacity>
-            {/* Right header action: bell or gear on Profile tab */}
+            {/* Bell button - always visible */}
             <TouchableOpacity
-              onPress={() => {
-                if (routes[tabIndex]?.key === "profile") {
-                  setShowHeaderSettingsMenu((v) => !v);
-                } else {
-                  navigation.navigate("RecentActivity");
-                }
-              }}
+              onPress={() => navigation.navigate("RecentActivity")}
               style={{
                 alignItems: "center",
                 justifyContent: "center",
                 backgroundColor: themeColors.white,
               }}
-              accessibilityLabel={routes[tabIndex]?.key === "profile" ? "Settings" : "Recent Activity"}
+              accessibilityLabel="Recent Activity"
             >
-              {routes[tabIndex]?.key === "profile" ? (
-                <Gear size={28} color={themeColors.purple} weight="light" />
-              ) : (
-                <Bell size={28} color={themeColors.purple} weight="light" />
-              )}
+              <Bell size={28} color={themeColors.purple} weight="light" />
             </TouchableOpacity>
+            {/* Filters button - only on home tab */}
+            {routes[tabIndex]?.key === "home" && (
+              <>
+                <View style={{ position: "absolute", left: -1000, opacity: 0 }}>
+                  <Filters
+                    filters={filters}
+                    setFilters={setFilters}
+                    themeColors={themeColors}
+                    sortBy={sortBy}
+                    setSortBy={setSortBy}
+                    isOpen={showFiltersModal}
+                    onOpenChange={setShowFiltersModal}
+                    showMapView={showMapView}
+                    setShowMapView={handleSetShowMapView}
+                  />
+                </View>
+                <TouchableOpacity
+                  onPress={() => setShowFiltersModal(true)}
+                  style={{
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: themeColors.white,
+                  }}
+                  accessibilityLabel="Filters"
+                >
+                  <FadersHorizontal
+                    size={28}
+                    color={themeColors.purple}
+                    weight="light"
+                  />
+                </TouchableOpacity>
+              </>
+            )}
+            {/* Settings button - only on profile tab */}
+            {routes[tabIndex]?.key === "profile" && (
+              <TouchableOpacity
+                onPress={() => setShowHeaderSettingsMenu((v) => !v)}
+                style={{
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: themeColors.white,
+                }}
+                accessibilityLabel="Settings"
+              >
+                <Gear size={28} color={themeColors.purple} weight="light" />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 

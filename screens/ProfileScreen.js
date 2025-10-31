@@ -709,7 +709,7 @@ export default function ProfileScreen({ navigation, route, settingsTrigger }) {
               <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
                 <View style={{ alignItems: "flex-start", marginRight: 30 }}>
                   <Text style={{ fontSize: 18, fontWeight: "bold", color: themeColors.black, fontFamily: FONTS.PRIMARY }}>
-                    {favoriteSpotsLoading ? "..." : favoriteSpots.length}
+                    {favoriteSpotsLoading ? "--" : favoriteSpots.length}
                   </Text>
                   <Text style={{ fontSize: 14, color: themeColors.darkGray, fontFamily: FONTS.PRIMARY }}>Favorites</Text>
                 </View>
@@ -731,12 +731,9 @@ export default function ProfileScreen({ navigation, route, settingsTrigger }) {
         </View>
 
         <View style={styles.profileContainer}>
-          <View
-            style={[styles.divider, { backgroundColor: themeColors.gray }]}
-          />
 
           {/* Focus Stats Section */}
-          <View style={{ marginBottom: 18 }}>
+          <View style={{ marginBottom: 18, marginTop: 16 }}>
             <Text
               style={{
                 fontSize: 18,
@@ -779,7 +776,7 @@ export default function ProfileScreen({ navigation, route, settingsTrigger }) {
                   ]}
                 >
                   {focusStatsLoading
-                    ? "..."
+                    ? "--"
                     : formatDuration(focusStats.totalFocusTime)}
                 </Text>
               </View>
@@ -803,7 +800,7 @@ export default function ProfileScreen({ navigation, route, settingsTrigger }) {
                     { color: themeColors.black, fontFamily: FONTS.PRIMARY },
                   ]}
                 >
-                  {focusStatsLoading ? "..." : focusStats.totalSessions}
+                  {focusStatsLoading ? "--" : focusStats.totalSessions}
                 </Text>
               </View>
             </View>

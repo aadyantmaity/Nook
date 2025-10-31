@@ -935,7 +935,13 @@ export default function FocusTimer({ navigation, route }) {
     if (!isPlaying) {
       // Only show location picker for work timers
       if (mode === "work") {
-        setShowLocationModal(true);
+        // If we already have a selected location (from before pausing), reuse it
+        if (selectedLocation) {
+          startTimerWithLocation(selectedLocation);
+        } else {
+          // No location selected yet, show modal to pick one
+          setShowLocationModal(true);
+        }
       } else {
         // For break timers, start immediately without location
         startBreakTimer();
@@ -960,6 +966,8 @@ export default function FocusTimer({ navigation, route }) {
     isLoadingSettings,
     mode,
     startBreakTimer,
+    selectedLocation,
+    startTimerWithLocation,
   ]);
 
   const startTimerWithLocation = useCallback(
@@ -1060,10 +1068,10 @@ export default function FocusTimer({ navigation, route }) {
               alignItems: "center",
               marginBottom: 16,
               zIndex: 20,
-              justifyContent: "flex-start", // left align
+              justifyContent: "center", // center align
             }}
           >
-            {/* Left: View Toggles */}
+            {/* Tab Toggles */}
             <View
               style={{
                 flexDirection: "row",

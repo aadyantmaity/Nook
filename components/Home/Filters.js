@@ -8,7 +8,7 @@ import {
   Platform,
   UIManager,
 } from "react-native";
-import { FadersHorizontal } from "phosphor-react-native";
+import { FadersHorizontal, Rows, MapTrifold } from "phosphor-react-native";
 import { FONTS } from "../../constants/fonts";
 
 const TAGS = [
@@ -47,6 +47,10 @@ export default function Filters({
   textStyle,
   sortBy,
   setSortBy,
+  isOpen,
+  onOpenChange,
+  showMapView,
+  setShowMapView,
 }) {
   // Modal open state
   const [modalVisible, setModalVisible] = useState(false);
@@ -54,13 +58,16 @@ export default function Filters({
   const [localFilters, setLocalFilters] = useState(filters);
   // Local sort state for modal
   const [localSortBy, setLocalSortBy] = useState(sortBy || "name-asc");
+  // Local view state for modal
+  const [localShowMapView, setLocalShowMapView] = useState(showMapView ?? false);
 
-  // When modal opens, always default sort to "name-asc" if not set
+  // When modal opens, sync local state with parent state
   useEffect(() => {
     if (modalVisible) {
       setLocalSortBy(sortBy || "name-asc");
+      setLocalShowMapView(showMapView ?? false);
     }
-  }, [modalVisible, sortBy]);
+  }, [modalVisible, sortBy, showMapView]);
 
   // Keep localFilters in sync with parent filters only when modal is closed
   useEffect(() => {
@@ -72,6 +79,20 @@ export default function Filters({
   useEffect(() => {
     if (!modalVisible) setLocalSortBy(sortBy || "name-asc");
   }, [sortBy, modalVisible]);
+
+  // Sync with external isOpen prop
+  useEffect(() => {
+    if (isOpen !== undefined) {
+      setModalVisible(isOpen);
+    }
+  }, [isOpen]);
+
+  // Notify parent when modal visibility changes
+  useEffect(() => {
+    if (onOpenChange) {
+      onOpenChange(modalVisible);
+    }
+  }, [modalVisible, onOpenChange]);
 
   const handlePress = (label) => {
     if (label === "All") {
@@ -103,9 +124,14 @@ export default function Filters({
     return localFilters.includes(normalized);
   };
 
+  const handleButtonPress = () => {
+    setModalVisible(true);
+    if (onOpenChange) onOpenChange(true);
+  };
+
   return (
     <TouchableOpacity
-      onPress={() => setModalVisible(true)}
+      onPress={handleButtonPress}
       style={[
         {
           backgroundColor: themeColors.purple,
@@ -139,7 +165,10 @@ export default function Filters({
             alignItems: "center",
           }}
           activeOpacity={1}
-          onPressOut={() => setModalVisible(false)}
+          onPressOut={() => {
+            setModalVisible(false);
+            if (onOpenChange) onOpenChange(false);
+          }}
         >
           <View
             style={{
@@ -288,11 +317,114 @@ export default function Filters({
               </View>
             </View>
             {/* --- End Sort By Section --- */}
+            {/* --- View Toggle Section --- */}
+            {showMapView !== undefined && setShowMapView && (
+              <View style={{ width: "100%", marginBottom: 10 }}>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "bold",
+                    color: themeColors.purple,
+                    marginBottom: 12,
+                    fontFamily: FONTS.PRIMARY,
+                    alignSelf: "center",
+                  }}
+                >
+                  View
+                </Text>
+
+                <View
+                  style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    justifyContent: "center",
+                    gap: 8,
+                  }}
+                >
+                  <TouchableOpacity
+                    onPress={() => setLocalShowMapView(false)}
+                    style={{
+                      backgroundColor: !localShowMapView
+                        ? themeColors.purple
+                        : themeColors.white,
+                      borderRadius: 18,
+                      paddingVertical: 10,
+                      paddingHorizontal: 14,
+                      shadowColor: themeColors.black,
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 4,
+                      elevation: 4,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <Rows
+                      size={16}
+                      color={!localShowMapView ? themeColors.white : themeColors.purple}
+                    />
+                    <Text
+                      style={{
+                        color: !localShowMapView
+                          ? themeColors.white
+                          : themeColors.purple,
+                        fontWeight: "bold",
+                        fontSize: 12.5,
+                        fontFamily: FONTS.PRIMARY,
+                      }}
+                    >
+                      List View
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setLocalShowMapView(true)}
+                    style={{
+                      backgroundColor: localShowMapView
+                        ? themeColors.purple
+                        : themeColors.white,
+                      borderRadius: 18,
+                      paddingVertical: 10,
+                      paddingHorizontal: 14,
+                      shadowColor: themeColors.black,
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 4,
+                      elevation: 4,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <MapTrifold
+                      size={16}
+                      color={localShowMapView ? themeColors.white : themeColors.purple}
+                    />
+                    <Text
+                      style={{
+                        color: localShowMapView
+                          ? themeColors.white
+                          : themeColors.purple,
+                        fontWeight: "bold",
+                        fontSize: 12.5,
+                        fontFamily: FONTS.PRIMARY,
+                      }}
+                    >
+                      Map View
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+            {/* --- End View Toggle Section --- */}
             {/* --- Reset Filters Button --- */}
             <TouchableOpacity
               onPress={() => {
                 setLocalFilters([]);
                 setLocalSortBy("name-asc");
+                if (showMapView !== undefined) {
+                  setLocalShowMapView(false);
+                }
               }}
               style={{
                 width: "100%",
@@ -318,8 +450,12 @@ export default function Filters({
               <TouchableOpacity
                 onPress={() => {
                   setModalVisible(false);
+                  if (onOpenChange) onOpenChange(false);
                   setLocalFilters(filters); // Reset to parent filters
                   setLocalSortBy(sortBy || "name-asc");
+                  if (showMapView !== undefined) {
+                    setLocalShowMapView(showMapView ?? false);
+                  }
                 }}
                 style={{
                   flex: 1,
@@ -348,7 +484,11 @@ export default function Filters({
                 onPress={() => {
                   setFilters(localFilters);
                   setSortBy && setSortBy(localSortBy);
+                  if (showMapView !== undefined && setShowMapView) {
+                    setShowMapView(localShowMapView);
+                  }
                   setModalVisible(false);
+                  if (onOpenChange) onOpenChange(false);
                 }}
                 style={{
                   flex: 1,
