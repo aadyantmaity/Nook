@@ -190,20 +190,6 @@ export function FocusGoalCard({
           )
         )}
       </View>
-      {archived && (
-        <View style={{ alignItems: "center", marginTop: 8 }}>
-          <Text
-            style={{
-              color: themeColors.purple,
-              fontWeight: "bold",
-              fontSize: 12,
-              fontFamily: FONTS.PRIMARY,
-            }}
-          >
-            Goal archived!
-          </Text>
-        </View>
-      )}
     </TouchableOpacity>
   );
 }
