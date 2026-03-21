@@ -1,120 +1,49 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { SpeakerHigh, UsersThree } from "phosphor-react-native";
+import { Star } from "phosphor-react-native";
 import { FONTS } from "../../constants/fonts";
 
-// Helper functions to map average to label
-function getNoiseLabel(avg) {
+function getRatingLabel(avg) {
   if (avg === "N/A" || avg === "No rating yet" || avg == null) return "N/A";
-  if (typeof avg === "string") {
-    const normalized = avg.trim().toLowerCase();
-    if (["silent", "buzz", "loud"].includes(normalized)) {
-      // Capitalize first letter
-      return avg.charAt(0).toUpperCase() + avg.slice(1).toLowerCase();
-    }
-    avg = parseFloat(avg);
-  }
-  if (isNaN(avg)) return "N/A";
-  if (avg < 0.5) return "Silent";
-  if (avg < 1.5) return "Buzz";
-  return "Loud";
-}
-function getCrowdLabel(avg) {
-  if (avg === "N/A" || avg === "No rating yet" || avg == null) return "N/A";
-  if (typeof avg === "string") {
-    const normalized = avg.trim().toLowerCase();
-    if (["light", "moderate", "busy"].includes(normalized)) {
-      return avg.charAt(0).toUpperCase() + avg.slice(1).toLowerCase();
-    }
-    avg = parseFloat(avg);
-  }
-  if (isNaN(avg)) return "N/A";
-  if (avg < 0.5) return "Light";
-  if (avg < 1.5) return "Moderate";
-  return "Busy";
+  const n = typeof avg === "string" ? parseFloat(avg) : avg;
+  if (isNaN(n)) return "N/A";
+  if (n < 1.5) return "Poor";
+  if (n < 2.5) return "Fair";
+  if (n < 3.5) return "Good";
+  if (n < 4.5) return "Great";
+  return "Excellent";
 }
 
-export default function RatingsDisplay({
-  ratings,
-  themeColors,
-  getLastUpdatedLabel,
-}) {
+export default function RatingsDisplay({ ratings, themeColors }) {
+  const avg = ratings?.rating;
+  const numAvg = typeof avg === "number" ? avg : parseFloat(avg);
+  const filled = isNaN(numAvg) ? 0 : Math.round(numAvg);
+
   return (
-    <>
-      <View
+    <View style={{ alignItems: "center" }}>
+      <View style={{ flexDirection: "row", gap: 6, marginBottom: 4 }}>
+        {[1, 2, 3, 4, 5].map((val) => (
+          <Star
+            key={val}
+            size={24}
+            color={themeColors.purple}
+            weight={filled >= val ? "fill" : "regular"}
+          />
+        ))}
+      </View>
+      <Text
         style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
+          color: themeColors.purple,
+          fontSize: 16,
+          fontWeight: "bold",
+          fontFamily: FONTS.PRIMARY,
         }}
       >
-        <View
-          style={{
-            alignItems: "center",
-            paddingHorizontal: 16,
-            backgroundColor: themeColors.white,
-            borderRadius: 8,
-            flex: 1,
-            marginRight: 8,
-          }}
-        >
-          <SpeakerHigh size={24} color={themeColors.purple} />
-          <Text
-            style={{
-              color: themeColors.purple,
-              fontSize: 16,
-              fontWeight: "bold",
-              marginTop: 8,
-              fontFamily: FONTS.PRIMARY,
-            }}
-          >
-            Noise: {getNoiseLabel(ratings?.noise)}
-          </Text>
-          {typeof ratings?.noise === "number" && (
-            <Text
-              style={{
-                color: themeColors.darkGray,
-                fontSize: 12,
-                fontFamily: FONTS.PRIMARY,
-              }}
-            >
-              ({ratings.noise.toFixed(1)} avg)
-            </Text>
-          )}
-        </View>
-        <View
-          style={{
-            alignItems: "center",
-            paddingHorizontal: 16,
-            backgroundColor: themeColors.white,
-            borderRadius: 8,
-            flex: 1,
-          }}
-        >
-          <UsersThree size={24} color={themeColors.purple} />
-          <Text
-            style={{
-              color: themeColors.purple,
-              fontSize: 16,
-              fontWeight: "bold",
-              marginTop: 8,
-              fontFamily: FONTS.PRIMARY,
-            }}
-          >
-            Crowd: {getCrowdLabel(ratings?.crowd)}
-          </Text>
-          {typeof ratings?.crowd === "number" && (
-            <Text
-              style={{
-                color: themeColors.darkGray,
-                fontSize: 12,
-                fontFamily: FONTS.PRIMARY,
-              }}
-            >
-              ({ratings.crowd.toFixed(1)} avg)
-            </Text>
-          )}
-        </View>
-      </View>
-    </>
+        {getRatingLabel(avg)}
+        {!isNaN(numAvg) && avg !== "N/A" && avg !== "No rating yet"
+          ? ` (${numAvg.toFixed(1)})`
+          : ""}
+      </Text>
+    </View>
   );
 }

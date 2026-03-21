@@ -55,8 +55,6 @@ import ActionButtons from "../components/SpotDetail/ActionButtons";
 import AddAlertModal from "../components/SpotDetail/AddAlertModal";
 import ReportModal from "../components/SpotDetail/ReportModal";
 import LiveUpdateSliders from "../components/SpotDetail/LiveUpdateSliders";
-import SpotFeedback from "../components/SpotDetail/SpotFeedback";
-import SpotGallery from "../components/SpotDetail/SpotGallery";
 import HomeLoadingScreen from "../components/Home/HomeLoadingScreen"; // Add this import
 import PrivateNookShareModal from "../components/SpotDetail/PrivateNookShareModal";
 
@@ -102,17 +100,8 @@ export default function SpotDetailScreen({ route, navigation }) {
   const { spot, addedByName, isLoading, setSpot } = useSpotDetails(spotId);
   const isOwner = !!user && !!spot && spot.addedBy === user.uid;
 
-  // Add state for live update sliders
-  const [liveNoise, setLiveNoise] = useState(
-    spot?.ratings?.noise === "N/A" || spot?.ratings?.noise === "No rating yet"
-      ? 0
-      : Number(spot?.ratings?.noise) || -2
-  );
-  const [liveCrowd, setLiveCrowd] = useState(
-    spot?.ratings?.crowd === "N/A" || spot?.ratings?.crowd === "No rating yet"
-      ? 0
-      : Number(spot?.ratings?.crowd) || -2
-  );
+  // Add state for live update
+  const [liveRating, setLiveRating] = useState(0);
 
   // --- Private Nook Notes State ---
   const [showAddNoteModal, setShowAddNoteModal] = useState(false);
@@ -173,35 +162,20 @@ export default function SpotDetailScreen({ route, navigation }) {
   // Submit handler for live update
   const handleLiveUpdate = async () => {
     if (!canSubmitLiveUpdate()) {
-      Alert.alert(
-        "Cooldown",
-        "You can only submit a live update every 30 minutes."
-      );
+      Alert.alert("Cooldown", "You can only submit a live update every 30 minutes.");
       return;
     }
-    // Disable if no options selected
-    if (
-      liveNoise === -2 ||
-      liveCrowd === -2
-      // (isOdegaard && tableAvailability === null) // REMOVE
-    ) {
-      Alert.alert(
-        "Select an option",
-        "Please select all required live update options."
-      );
+    if (!liveRating) {
+      Alert.alert("Select a rating", "Please select a rating before submitting.");
       return;
     }
     setIsSubmittingLive(true);
     try {
-      const ratingData = {
-        spotId,
-        noise: liveNoise,
-        crowd: liveCrowd,
-        timestamp: serverTimestamp(),
-      };
-      // if (isOdegaard && tableAvailability !== null) {…} // REMOVE
-      await addDoc(collection(db, "ratings"), ratingData);
-      // Set cooldown in user doc
+      await addDoc(collection(db, "studySpots", spotId, "ratings"), {
+        rating: liveRating,
+        createdAt: serverTimestamp(),
+        userId: user.uid,
+      });
       const userRef = doc(db, "users", user.uid);
       await updateDoc(userRef, { lastLiveUpdate: Date.now() });
       setLastLiveUpdate(Date.now());
@@ -708,21 +682,6 @@ export default function SpotDetailScreen({ route, navigation }) {
               </View>
             </View>
 
-            {/* Spot Gallery (replaces SpotImage, matches image size) */}
-            <SpotGallery
-              spotId={spotId}
-              galleryImages={spot.galleryImages}
-              setSpot={setSpot}
-              themeColors={themeColors}
-              imageStyle={{
-                width: "100%",
-                height: 150,
-                borderRadius: 8,
-              }}
-              // Add marginTop: 8 if not private nook
-              style={!isPrivateNook ? { marginTop: -4 } : undefined}
-            />
-
             {/* Spot Name and Floor */}
             <Text
               style={{
@@ -821,16 +780,11 @@ export default function SpotDetailScreen({ route, navigation }) {
             {!isPrivateNook && (
               <View style={{ marginTop: 14 }}>
                 <LiveUpdateSliders
-                  liveNoise={liveNoise}
-                  setLiveNoise={setLiveNoise}
-                  liveCrowd={liveCrowd}
-                  setLiveCrowd={setLiveCrowd}
+                  liveRating={liveRating}
+                  setLiveRating={setLiveRating}
                   isSubmittingLive={isSubmittingLive}
                   onSubmit={handleLiveUpdate}
                   themeColors={themeColors}
-                  // showTableAvailability={isOdegaard}
-                  // tableAvailability={tableAvailability}
-                  // setTableAvailability={setTableAvailability}
                   spot={spot}
                   canSubmitLiveUpdate={canSubmitLiveUpdate()}
                   lastLiveUpdate={lastLiveUpdate}
@@ -1148,20 +1102,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                 )}
               </View>
             </View>
-            {/* Spot Gallery (replaces SpotImage, matches image size) */}
-            <SpotGallery
-              spotId={spotId}
-              galleryImages={spot.galleryImages}
-              setSpot={setSpot}
-              themeColors={themeColors}
-              imageStyle={{
-                width: "100%",
-                height: 150,
-                borderRadius: 8,
-              }}
-              // No extra margin for private nook
-              style={undefined}
-            />
             {/* Spot Name and Floor */}
             <Text
               style={{
@@ -1257,16 +1197,13 @@ export default function SpotDetailScreen({ route, navigation }) {
             {!isPrivateNook && (
               <View style={{ marginTop: 14 }}>
                 <LiveUpdateSliders
-                  liveNoise={liveNoise}
-                  setLiveNoise={setLiveNoise}
-                  liveCrowd={liveCrowd}
-                  setLiveCrowd={setLiveCrowd}
+                  liveRating={liveRating}
+                  setLiveRating={setLiveRating}
+                  liveComment={liveComment}
+                  setLiveComment={setLiveComment}
                   isSubmittingLive={isSubmittingLive}
                   onSubmit={handleLiveUpdate}
                   themeColors={themeColors}
-                  // showTableAvailability={isOdegaard}
-                  // tableAvailability={tableAvailability}
-                  // setTableAvailability={setTableAvailability}
                   spot={spot}
                   canSubmitLiveUpdate={canSubmitLiveUpdate()}
                   lastLiveUpdate={lastLiveUpdate}

@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext } from "react";
 import {
   View,
   Text,
@@ -8,15 +8,13 @@ import {
   SafeAreaView,
   Image,
   Modal,
-  Switch,
 } from "react-native";
-import { ArrowLeft, Check, MapPin } from "phosphor-react-native";
+import { ArrowLeft, Check } from "phosphor-react-native";
 import { ThemeContext } from "../App";
 import { colors } from "../constants/colors";
 import {
   collection,
   addDoc,
-  getDoc,
   doc,
   getDocs,
   updateDoc,
@@ -32,9 +30,6 @@ import TagSelector from "../components/AddSpot/TagSelector";
 import BuildingPicker from "../components/AddSpot/BuildingPicker";
 import ImagePickerButton from "../components/AddSpot/ImagePickerButton";
 import FavoriteToggle from "../components/AddSpot/FavoriteToggle";
-import MapLocationPicker from "../components/AddSpot/MapLocationPicker";
-// --- Add import for ShareWithModal ---
-import ShareWithModal from "../components/AddSpot/ShareWithModal";
 import { FONTS } from "../constants/fonts";
 
 const TAGS = [
@@ -68,44 +63,8 @@ const BUILDINGS = [
     longitude: -122.3042,
   },
   { name: "Paccar Hall", latitude: 47.6591, longitude: -122.3087 },
-  { name: "Denny Hall", latitude: 47.6577, longitude: -122.3122 },
-  { name: "Bagley Hall", latitude: 47.6539, longitude: -122.3087 },
-  { name: "Smith Hall", latitude: 47.6569, longitude: -122.3108 },
-  { name: "Thomson Hall", latitude: 47.6567, longitude: -122.3118 },
-  {
-    name: "Physics‑Astronomy Building",
-    latitude: 47.6532,
-    longitude: -122.3042,
-  },
-  {
-    name: "Mechanical Engineering Building",
-    latitude: 47.6535,
-    longitude: -122.3049,
-  },
-  {
-    name: "Electrical Engineering Building",
-    latitude: 47.6536,
-    longitude: -122.3056,
-  },
-  { name: "Art Building", latitude: 47.6552, longitude: -122.3089 },
-  { name: "Music Building", latitude: 47.6555, longitude: -122.3084 },
-  { name: "William H. Gates Hall", latitude: 47.6582, longitude: -122.3126 },
-  { name: "Savery Hall", latitude: 47.6562, longitude: -122.3102 },
-  { name: "Sieg Hall", latitude: 47.6538, longitude: -122.3062 },
-  { name: "Raitt Hall", latitude: 47.6563, longitude: -122.3112 },
-  { name: "Roberts Hall", latitude: 47.6537, longitude: -122.3072 },
-  { name: "Loew Hall", latitude: 47.6536, longitude: -122.3078 },
-  { name: "More Hall", latitude: 47.6535, longitude: -122.3083 },
-  { name: "Guggenheim Hall", latitude: 47.6534, longitude: -122.3088 },
-  { name: "Benson Hall", latitude: 47.6533, longitude: -122.3093 },
-  { name: "Anderson Hall", latitude: 47.6558, longitude: -122.3097 },
-  { name: "Architecture Hall", latitude: 47.6556, longitude: -122.3092 },
-  { name: "Communications Building", latitude: 47.656, longitude: -122.3076 },
-  { name: "Clark Hall", latitude: 47.6559, longitude: -122.3081 },
-  { name: "Parrington Hall", latitude: 47.6571, longitude: -122.3097 },
-  { name: "Schmitz Hall", latitude: 47.6547, longitude: -122.3072 },
-  { name: "South Campus Center", latitude: 47.6507, longitude: -122.3082 },
   { name: "Health Sciences Building", latitude: 47.6499, longitude: -122.3077 },
+  { name: "Population Health Building", latitude: 47.654483, longitude: -122.311726 },
 ];
 
 export default function AddSpotScreen({ navigation, route }) {
@@ -120,55 +79,8 @@ export default function AddSpotScreen({ navigation, route }) {
   const [selectedTags, setSelectedTags] = useState([]);
   const [showAddedBy, setShowAddedBy] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isUWBuilding, setIsUWBuilding] = useState(true);
-  const [customBuilding, setCustomBuilding] = useState("");
   const [isFavorite, setIsFavorite] = useState(false);
   const [customImage, setCustomImage] = useState(null);
-  const [showMapPicker, setShowMapPicker] = useState(false);
-  const [customCoords, setCustomCoords] = useState(null);
-  const [privateNook, setPrivateNook] = useState(false);
-  // --- Add state for sharing ---
-  const [sharedWith, setSharedWith] = useState([]);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [followingList, setFollowingList] = useState([]);
-  const [followingLoading, setFollowingLoading] = useState(false); // <-- add loading state
-
-  // Fetch following list for sharing
-  useEffect(() => {
-    const fetchFollowing = async () => {
-      setFollowingLoading(true); // <-- set loading true
-      const user = auth.currentUser;
-      if (!user) {
-        setFollowingList([]);
-        setFollowingLoading(false);
-        return;
-      }
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (userDoc.exists()) {
-        const following = userDoc.data().following || [];
-        // Fetch user info for display
-        const users = [];
-        for (let uid of following) {
-          const uDoc = await getDoc(doc(db, "users", uid));
-          if (uDoc.exists()) {
-            users.push({
-              uid,
-              name:
-                `${uDoc.data().firstName || ""} ${
-                  uDoc.data().lastName || ""
-                }`.trim() || uDoc.data().email,
-              email: uDoc.data().email,
-            });
-          }
-        }
-        setFollowingList(users);
-      } else {
-        setFollowingList([]);
-      }
-      setFollowingLoading(false); // <-- set loading false
-    };
-    if (privateNook && !isUWBuilding) fetchFollowing();
-  }, [privateNook, isUWBuilding]);
 
   const toggleTag = (tag) => {
     setSelectedTags((tags) =>
@@ -183,13 +95,8 @@ export default function AddSpotScreen({ navigation, route }) {
     setDepartment("");
     setSelectedTags([]);
     setShowAddedBy(false);
-    setIsUWBuilding(true);
-    setCustomBuilding("");
     setIsFavorite(false);
     setCustomImage(null);
-    setCustomCoords(null);
-    setPrivateNook(false);
-    setSharedWith([]); // <-- reset
   };
 
   const isAmaity =
@@ -276,13 +183,10 @@ export default function AddSpotScreen({ navigation, route }) {
       }
       const querySnapshot = await getDocs(collection(db, "studySpots"));
       const existingSpots = querySnapshot.docs.map((doc) => doc.data());
-      const buildingNameToCheck = isUWBuilding
-        ? selectedBuilding
-        : customBuilding;
       const isDuplicate = existingSpots.some(
         (spot) =>
           spot.buildingName.toLowerCase() ===
-            buildingNameToCheck.toLowerCase() &&
+            selectedBuilding.toLowerCase() &&
           spot.roomNumber.toLowerCase() === roomNumber.toLowerCase()
       );
       if (isDuplicate) {
@@ -293,17 +197,15 @@ export default function AddSpotScreen({ navigation, route }) {
       let photoUrl = "";
       // --- Add coordinates for UW buildings ---
       let coordinates = undefined;
-      if (isUWBuilding) {
-        const b = BUILDINGS.find(
-          (b) => (b.name || b) === selectedBuilding || b === selectedBuilding
-        );
-        if (b && b.latitude && b.longitude) {
-          coordinates = { latitude: b.latitude, longitude: b.longitude };
-        }
+      const b = BUILDINGS.find(
+        (b) => (b.name || b) === selectedBuilding || b === selectedBuilding
+      );
+      if (b && b.latitude && b.longitude) {
+        coordinates = { latitude: b.latitude, longitude: b.longitude };
       }
       const spotDetails = {
-        name: buildingNameToCheck,
-        buildingName: buildingNameToCheck,
+        name: selectedBuilding,
+        buildingName: selectedBuilding,
         roomNumber,
         huskyCardNeeded,
         department: huskyCardNeeded ? department : null,
@@ -312,23 +214,14 @@ export default function AddSpotScreen({ navigation, route }) {
         addedBy: user.uid,
         revealIdentity: showAddedBy,
         photoUrl: "",
-        ...(isUWBuilding
-          ? coordinates
-            ? { coordinates }
-            : {}
-          : customCoords
-          ? { coordinates: customCoords }
-          : {}),
-        privateNook: !isUWBuilding ? privateNook : false,
-        sharedWith: !isUWBuilding && privateNook ? sharedWith : [], // <-- add this
+        ...(coordinates ? { coordinates } : {}),
+        privateNook: false,
+        sharedWith: [],
       };
       const docRef = await addDoc(collection(db, "studySpots"), spotDetails);
 
       // --- Cloudinary upload for main spot image ---
-      if (
-        (!isUWBuilding && customImage) ||
-        (isUWBuilding && isAmaity && customImage)
-      ) {
+      if (isAmaity && customImage) {
         photoUrl = await uploadImageToCloudinary(customImage);
         await updateDoc(docRef, { photoUrl });
       }
@@ -356,21 +249,6 @@ export default function AddSpotScreen({ navigation, route }) {
       setIsLoading(false);
     }
   };
-
-  const handleUWBuildingToggle = (isUW) => {
-    setIsUWBuilding(isUW);
-    setCustomImage(null);
-  };
-
-  // --- Show share modal after toggling private nook ---
-  useEffect(() => {
-    if (privateNook && !isUWBuilding) {
-      setShowShareModal(true);
-    } else {
-      setShowShareModal(false);
-      setSharedWith([]);
-    }
-  }, [privateNook, isUWBuilding]);
 
   return (
     <View
@@ -419,72 +297,6 @@ export default function AddSpotScreen({ navigation, route }) {
             </TouchableOpacity>
           </View>
 
-          {/* UW Building Toggle */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 12,
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => handleUWBuildingToggle(true)}
-              style={{
-                flex: 1,
-                alignItems: "center",
-                padding: 12,
-                marginRight: 8,
-                backgroundColor: isUWBuilding
-                  ? themeColors.purple
-                  : themeColors.white,
-                borderRadius: 8,
-                shadowColor: themeColors.black,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.3,
-                shadowRadius: 4,
-                elevation: 4,
-              }}
-            >
-              <Text
-                style={{
-                  color: isUWBuilding ? themeColors.white : themeColors.purple,
-                  fontWeight: "bold",
-                  fontFamily: FONTS.PRIMARY,
-                }}
-              >
-                UW Building
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => handleUWBuildingToggle(false)}
-              style={{
-                flex: 1,
-                alignItems: "center",
-                padding: 12,
-                marginLeft: 8,
-                backgroundColor: !isUWBuilding
-                  ? themeColors.purple
-                  : themeColors.white,
-                borderRadius: 8,
-                shadowColor: themeColors.black,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.3,
-                shadowRadius: 4,
-                elevation: 4,
-              }}
-            >
-              <Text
-                style={{
-                  color: !isUWBuilding ? themeColors.white : themeColors.purple,
-                  fontWeight: "bold",
-                  fontFamily: FONTS.PRIMARY,
-                }}
-              >
-                Custom Location
-              </Text>
-            </TouchableOpacity>
-          </View>
-
           <Text
             style={{
               fontSize: 20,
@@ -493,125 +305,21 @@ export default function AddSpotScreen({ navigation, route }) {
               fontFamily: FONTS.PRIMARY,
             }}
           >
-            {isUWBuilding ? "Select Building:" : "Enter Location Name:"}
+            Select Building:
           </Text>
 
-          {/* Building/Floor/Map Row */}
-          {isUWBuilding ? (
-            <BuildingPicker
-              isUWBuilding={isUWBuilding}
-              selectedBuilding={selectedBuilding}
-              setSelectedBuilding={setSelectedBuilding}
-              customBuilding={customBuilding}
-              setCustomBuilding={setCustomBuilding}
-              roomNumber={roomNumber}
-              setRoomNumber={setRoomNumber}
-              BUILDINGS={BUILDINGS}
-              themeColors={themeColors}
-            />
-          ) : (
-            <>
-              <View
-                style={{
-                  marginBottom: 8,
-                }}
-              >
-                <TextInput
-                  placeholder="Location Name"
-                  placeholderTextColor={themeColors.darkGray}
-                  value={customBuilding}
-                  onChangeText={setCustomBuilding}
-                  style={{
-                    shadowColor: themeColors.black,
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 4,
-                    elevation: 4,
-                    borderRadius: 8,
-                    padding: 12,
-                    marginBottom: 8,
-                    backgroundColor: themeColors.white,
-                    color: themeColors.purple,
-                    fontFamily: FONTS.PRIMARY,
-                  }}
-                />
-                <Text
-                  style={{
-                    textAlign: "center",
-                    color: themeColors.darkGray,
-                    fontSize: 14,
-                    fontFamily: FONTS.PRIMARY,
-                    marginBottom: 8,
-                  }}
-                >
-                  or
-                </Text>
-                <TouchableOpacity
-                  onPress={() => setShowMapPicker(true)}
-                  style={{
-                    backgroundColor: themeColors.purple,
-                    borderRadius: 8,
-                    paddingVertical: 10,
-                    paddingHorizontal: 12,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexDirection: "row",
-                    shadowColor: themeColors.black,
-
-                    shadowOffset: {
-                      width: 0,
-                      height: 2
-                    },
-
-                    shadowOpacity: 0.3,
-                    shadowRadius: 4,
-                    elevation: 4
-                  }}
-                  accessibilityLabel={
-                    customCoords
-                      ? "Change Location on Map"
-                      : "Pick Location on Map"
-                  }
-                  accessible={true}
-                >
-                  <MapPin size={20} color={themeColors.white} />
-                  <Text
-                    style={{
-                      color: themeColors.white,
-                      marginLeft: 6,
-                      fontSize: 13,
-                      fontFamily: FONTS.PRIMARY,
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Search
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <TextInput
-                placeholder="Floor number (if applicable)"
-                placeholderTextColor={themeColors.darkGray}
-                value={roomNumber}
-                onChangeText={setRoomNumber}
-                style={{
-                  borderRadius: 8,
-                  padding: 12,
-                  marginTop: 12,
-                  marginBottom: 8,
-                  backgroundColor: themeColors.white,
-                  color: themeColors.purple,
-                  shadowColor: themeColors.black,
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 4,
-                  elevation: 4,
-                  // Match width to name input
-                  width: "100%",
-                  fontFamily: FONTS.PRIMARY,
-                }}
-              />
-            </>
-          )}
+          {/* Building/Floor */}
+          <BuildingPicker
+            isUWBuilding={true}
+            selectedBuilding={selectedBuilding}
+            setSelectedBuilding={setSelectedBuilding}
+            customBuilding=""
+            setCustomBuilding={() => {}}
+            roomNumber={roomNumber}
+            setRoomNumber={setRoomNumber}
+            BUILDINGS={BUILDINGS}
+            themeColors={themeColors}
+          />
 
           {/* Image Picker */}
           <View style={{ marginTop: 12 }}>
@@ -623,26 +331,8 @@ export default function AddSpotScreen({ navigation, route }) {
             />
           </View>
 
-          {/* Map Picker Modal */}
-          <MapLocationPicker
-            visible={showMapPicker}
-            onClose={() => setShowMapPicker(false)}
-            onPick={(coords) => {
-              setCustomCoords(coords);
-              // Autofill custom building name if available
-              if (coords.name) {
-                setCustomBuilding(coords.name);
-              } else if (coords.display_name) {
-                setCustomBuilding(coords.display_name.split(",")[0]);
-              }
-              setShowMapPicker(false);
-            }}
-            themeColors={themeColors}
-            initialCoords={customCoords}
-          />
-
           {/* Husky Card Needed */}
-          {isUWBuilding && (
+          {(
             <View style={{ marginBottom: 16 }}>
               <Text
                 style={{
@@ -726,7 +416,7 @@ export default function AddSpotScreen({ navigation, route }) {
               </View>
             </View>
           )}
-          {isUWBuilding && huskyCardNeeded && (
+          {huskyCardNeeded && (
             <TextInput
               placeholder="Department (if applicable)"
               placeholderTextColor={themeColors.darkGray}
@@ -765,75 +455,6 @@ export default function AddSpotScreen({ navigation, route }) {
             onToggle={toggleTag}
             themeColors={themeColors}
           />
-
-          {!isUWBuilding && (
-          <Text
-            style={{
-              fontSize: 20,
-              color: themeColors.black,
-              fontFamily: FONTS.PRIMARY,
-            }}
-          >
-            Privacy:
-          </Text>
-          )}
-          {/* Only show private toggle for custom locations */}
-          {!isUWBuilding && (
-            <View
-              style={{
-                width: "100%",
-                backgroundColor: themeColors.white,
-                borderRadius: 10,
-                paddingTop: 4,
-                paddingBottom: 12,
-                marginBottom: 16,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  width: "100%",
-                }}
-              >
-                <View style={{ flexDirection: "column" }}>
-                  
-                  <Text
-                    style={{
-                      color: themeColors.darkGray,
-                      fontSize: 14,
-                      marginTop: 4,
-                      fontFamily: FONTS.PRIMARY,
-                    }}
-                  >
-                    Only you and invited users can see this nook
-                  </Text>
-                </View>
-                <Switch
-                  value={privateNook}
-                  onValueChange={setPrivateNook}
-                  trackColor={{ false: themeColors.gray, true: themeColors.purple }}
-                  thumbColor={themeColors.white}
-                  ios_backgroundColor={themeColors.gray}
-                  accessibilityLabel="Toggle Private Nook"
-                />
-              </View>
-            </View>
-          )}
-
-          {/* --- Share Modal --- */}
-          {showShareModal && (
-            <ShareWithModal
-              visible={showShareModal}
-              onClose={() => setShowShareModal(false)}
-              sharedWith={sharedWith}
-              setSharedWith={setSharedWith}
-              themeColors={themeColors}
-              followingList={followingList}
-              loading={followingLoading} // <-- pass loading prop
-            />
-          )}
 
           {/* Buttons */}
           <View

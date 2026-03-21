@@ -3,8 +3,6 @@ import {
   doc,
   getDoc,
   collection,
-  query,
-  where,
   onSnapshot,
   Timestamp,
 } from "firebase/firestore";
@@ -68,73 +66,55 @@ export default function useSpotDetails(spotId) {
           if (spotData.privateNook) {
             setSpot((prev) => ({
               ...prev,
-              ratings: {
-                noise: "N/A",
-                crowd: "N/A",
-                lastUpdated: null,
-                lastUpdatedType: null,
-                lastWindowHours: null,
-              },
+              ratings: { rating: "N/A", lastUpdated: null, lastUpdatedType: null, lastWindowHours: null },
             }));
             return;
           }
 
-          // Fetch ratings for the spot
-          const ratingsQuery = query(
-            collection(db, "ratings"),
-            where("spotId", "==", spotId)
-          );
+          // Fetch ratings from subcollection
+          const ratingsRef = collection(db, "studySpots", spotId, "ratings");
           unsubscribeAll();
-          const unsubscribe = onSnapshot(ratingsQuery, (snapshot) => {
+          const unsubscribe = onSnapshot(ratingsRef, (snapshot) => {
             const now = Timestamp.now().toMillis();
             const thirtyMinutesAgo = now - 30 * 60 * 1000;
             const todayStart = new Date();
             todayStart.setHours(0, 0, 0, 0);
             const todayStartMillis = todayStart.getTime();
 
+            const getTs = (data) =>
+              data.createdAt?.toMillis?.() ?? null;
+
             let recentRatings = [];
             let recentLastTimestamp = null;
             snapshot.forEach((doc) => {
               const data = doc.data();
-              if (!data.timestamp) return;
-              const ts = data.timestamp.toMillis();
-              if (ts >= thirtyMinutesAgo) {
+              const ts = getTs(data);
+              if (ts !== null && ts >= thirtyMinutesAgo) {
                 recentRatings.push(data);
                 if (!recentLastTimestamp || ts > recentLastTimestamp)
                   recentLastTimestamp = ts;
               }
             });
 
-            let noiseRating,
-              crowdRating,
-              lastUpdated,
-              lastUpdatedType,
-              lastWindowHours;
+            let avgRating, lastUpdated, lastUpdatedType, lastWindowHours;
 
             if (recentRatings.length > 0) {
-              let noiseSum = 0,
-                crowdSum = 0;
-              recentRatings.forEach((r) => {
-                noiseSum += r.noise;
-                crowdSum += r.crowd;
-              });
-              noiseRating = (noiseSum / recentRatings.length).toFixed(1);
-              crowdRating = (crowdSum / recentRatings.length).toFixed(1);
+              avgRating = (recentRatings.reduce((s, r) => s + r.rating, 0) / recentRatings.length).toFixed(1);
               lastUpdated = recentLastTimestamp;
               lastUpdatedType = "recent";
               lastWindowHours = null;
             } else {
-              let bestWindow = null;
+              let found = false;
               let bestWindowRatings = [];
               let lastRecentTimestamp = null;
-              let found = false;
+              let bestWindow = null;
               for (let hours = 1; hours <= 6; hours++) {
                 const windowStart = now - hours * 60 * 60 * 1000;
                 let windowRatings = [];
                 let windowLastTimestamp = null;
                 snapshot.forEach((doc) => {
                   const data = doc.data();
-                  const ts = data.timestamp ? data.timestamp.toMillis() : null;
+                  const ts = getTs(data);
                   if (ts !== null && ts >= windowStart) {
                     windowRatings.push(data);
                     if (!windowLastTimestamp || ts > windowLastTimestamp)
@@ -153,44 +133,23 @@ export default function useSpotDetails(spotId) {
               if (!found) {
                 snapshot.forEach((doc) => {
                   const data = doc.data();
-                  const ts = data.timestamp ? data.timestamp.toMillis() : null;
-                  if (ts !== null && ts >= todayStartMillis) {
-                    todayRatings.push(data);
-                  }
+                  const ts = getTs(data);
+                  if (ts !== null && ts >= todayStartMillis) todayRatings.push(data);
                 });
               }
 
               if (found && bestWindowRatings.length > 0) {
-                let noiseSum = 0,
-                  crowdSum = 0;
-                bestWindowRatings.forEach((r) => {
-                  noiseSum += r.noise;
-                  crowdSum += r.crowd;
-                });
-                noiseRating = (noiseSum / bestWindowRatings.length).toFixed(1);
-                crowdRating = (crowdSum / bestWindowRatings.length).toFixed(1);
+                avgRating = (bestWindowRatings.reduce((s, r) => s + r.rating, 0) / bestWindowRatings.length).toFixed(1);
                 lastUpdated = lastRecentTimestamp;
                 lastUpdatedType = "window";
                 lastWindowHours = bestWindow;
               } else if (todayRatings.length > 0) {
-                let noiseSumDay = 0,
-                  crowdSumDay = 0;
-                todayRatings.forEach((r) => {
-                  noiseSumDay += r.noise;
-                  crowdSumDay += r.crowd;
-                });
-                noiseRating = (noiseSumDay / todayRatings.length).toFixed(1);
-                crowdRating = (crowdSumDay / todayRatings.length).toFixed(1);
-                lastUpdated = Math.max(
-                  ...todayRatings
-                    .map((r) => (r.timestamp ? r.timestamp.toMillis() : null))
-                    .filter((v) => v !== null)
-                );
+                avgRating = (todayRatings.reduce((s, r) => s + r.rating, 0) / todayRatings.length).toFixed(1);
+                lastUpdated = Math.max(...todayRatings.map((r) => getTs(r)).filter((v) => v !== null));
                 lastUpdatedType = "today";
                 lastWindowHours = null;
               } else {
-                noiseRating = "N/A";
-                crowdRating = "N/A";
+                avgRating = "N/A";
                 lastUpdated = null;
                 lastUpdatedType = null;
                 lastWindowHours = null;
@@ -199,13 +158,7 @@ export default function useSpotDetails(spotId) {
 
             setSpot((prev) => ({
               ...prev,
-              ratings: {
-                noise: noiseRating,
-                crowd: crowdRating,
-                lastUpdated,
-                lastUpdatedType,
-                lastWindowHours,
-              },
+              ratings: { rating: avgRating, lastUpdated, lastUpdatedType, lastWindowHours },
             }));
           });
           unsubscribeRefs.current.push(unsubscribe);

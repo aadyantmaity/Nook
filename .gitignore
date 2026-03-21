@@ -36,3 +36,6 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 nook.ipa
+
+# Script outputs
+image_links.txt

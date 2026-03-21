@@ -1,0 +1,98 @@
+[
+    {
+      "name": "Suzzallo Library",
+      "addedBy": "xi85MimfMoYwPvRQ7NcmvYx7jDD3",
+      "latitude": 47.6557,
+      "longitude": -122.3084,
+      "image": "https://res.cloudinary.com/dxnd4aryf/image/upload/w_1024,h_1024/v1766379937/spotimages/bds7btcz06vimhgyodfs.jpg",
+      "description": "",
+      "huskyCardNeeded": false,
+      "department": "N/A",
+      "tags": ["Quiet", "Natural Light", "WiFi", "Outlets"],
+      "floors": [1, 2, 3]
+    },
+    {
+      "name": "Allen Library",
+      "addedBy": "xi85MimfMoYwPvRQ7NcmvYx7jDD3",
+      "latitude": 47.6557,
+      "longitude": -122.3094,
+      "image": "https://res.cloudinary.com/dxnd4aryf/image/upload/w_1024,h_1024/v1766379928/spotimages/fgnnpdwzemgvlji68c9u.jpg",
+      "description": "",
+      "huskyCardNeeded": false,
+      "department": "N/A",
+      "tags": ["Quiet", "WiFi", "Outlets"],
+      "floors": []
+    },
+    {
+      "name": "Odegaard Library",
+      "addedBy": "xi85MimfMoYwPvRQ7NcmvYx7jDD3",
+      "latitude": 47.656667,
+      "longitude": -122.310278,
+      "image": "https://res.cloudinary.com/dxnd4aryf/image/upload/w_1024,h_1024/v1766379932/spotimages/uaxztj0mmifaf03ul3cb.jpg",
+      "description": "",
+      "huskyCardNeeded": true,
+      "department": "N/A",
+      "tags": ["Group Friendly", "Open Space", "WiFi", "Food Nearby", "Outlets"],
+      "floors": [1, 2, 3]
+    },
+    {
+      "name": "Mary Gates Hall",
+      "addedBy": "xi85MimfMoYwPvRQ7NcmvYx7jDD3",
+      "latitude": 47.6564,
+      "longitude": -122.307,
+      "image": "https://res.cloudinary.com/dxnd4aryf/image/upload/w_1024,h_1024/v1766379931/spotimages/kvxj6rdlvxqyi9twgfsj.jpg",
+      "description": "",
+      "huskyCardNeeded": false,
+      "department": "N/A",
+      "tags": ["Group Friendly", "WiFi", "Outlets"],
+      "floors": []
+    },
+    {
+      "name": "Bill-Melinda Gates Center",
+      "addedBy": "xi85MimfMoYwPvRQ7NcmvYx7jDD3",
+      "latitude": 47.6532,
+      "longitude": -122.3042,
+      "image": "https://res.cloudinary.com/dxnd4aryf/image/upload/w_1024,h_1024/v1766379929/spotimages/kyoogkxjcsgmylti797k.jpg",
+      "description": "",
+      "huskyCardNeeded": false,
+      "department": "N/A",
+      "tags": ["Group Friendly", "WiFi", "Outlets", "Food Nearby"],
+      "floors": []
+    },
+    {
+      "name": "Paccar Hall",
+      "addedBy": "xi85MimfMoYwPvRQ7NcmvYx7jDD3",
+      "latitude": 47.6591,
+      "longitude": -122.3087,
+      "image": "https://res.cloudinary.com/dxnd4aryf/image/upload/w_1024,h_1024/v1766379934/spotimages/rigtjxczdc9bejrdecv3.jpg",
+      "description": "",
+      "huskyCardNeeded": false,
+      "department": "N/A",
+      "tags": ["Group Friendly", "WiFi", "Outlets", "Open Space"],
+      "floors": [1, 2, 3]
+    },
+    {
+      "name": "Health Sciences",
+      "addedBy": "xi85MimfMoYwPvRQ7NcmvYx7jDD3",
+      "latitude": 47.6499,
+      "longitude": -122.3077,
+      "image": "https://res.cloudinary.com/dxnd4aryf/image/upload/w_1024,h_1024/v1766379930/spotimages/hyjgvfevnef0nu7seluq.jpg",
+      "description": "",
+      "huskyCardNeeded": true,
+      "department": "N/A",
+      "tags": ["Quiet", "WiFi", "Outlets"],
+      "floors": []
+    },
+    {
+      "name": "Population Health",
+      "addedBy": "xi85MimfMoYwPvRQ7NcmvYx7jDD3",
+      "latitude": 47.654483,
+      "longitude": -122.311726,
+      "image": "https://res.cloudinary.com/dxnd4aryf/image/upload/w_1024,h_1024/v1766379936/spotimages/yv3scz7yfa5pixtr7qsx.jpg",
+      "description": "",
+      "huskyCardNeeded": true,
+      "department": "Public Health",
+      "tags": ["Quiet", "Natural Light", "WiFi", "Outlets"],
+      "floors": [1, 8]
+    }
+  ]

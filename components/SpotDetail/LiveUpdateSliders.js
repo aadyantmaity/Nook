@@ -1,15 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Alert } from "react-native";
-import {
-  SpeakerSimpleNone,
-  SpeakerSimpleLow,
-  SpeakerSimpleHigh,
-  Users,
-  User,
-  UsersThree,
-  Check,
-  MapPin,
-} from "phosphor-react-native";
+import { Star, Check } from "phosphor-react-native";
 import { FONTS } from "../../constants/fonts";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { auth } from "../../firebaseConfig";
@@ -17,22 +8,11 @@ import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { addCheckinActivity } from "../../utils/checkinActivity";
 import useGeofencing from "../../hooks/useGeofencing";
 
-const NOISE_OPTIONS = [
-  { label: "Silent", value: 0, icon: <SpeakerSimpleNone size={23} /> },
-  { label: "Buzz", value: 1, icon: <SpeakerSimpleLow size={23} /> },
-  { label: "Loud", value: 2, icon: <SpeakerSimpleHigh size={23} /> },
-];
-const CROWD_OPTIONS = [
-  { label: "Light", value: 0, icon: <User size={23} /> },
-  { label: "Moderate", value: 1, icon: <Users size={23} /> },
-  { label: "Busy", value: 2, icon: <UsersThree size={23} /> },
-];
+const RATING_OPTIONS = [1, 2, 3, 4, 5];
 
 export default function LiveUpdateSliders({
-  liveNoise,
-  setLiveNoise,
-  liveCrowd,
-  setLiveCrowd,
+  liveRating,
+  setLiveRating,
   isSubmittingLive,
   onSubmit,
   themeColors,
@@ -100,13 +80,11 @@ export default function LiveUpdateSliders({
   // Handler for live update submission
   const handleSubmit = () => {
     onSubmit && onSubmit();
-    // Reset choices after submit
-    setLiveNoise(-2);
-    setLiveCrowd(-2);
+    setLiveRating(0);
   };
 
-  // Disable submit unless all options selected
-  const noOptionsSelected = liveNoise === -2 || liveCrowd === -2;
+  // Disable submit unless rating selected
+  const noOptionsSelected = !liveRating;
   const isDisabled = !canSubmitLiveUpdate;
   
   // Combined submit handler that does both live update and silent check-in
@@ -259,165 +237,36 @@ export default function LiveUpdateSliders({
           {getCooldownLabel()}
         </Text>
       )}
-      <View style={{ flexDirection: "row", gap: 18 }}>
-        {/* Noise */}
-        <View style={{ flex: 1, alignItems: "center" }}>
+      {/* Star Rating */}
+      <View style={{ alignItems: "center", marginBottom: 4 }}>
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          {RATING_OPTIONS.map((val) => (
+            <TouchableOpacity
+              key={val}
+              onPress={() => setLiveRating(val)}
+              disabled={isDisabled || !isWithinGeofence}
+              style={{ opacity: (isDisabled || !isWithinGeofence) ? 0.5 : 1 }}
+            >
+              <Star
+                size={36}
+                color={themeColors.purple}
+                weight={liveRating >= val ? "fill" : "regular"}
+              />
+            </TouchableOpacity>
+          ))}
+        </View>
+        {liveRating > 0 && (
           <Text
             style={{
-              color: themeColors.black,
-              marginBottom: 8,
-              fontWeight: "700",
-              fontSize: 15,
-              letterSpacing: 0.2,
+              color: themeColors.darkGray,
+              fontSize: 13,
+              marginTop: 6,
               fontFamily: FONTS.PRIMARY,
             }}
           >
-            Noise
+            {["", "Poor", "Fair", "Good", "Great", "Excellent"][liveRating]}
           </Text>
-          {NOISE_OPTIONS.map((opt) => (
-            <View
-              key={opt.value}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 9,
-              }}
-            >
-              <View style={{ marginRight: 10 }}>
-                {React.cloneElement(opt.icon, {
-                  color:
-                    liveNoise === opt.value
-                      ? themeColors.purple
-                      : themeColors.darkGray,
-                  size: 23,
-                })}
-              </View>
-              <TouchableOpacity
-                onPress={() => setLiveNoise(opt.value)}
-                disabled={isDisabled || !isWithinGeofence}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-
-                  backgroundColor:
-                    liveNoise === opt.value
-                      ? themeColors.purple
-                      : themeColors.gray,
-
-                  borderRadius: 8,
-                  paddingVertical: 8,
-                  paddingHorizontal: 14,
-                  minWidth: 90,
-                  justifyContent: "center",
-                  opacity: (isDisabled || !isWithinGeofence) ? 0.5 : 1,
-                  shadowColor: themeColors.black,
-
-                  shadowOffset: {
-                    width: 0,
-                    height: 2
-                  },
-
-                  shadowOpacity: 0.3,
-                  shadowRadius: 4,
-                  elevation: 4
-                }}
-              >
-                <Text
-                  style={{
-                    color:
-                      liveNoise === opt.value
-                        ? themeColors.white
-                        : themeColors.black,
-                    fontSize: 13,
-                    fontWeight: liveNoise === opt.value ? "bold" : "normal",
-                    fontFamily: FONTS.PRIMARY,
-                  }}
-                >
-                  {opt.label}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          ))}
-        </View>
-        {/* Crowd */}
-        <View style={{ flex: 1, alignItems: "center" }}>
-          <Text
-            style={{
-              color: themeColors.black,
-              marginBottom: 8,
-              fontWeight: "700",
-              fontSize: 15,
-              letterSpacing: 0.2,
-              fontFamily: FONTS.PRIMARY,
-            }}
-          >
-            Crowd
-          </Text>
-          {CROWD_OPTIONS.map((opt) => (
-            <View
-              key={opt.value}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 9,
-              }}
-            >
-              <View style={{ marginRight: 10 }}>
-                {React.cloneElement(opt.icon, {
-                  color:
-                    liveCrowd === opt.value
-                      ? themeColors.purple
-                      : themeColors.darkGray,
-                  size: 23,
-                })}
-              </View>
-              <TouchableOpacity
-                onPress={() => setLiveCrowd(opt.value)}
-                disabled={isDisabled || !isWithinGeofence}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-
-                  backgroundColor:
-                    liveCrowd === opt.value
-                      ? themeColors.purple
-                      : themeColors.gray,
-
-                  borderRadius: 8,
-                  paddingVertical: 8,
-                  paddingHorizontal: 14,
-                  minWidth: 90,
-                  justifyContent: "center",
-                  opacity: (isDisabled || !isWithinGeofence) ? 0.5 : 1,
-                  shadowColor: themeColors.black,
-
-                  shadowOffset: {
-                    width: 0,
-                    height: 2
-                  },
-
-                  shadowOpacity: 0.3,
-                  shadowRadius: 4,
-                  elevation: 4
-                }}
-              >
-                <Text
-                  style={{
-                    color:
-                      liveCrowd === opt.value
-                        ? themeColors.white
-                        : themeColors.black,
-                    fontSize: 13,
-                    fontWeight: liveCrowd === opt.value ? "bold" : "normal",
-                    fontFamily: FONTS.PRIMARY,
-                  }}
-                >
-                  {opt.label}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          ))}
-        </View>
+        )}
       </View>
       {/* Submit button */}
       <View
@@ -483,7 +332,7 @@ export default function LiveUpdateSliders({
             fontFamily: FONTS.PRIMARY,
           }}
         >
-          Please update all options.
+          Please select a rating.
         </Text>
       )}
     </View>

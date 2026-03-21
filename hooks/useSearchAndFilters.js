@@ -158,18 +158,6 @@ export default function useSearchAndFilters(
       const bNoise = typeof b.ratings?.noise === "number" ? b.ratings.noise : 999;
       return aNoise - bNoise;
     });
-  } else if (sortBy === "overall-desc") {
-    sortedSpots.sort((a, b) => {
-      const aOverall =
-        typeof a.averageOverallRating === "number"
-          ? a.averageOverallRating
-          : -1;
-      const bOverall =
-        typeof b.averageOverallRating === "number"
-          ? b.averageOverallRating
-          : -1;
-      return bOverall - aOverall;
-    });
   } else if (sortBy === "crowd-asc") {
     sortedSpots.sort((a, b) => {
       const aCrowd = typeof a.ratings?.crowd === "number" ? a.ratings.crowd : 999;

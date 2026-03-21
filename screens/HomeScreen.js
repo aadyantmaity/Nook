@@ -44,7 +44,6 @@ import {
   MapTrifold,
   MapPin,
   UsersThree,
-  Bell,
   Gear,
   FadersHorizontal,
 } from "phosphor-react-native"; // Add Heart icon
@@ -914,18 +913,6 @@ export default function HomeScreen({ navigation, route }) {
                 color={themeColors.purple}
                 weight="light"
               />
-            </TouchableOpacity>
-            {/* Bell button - always visible */}
-            <TouchableOpacity
-              onPress={() => navigation.navigate("RecentActivity")}
-              style={{
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: themeColors.white,
-              }}
-              accessibilityLabel="Recent Activity"
-            >
-              <Bell size={28} color={themeColors.purple} weight="light" />
             </TouchableOpacity>
             {/* Filters button - only on home tab */}
             {routes[tabIndex]?.key === "home" && (
