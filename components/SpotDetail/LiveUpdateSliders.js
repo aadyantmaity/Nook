@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Alert } from "react-native";
-import { Star, Check } from "phosphor-react-native";
+import { Check } from "phosphor-react-native";
 import { FONTS } from "../../constants/fonts";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { auth } from "../../firebaseConfig";
@@ -8,11 +8,23 @@ import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { addCheckinActivity } from "../../utils/checkinActivity";
 import useGeofencing from "../../hooks/useGeofencing";
 
-const RATING_OPTIONS = [1, 2, 3, 4, 5];
+const NOISE_OPTIONS = [
+  { label: "Silent", value: 0 },
+  { label: "Buzz", value: 1 },
+  { label: "Loud", value: 2 },
+];
+
+const CROWD_OPTIONS = [
+  { label: "Light", value: 0 },
+  { label: "Moderate", value: 1 },
+  { label: "Busy", value: 2 },
+];
 
 export default function LiveUpdateSliders({
-  liveRating,
-  setLiveRating,
+  noiseRating,
+  setNoiseRating,
+  crowdRating,
+  setCrowdRating,
   isSubmittingLive,
   onSubmit,
   themeColors,
@@ -80,11 +92,12 @@ export default function LiveUpdateSliders({
   // Handler for live update submission
   const handleSubmit = () => {
     onSubmit && onSubmit();
-    setLiveRating(0);
+    setNoiseRating(null);
+    setCrowdRating(null);
   };
 
-  // Disable submit unless rating selected
-  const noOptionsSelected = !liveRating;
+  // Disable submit unless both ratings selected
+  const noOptionsSelected = noiseRating === null || crowdRating === null;
   const isDisabled = !canSubmitLiveUpdate;
   
   // Combined submit handler that does both live update and silent check-in
@@ -237,36 +250,69 @@ export default function LiveUpdateSliders({
           {getCooldownLabel()}
         </Text>
       )}
-      {/* Star Rating */}
-      <View style={{ alignItems: "center", marginBottom: 4 }}>
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          {RATING_OPTIONS.map((val) => (
-            <TouchableOpacity
-              key={val}
-              onPress={() => setLiveRating(val)}
-              disabled={isDisabled || !isWithinGeofence}
-              style={{ opacity: (isDisabled || !isWithinGeofence) ? 0.5 : 1 }}
-            >
-              <Star
-                size={36}
-                color={themeColors.purple}
-                weight={liveRating >= val ? "fill" : "regular"}
-              />
-            </TouchableOpacity>
-          ))}
+      {/* Noise Level */}
+      <View style={{ marginBottom: 14 }}>
+        <Text style={{ fontSize: 14, fontWeight: "bold", color: themeColors.black, fontFamily: FONTS.PRIMARY, marginBottom: 8 }}>
+          Noise Level
+        </Text>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          {NOISE_OPTIONS.map((opt) => {
+            const selected = noiseRating === opt.value;
+            return (
+              <TouchableOpacity
+                key={opt.value}
+                onPress={() => setNoiseRating(opt.value)}
+                disabled={isDisabled || !isWithinGeofence}
+                style={{
+                  flex: 1,
+                  paddingVertical: 8,
+                  borderRadius: 8,
+                  alignItems: "center",
+                  backgroundColor: selected ? themeColors.purple : themeColors.white,
+                  borderWidth: 1,
+                  borderColor: selected ? themeColors.purple : themeColors.gray,
+                  opacity: (isDisabled || !isWithinGeofence) ? 0.5 : 1,
+                }}
+              >
+                <Text style={{ color: selected ? themeColors.white : themeColors.black, fontSize: 13, fontFamily: FONTS.PRIMARY }}>
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
-        {liveRating > 0 && (
-          <Text
-            style={{
-              color: themeColors.darkGray,
-              fontSize: 13,
-              marginTop: 6,
-              fontFamily: FONTS.PRIMARY,
-            }}
-          >
-            {["", "Poor", "Fair", "Good", "Great", "Excellent"][liveRating]}
-          </Text>
-        )}
+      </View>
+      {/* Crowd Level */}
+      <View style={{ marginBottom: 4 }}>
+        <Text style={{ fontSize: 14, fontWeight: "bold", color: themeColors.black, fontFamily: FONTS.PRIMARY, marginBottom: 8 }}>
+          Crowd Level
+        </Text>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          {CROWD_OPTIONS.map((opt) => {
+            const selected = crowdRating === opt.value;
+            return (
+              <TouchableOpacity
+                key={opt.value}
+                onPress={() => setCrowdRating(opt.value)}
+                disabled={isDisabled || !isWithinGeofence}
+                style={{
+                  flex: 1,
+                  paddingVertical: 8,
+                  borderRadius: 8,
+                  alignItems: "center",
+                  backgroundColor: selected ? themeColors.purple : themeColors.white,
+                  borderWidth: 1,
+                  borderColor: selected ? themeColors.purple : themeColors.gray,
+                  opacity: (isDisabled || !isWithinGeofence) ? 0.5 : 1,
+                }}
+              >
+                <Text style={{ color: selected ? themeColors.white : themeColors.black, fontSize: 13, fontFamily: FONTS.PRIMARY }}>
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
       {/* Submit button */}
       <View

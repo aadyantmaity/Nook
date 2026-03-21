@@ -1,49 +1,59 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { Star } from "phosphor-react-native";
+import { SpeakerNone, SpeakerLow, SpeakerHigh, UserMinus, Users, UsersThree } from "phosphor-react-native";
 import { FONTS } from "../../constants/fonts";
 
-function getRatingLabel(avg) {
-  if (avg === "N/A" || avg === "No rating yet" || avg == null) return "N/A";
+function getNoiseInfo(avg) {
+  if (avg === "N/A" || avg === "No rating yet" || avg == null) return { label: "N/A", Icon: SpeakerNone };
   const n = typeof avg === "string" ? parseFloat(avg) : avg;
-  if (isNaN(n)) return "N/A";
-  if (n < 1.5) return "Poor";
-  if (n < 2.5) return "Fair";
-  if (n < 3.5) return "Good";
-  if (n < 4.5) return "Great";
-  return "Excellent";
+  if (isNaN(n)) return { label: "N/A", Icon: SpeakerNone };
+  if (n < 0.5) return { label: "Silent", Icon: SpeakerNone };
+  if (n < 1.5) return { label: "Buzz", Icon: SpeakerLow };
+  return { label: "Loud", Icon: SpeakerHigh };
+}
+
+function getCrowdInfo(avg) {
+  if (avg === "N/A" || avg === "No rating yet" || avg == null) return { label: "N/A", Icon: UserMinus };
+  const n = typeof avg === "string" ? parseFloat(avg) : avg;
+  if (isNaN(n)) return { label: "N/A", Icon: UserMinus };
+  if (n < 0.5) return { label: "Light", Icon: UserMinus };
+  if (n < 1.5) return { label: "Moderate", Icon: Users };
+  return { label: "Busy", Icon: UsersThree };
+}
+
+function RatingCard({ sectionLabel, icon: Icon, valueLabel, themeColors }) {
+  const isNA = valueLabel === "N/A";
+  const color = isNA ? themeColors.darkGray : themeColors.purple;
+  return (
+    <View style={{
+      flex: 1,
+      alignItems: "center",
+      paddingVertical: 12,
+      paddingHorizontal: 8,
+      backgroundColor: themeColors.white,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: themeColors.gray,
+    }}>
+      <Text style={{ fontSize: 12, color: themeColors.darkGray, fontFamily: FONTS.PRIMARY, marginBottom: 8 }}>
+        {sectionLabel}
+      </Text>
+      <Icon size={28} color={color} weight={isNA ? "regular" : "fill"} />
+      <Text style={{ fontSize: 14, fontWeight: "bold", color, fontFamily: FONTS.PRIMARY, marginTop: 6 }}>
+        {valueLabel}
+      </Text>
+    </View>
+  );
 }
 
 export default function RatingsDisplay({ ratings, themeColors }) {
-  const avg = ratings?.rating;
-  const numAvg = typeof avg === "number" ? avg : parseFloat(avg);
-  const filled = isNaN(numAvg) ? 0 : Math.round(numAvg);
+  const noiseInfo = getNoiseInfo(ratings?.noise);
+  const crowdInfo = getCrowdInfo(ratings?.crowd);
 
   return (
-    <View style={{ alignItems: "center" }}>
-      <View style={{ flexDirection: "row", gap: 6, marginBottom: 4 }}>
-        {[1, 2, 3, 4, 5].map((val) => (
-          <Star
-            key={val}
-            size={24}
-            color={themeColors.purple}
-            weight={filled >= val ? "fill" : "regular"}
-          />
-        ))}
-      </View>
-      <Text
-        style={{
-          color: themeColors.purple,
-          fontSize: 16,
-          fontWeight: "bold",
-          fontFamily: FONTS.PRIMARY,
-        }}
-      >
-        {getRatingLabel(avg)}
-        {!isNaN(numAvg) && avg !== "N/A" && avg !== "No rating yet"
-          ? ` (${numAvg.toFixed(1)})`
-          : ""}
-      </Text>
+    <View style={{ flexDirection: "row", gap: 10 }}>
+      <RatingCard sectionLabel="Noise" icon={noiseInfo.Icon} valueLabel={noiseInfo.label} themeColors={themeColors} />
+      <RatingCard sectionLabel="Crowd" icon={crowdInfo.Icon} valueLabel={crowdInfo.label} themeColors={themeColors} />
     </View>
   );
 }

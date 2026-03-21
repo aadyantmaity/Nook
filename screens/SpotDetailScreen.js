@@ -101,7 +101,8 @@ export default function SpotDetailScreen({ route, navigation }) {
   const isOwner = !!user && !!spot && spot.addedBy === user.uid;
 
   // Add state for live update
-  const [liveRating, setLiveRating] = useState(0);
+  const [noiseRating, setNoiseRating] = useState(null);
+  const [crowdRating, setCrowdRating] = useState(null);
 
   // --- Private Nook Notes State ---
   const [showAddNoteModal, setShowAddNoteModal] = useState(false);
@@ -165,14 +166,15 @@ export default function SpotDetailScreen({ route, navigation }) {
       Alert.alert("Cooldown", "You can only submit a live update every 30 minutes.");
       return;
     }
-    if (!liveRating) {
-      Alert.alert("Select a rating", "Please select a rating before submitting.");
+    if (noiseRating === null || crowdRating === null) {
+      Alert.alert("Select ratings", "Please select both noise and crowd levels before submitting.");
       return;
     }
     setIsSubmittingLive(true);
     try {
       await addDoc(collection(db, "studySpots", spotId, "ratings"), {
-        rating: liveRating,
+        noise: noiseRating,
+        crowd: crowdRating,
         createdAt: serverTimestamp(),
         userId: user.uid,
       });
@@ -754,9 +756,28 @@ export default function SpotDetailScreen({ route, navigation }) {
             {/* Tags */}
             <TagList tags={tags} themeColors={themeColors} />
 
-            {/* Ratings */}
+            {/* Live Update Sliders (compact, extracted component) */}
             {!isPrivateNook && (
               <View style={{ marginTop: 16 }}>
+                <LiveUpdateSliders
+                  noiseRating={noiseRating}
+                  setNoiseRating={setNoiseRating}
+                  crowdRating={crowdRating}
+                  setCrowdRating={setCrowdRating}
+                  isSubmittingLive={isSubmittingLive}
+                  onSubmit={handleLiveUpdate}
+                  themeColors={themeColors}
+                  spot={spot}
+                  canSubmitLiveUpdate={canSubmitLiveUpdate()}
+                  lastLiveUpdate={lastLiveUpdate}
+                  spotId={spotId}
+                />
+              </View>
+            )}
+
+            {/* Ratings */}
+            {!isPrivateNook && (
+              <View style={{ marginTop: 14 }}>
                 <RatingsDisplay
                   ratings={spot.ratings}
                   themeColors={themeColors}
@@ -773,23 +794,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                     {getLastUpdatedLabel(spot.ratings)}
                   </Text>
                 </View>
-              </View>
-            )}
-
-            {/* Live Update Sliders (compact, extracted component) */}
-            {!isPrivateNook && (
-              <View style={{ marginTop: 14 }}>
-                <LiveUpdateSliders
-                  liveRating={liveRating}
-                  setLiveRating={setLiveRating}
-                  isSubmittingLive={isSubmittingLive}
-                  onSubmit={handleLiveUpdate}
-                  themeColors={themeColors}
-                  spot={spot}
-                  canSubmitLiveUpdate={canSubmitLiveUpdate()}
-                  lastLiveUpdate={lastLiveUpdate}
-                  spotId={spotId}
-                />
               </View>
             )}
 
@@ -1172,9 +1176,27 @@ export default function SpotDetailScreen({ route, navigation }) {
             )}
             {/* Tags */}
             <TagList tags={tags} themeColors={themeColors} />
-            {/* Ratings */}
+            {/* Live Update Sliders (compact, extracted component) */}
             {!isPrivateNook && (
               <View style={{ marginTop: 16 }}>
+                <LiveUpdateSliders
+                  noiseRating={noiseRating}
+                  setNoiseRating={setNoiseRating}
+                  crowdRating={crowdRating}
+                  setCrowdRating={setCrowdRating}
+                  isSubmittingLive={isSubmittingLive}
+                  onSubmit={handleLiveUpdate}
+                  themeColors={themeColors}
+                  spot={spot}
+                  canSubmitLiveUpdate={canSubmitLiveUpdate()}
+                  lastLiveUpdate={lastLiveUpdate}
+                  spotId={spotId}
+                />
+              </View>
+            )}
+            {/* Ratings */}
+            {!isPrivateNook && (
+              <View style={{ marginTop: 14 }}>
                 <RatingsDisplay
                   ratings={spot.ratings}
                   themeColors={themeColors}
@@ -1191,24 +1213,6 @@ export default function SpotDetailScreen({ route, navigation }) {
                     {getLastUpdatedLabel(spot.ratings)}
                   </Text>
                 </View>
-              </View>
-            )}
-            {/* Live Update Sliders (compact, extracted component) */}
-            {!isPrivateNook && (
-              <View style={{ marginTop: 14 }}>
-                <LiveUpdateSliders
-                  liveRating={liveRating}
-                  setLiveRating={setLiveRating}
-                  liveComment={liveComment}
-                  setLiveComment={setLiveComment}
-                  isSubmittingLive={isSubmittingLive}
-                  onSubmit={handleLiveUpdate}
-                  themeColors={themeColors}
-                  spot={spot}
-                  canSubmitLiveUpdate={canSubmitLiveUpdate()}
-                  lastLiveUpdate={lastLiveUpdate}
-                  spotId={spotId}
-                />
               </View>
             )}
             {/* Modals */}

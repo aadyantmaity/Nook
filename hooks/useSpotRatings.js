@@ -4,7 +4,8 @@ import { db } from "../firebaseConfig";
 
 export default function useSpotRatings(spotId, isPrivateNook = false) {
   const [ratings, setRatings] = useState({
-    rating: "No rating yet",
+    noise: "No rating yet",
+    crowd: "No rating yet",
     lastUpdated: null,
     lastUpdatedType: null,
     lastWindowHours: null,
@@ -14,7 +15,7 @@ export default function useSpotRatings(spotId, isPrivateNook = false) {
 
   useEffect(() => {
     if (!spotId || isPrivateNook) {
-      setRatings({ rating: "N/A", lastUpdated: null, lastUpdatedType: null, lastWindowHours: null });
+      setRatings({ noise: "N/A", crowd: "N/A", lastUpdated: null, lastUpdatedType: null, lastWindowHours: null });
       setIsLoading(false);
       return;
     }
@@ -32,79 +33,77 @@ export default function useSpotRatings(spotId, isPrivateNook = false) {
         todayStart.setHours(0, 0, 0, 0);
         const todayStartMillis = todayStart.getTime();
 
-        let recentRatings = [];
-        let recentLastTimestamp = null;
+        // Only use docs with noise/crowd fields
+        const allDocs = [];
         snapshot.forEach((doc) => {
           const data = doc.data();
-          const ts = getTs(data);
-          if (ts !== null && ts >= thirtyMinutesAgo) {
-            recentRatings.push(data);
-            if (!recentLastTimestamp || ts > recentLastTimestamp)
-              recentLastTimestamp = ts;
+          if (data.noise !== undefined && data.crowd !== undefined) {
+            allDocs.push(data);
           }
         });
 
-        let avgRating, lastUpdated, lastUpdatedType, lastWindowHours;
+        function computeAvg(docs, field) {
+          if (docs.length === 0) return "No rating yet";
+          return docs.reduce((s, r) => s + r[field], 0) / docs.length;
+        }
 
-        if (recentRatings.length > 0) {
-          avgRating = recentRatings.reduce((s, r) => s + r.rating, 0) / recentRatings.length;
-          lastUpdated = recentLastTimestamp;
+        function getDocsInWindow(windowStartMillis) {
+          return allDocs.filter((data) => {
+            const ts = getTs(data);
+            return ts !== null && ts >= windowStartMillis;
+          });
+        }
+
+        function getLastTs(docs) {
+          return Math.max(...docs.map(getTs).filter((v) => v !== null));
+        }
+
+        let noiseAvg, crowdAvg, lastUpdated, lastUpdatedType, lastWindowHours;
+
+        const recentDocs = getDocsInWindow(thirtyMinutesAgo);
+        if (recentDocs.length > 0) {
+          noiseAvg = computeAvg(recentDocs, "noise");
+          crowdAvg = computeAvg(recentDocs, "crowd");
+          lastUpdated = getLastTs(recentDocs);
           lastUpdatedType = "recent";
           lastWindowHours = null;
         } else {
           let found = false;
           let bestWindow = null;
-          let bestWindowRatings = [];
-          let lastRecentTimestamp = null;
+          let bestDocs = [];
           for (let hours = 1; hours <= 6; hours++) {
-            const windowStart = now - hours * 60 * 60 * 1000;
-            let windowRatings = [];
-            let windowLastTimestamp = null;
-            snapshot.forEach((doc) => {
-              const data = doc.data();
-              const ts = getTs(data);
-              if (ts !== null && ts >= windowStart) {
-                windowRatings.push(data);
-                if (!windowLastTimestamp || ts > windowLastTimestamp)
-                  windowLastTimestamp = ts;
-              }
-            });
-            if (windowRatings.length > 0) {
+            const windowDocs = getDocsInWindow(now - hours * 60 * 60 * 1000);
+            if (windowDocs.length > 0) {
               bestWindow = hours;
-              bestWindowRatings = windowRatings;
-              lastRecentTimestamp = windowLastTimestamp;
+              bestDocs = windowDocs;
               found = true;
               break;
             }
           }
-          let todayRatings = [];
-          if (!found) {
-            snapshot.forEach((doc) => {
-              const data = doc.data();
-              const ts = getTs(data);
-              if (ts !== null && ts >= todayStartMillis) todayRatings.push(data);
-            });
-          }
+          const todayDocs = getDocsInWindow(todayStartMillis);
 
-          if (found && bestWindowRatings.length > 0) {
-            avgRating = bestWindowRatings.reduce((s, r) => s + r.rating, 0) / bestWindowRatings.length;
-            lastUpdated = lastRecentTimestamp;
+          if (found) {
+            noiseAvg = computeAvg(bestDocs, "noise");
+            crowdAvg = computeAvg(bestDocs, "crowd");
+            lastUpdated = getLastTs(bestDocs);
             lastUpdatedType = "window";
             lastWindowHours = bestWindow;
-          } else if (todayRatings.length > 0) {
-            avgRating = todayRatings.reduce((s, r) => s + r.rating, 0) / todayRatings.length;
-            lastUpdated = Math.max(...todayRatings.map(getTs).filter((v) => v !== null));
+          } else if (todayDocs.length > 0) {
+            noiseAvg = computeAvg(todayDocs, "noise");
+            crowdAvg = computeAvg(todayDocs, "crowd");
+            lastUpdated = getLastTs(todayDocs);
             lastUpdatedType = "today";
             lastWindowHours = null;
           } else {
-            avgRating = "No rating yet";
+            noiseAvg = "No rating yet";
+            crowdAvg = "No rating yet";
             lastUpdated = null;
             lastUpdatedType = null;
             lastWindowHours = null;
           }
         }
 
-        setRatings({ rating: avgRating, lastUpdated, lastUpdatedType, lastWindowHours });
+        setRatings({ noise: noiseAvg, crowd: crowdAvg, lastUpdated, lastUpdatedType, lastWindowHours });
         setIsLoading(false);
       },
       (error) => {

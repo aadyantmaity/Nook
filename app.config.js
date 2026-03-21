@@ -4,7 +4,7 @@ export default {
   expo: {
     name: "Nook",
     slug: "nook",
-    version: "1.0.3",
+    version: "1.1.1",
     icon: "./assets/NewNook.png",
     scheme: "nook",
     userInterfaceStyle: "automatic",
@@ -16,7 +16,7 @@ export default {
     ios: {
       bundleIdentifier: "com.aadyant.nook",
       usesNotifications: true,
-      buildNumber: "1.0.65",
+      buildNumber: "203",
       supportsTablet: true,
       associatedDomains: ["applinks:nook-web.netlify.app"],
       infoPlist: {
